@@ -1,0 +1,35 @@
+PREFIX=	/usr/local
+BINDIR=	$(PREFIX)/bin
+MANDIR=	$(PREFIX)/man
+INCDIR=	$(PREFIX)/include
+LIBDIR=	$(PREFIX)/lib
+BIN=	vddiff
+OBJ=	main.o pars.o lex.o
+
+YFLAGS=	-d
+_CFLAGS=$(CFLAGS) $(CPPFLAGS) $(DEFINES) -I$(INCDIR) \
+	$(__CDBG) $(__SAN) -Wall -Wextra
+_LDFLAGS=$(LDFLAGS) $(__SAN) -L${LIBDIR} -Wl,-rpath,${LIBDIR} \
+	#-s
+LDADD=	-lavlbst
+
+$(BIN):	$(OBJ)
+	$(CC) $(_CFLAGS) $(_LDFLAGS) -o $@ $(OBJ) $(LDADD)
+
+install:
+	[ -d $(BINDIR) ] || mkdir -p $(BINDIR)
+	install $(BIN) $(BINDIR)/
+	[ -d $(MANDIR)/man1 ] || mkdir -p $(MANDIR)/man1
+	install -m 644 $(BIN).1 $(MANDIR)/man1/
+
+clean:
+	rm -f $(BIN) $(OBJ) y.tab.h
+
+distclean: clean
+	rm -f Makefile config.log compat.h
+
+.c.o:
+	$(CC) $(_CFLAGS) -c $<
+
+main.o: pars.o # y.tab.h
+lex.o: pars.o # y.tab.h
