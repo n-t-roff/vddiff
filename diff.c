@@ -89,7 +89,7 @@ build_diff_db(void)
 
 		} else if (stat1.st_ino == stat2.st_ino) {
 
-			diff->diff = SAME_INO;
+			diff->diff = '=';
 			db_add(diff);
 			continue;
 
@@ -187,7 +187,7 @@ cmp_link(void)
 	diff->rlink = strdup(rbuf);
 
 	if (l1 != l2 || memcmp(lbuf, rbuf, l1))
-		diff->diff = DIFF;
+		diff->diff = '!';
 
 	db_add(diff);
 	diff = NULL;
@@ -201,7 +201,7 @@ cmp_file(void)
 	ssize_t l1, l2;
 
 	if (stat1.st_size != stat2.st_size) {
-		diff->diff = DIFF;
+		diff->diff = '!';
 		goto ret;
 	}
 
@@ -233,7 +233,7 @@ cmp_file(void)
 		}
 
 		if (l1 != l2) {
-			diff->diff = DIFF;
+			diff->diff = '!';
 			break;
 		}
 
@@ -241,7 +241,7 @@ cmp_file(void)
 			break;
 
 		if (memcpy(lbuf, rbuf, l1)) {
-			diff->diff = DIFF;
+			diff->diff = '!';
 			break;
 		}
 
@@ -267,7 +267,7 @@ alloc_diff(char *name)
 	p->name  = strdup(name);
 	p->llink = NULL; /* to simply use free() later */
 	p->rlink = NULL;
-	p->diff  = NO_DIFF;
+	p->diff  = ' ';
 	return p;
 }
 

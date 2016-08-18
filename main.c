@@ -39,6 +39,7 @@ main(int argc, char **argv)
 	initscr();
 	noecho();
 	keypad(stdscr, TRUE);
+	curs_set(2);
 	build_ui();
 	endwin();
 	return 0;

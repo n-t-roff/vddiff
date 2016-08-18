@@ -1,7 +1,13 @@
+#include <string.h>
 #include <stdarg.h>
+#include <stdlib.h>
+#include <sys/types.h>
+#include <sys/stat.h>
 #include "compat.h"
-#include "ui.h"
+#include "avlbst.h"
 #include "diff.h"
+#include "main.h"
+#include "ui.h"
 #include "db.h"
 
 static void ui_ctrl(void);
@@ -12,10 +18,14 @@ static void curs_up(void);
 static void disp_curs(int);
 static void disp_list(void);
 static void disp_line(unsigned, unsigned);
+static void push_state(void);
+static void pop_state(void);
+static void enter_dir(char *);
 
 static unsigned listw, listh, statw;
 static WINDOW *wlist, *wstat;
 static unsigned top_idx, curs;
+static struct ui_state *ui_stack;
 
 void
 build_ui(void)
@@ -36,6 +46,7 @@ build_ui(void)
 	build_diff_db();
 	disp_list();
 	ui_ctrl();
+	db_free();
 	delwin(wstat);
 	delwin(wlist);
 }
@@ -44,6 +55,7 @@ static void
 ui_ctrl(void)
 {
 	int c;
+	struct filediff *f;
 
 	while (1) {
 		switch (c = getch()) {
@@ -53,6 +65,15 @@ ui_ctrl(void)
 			curs_down(); break;
 		case KEY_UP:
 			curs_up(); break;
+		case KEY_LEFT:
+			pop_state(); break;
+		case KEY_RIGHT:
+			if (!db_num)
+				break;
+			f = db_list[top_idx + curs];
+			if (f->ltype == f->rtype && S_ISDIR(f->ltype))
+				enter_dir(f->name);
+			break;
 		case KEY_NPAGE:
 			page_down(); break;
 		case KEY_PPAGE:
@@ -173,7 +194,75 @@ disp_list(void)
 static void
 disp_line(unsigned y, unsigned i)
 {
-	mvwprintw(wlist, y, 0, "%s", db_list[i]->name);
+	int diff, type;
+	mode_t mode;
+	struct filediff *f = db_list[i];
+
+	if (!f->ltype) {
+		diff = '>';
+		mode = f->rtype;
+	} else if (!f->rtype) {
+		diff = '<';
+		mode = f->ltype;
+	} else {
+		diff = f->diff;
+		mode = f->ltype;
+	}
+
+	if      (S_ISREG(mode)) type = ' ';
+	else if (S_ISDIR(mode)) type = '/';
+	else if (S_ISLNK(mode)) type = '@';
+	else                    type = '?';
+
+	mvwprintw(wlist, y, 0, "%c %c %s", diff, type, f->name);
+}
+
+static void
+push_state(void)
+{
+	struct ui_state *st = malloc(sizeof(struct ui_state));
+	db_store(st);
+	st->llen    = llen;
+	st->rlen    = rlen;
+	st->top_idx = top_idx;  top_idx = 0;
+	st->curs    = curs;     curs    = 0;
+	st->next    = ui_stack;
+	ui_stack    = st;
+}
+
+static void
+pop_state(void)
+{
+	struct ui_state *st = ui_stack;
+	if (!st)
+		return;
+	ui_stack = st->next;
+	llen     = st->llen;
+	rlen     = st->rlen;
+	top_idx  = st->top_idx;
+	curs     = st->curs;
+	db_restore(st);
+	free(st);
+	disp_list();
+}
+
+static void
+enter_dir(char *name)
+{
+	size_t l;
+
+	push_state();
+
+	lpath[llen++] = '/';
+	rpath[rlen++] = '/';
+	l = strlen(name);
+	memcpy(lpath + llen, name, l + 1);
+	memcpy(rpath + rlen, name, l + 1);
+	llen += l;
+	rlen += l;
+
+	build_diff_db();
+	disp_list();
 }
 
 void
