@@ -11,6 +11,7 @@ NS [^ \t\n]
 ^{S}*filesfirst		{ rc_col += yyleng; return FILES; }
 ^{S}*dirsfirst		{ rc_col += yyleng; return DIRS; }
 ^{S}*mixed		{ rc_col += yyleng; return MIXED; }
+^{S}*followlinks	{ rc_col += yyleng; return FOLLOW; }
 \"[^\"]*\"		{ rc_col += yyleng;
 			  yytext[yyleng-1] = 0;
 			  yylval.str = strdup(yytext+1);

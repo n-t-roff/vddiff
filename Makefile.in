@@ -4,14 +4,14 @@ MANDIR=	$(PREFIX)/man
 INCDIR=	$(PREFIX)/include
 LIBDIR=	$(PREFIX)/lib
 BIN=	vddiff
-OBJ=	main.o pars.o lex.o
+OBJ=	main.o pars.o lex.o diff.o ui.o db.o
 
 YFLAGS=	-d
 _CFLAGS=$(CFLAGS) $(CPPFLAGS) $(DEFINES) -I$(INCDIR) \
 	$(__CDBG) $(__SAN) -Wall -Wextra
 _LDFLAGS=$(LDFLAGS) $(__SAN) -L${LIBDIR} -Wl,-rpath,${LIBDIR} \
 	#-s
-LDADD=	-lavlbst
+LDADD=	-lavlbst $(LIB_CURSES)
 
 $(BIN):	$(OBJ)
 	$(CC) $(_CFLAGS) $(_LDFLAGS) -o $@ $(OBJ) $(LDADD)

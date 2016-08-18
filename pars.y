@@ -3,12 +3,13 @@
 #include "main.h"
 void yyerror(const char *);
 int yylex(void);
+void follow(int);
 extern unsigned rc_nline, rc_col;
 %}
 %union {
 	char *str;
 }
-%token DIFFTOOL FILES DIRS MIXED
+%token DIFFTOOL FILES DIRS MIXED FOLLOW
 %token <str> STRING
 %%
 config:
@@ -19,22 +20,13 @@ option_list:
 	| option_list option
 	;
 option:
-	  difftool
-	| sorting
-	;
-difftool:
 	  DIFFTOOL STRING { difftool = $2; }
-	;
-sorting:
-	  FILES { sorting = FILESFIRST; }
-	| DIRS  { sorting = DIRSFIRST;  }
-	| MIXED { sorting = SORTMIXED;  }
+	| FILES  { sorting = FILESFIRST; }
+	| DIRS   { sorting = DIRSFIRST;  }
+	| MIXED  { sorting = SORTMIXED;  }
+	| FOLLOW { follow(1); }
 	;
 %%
-void
-parse_rc(void)
-{
-}
 void
 yyerror(const char *s)
 {
