@@ -1,2 +1,2 @@
 void build_ui(void);
-void printerr(char *, ...);
+void printerr(char *, char *, ...);

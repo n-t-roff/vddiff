@@ -27,8 +27,7 @@ build_diff_db(void)
 	size_t l;
 
 	if (!(d = opendir(lpath))) {
-		printerr("opendir(\"%s\") failed: %s", lpath,
-		    strerror(errno));
+		printerr(strerror(errno), "opendir %s failed", lpath);
 		return -1;
 	}
 
@@ -40,8 +39,7 @@ build_diff_db(void)
 		if (!(ent = readdir(d))) {
 			if (!errno)
 				break;
-			printerr("readdir(\"%s\") failed: %s", lpath,
-			    strerror(errno));
+			printerr(strerror(errno), "readdir %s failed", lpath);
 			closedir(d);
 			return -1;
 		}
@@ -59,8 +57,8 @@ build_diff_db(void)
 
 		if (xstat(lpath, &stat1) == -1) {
 			if (errno != ENOENT) {
-				printerr("stat(\"%s\") failed: %s", lpath,
-				    strerror(errno));
+				printerr(strerror(errno), "stat %s failed",
+				   lpath);
 				continue;
 			}
 
@@ -69,8 +67,8 @@ build_diff_db(void)
 
 		if (xstat(rpath, &stat2) == -1) {
 			if (errno != ENOENT) {
-				printerr("lstat(\"%s\") failed: %s", rpath,
-				    strerror(errno));
+				printerr(strerror(errno), "lstat %s failed",
+				    rpath);
 				continue;
 			}
 
@@ -123,8 +121,7 @@ build_diff_db(void)
 	rpath[rlen] = 0;
 
 	if (!(d = opendir(rpath))) {
-		printerr("opendir(\"%s\") failed: %s", lpath,
-		    strerror(errno));
+		printerr(strerror(errno), "opendir %s failed", lpath);
 		return -1;
 	}
 
@@ -133,8 +130,7 @@ build_diff_db(void)
 		if (!(ent = readdir(d))) {
 			if (!errno)
 				break;
-			printerr("readdir(\"%s\") failed: %s", lpath,
-			    strerror(errno));
+			printerr(strerror(errno), "readdir %s failed", lpath);
 			closedir(d);
 			return -1;
 		}
@@ -153,8 +149,8 @@ build_diff_db(void)
 
 		if (xstat(rpath, &stat2) == -1) {
 			if (errno != ENOENT) {
-				printerr("lstat(\"%s\") failed: %s", rpath,
-				    strerror(errno));
+				printerr(strerror(errno), "lstat %s failed",
+				    rpath);
 				continue;
 			}
 		}
@@ -166,7 +162,7 @@ build_diff_db(void)
 	}
 
 	closedir(d);
-
+	db_sort();
 	return 0;
 }
 
@@ -176,14 +172,12 @@ cmp_link(void)
 	ssize_t l1, l2;
 
 	if ((l1 = readlink(lpath, lbuf, sizeof(lbuf) - 1)) == -1) {
-		printerr("readlink(\"%s\") failed: %s", lpath,
-		    strerror(errno));
+		printerr(strerror(errno), "readlink %s failed", lpath);
 		return -1;
 	}
 
 	if ((l2 = readlink(rpath, rbuf, sizeof(rbuf) - 1)) == -1) {
-		printerr("readlink(\"%s\") failed: %s", rpath,
-		    strerror(errno));
+		printerr(strerror(errno), "readlink %s failed", rpath);
 		return -1;
 	}
 
@@ -215,27 +209,25 @@ cmp_file(void)
 		goto ret;
 
 	if ((f1 = open(lpath, O_RDONLY)) == -1) {
-		printerr("open(\"%s\") failed: %s", lpath, strerror(errno));
+		printerr(strerror(errno), "open %s failed", lpath);
 		return -1;
 	}
 
 	if ((f2 = open(rpath, O_RDONLY)) == -1) {
-		printerr("open(\"%s\") failed: %s", rpath, strerror(errno));
+		printerr(strerror(errno), "open %s failed", rpath);
 		rv = -1;
 		goto close_f1;
 	}
 
 	while (1) {
 		if ((l1 = read(f1, lbuf, sizeof lbuf)) == -1) {
-			printerr("read(\"%s\") failed: %s", lpath,
-			    strerror(errno));
+			printerr(strerror(errno), "read %s failed", lpath);
 			rv = -1;
 			break;
 		}
 
 		if ((l2 = read(f2, rbuf, sizeof rbuf)) == -1) {
-			printerr("read(\"%s\") failed: %s", rpath,
-			    strerror(errno));
+			printerr(strerror(errno), "read %s failed", rpath);
 			rv = -1;
 			break;
 		}

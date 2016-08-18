@@ -37,6 +37,8 @@ main(int argc, char **argv)
 	if (read_rc())
 		return 1;
 	initscr();
+	noecho();
+	keypad(stdscr, TRUE);
 	build_ui();
 	endwin();
 	return 0;
