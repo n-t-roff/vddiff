@@ -9,6 +9,7 @@
 #include "main.h"
 #include "ui.h"
 #include "db.h"
+#include "exec.h"
 
 static void ui_ctrl(void);
 static void page_down(void);
@@ -16,7 +17,6 @@ static void page_up(void);
 static void curs_down(void);
 static void curs_up(void);
 static void disp_curs(int);
-static void disp_list(void);
 static void disp_line(unsigned, unsigned);
 static void push_state(void);
 static void pop_state(void);
@@ -68,11 +68,14 @@ ui_ctrl(void)
 		case KEY_LEFT:
 			pop_state(); break;
 		case KEY_RIGHT:
+		case '\n':
 			if (!db_num)
 				break;
 			f = db_list[top_idx + curs];
 			if (f->ltype == f->rtype && S_ISDIR(f->ltype))
 				enter_dir(f->name);
+			else
+				tool(f->name);
 			break;
 		case KEY_NPAGE:
 			page_down(); break;
@@ -171,7 +174,7 @@ disp_curs(int a)
 		wattroff(wlist, A_REVERSE);
 }
 
-static void
+void
 disp_list(void)
 {
 	unsigned y, i;
