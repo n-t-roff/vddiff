@@ -11,6 +11,13 @@
 #include "db.h"
 #include "exec.h"
 
+#define COLOR_LEFTONLY  1
+#define COLOR_RIGHTONLY 2
+#define COLOR_DIFF      3
+#define COLOR_DIR       4
+#define COLOR_UNKNOWN   5
+#define COLOR_LINK      6
+
 static void ui_ctrl(void);
 static void page_down(void);
 static void page_up(void);
@@ -23,6 +30,7 @@ static void pop_state(void);
 static void enter_dir(char *);
 static void help(void);
 static void action(void);
+static char *type_name(mode_t);
 
 short color = 1;
 
@@ -35,8 +43,10 @@ static short scrollen = 1;
 
 #ifdef NCURSES_MOUSE_VERSION
 static void proc_mevent(void);
+# if NCURSES_MOUSE_VERSION >= 2
 static void scroll_up(unsigned);
 static void scroll_down(unsigned);
+# endif
 
 static MEVENT mevent;
 #endif
@@ -63,7 +73,7 @@ build_ui(void)
 	keypad(stdscr, TRUE);
 	curs_set(0);
 	listw = statw = COLS;
-	listh = LINES - 3;
+	listh = LINES - 2;
 #ifdef NCURSES_MOUSE_VERSION
 	mousemask(BUTTON1_CLICKED | BUTTON1_DOUBLE_CLICKED
 # if NCURSES_MOUSE_VERSION >= 2
@@ -173,6 +183,7 @@ proc_mevent(void)
 		curs = mevent.y;
 		disp_curs(1);
 		wrefresh(wlist);
+		wrefresh(wstat);
 
 		if (mevent.bstate & BUTTON1_DOUBLE_CLICKED)
 			action();
@@ -211,6 +222,7 @@ page_down(void)
 			curs = db_num - top_idx - 1;
 			disp_curs(1);
 			wrefresh(wlist);
+			wrefresh(wstat);
 		}
 		return;
 	}
@@ -229,6 +241,7 @@ page_up(void)
 			curs = 0;
 			disp_curs(1);
 			wrefresh(wlist);
+			wrefresh(wstat);
 		}
 		return;
 	}
@@ -257,6 +270,7 @@ curs_down(void)
 			top_idx++;
 			disp_curs(1);
 			wrefresh(wlist);
+			wrefresh(wstat);
 		} else {
 			page_down();
 		}
@@ -267,6 +281,7 @@ curs_down(void)
 	curs++;
 	disp_curs(1);
 	wrefresh(wlist);
+	wrefresh(wstat);
 }
 
 static void
@@ -282,6 +297,7 @@ curs_up(void)
 			top_idx--;
 			disp_curs(1);
 			wrefresh(wlist);
+			wrefresh(wstat);
 		} else {
 			page_up();
 		}
@@ -292,6 +308,7 @@ curs_up(void)
 	curs--;
 	disp_curs(1);
 	wrefresh(wlist);
+	wrefresh(wstat);
 }
 
 #if NCURSES_MOUSE_VERSION >= 2
@@ -313,6 +330,7 @@ scroll_up(unsigned num)
 
 		disp_curs(1);
 		wrefresh(wlist);
+		wrefresh(wstat);
 		return;
 	}
 
@@ -338,6 +356,7 @@ scroll_up(unsigned num)
 	if (move_curs)
 		disp_curs(1);
 	wrefresh(wlist);
+	wrefresh(wstat);
 }
 
 static void
@@ -371,6 +390,7 @@ scroll_down(unsigned num)
 	if (move_curs)
 		disp_curs(1);
 	wrefresh(wlist);
+	wrefresh(wstat);
 }
 #endif
 
@@ -395,6 +415,7 @@ disp_list(void)
 			disp_line(y, i);
 	}
 	wrefresh(wlist);
+	wrefresh(wstat);
 }
 
 static void
@@ -455,6 +476,29 @@ disp_line(unsigned y, unsigned i)
 		waddstr(wlist, " -> ");
 		waddstr(wlist, link);
 	}
+
+	werase(wstat);
+	wattron(wstat, A_REVERSE);
+	if (diff == '!' & type == '@') {
+		mvwprintw(wstat, 0, 0, "<   -> %s", f->llink);
+		mvwprintw(wstat, 1, 0, ">   -> %s", f->rlink);
+	} else if (diff == ' ' && type == '!') {
+		mvwprintw(wstat, 0, 0, "<   %s", type_name(f->ltype));
+		mvwprintw(wstat, 1, 0, ">   %s", type_name(f->rtype));
+	}
+}
+
+static char *
+type_name(mode_t m)
+{
+	if      (S_ISREG(m))  return "regular file";
+	else if (S_ISDIR(m))  return "directory";
+	else if (S_ISLNK(m))  return "symbolic link";
+	else if (S_ISSOCK(m)) return "socket";
+	else if (S_ISFIFO(m)) return "FIFO";
+	else if (S_ISCHR(m))  return "character device";
+	else if (S_ISBLK(m))  return "block device";
+	else                  return "unkown type";
 }
 
 static void
@@ -511,6 +555,7 @@ printerr(char *s2, char *s1, ...)
 	va_list ap;
 
 	werase(wstat);
+	wattrset(wstat, A_NORMAL);
 	wmove(wstat, 0, 0);
 	va_start(ap, s1);
 	vwprintw(wstat, s1, ap);
