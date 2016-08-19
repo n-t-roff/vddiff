@@ -18,4 +18,4 @@ void build_ui(void);
 void printerr(char *, char *, ...);
 void disp_list(void);
 
-extern unsigned color;
+extern short color;

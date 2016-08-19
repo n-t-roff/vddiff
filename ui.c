@@ -24,7 +24,7 @@ static void enter_dir(char *);
 static void help(void);
 static void action(void);
 
-unsigned color = 1;
+short color = 1;
 
 static unsigned listw, listh, statw;
 static WINDOW *wlist, *wstat;
@@ -35,6 +35,8 @@ static short scrollen = 1;
 
 #ifdef NCURSES_MOUSE_VERSION
 static void proc_mevent(void);
+static void scroll_up(unsigned);
+static void scroll_down(unsigned);
 
 static MEVENT mevent;
 #endif
@@ -176,9 +178,9 @@ proc_mevent(void)
 			action();
 # if NCURSES_MOUSE_VERSION >= 2
 	} else if (mevent.bstate & BUTTON4_PRESSED) {
-		//scroll_up(3);
+		scroll_up(3);
 	} else if (mevent.bstate & BUTTON5_PRESSED) {
-		//scroll_down(3);
+		scroll_down(3);
 # endif
 	}
 }
@@ -292,6 +294,86 @@ curs_up(void)
 	wrefresh(wlist);
 }
 
+#if NCURSES_MOUSE_VERSION >= 2
+static void
+scroll_up(unsigned num)
+{
+	unsigned move_curs, y, i;
+
+	if (!top_idx) {
+		if (!curs)
+			return;
+
+		disp_curs(0);
+
+		if (curs >= num)
+			curs -= num;
+		else
+			curs = 0;
+
+		disp_curs(1);
+		wrefresh(wlist);
+		return;
+	}
+
+	if (top_idx < num)
+		num = top_idx;
+
+	top_idx -= num;
+
+	if (curs + num >= listh) {
+		disp_curs(0);
+		curs = listh - 1;
+		move_curs = 1;
+	} else {
+		curs += num;
+		move_curs = 0;
+	}
+
+	wscrl(wlist, -num);
+
+	for (y = 0, i = top_idx; y < num; y++, i++)
+		disp_line(y, i);
+
+	if (move_curs)
+		disp_curs(1);
+	wrefresh(wlist);
+}
+
+static void
+scroll_down(unsigned num)
+{
+	unsigned move_curs, y, i;
+
+	if (top_idx >= db_num - 1)
+		return;
+
+	if (top_idx + num >= db_num)
+		num = db_num - 1 - top_idx;
+
+	top_idx += num;
+
+	if (curs < num) {
+		disp_curs(0);
+		curs = 0;
+		move_curs = 1;
+	} else {
+		curs -= num;
+		move_curs = 0;
+	}
+
+	wscrl(wlist, num);
+
+	for (y = listh - num, i = top_idx + y; y < listh && i < db_num;
+	    y++, i++)
+		disp_line(y, i);
+
+	if (move_curs)
+		disp_curs(1);
+	wrefresh(wlist);
+}
+#endif
+
 static void
 disp_curs(int a)
 {
@@ -334,6 +416,7 @@ disp_line(unsigned y, unsigned i)
 		color_id = COLOR_LEFTONLY;
 	} else if (f->ltype != f->rtype) {
 		diff = ' ';
+		mode = 0;
 		type = '!';
 		color_id = COLOR_DIFF;
 	} else {
@@ -355,7 +438,7 @@ disp_line(unsigned y, unsigned i)
 			color_id = COLOR_LINK;
 		if (diff != '!')
 			link = f->llink;
-	} else {
+	} else if (mode) {
 		type = '?';
 		if (!color_id)
 			color_id = COLOR_UNKNOWN;
