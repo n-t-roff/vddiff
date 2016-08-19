@@ -13,6 +13,7 @@ static int name_cmp(union bst_val, union bst_val);
 static void mk_list(struct bst_node *);
 static void del_tree(struct bst_node *);
 
+enum sorting sorting;
 unsigned db_num;
 struct filediff **db_list;
 

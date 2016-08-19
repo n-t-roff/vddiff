@@ -8,6 +8,7 @@
 #include "main.h"
 #include "y.tab.h"
 #include "ui.h"
+#include "exec.h"
 
 char *prog;
 size_t llen,
@@ -17,8 +18,6 @@ char lpath[PATHSIZ],
      lbuf[PATHSIZ],
      rbuf[PATHSIZ];
 struct stat stat1, stat2;
-enum sorting sorting;
-char *difftool = "vim -d";
 
 static void check_args(char **);
 static int read_rc(void);
@@ -33,6 +32,7 @@ main(int argc, char **argv)
 		usage();
 	}
 
+	set_difftool("vim -dR");
 	check_args(argv);
 	if (read_rc())
 		return 1;

@@ -21,6 +21,7 @@ static void disp_line(unsigned, unsigned);
 static void push_state(void);
 static void pop_state(void);
 static void enter_dir(char *);
+static void help(void);
 
 unsigned color = 1;
 
@@ -39,10 +40,12 @@ build_ui(void)
 
 	if (color) {
 		start_color();
-		init_pair(COLOR_LEFTONLY , COLOR_BLUE   , COLOR_BLACK);
-		init_pair(COLOR_RIGHTONLY, COLOR_MAGENTA, COLOR_BLACK);
-		init_pair(COLOR_DIR      , COLOR_GREEN  , COLOR_BLACK);
-		init_pair(COLOR_DIFF     , COLOR_YELLOW , COLOR_BLACK);
+		init_pair(COLOR_LEFTONLY , COLOR_CYAN   , COLOR_BLACK);
+		init_pair(COLOR_RIGHTONLY, COLOR_GREEN  , COLOR_BLACK);
+		init_pair(COLOR_DIFF     , COLOR_RED    , COLOR_BLACK);
+		init_pair(COLOR_DIR      , COLOR_YELLOW , COLOR_BLACK);
+		init_pair(COLOR_UNKNOWN  , COLOR_BLUE   , COLOR_BLACK);
+		init_pair(COLOR_LINK     , COLOR_MAGENTA, COLOR_BLACK);
 	}
 
 	noecho();
@@ -91,19 +94,44 @@ ui_ctrl(void)
 			if (!db_num)
 				break;
 			f = db_list[top_idx + curs];
-			if (f->ltype == f->rtype && S_ISDIR(f->ltype))
-				enter_dir(f->name);
-			else
-				tool(f->name);
+			if (f->ltype == f->rtype) {
+				if (S_ISDIR(f->ltype))
+					enter_dir(f->name);
+				else if (f->diff == '!')
+					tool(f->name);
+			}
 			break;
 		case KEY_NPAGE:
 			page_down(); break;
 		case KEY_PPAGE:
 			page_up(); break;
-		default:
-			printerr(NULL, "Invalid key %c pressed", c);
+		case 'h':
+		case '?':
+			help(); break;
 		}
 	}
+}
+
+static void
+help(void) {
+	erase();
+	move(0, 0);
+	addstr(
+       "q		Quit\n"
+       "h		Display help\n"
+       "?		Display help\n"
+       "<UP>		Move cursor up\n"
+       "<DOWN>		Move cursor down\n"
+       "<LEFT>		Leave directory (one directory up)\n"
+       "<RIGHT>		Enter directory or start diff tool\n"
+       "<ENTER>		Enter directory or start diff tool\n"
+       "<PG-UP>		Scroll one screen up\n"
+       "<PG-DOWN>	Scroll one screen down\n"
+	    );
+	refresh();
+	getch();
+	erase(); refresh();
+	disp_list();
 }
 
 static void
@@ -196,11 +224,6 @@ disp_list(void)
 {
 	unsigned y, i;
 
-	if (!db_num) {
-		printerr(NULL, "No data");
-		return;
-	}
-
 	werase(wlist);
 	for (y = 0, i = top_idx; y < listh && i < db_num; y++, i++) {
 		if (y == curs)
@@ -217,6 +240,7 @@ disp_line(unsigned y, unsigned i)
 	int diff, type;
 	mode_t mode;
 	struct filediff *f = db_list[i];
+	char *link = NULL;
 	short color_id = 0;
 
 	if (!f->ltype) {
@@ -234,16 +258,23 @@ disp_line(unsigned y, unsigned i)
 			color_id = COLOR_DIFF;
 	}
 
-	if (S_ISREG(mode))
+	if (S_ISREG(mode)) {
 		type = ' ';
-	else if (S_ISDIR(mode)) {
+	} else if (S_ISDIR(mode)) {
 		type = '/';
 		if (!color_id)
 			color_id = COLOR_DIR;
-	} else if (S_ISLNK(mode))
-		type = '@'; 
-	else
+	} else if (S_ISLNK(mode)) {
+		type = '@';
+		if (!color_id)
+			color_id = COLOR_LINK;
+		if (diff != '!')
+			link = f->llink;
+	} else {
 		type = '?';
+		if (!color_id)
+			color_id = COLOR_UNKNOWN;
+	}
 
 	if (color) {
 		wattron(wlist, A_BOLD);
@@ -252,6 +283,10 @@ disp_line(unsigned y, unsigned i)
 	}
 	mvwprintw(wlist, y, 0, "%c %c %s", diff, type, f->name);
 	wattrset(wlist, A_NORMAL);
+	if (link) {
+		waddstr(wlist, " -> ");
+		waddstr(wlist, link);
+	}
 }
 
 static void

@@ -242,7 +242,7 @@ cmp_file(void)
 		if (!l1)
 			break;
 
-		if (memcpy(lbuf, rbuf, l1)) {
+		if (memcmp(lbuf, rbuf, l1)) {
 			diff->diff = '!';
 			break;
 		}

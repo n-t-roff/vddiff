@@ -1,11 +1,13 @@
 %{
 #include "compat.h"
-#include "main.h"
+#include "exec.h"
 #include "ui.h"
+#include "db.h"
 void yyerror(const char *);
 int yylex(void);
 void follow(int);
 extern unsigned rc_nline, rc_col;
+extern char *yytext;
 %}
 %union {
 	char *str;
@@ -17,11 +19,10 @@ config:
 	  option_list
 	;
 option_list:
-	  option
 	| option_list option
 	;
 option:
-	  DIFFTOOL STRING { difftool = $2       ; }
+	  DIFFTOOL STRING { set_difftool($2)    ; }
 	| FILES           { sorting = FILESFIRST; }
 	| DIRS            { sorting = DIRSFIRST ; }
 	| MIXED           { sorting = SORTMIXED ; }
@@ -32,6 +33,6 @@ option:
 void
 yyerror(const char *s)
 {
-	printf("Parse error: %s on line %u column %u\n", s, rc_nline,
-	    rc_col);
+	printf("Parse error: %s on line %u column %u\n",
+	    s, rc_nline, rc_col);
 }
