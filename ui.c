@@ -22,6 +22,8 @@ static void push_state(void);
 static void pop_state(void);
 static void enter_dir(char *);
 static void help(void);
+static void proc_mevent(void);
+static void action(void);
 
 unsigned color = 1;
 
@@ -29,6 +31,10 @@ static unsigned listw, listh, statw;
 static WINDOW *wlist, *wstat;
 static unsigned top_idx, curs;
 static struct ui_state *ui_stack;
+
+#ifdef NCURSES_MOUSE_VERSION
+static MEVENT mevent;
+#endif
 
 void
 build_ui(void)
@@ -53,6 +59,9 @@ build_ui(void)
 	curs_set(0);
 	listw = statw = COLS;
 	listh = LINES - 3;
+#ifdef NCURSES_MOUSE_VERSION
+	mousemask(BUTTON1_CLICKED | BUTTON1_DOUBLE_CLICKED, NULL);
+#endif
 
 	if (!(wlist = subwin(stdscr, listh, listw, 0, 0))) {
 		printf("subwin failed\n");
@@ -77,10 +86,14 @@ static void
 ui_ctrl(void)
 {
 	int c;
-	struct filediff *f;
 
 	while (1) {
 		switch (c = getch()) {
+#ifdef NCURSES_MOUSE_VERSION
+		case KEY_MOUSE:
+			proc_mevent();
+			break;
+#endif /* NCURSES_MOUSE_VERSION */
 		case 'q':
 			return;
 		case KEY_DOWN:
@@ -93,13 +106,8 @@ ui_ctrl(void)
 		case '\n':
 			if (!db_num)
 				break;
-			f = db_list[top_idx + curs];
-			if (f->ltype == f->rtype) {
-				if (S_ISDIR(f->ltype))
-					enter_dir(f->name);
-				else if (f->diff == '!')
-					tool(f->name);
-			}
+
+			action();
 			break;
 		case KEY_NPAGE:
 			page_down(); break;
@@ -132,6 +140,43 @@ help(void) {
 	getch();
 	erase(); refresh();
 	disp_list();
+}
+
+static void
+proc_mevent(void)
+{
+	if (getmouse(&mevent) != OK)
+		return;
+
+	if (mevent.bstate & BUTTON1_CLICKED ||
+	    mevent.bstate & BUTTON1_DOUBLE_CLICKED) {
+		if (mevent.y >= (int)listh ||
+		    mevent.y >= (int)(db_num - top_idx))
+			return;
+
+		disp_curs(0);
+		curs = mevent.y;
+		disp_curs(1);
+		wrefresh(wlist);
+
+		if (mevent.bstate & BUTTON1_DOUBLE_CLICKED)
+			action();
+	}
+}
+
+static void
+action(void)
+{
+	struct filediff *f;
+
+	f = db_list[top_idx + curs];
+
+	if (f->ltype == f->rtype) {
+		if (S_ISDIR(f->ltype))
+			enter_dir(f->name);
+		else if (f->diff == '!')
+			tool(f->name);
+	}
 }
 
 static void
