@@ -1,6 +1,7 @@
 %{
 #include "compat.h"
 #include "main.h"
+#include "ui.h"
 void yyerror(const char *);
 int yylex(void);
 void follow(int);
@@ -9,7 +10,7 @@ extern unsigned rc_nline, rc_col;
 %union {
 	char *str;
 }
-%token DIFFTOOL FILES DIRS MIXED FOLLOW
+%token DIFFTOOL FILES DIRS MIXED FOLLOW MONO
 %token <str> STRING
 %%
 config:
@@ -20,11 +21,12 @@ option_list:
 	| option_list option
 	;
 option:
-	  DIFFTOOL STRING { difftool = $2; }
-	| FILES  { sorting = FILESFIRST; }
-	| DIRS   { sorting = DIRSFIRST;  }
-	| MIXED  { sorting = SORTMIXED;  }
-	| FOLLOW { follow(1); }
+	  DIFFTOOL STRING { difftool = $2       ; }
+	| FILES           { sorting = FILESFIRST; }
+	| DIRS            { sorting = DIRSFIRST ; }
+	| MIXED           { sorting = SORTMIXED ; }
+	| FOLLOW          { follow(1)           ; }
+	| MONO            { color = 0           ; }
 	;
 %%
 void

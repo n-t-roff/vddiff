@@ -12,6 +12,7 @@ NS [^ \t\n]
 ^{S}*dirsfirst		{ rc_col += yyleng; return DIRS; }
 ^{S}*mixed		{ rc_col += yyleng; return MIXED; }
 ^{S}*followlinks	{ rc_col += yyleng; return FOLLOW; }
+^{S}*mono		{ rc_col += yyleng; return MONO; }
 \"[^\"]*\"		{ rc_col += yyleng;
 			  yytext[yyleng-1] = 0;
 			  yylval.str = strdup(yytext+1);

@@ -49,6 +49,7 @@ build_diff_db(void)
 		    !name[2])))
 			continue;
 
+		add_name(name);
 		lpath[llen++] = '/';
 		rpath[rlen++] = '/';
 		l = strlen(name);
@@ -140,7 +141,7 @@ build_diff_db(void)
 		    !name[2])))
 			continue;
 
-		if (!db_srch(name))
+		if (!srch_name(name))
 			continue;
 
 		rpath[rlen++] = '/';
@@ -163,6 +164,7 @@ build_diff_db(void)
 
 	closedir(d);
 	db_sort();
+	free_names();
 	return 0;
 }
 

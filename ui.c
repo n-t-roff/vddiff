@@ -22,6 +22,8 @@ static void push_state(void);
 static void pop_state(void);
 static void enter_dir(char *);
 
+unsigned color = 1;
+
 static unsigned listw, listh, statw;
 static WINDOW *wlist, *wstat;
 static unsigned top_idx, curs;
@@ -30,6 +32,22 @@ static struct ui_state *ui_stack;
 void
 build_ui(void)
 {
+	initscr();
+
+	if (color && !has_colors())
+		color = 0;
+
+	if (color) {
+		start_color();
+		init_pair(COLOR_LEFTONLY , COLOR_BLUE   , COLOR_BLACK);
+		init_pair(COLOR_RIGHTONLY, COLOR_MAGENTA, COLOR_BLACK);
+		init_pair(COLOR_DIR      , COLOR_GREEN  , COLOR_BLACK);
+		init_pair(COLOR_DIFF     , COLOR_YELLOW , COLOR_BLACK);
+	}
+
+	noecho();
+	keypad(stdscr, TRUE);
+	curs_set(0);
 	listw = statw = COLS;
 	listh = LINES - 3;
 
@@ -49,6 +67,7 @@ build_ui(void)
 	db_free();
 	delwin(wstat);
 	delwin(wlist);
+	endwin();
 }
 
 static void
@@ -170,8 +189,6 @@ disp_curs(int a)
 	if (a)
 		wattron(wlist, A_REVERSE);
 	disp_line(curs, top_idx + curs);
-	if (a)
-		wattroff(wlist, A_REVERSE);
 }
 
 void
@@ -200,24 +217,41 @@ disp_line(unsigned y, unsigned i)
 	int diff, type;
 	mode_t mode;
 	struct filediff *f = db_list[i];
+	short color_id = 0;
 
 	if (!f->ltype) {
-		diff = '>';
-		mode = f->rtype;
+		diff     = '>';
+		mode     = f->rtype;
+		color_id = COLOR_RIGHTONLY;
 	} else if (!f->rtype) {
-		diff = '<';
-		mode = f->ltype;
+		diff     = '<';
+		mode     = f->ltype;
+		color_id = COLOR_LEFTONLY;
 	} else {
 		diff = f->diff;
 		mode = f->ltype;
+		if (diff == '!')
+			color_id = COLOR_DIFF;
 	}
 
-	if      (S_ISREG(mode)) type = ' ';
-	else if (S_ISDIR(mode)) type = '/';
-	else if (S_ISLNK(mode)) type = '@';
-	else                    type = '?';
+	if (S_ISREG(mode))
+		type = ' ';
+	else if (S_ISDIR(mode)) {
+		type = '/';
+		if (!color_id)
+			color_id = COLOR_DIR;
+	} else if (S_ISLNK(mode))
+		type = '@'; 
+	else
+		type = '?';
 
+	if (color) {
+		wattron(wlist, A_BOLD);
+		if (color_id)
+			wattron(wlist, COLOR_PAIR(color_id));
+	}
 	mvwprintw(wlist, y, 0, "%c %c %s", diff, type, f->name);
+	wattrset(wlist, A_NORMAL);
 }
 
 static void

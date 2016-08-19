@@ -36,12 +36,7 @@ main(int argc, char **argv)
 	check_args(argv);
 	if (read_rc())
 		return 1;
-	initscr();
-	noecho();
-	keypad(stdscr, TRUE);
-	curs_set(0);
 	build_ui();
-	endwin();
 	return 0;
 }
 
