@@ -22,7 +22,6 @@ static void push_state(void);
 static void pop_state(void);
 static void enter_dir(char *);
 static void help(void);
-static void proc_mevent(void);
 static void action(void);
 
 unsigned color = 1;
@@ -31,8 +30,12 @@ static unsigned listw, listh, statw;
 static WINDOW *wlist, *wstat;
 static unsigned top_idx, curs;
 static struct ui_state *ui_stack;
+/* Line scroll enable. Else only full screen is scrolled */
+static short scrollen = 1;
 
 #ifdef NCURSES_MOUSE_VERSION
+static void proc_mevent(void);
+
 static MEVENT mevent;
 #endif
 
@@ -60,7 +63,11 @@ build_ui(void)
 	listw = statw = COLS;
 	listh = LINES - 3;
 #ifdef NCURSES_MOUSE_VERSION
-	mousemask(BUTTON1_CLICKED | BUTTON1_DOUBLE_CLICKED, NULL);
+	mousemask(BUTTON1_CLICKED | BUTTON1_DOUBLE_CLICKED
+# if NCURSES_MOUSE_VERSION >= 2
+	    | BUTTON4_PRESSED | BUTTON5_PRESSED
+# endif
+	    , NULL);
 #endif
 
 	if (!(wlist = subwin(stdscr, listh, listw, 0, 0))) {
@@ -71,6 +78,11 @@ build_ui(void)
 	if (!(wstat = subwin(stdscr, 2, statw, LINES-2, 0))) {
 		printf("subwin failed\n");
 		return;
+	}
+
+	if (scrollen) {
+		idlok(wlist, TRUE);
+		scrollok(wlist, TRUE);
 	}
 
 	build_diff_db();
@@ -93,7 +105,7 @@ ui_ctrl(void)
 		case KEY_MOUSE:
 			proc_mevent();
 			break;
-#endif /* NCURSES_MOUSE_VERSION */
+#endif
 		case 'q':
 			return;
 		case KEY_DOWN:
@@ -142,6 +154,7 @@ help(void) {
 	disp_list();
 }
 
+#ifdef NCURSES_MOUSE_VERSION
 static void
 proc_mevent(void)
 {
@@ -161,8 +174,15 @@ proc_mevent(void)
 
 		if (mevent.bstate & BUTTON1_DOUBLE_CLICKED)
 			action();
+# if NCURSES_MOUSE_VERSION >= 2
+	} else if (mevent.bstate & BUTTON4_PRESSED) {
+		//scroll_up(3);
+	} else if (mevent.bstate & BUTTON5_PRESSED) {
+		//scroll_down(3);
+# endif
 	}
 }
+#endif
 
 static void
 action(void)
@@ -229,7 +249,15 @@ curs_down(void)
 		return;
 
 	if (curs + 1 >= listh) {
-		page_down();
+		if (scrollen) {
+			disp_curs(0);
+			wscrl(wlist, 1);
+			top_idx++;
+			disp_curs(1);
+			wrefresh(wlist);
+		} else {
+			page_down();
+		}
 		return;
 	}
 
@@ -246,7 +274,15 @@ curs_up(void)
 		if (!top_idx)
 			return;
 
-		page_up();
+		if (scrollen) {
+			disp_curs(0);
+			wscrl(wlist, -1);
+			top_idx--;
+			disp_curs(1);
+			wrefresh(wlist);
+		} else {
+			page_up();
+		}
 		return;
 	}
 
@@ -296,6 +332,10 @@ disp_line(unsigned y, unsigned i)
 		diff     = '<';
 		mode     = f->ltype;
 		color_id = COLOR_LEFTONLY;
+	} else if (f->ltype != f->rtype) {
+		diff = ' ';
+		type = '!';
+		color_id = COLOR_DIFF;
 	} else {
 		diff = f->diff;
 		mode = f->ltype;
