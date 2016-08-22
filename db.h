@@ -1,4 +1,4 @@
-enum sorting { FILESFIRST, DIRSFIRST, SORTMIXED };
+enum sorting { DIRSFIRST, FILESFIRST, SORTMIXED };
 
 void db_add(struct filediff *);
 void add_name(char *);
@@ -12,3 +12,4 @@ void free_names(void);
 extern enum sorting sorting;
 extern unsigned db_num;
 extern struct filediff **db_list;
+extern short noequal;

@@ -1,0 +1,78 @@
+.Dd August 21, 2016
+.Dt VDDIFF 1
+.Sh NAME
+.Nm vddiff
+.Nd text terminal directory diff tool
+.Sh SYNOPSYS
+.Nm
+.Op Fl bdgk
+.Op Fl t Ar diff_tool
+.Ar directory_1
+.Ar directory_2
+.Sh DESCRIPTION
+.Nm
+is a simple vim based directory diff tool for the text terminal.
+.Sh OPTIONS
+.Bl -tag
+.It Fl b
+Disable color.
+.It Fl d
+Use
+.Dq Li diff $1 $2 | less
+as diff tool.
+.It Fl g
+Use
+.Dq Li gvim
+as diff tool.
+.It Fl k
+Use
+.Dq Li tkdiff $1 $2 &
+as diff tool.
+.It Fl t Ar diff_tool
+Specify diff tool on the command line.
+The filenames to compare are appended to the given string.
+To include them into the string the symbolic names
+.Dq Li $1
+and
+.Dq Li $2
+can be used (in any order), where
+.Dq Li $1
+refers to the first and
+.Dq Li $2
+to the second file.
+Note that the shell may require quoting as in
+.Pp
+.Dl -t \(dqdiff \(rs$1 \(rs$2 | vim -R -\(dq
+.El
+.Sh INTERACTIVE COMMANDS
+.Bl -tag
+.It Sq Li q
+Quit.
+.It So Li h Sc or So Li ? Sc
+Display help.
+.It Aq Cm UP
+Move cursor line up.
+.It Aq Cm DOWN
+Move cursor line down.
+.It Aq Cm LEFT
+Leave directory (one directory up).
+.It Ao Cm RIGHT Ac or Ao Cm ENTER Ac
+Enter directory or start diff tool.
+.It Aq Cm PAGE-UP
+Scroll one screen up.
+.It Aq Cm PAGE-DOWN
+Scroll one screen down.
+.It So Li ! Sc or So d Sc
+Toggle display of equal files.
+.It Sq p
+Show current relative work directory.
+.El
+.Sh CONFIGURATION FILE ~/.vddiffrc
+.Bl -tag
+.It Li difftool Ar string
+.El
+.Sh FILES
+.Bl -tag -width ~/.vddiffrc -compact
+.It Pa ~/.vddiffrc
+Read on start-up to set non-default options.
+.El

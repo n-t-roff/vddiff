@@ -12,3 +12,9 @@ void printerr(char *, char *, ...);
 void disp_list(void);
 
 extern short color;
+extern short color_leftonly ,
+             color_rightonly,
+             color_diff     ,
+             color_dir      ,
+             color_unknown  ,
+             color_link     ;

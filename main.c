@@ -9,8 +9,10 @@
 #include "y.tab.h"
 #include "ui.h"
 #include "exec.h"
+#include "db.h"
 
-char *prog;
+char *prog,
+     *pwd;
 size_t llen,
        rlen;
 char lpath[PATHSIZ],
@@ -22,20 +24,62 @@ struct stat stat1, stat2;
 static void check_args(char **);
 static int read_rc(void);
 static void usage(void);
+static char *usage_txt =
+"Usage: %s [-bdfgkmn] [-t <diff_tool>] <directory_1> <directory_2>\n";
+static char *getopt_arg = "bdfgkmnt:";
 
 int
 main(int argc, char **argv)
 {
-	prog = *argv++; argc--;
+	int opt;
+
+	prog = *argv;
+	set_difftool("vim -dR");
+
+	if (read_rc())
+		return 1;
+
+	while ((opt = getopt(argc, argv, getopt_arg)) != -1) {
+		switch (opt) {
+		case 'b':
+			color = 0;
+			break;
+		case 'd':
+			set_difftool("diff $1 $2 | less");
+			break;
+		case 'f':
+			sorting = FILESFIRST;
+			break;
+		case 'g':
+			set_difftool("gvim -dR");
+			break;
+		case 'k':
+			set_difftool("tkdiff $1 $2 &");
+			break;
+		case 'm':
+			sorting = SORTMIXED;
+			break;
+		case 'n':
+			noequal = 1;
+			break;
+		case 't':
+			set_difftool(optarg);
+			break;
+		default:
+			usage();
+		}
+	}
+
+	argc -= optind;
+	argv += optind;
+
 	if (argc != 2) {
 		printf("Two arguments expected\n");
 		usage();
 	}
 
-	set_difftool("vim -dR");
 	check_args(argv);
-	if (read_rc())
-		return 1;
+	pwd = lpath + llen;
 	build_ui();
 	return 0;
 }
@@ -129,6 +173,6 @@ check_args(char **argv)
 static void
 usage(void)
 {
-	printf("Usage: %s <directory_1> <directory_2>\n", prog);
+	printf(usage_txt, prog);
 	exit(1);
 }

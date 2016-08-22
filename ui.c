@@ -33,6 +33,12 @@ static void action(void);
 static char *type_name(mode_t);
 
 short color = 1;
+short color_leftonly  = COLOR_CYAN   ,
+      color_rightonly = COLOR_GREEN  ,
+      color_diff      = COLOR_RED    ,
+      color_dir       = COLOR_YELLOW ,
+      color_unknown   = COLOR_BLUE   ,
+      color_link      = COLOR_MAGENTA;
 
 static unsigned listw, listh, statw;
 static WINDOW *wlist, *wstat;
@@ -61,12 +67,12 @@ build_ui(void)
 
 	if (color) {
 		start_color();
-		init_pair(COLOR_LEFTONLY , COLOR_CYAN   , COLOR_BLACK);
-		init_pair(COLOR_RIGHTONLY, COLOR_GREEN  , COLOR_BLACK);
-		init_pair(COLOR_DIFF     , COLOR_RED    , COLOR_BLACK);
-		init_pair(COLOR_DIR      , COLOR_YELLOW , COLOR_BLACK);
-		init_pair(COLOR_UNKNOWN  , COLOR_BLUE   , COLOR_BLACK);
-		init_pair(COLOR_LINK     , COLOR_MAGENTA, COLOR_BLACK);
+		init_pair(COLOR_LEFTONLY , color_leftonly , COLOR_BLACK);
+		init_pair(COLOR_RIGHTONLY, color_rightonly, COLOR_BLACK);
+		init_pair(COLOR_DIFF     , color_diff     , COLOR_BLACK);
+		init_pair(COLOR_DIR      , color_dir      , COLOR_BLACK);
+		init_pair(COLOR_UNKNOWN  , color_unknown  , COLOR_BLACK);
+		init_pair(COLOR_LINK     , color_link     , COLOR_BLACK);
 	}
 
 	noecho();
@@ -121,25 +127,39 @@ ui_ctrl(void)
 		case 'q':
 			return;
 		case KEY_DOWN:
-			curs_down(); break;
+			curs_down();
+			break;
 		case KEY_UP:
-			curs_up(); break;
+			curs_up();
+			break;
 		case KEY_LEFT:
-			pop_state(); break;
-		case KEY_RIGHT:
-		case '\n':
+			pop_state();
+			break;
+		case KEY_RIGHT: case '\n':
 			if (!db_num)
 				break;
 
 			action();
 			break;
 		case KEY_NPAGE:
-			page_down(); break;
+			page_down();
+			break;
 		case KEY_PPAGE:
-			page_up(); break;
-		case 'h':
-		case '?':
-			help(); break;
+			page_up();
+			break;
+		case 'h': case '?':
+			help();
+			break;
+		case 'p':
+			printerr(NULL, "%s", *pwd == '/' ? pwd + 1 : pwd);
+			break;
+		case '!': case 'n':
+			noequal = noequal ? 0 : 1;
+			db_sort();
+			top_idx = 0;
+			curs    = 0;
+			disp_list();
+			break;
 		}
 	}
 }
@@ -150,19 +170,21 @@ help(void) {
 	move(0, 0);
 	addstr(
        "q		Quit\n"
-       "h		Display help\n"
-       "?		Display help\n"
+       "h, ?		Display help\n"
        "<UP>		Move cursor up\n"
        "<DOWN>		Move cursor down\n"
        "<LEFT>		Leave directory (one directory up)\n"
-       "<RIGHT>		Enter directory or start diff tool\n"
-       "<ENTER>		Enter directory or start diff tool\n"
+       "<RIGHT>, <ENTER>\n"
+       "		Enter directory or start diff tool\n"
        "<PG-UP>		Scroll one screen up\n"
        "<PG-DOWN>	Scroll one screen down\n"
+       "!, n		Toggle display of equal files\n"
+       "p		Show current relative work directory\n"
 	    );
 	refresh();
 	getch();
-	erase(); refresh();
+	erase();
+	refresh();
 	disp_list();
 }
 
@@ -478,11 +500,12 @@ disp_line(unsigned y, unsigned i)
 	}
 
 	werase(wstat);
-	wattron(wstat, A_REVERSE);
-	if (diff == '!' & type == '@') {
+	if (diff == '!' && type == '@') {
+		wattron(wstat, A_REVERSE);
 		mvwprintw(wstat, 0, 0, "<   -> %s", f->llink);
 		mvwprintw(wstat, 1, 0, ">   -> %s", f->rlink);
 	} else if (diff == ' ' && type == '!') {
+		wattron(wstat, A_REVERSE);
 		mvwprintw(wstat, 0, 0, "<   %s", type_name(f->ltype));
 		mvwprintw(wstat, 1, 0, ">   %s", type_name(f->rtype));
 	}
@@ -525,6 +548,7 @@ pop_state(void)
 	rlen     = st->rlen;
 	top_idx  = st->top_idx;
 	curs     = st->curs;
+	lpath[llen] = 0; /* For 'p' (pwd) */
 	db_restore(st);
 	free(st);
 	disp_list();
@@ -556,7 +580,7 @@ printerr(char *s2, char *s1, ...)
 
 	werase(wstat);
 	wattrset(wstat, A_NORMAL);
-	wmove(wstat, 0, 0);
+	wmove(wstat, s2 ? 0 : 1, 0);
 	va_start(ap, s1);
 	vwprintw(wstat, s1, ap);
 	va_end(ap);

@@ -79,6 +79,10 @@ add_path(char *cmd, size_t l0, char *path, size_t len, char *name, size_t ln)
 void
 set_difftool(char *s)
 {
+	static char *m;
+
+	free(m);
+	m = s = strdup(s);
 	*difftool = s;
 	difftool[1] = NULL;
 	difftool[2] = NULL;

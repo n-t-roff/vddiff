@@ -16,16 +16,18 @@ static void del_tree(struct bst_node *);
 enum sorting sorting;
 unsigned db_num;
 struct filediff **db_list;
+short noequal;
 
 static struct bst db      = { NULL, cmp },
                   name_db = { NULL, name_cmp };
-static unsigned db_idx;
+static unsigned db_idx,
+                tot_db_num;
 
 void
 db_add(struct filediff *diff)
 {
 	avl_add(&db, (union bst_val)(void *)diff, (union bst_val)(int)0);
-	db_num++;
+	tot_db_num++;
 }
 
 void
@@ -49,26 +51,32 @@ name_cmp(union bst_val a, union bst_val b)
 	return strcmp(s1, s2);
 }
 
+#define IS_F_DIR(n) \
+    /* both are dirs */ \
+    (S_ISDIR(f##n->ltype) && S_ISDIR(f##n->rtype)) || \
+    /* only left dir present */ \
+    (S_ISDIR(f##n->ltype) && !f##n->rtype) || \
+    /* only right dir present */ \
+    (S_ISDIR(f##n->rtype) && !f##n->ltype)
+
 static int
 cmp(union bst_val a, union bst_val b)
 {
 	struct filediff *f1 = a.p,
 	                *f2 = b.p;
 
-	if (sorting == FILESFIRST) {
-		if (!S_ISDIR(f1->ltype) && !S_ISDIR(f1->rtype) &&
-		    (S_ISDIR(f2->ltype) ||  S_ISDIR(f2->rtype)))
-			return 1;
-		if (!S_ISDIR(f2->ltype) && !S_ISDIR(f2->rtype) &&
-		    (S_ISDIR(f1->ltype) ||  S_ISDIR(f1->rtype)))
-			return -1;
-	} else if (sorting == DIRSFIRST) {
-		if (!S_ISDIR(f1->ltype) && !S_ISDIR(f1->rtype) &&
-		    (S_ISDIR(f2->ltype) ||  S_ISDIR(f2->rtype)))
-			return -1;
-		if (!S_ISDIR(f2->ltype) && !S_ISDIR(f2->rtype) &&
-		    (S_ISDIR(f1->ltype) ||  S_ISDIR(f1->rtype)))
-			return 1;
+	if (sorting != SORTMIXED) {
+		short f1_dir = IS_F_DIR(1),
+		      f2_dir = IS_F_DIR(2);
+		short dirsort = f1_dir && !f2_dir ? -1 :
+		                f2_dir && !f1_dir ?  1 : 0;
+
+		if (dirsort) {
+			if (sorting == DIRSFIRST)
+				return  dirsort;
+			else
+				return -dirsort;
+		}
 	}
 
 	return strcmp(f1->name, f2->name);
@@ -77,20 +85,29 @@ cmp(union bst_val a, union bst_val b)
 void
 db_sort(void)
 {
-	if (!db_num)
+	if (!tot_db_num)
 		return;
-	db_list = malloc(db_num * sizeof(struct filediff *));
+	if (!db_list)
+		db_list = malloc(tot_db_num * sizeof(struct filediff *));
 	db_idx = 0;
 	mk_list(db.root);
+	db_num = db_idx;
 }
 
 static void
 mk_list(struct bst_node *n)
 {
+	struct filediff *f;
+
 	if (!n)
 		return;
 	mk_list(n->left);
-	db_list[db_idx++] = n->key.p;
+	f = n->key.p;
+
+	if (!noequal ||
+	    f->diff == '!' || S_ISDIR(f->ltype) || f->ltype != f->rtype)
+		db_list[db_idx++] = f;
+
 	mk_list(n->right);
 }
 
