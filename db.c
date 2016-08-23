@@ -18,14 +18,13 @@ PERFORMANCE OF THIS SOFTWARE.
 #include <stdlib.h>
 #include <sys/types.h>
 #include <sys/stat.h>
-#include "avlbst.h"
+#include <avlbst.h>
 #include "diff.h"
 #include "main.h"
 #include "ui.h"
 #include "db.h"
 
 static int cmp(union bst_val, union bst_val);
-static int name_cmp(union bst_val, union bst_val);
 static void mk_list(struct bst_node *);
 static void del_tree(struct bst_node *);
 
@@ -33,6 +32,7 @@ enum sorting sorting;
 unsigned db_num;
 struct filediff **db_list;
 short noequal, real_diff;
+struct bst scan_db = { NULL, name_cmp };
 
 static struct bst db      = { NULL, cmp },
                   name_db = { NULL, name_cmp };
@@ -49,7 +49,8 @@ db_add(struct filediff *diff)
 void
 add_name(char *name)
 {
-	avl_add(&name_db, (union bst_val)(void *)strdup(name), (union bst_val)(int)0);
+	avl_add(&name_db, (union bst_val)(void *)strdup(name),
+	    (union bst_val)(int)0);
 }
 
 int
@@ -58,7 +59,7 @@ srch_name(char *name)
 	return bst_srch(&name_db, (union bst_val)(void *)name, NULL);
 }
 
-static int
+int
 name_cmp(union bst_val a, union bst_val b)
 {
 	char *s1 = a.p,

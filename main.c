@@ -20,6 +20,7 @@ PERFORMANCE OF THIS SOFTWARE.
 #include <sys/stat.h>
 #include <unistd.h>
 #include <errno.h>
+#include <avlbst.h>
 #include "compat.h"
 #include "main.h"
 #include "y.tab.h"
@@ -39,13 +40,14 @@ char lpath[PATHSIZ],
      lbuf[PATHSIZ],
      rbuf[PATHSIZ];
 struct stat stat1, stat2;
+short recursive, scan;
 
 static void check_args(char **);
 static int read_rc(void);
 static void usage(void);
 static char *usage_txt =
-"Usage: %s [-bcdfgklmn] [-t <diff_tool>] <directory_1> <directory_2>\n";
-static char *getopt_arg = "bcdfgklmnt:";
+"Usage: %s [-bcdfgklmnr] [-t <diff_tool>] <directory_1> <directory_2>\n";
+static char *getopt_arg = "bcdfgklmnrt:";
 
 int
 main(int argc, char **argv)
@@ -86,6 +88,9 @@ main(int argc, char **argv)
 			break;
 		case 'n':
 			noequal = 1;
+			break;
+		case 'r':
+			recursive = 1;
 			break;
 		case 't':
 			set_difftool(optarg);

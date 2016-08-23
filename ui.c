@@ -119,6 +119,13 @@ build_ui(void)
 		scrollok(wlist, TRUE);
 	}
 
+	/* Not in main since build_diff_db() uses printerr() */
+	if (recursive) {
+		scan = 1;
+		build_diff_db();
+		scan = 0;
+	}
+
 	build_diff_db();
 	disp_list();
 	ui_ctrl();
@@ -584,19 +591,8 @@ pop_state(void)
 static void
 enter_dir(char *name)
 {
-	size_t l;
-
 	push_state();
-
-	lpath[llen++] = '/';
-	rpath[rlen++] = '/';
-	l = strlen(name);
-	memcpy(lpath + llen, name, l + 1);
-	memcpy(rpath + rlen, name, l + 1);
-	llen += l;
-	rlen += l;
-
-	build_diff_db();
+	scan_subdir(name);
 	disp_list();
 }
 

@@ -198,3 +198,18 @@ Default is 4 (blue).
 .It Pa ~/.vddiffrc
 Read on start-up to set non-default options.
 .El
+.Sh BUGS
+TODO issues are (in this order):
+.Pp
+.Bl -bullet -compact
+.It
+Showing only directories which contain differences.
+This is currently work in process.
+.It
+Make it possible to delete or copy files.
+(Merging will not be a feature of
+.Nm ,
+instead it is done by the diff tool.)
+.It
+The path buffer (16 KB) is currently not checked for overflows.
+.El

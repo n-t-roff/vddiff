@@ -22,6 +22,7 @@ PERFORMANCE OF THIS SOFTWARE.
 #include <dirent.h>
 #include <errno.h>
 #include <string.h>
+#include <avlbst.h>
 #include "main.h"
 #include "ui.h"
 #include "diff.h"
@@ -30,6 +31,8 @@ PERFORMANCE OF THIS SOFTWARE.
 static int cmp_link(void);
 static int cmp_file(void);
 static struct filediff *alloc_diff(char *);
+static void proc_subdirs(struct bst_node *);
+static void add_diff_dir(void);
 
 static int (*xstat)(const char *, struct stat *) = lstat;
 static struct filediff *diff;
@@ -41,6 +44,8 @@ build_diff_db(void)
 	struct dirent *ent;
 	char *name;
 	size_t l;
+	struct bst dirs = { NULL, name_cmp };
+	short dir_diff = 0;
 
 	if (!(d = opendir(lpath))) {
 		printerr(strerror(errno), "opendir %s failed", lpath);
@@ -94,6 +99,42 @@ build_diff_db(void)
 			stat2.st_mode = 0;
 		}
 
+		if (scan) {
+			if (S_ISDIR(stat1.st_mode) &&
+			    S_ISDIR(stat2.st_mode))
+				avl_add(&dirs,
+				    (union bst_val)(void *)strdup(name),
+				    (union bst_val)(int)0);
+
+			if (!*pwd || dir_diff)
+				continue;
+
+			if (S_ISREG(stat1.st_mode) &&
+			    S_ISREG(stat2.st_mode)) {
+				if (cmp_file() == 1)
+					dir_diff = 1;
+				continue;
+			}
+
+			if (S_ISLNK(stat1.st_mode) &&
+			    S_ISLNK(stat2.st_mode)) {
+				if (cmp_link() == 1)
+					dir_diff = 1;
+				continue;
+			}
+
+			if (real_diff)
+				continue;
+
+			if (!stat1.st_mode || !stat2.st_mode ||
+			     stat1.st_mode !=  stat2.st_mode) {
+				dir_diff = 1;
+				continue;
+			}
+
+			continue;
+		}
+
 		diff = alloc_diff(name);
 		diff->ltype = S_IFMT & stat1.st_mode;
 		diff->rtype = S_IFMT & stat2.st_mode;
@@ -112,8 +153,14 @@ build_diff_db(void)
 
 		} else if (S_ISREG(stat1.st_mode)) {
 
-			if (!cmp_file())
+			switch (cmp_file()) {
+			case 1:
+				diff->diff = '!';
+				/* fall through */
+			case 0:
+				db_add(diff);
 				continue;
+			}
 
 		} else if (S_ISDIR(stat1.st_mode)) {
 
@@ -122,8 +169,14 @@ build_diff_db(void)
 
 		} else if (S_ISLNK(stat1.st_mode)) {
 
-			if (!cmp_link())
+			switch (cmp_link()) {
+			case 1:
+				diff->diff = '!';
+				/* fall through */
+			case 0:
+				db_add(diff);
 				continue;
+			}
 
 		} else {
 			db_add(diff);
@@ -137,8 +190,11 @@ build_diff_db(void)
 	lpath[llen] = 0;
 	rpath[rlen] = 0;
 
+	if (scan && dir_diff)
+		goto dir_scan_end;
+
 	if (!(d = opendir(rpath))) {
-		printerr(strerror(errno), "opendir %s failed", lpath);
+		printerr(strerror(errno), "opendir %s failed", rpath);
 		return -1;
 	}
 
@@ -147,7 +203,7 @@ build_diff_db(void)
 		if (!(ent = readdir(d))) {
 			if (!errno)
 				break;
-			printerr(strerror(errno), "readdir %s failed", lpath);
+			printerr(strerror(errno), "readdir %s failed", rpath);
 			closedir(d);
 			return -1;
 		}
@@ -159,6 +215,11 @@ build_diff_db(void)
 
 		if (!srch_name(name))
 			continue;
+
+		if (scan) {
+			dir_diff = 1;
+			break;
+		}
 
 		rpath[rlen++] = '/';
 		l = strlen(name);
@@ -179,10 +240,81 @@ build_diff_db(void)
 	}
 
 	closedir(d);
-	db_sort();
+
+	if (!scan)
+		db_sort();
+
+dir_scan_end:
 	free_names();
+
+	if (!scan)
+		return 0;
+
+	if (dir_diff)
+		add_diff_dir();
+
+	proc_subdirs(dirs.root);
 	return 0;
 }
+
+static void
+proc_subdirs(struct bst_node *n)
+{
+	if (!n)
+		return;
+
+	proc_subdirs(n->left);
+	proc_subdirs(n->right);
+	scan_subdir(n->key.p);
+	free(n->key.p);
+	free(n);
+}
+
+void
+scan_subdir(char *name)
+{
+	size_t l;
+
+	lpath[llen++] = '/';
+	rpath[rlen++] = '/';
+	l = strlen(name);
+	memcpy(lpath + llen, name, l + 1);
+	memcpy(rpath + rlen, name, l + 1);
+	llen += l;
+	rlen += l;
+
+	build_diff_db();
+}
+
+static void
+add_diff_dir(void)
+{
+	char *path, *end;
+
+	if (!*pwd)
+		return;
+
+	path = pwd + 1;
+	end = path + strlen(path);
+
+	while (1) {
+		if (!bst_srch(&scan_db, (union bst_val)(void *)path, NULL))
+			return;
+
+		avl_add(&scan_db, (union bst_val)(void *)strdup(path),
+			    (union bst_val)(int)0);
+
+		while (*--end != '/')
+			if (end <= path)
+				return;
+
+		*end = 0;
+	}
+}
+
+/* -1  Error, don't make DB entry
+ *  0  No diff
+ *  1  Diff */
 
 static int
 cmp_link(void)
@@ -205,12 +337,14 @@ cmp_link(void)
 	diff->rlink = strdup(rbuf);
 
 	if (l1 != l2 || memcmp(lbuf, rbuf, l1))
-		diff->diff = '!';
+		return 1;
 
-	db_add(diff);
-	diff = NULL;
 	return 0;
 }
+
+/* -1  Error, don't make DB entry
+ *  0  No diff
+ *  1  Diff */
 
 static int
 cmp_file(void)
@@ -218,13 +352,11 @@ cmp_file(void)
 	int rv = 0, f1, f2;
 	ssize_t l1, l2;
 
-	if (stat1.st_size != stat2.st_size) {
-		diff->diff = '!';
-		goto ret;
-	}
+	if (stat1.st_size != stat2.st_size)
+		return 1;
 
 	if (!stat1.st_size)
-		goto ret;
+		return 0;
 
 	if ((f1 = open(lpath, O_RDONLY)) == -1) {
 		printerr(strerror(errno), "open %s failed", lpath);
@@ -251,7 +383,7 @@ cmp_file(void)
 		}
 
 		if (l1 != l2) {
-			diff->diff = '!';
+			rv = 1;
 			break;
 		}
 
@@ -259,7 +391,7 @@ cmp_file(void)
 			break;
 
 		if (memcmp(lbuf, rbuf, l1)) {
-			diff->diff = '!';
+			rv = 1;
 			break;
 		}
 
@@ -270,11 +402,6 @@ cmp_file(void)
 	close(f2);
 close_f1:
 	close(f1);
-ret:
-	if (!rv) {
-		db_add(diff);
-		diff = NULL;
-	}
 	return rv;
 }
 
