@@ -28,6 +28,8 @@ PERFORMANCE OF THIS SOFTWARE.
 #include "db.h"
 #include "diff.h"
 
+int yyparse(void);
+
 char *prog,
      *pwd;
 size_t llen,

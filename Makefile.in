@@ -1,6 +1,6 @@
 PREFIX=	/usr/local
 BINDIR=	$(PREFIX)/bin
-MANDIR=	$(PREFIX)/man
+MANDIR=	$(PREFIX)/share/man
 INCDIR=	$(PREFIX)/include
 LIBDIR=	$(PREFIX)/lib
 BIN=	vddiff
