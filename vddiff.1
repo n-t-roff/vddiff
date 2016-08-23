@@ -5,13 +5,17 @@
 .Nd text terminal directory diff tool
 .Sh SYNOPSYS
 .Nm
-.Op Fl bdgk
+.Op Fl bdfgkmn
 .Op Fl t Ar diff_tool
 .Ar directory_1
 .Ar directory_2
 .Sh DESCRIPTION
 .Nm
-is a simple vim based directory diff tool for the text terminal.
+stands for
+.Dq vim directory diff .
+It is a simple
+.Xr vim 1
+based directory diff tool for the text terminal.
 .Sh OPTIONS
 .Bl -tag
 .It Fl b
@@ -20,6 +24,9 @@ Disable color.
 Use
 .Dq Li diff $1 $2 | less
 as diff tool.
+.It Fl f
+Normally directories are displayed on top.
+With this option files are displayed first.
 .It Fl g
 Use
 .Dq Li gvim
@@ -28,6 +35,11 @@ as diff tool.
 Use
 .Dq Li tkdiff $1 $2 &
 as diff tool.
+.It Fl m
+Normally directories are displayed on top.
+This is disabled with this option.
+.It Fl n
+This option suppresses the display of equal files.
 .It Fl t Ar diff_tool
 Specify diff tool on the command line.
 The filenames to compare are appended to the given string.
@@ -62,14 +74,46 @@ Enter directory or start diff tool.
 Scroll one screen up.
 .It Aq Cm PAGE-DOWN
 Scroll one screen down.
-.It So Li ! Sc or So d Sc
+.It So Li ! Sc or So n Sc
 Toggle display of equal files.
 .It Sq p
 Show current relative work directory.
 .El
 .Sh CONFIGURATION FILE ~/.vddiffrc
+Permanent non-default options can be set in the file
+.Pa ~/.vddiffrc .
+The elements in this file may be separated with
+spaces, tabs or line breaks.
+Line breaks are not required, everything can be written
+into one long line.
+Also spaces or tabs are not required (outside quoted strings),
+when every element is on it's own line.
+Everything following a
+.Sq Li #
+to the end of the line is a comment.
 .Bl -tag
 .It Li difftool Ar string
+Configure
+.Ar string
+as diff tool.
+If
+.Ar string
+contains spaces it needs to be quoted with
+.Sq Li \(dq
+at begin and end.
+The two filenames are appended to this string.
+If the filenames need to be before a pipe symbol
+.Pq Sq Li |
+or a background process symbol
+.Pq Sq Li &
+the symbols
+.Dq Li $1
+and
+.Dq Li $2
+can be embedded into
+.Ar string
+(in any order).
+These symbols are expanded to the respective filename.
 .El
 .Sh FILES
 .Bl -tag -width ~/.vddiffrc -compact

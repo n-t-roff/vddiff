@@ -27,7 +27,6 @@ option_list:
 option:
 	  DIFFTOOL STRING       { set_difftool($2)    ; }
 	| FILES                 { sorting = FILESFIRST; }
-	| DIRS                  { sorting = DIRSFIRST ; }
 	| MIXED                 { sorting = SORTMIXED ; }
 	| FOLLOW                { follow(1)           ; }
 	| MONO                  { color = 0           ; }

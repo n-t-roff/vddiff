@@ -1,5 +1,4 @@
 #include <string.h>
-#include <stdarg.h>
 #include <stdlib.h>
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -31,6 +30,8 @@ static void enter_dir(char *);
 static void help(void);
 static void action(void);
 static char *type_name(mode_t);
+static void ui_resize(void);
+static void set_win_dim(void);
 
 short color = 1;
 short color_leftonly  = COLOR_CYAN   ,
@@ -78,8 +79,6 @@ build_ui(void)
 	noecho();
 	keypad(stdscr, TRUE);
 	curs_set(0);
-	listw = statw = COLS;
-	listh = LINES - 2;
 #ifdef NCURSES_MOUSE_VERSION
 	mousemask(BUTTON1_CLICKED | BUTTON1_DOUBLE_CLICKED
 # if NCURSES_MOUSE_VERSION >= 2
@@ -87,6 +86,7 @@ build_ui(void)
 # endif
 	    , NULL);
 #endif
+	set_win_dim();
 
 	if (!(wlist = subwin(stdscr, listh, listw, 0, 0))) {
 		printf("subwin failed\n");
@@ -159,6 +159,9 @@ ui_ctrl(void)
 			top_idx = 0;
 			curs    = 0;
 			disp_list();
+			break;
+		case KEY_RESIZE:
+			ui_resize();
 			break;
 		}
 	}
@@ -591,4 +594,30 @@ printerr(char *s2, char *s1, ...)
 		werase(wstat);
 	}
 	wrefresh(wstat);
+}
+
+static void
+ui_resize(void)
+{
+	set_win_dim();
+
+	if (curs >= listh)
+		curs = listh -1;
+
+	wresize(wlist, listh, listw);
+	delwin(wstat);
+
+	if (!(wstat = subwin(stdscr, 2, statw, LINES-2, 0))) {
+		printf("subwin failed\n");
+		return;
+	}
+
+	disp_list();
+}
+
+static void
+set_win_dim(void)
+{
+	listw = statw = COLS;
+	listh = LINES - 2;
 }
