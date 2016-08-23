@@ -5,7 +5,7 @@
 .Nd text terminal directory diff tool
 .Sh SYNOPSYS
 .Nm
-.Op Fl bdfgkmn
+.Op Fl bdfgklmn
 .Op Fl t Ar diff_tool
 .Ar directory_1
 .Ar directory_2
@@ -13,9 +13,32 @@
 .Nm
 stands for
 .Dq vim directory diff .
-It is a simple
+It is a simple text terminal directory diff tool using
 .Xr vim 1
-based directory diff tool for the text terminal.
+for the actual diff operation.
+A file browser displays the names found in the directories
+given on the command line.
+Only plain files and symbolic links are compared.
+Directories are not compared before they are entered.
+Symbols are are printed in two columns before the names
+which have the following meaning:
+.Pp
+First column: Difference type
+.Bl -column -offset indent ".Sq Li !"
+.It So Li " " Sc Ta "Directory, equal files or different file types"
+.It So Li ! Sc Ta "Different files or links"
+.It So Li < Sc Ta "Files found in first directory only"
+.It So Li > Sc Ta "Files found in second directory only"
+.El
+.Pp
+Second column: File type
+.Bl -column -offset indent ".Sq Li !"
+.It So Li / Sc Ta Directory
+.It So Li " " Sc Ta "Plain file"
+.It So Li @ Sc Ta "Symbolic link"
+.It So Li ? Sc Ta "Any other file type"
+.It So Li ! Sc Ta "Different file type"
+.El
 .Sh OPTIONS
 .Bl -tag
 .It Fl b
@@ -35,6 +58,8 @@ as diff tool.
 Use
 .Dq Li tkdiff $1 $2 &
 as diff tool.
+.It Fl l
+Follow symbolic links.
 .It Fl m
 Normally directories are displayed on top.
 This is disabled with this option.
@@ -114,6 +139,34 @@ can be embedded into
 .Ar string
 (in any order).
 These symbols are expanded to the respective filename.
+.It Li mono
+Disable colors.
+.It Li followlinks
+Follow symbolic links.
+.It Li noqueal
+Display differences only, hide equal files.
+.It Li filesfirst
+Display directories at the end instead on top.
+.It Li mixed
+Display files and directories mixed.
+.It Li dir_color Ar integer
+Set color for directories.
+Default is 3 (yellow).
+.It Li diff_color Ar integer
+Set color for different files.
+Default is 1 (red).
+.It Li link_color Ar integer
+Set color for symbolic links.
+Default is 5 (magenta).
+.It Li left_color Ar integer
+Set color for files found in first directory only.
+Default is 6 (cyan).
+.It Li right_color Ar integer
+Set color for files found in second directory only.
+Default is 2 (green).
+.It Li unknown_color Ar integer
+Set color for unknown file types.
+Default is 4 (blue).
 .El
 .Sh FILES
 .Bl -tag -width ~/.vddiffrc -compact

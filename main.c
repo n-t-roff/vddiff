@@ -10,6 +10,7 @@
 #include "ui.h"
 #include "exec.h"
 #include "db.h"
+#include "diff.h"
 
 char *prog,
      *pwd;
@@ -25,8 +26,8 @@ static void check_args(char **);
 static int read_rc(void);
 static void usage(void);
 static char *usage_txt =
-"Usage: %s [-bdfgkmn] [-t <diff_tool>] <directory_1> <directory_2>\n";
-static char *getopt_arg = "bdfgkmnt:";
+"Usage: %s [-bdfgklmn] [-t <diff_tool>] <directory_1> <directory_2>\n";
+static char *getopt_arg = "bdfgklmnt:";
 
 int
 main(int argc, char **argv)
@@ -55,6 +56,9 @@ main(int argc, char **argv)
 			break;
 		case 'k':
 			set_difftool("tkdiff $1 $2 &");
+			break;
+		case 'l':
+			follow(1);
 			break;
 		case 'm':
 			sorting = SORTMIXED;
