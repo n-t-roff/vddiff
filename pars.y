@@ -29,7 +29,7 @@ extern char *yytext;
 	int  integer;
 }
 %token DIFFTOOL FILES DIRS MIXED FOLLOW MONO NOEQUAL LEFT_COLOR RIGHT_COLOR
-%token DIFF_COLOR DIR_COLOR UNKNOWN_COLOR LINK_COLOR
+%token DIFF_COLOR DIR_COLOR UNKNOWN_COLOR LINK_COLOR REAL_DIFF
 %token <str>     STRING
 %token <integer> INTEGER
 %%
@@ -46,6 +46,7 @@ option:
 	| FOLLOW                { follow(1)           ; }
 	| MONO                  { color = 0           ; }
 	| NOEQUAL               { noequal = 1         ; }
+	| REAL_DIFF             { real_diff = 1       ; }
 	| LEFT_COLOR INTEGER    { color_leftonly  = $2; }
 	| RIGHT_COLOR INTEGER   { color_rightonly = $2; }
 	| DIFF_COLOR INTEGER    { color_diff      = $2; }

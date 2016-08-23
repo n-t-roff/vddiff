@@ -44,8 +44,8 @@ static void check_args(char **);
 static int read_rc(void);
 static void usage(void);
 static char *usage_txt =
-"Usage: %s [-bdfgklmn] [-t <diff_tool>] <directory_1> <directory_2>\n";
-static char *getopt_arg = "bdfgklmnt:";
+"Usage: %s [-bcdfgklmn] [-t <diff_tool>] <directory_1> <directory_2>\n";
+static char *getopt_arg = "bcdfgklmnt:";
 
 int
 main(int argc, char **argv)
@@ -62,6 +62,9 @@ main(int argc, char **argv)
 		switch (opt) {
 		case 'b':
 			color = 0;
+			break;
+		case 'c':
+			real_diff = 1;
 			break;
 		case 'd':
 			set_difftool("diff $1 $2 | less");

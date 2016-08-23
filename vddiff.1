@@ -13,14 +13,14 @@ LOSS OF USE, DATA OR PROFITS, WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE OR
 OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
 PERFORMANCE OF THIS SOFTWARE.
 ..
-.Dd August 21, 2016
+.Dd August 23, 2016
 .Dt VDDIFF 1
 .Sh NAME
 .Nm vddiff
 .Nd text terminal directory diff tool
 .Sh SYNOPSYS
 .Nm
-.Op Fl bdfgklmn
+.Op Fl bcdfgklmn
 .Op Fl t Ar diff_tool
 .Ar directory_1
 .Ar directory_2
@@ -58,6 +58,9 @@ Second column: File type
 .Bl -tag
 .It Fl b
 Disable color.
+.It Fl c
+Show only directories which exist in both trees
+and really different files.
 .It Fl d
 Use
 .Dq Li diff $1 $2 | less
@@ -116,6 +119,10 @@ Scroll one screen up.
 Scroll one screen down.
 .It So Li ! Sc or So n Sc
 Toggle display of equal files.
+.It Sq c
+Toggle display of all files or
+only directories which exist in both trees
+and really different files.
 .It Sq p
 Show current relative work directory.
 .El
@@ -160,6 +167,9 @@ Disable colors.
 Follow symbolic links.
 .It Li noequal
 Display differences only, hide equal files.
+.It Li real_diff
+Show only directories which exist in both trees
+and really different files.
 .It Li filesfirst
 Display directories at the end instead on top.
 .It Li mixed

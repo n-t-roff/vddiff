@@ -12,4 +12,4 @@ void free_names(void);
 extern enum sorting sorting;
 extern unsigned db_num;
 extern struct filediff **db_list;
-extern short noequal;
+extern short noequal, real_diff;

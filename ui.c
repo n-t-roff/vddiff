@@ -176,6 +176,13 @@ ui_ctrl(void)
 			curs    = 0;
 			disp_list();
 			break;
+		case 'c':
+			real_diff = real_diff ? 0 : 1;
+			db_sort();
+			top_idx = 0;
+			curs    = 0;
+			disp_list();
+			break;
 		case KEY_RESIZE:
 			ui_resize();
 			break;
@@ -198,6 +205,7 @@ help(void) {
        "<PG-UP>		Scroll one screen up\n"
        "<PG-DOWN>	Scroll one screen down\n"
        "!, n		Toggle display of equal files\n"
+       "c		Show only directories and really different files\n"
        "p		Show current relative work directory\n"
 	    );
 	refresh();

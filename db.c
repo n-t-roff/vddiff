@@ -32,7 +32,7 @@ static void del_tree(struct bst_node *);
 enum sorting sorting;
 unsigned db_num;
 struct filediff **db_list;
-short noequal;
+short noequal, real_diff;
 
 static struct bst db      = { NULL, cmp },
                   name_db = { NULL, name_cmp };
@@ -120,8 +120,10 @@ mk_list(struct bst_node *n)
 	mk_list(n->left);
 	f = n->key.p;
 
-	if (!noequal ||
-	    f->diff == '!' || S_ISDIR(f->ltype) || f->ltype != f->rtype)
+	if ((!noequal ||
+	     f->diff == '!' || S_ISDIR(f->ltype) || f->ltype != f->rtype) &&
+	    (!real_diff ||
+	     f->diff == '!' || (S_ISDIR(f->ltype) && S_ISDIR(f->rtype))))
 		db_list[db_idx++] = f;
 
 	mk_list(n->right);

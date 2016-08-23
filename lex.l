@@ -28,6 +28,7 @@ NS [^ \t\n]
 ^{S}*followlinks	{ rc_col += yyleng; return FOLLOW       ; }
 ^{S}*mono		{ rc_col += yyleng; return MONO         ; }
 ^{S}*noequal		{ rc_col += yyleng; return NOEQUAL      ; }
+^{S}*real_diff		{ rc_col += yyleng; return REAL_DIFF    ; }
 ^{S}*left_color		{ rc_col += yyleng; return LEFT_COLOR   ; }
 ^{S}*right_color	{ rc_col += yyleng; return RIGHT_COLOR  ; }
 ^{S}*diff_color		{ rc_col += yyleng; return DIFF_COLOR   ; }
