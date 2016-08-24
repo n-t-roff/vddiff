@@ -212,7 +212,7 @@ help(void) {
        "<PG-UP>		Scroll one screen up\n"
        "<PG-DOWN>	Scroll one screen down\n"
        "!, n		Toggle display of equal files\n"
-       "c		Show only directories and really different files\n"
+       "c		Toggle showing only directories and really different files\n"
        "p		Show current relative work directory\n"
 	    );
 	refresh();

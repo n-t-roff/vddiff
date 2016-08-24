@@ -20,7 +20,7 @@ PERFORMANCE OF THIS SOFTWARE.
 .Nd text terminal directory diff tool
 .Sh SYNOPSYS
 .Nm
-.Op Fl bcdfgklmn
+.Op Fl bcdfgklmnr
 .Op Fl t Ar diff_tool
 .Ar directory_1
 .Ar directory_2
@@ -34,14 +34,17 @@ for the actual diff operation.
 A file browser displays the names found in the directories
 given on the command line.
 Only plain files and symbolic links are compared.
-Directories are not compared before they are entered.
-Symbols are are printed in two columns before the names
+Unless option
+.Fl r
+is used,
+directories are not compared before they are entered.
+Symbols are printed in two columns before the names
 which have the following meaning:
 .Pp
 First column: Difference type
 .Bl -column -offset indent ".Sq Li !"
 .It So Li " " Sc Ta "Directory, equal files or different file types"
-.It So Li ! Sc Ta "Different files or links"
+.It So Li ! Sc Ta "Different files or links (or directories with option" Fl r )
 .It So Li < Sc Ta "Files found in first directory only"
 .It So Li > Sc Ta "Files found in second directory only"
 .El
@@ -83,6 +86,17 @@ Normally directories are displayed on top.
 This is disabled with this option.
 .It Fl n
 This option suppresses the display of equal files.
+.It Fl r
+Recursively scan directories to detect differences in subdirectories.
+This allows to mark directories which contain differences.
+It increases the start time (due to disk I/O) since
+the full file tree is compared at begin.
+To only show different directories this option needs to be
+combined with
+.Fl c .
+Pressing key
+.Sq c
+enables to view all files in this mode.
 .It Fl t Ar diff_tool
 Specify diff tool on the command line.
 The filenames to compare are appended to the given string.
@@ -170,6 +184,16 @@ Display differences only, hide equal files.
 .It Li real_diff
 Show only directories which exist in both trees
 and really different files.
+.It Li recursive
+Recursively scan file tree to detect and mark
+directories which contain differences.
+This increases the start time.
+To show only directories with differences
+additinally set option
+.Li real_diff .
+To view all files when in this mode key
+.Sq c
+can be used.
 .It Li filesfirst
 Display directories at the end instead on top.
 .It Li mixed
@@ -202,9 +226,6 @@ Read on start-up to set non-default options.
 TODO issues are (in this order):
 .Pp
 .Bl -bullet -compact
-.It
-Showing only directories which contain differences.
-This is currently work in process.
 .It
 Make it possible to delete or copy files.
 (Merging will not be a feature of
