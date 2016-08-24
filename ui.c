@@ -507,8 +507,12 @@ disp_line(unsigned y, unsigned i)
 		type = ' ';
 	} else if (S_ISDIR(mode)) {
 		type = '/';
-		if (!color_id)
+		if (!color_id) {
 			color_id = COLOR_DIR;
+
+			if (is_diff_dir(f->name))
+				diff = '!';
+		}
 	} else if (S_ISLNK(mode)) {
 		type = '@';
 		if (!color_id)

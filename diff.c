@@ -36,6 +36,7 @@ static void add_diff_dir(void);
 
 static int (*xstat)(const char *, struct stat *) = lstat;
 static struct filediff *diff;
+static struct bst scan_db = { NULL, name_cmp };
 
 int
 build_diff_db(void)
@@ -101,10 +102,12 @@ build_diff_db(void)
 
 		if (scan) {
 			if (S_ISDIR(stat1.st_mode) &&
-			    S_ISDIR(stat2.st_mode))
+			    S_ISDIR(stat2.st_mode)) {
 				avl_add(&dirs,
 				    (union bst_val)(void *)strdup(name),
 				    (union bst_val)(int)0);
+				continue;
+			}
 
 			if (!*pwd || dir_diff)
 				continue;
@@ -260,12 +263,18 @@ dir_scan_end:
 static void
 proc_subdirs(struct bst_node *n)
 {
+	size_t l1, l2;
+
 	if (!n)
 		return;
 
 	proc_subdirs(n->left);
 	proc_subdirs(n->right);
+	l1 = llen;
+	l2 = rlen;
 	scan_subdir(n->key.p);
+	lpath[llen = l1] = 0;
+	rpath[rlen = l2] = 0;
 	free(n->key.p);
 	free(n);
 }
@@ -310,6 +319,28 @@ add_diff_dir(void)
 
 		*end = 0;
 	}
+}
+
+int
+is_diff_dir(char *name)
+{
+	char *s;
+	size_t l1, l2;
+	short v;
+
+	if (!recursive)
+		return 0;
+	if (!*pwd)
+		return bst_srch(&scan_db, (union bst_val)(void *)name, NULL) ? 0 : 1;
+	l1 = strlen(pwd + 1);
+	l2 = strlen(name);
+	s = malloc(l1 + l2 + 2);
+	memcpy(s, pwd + 1, l1);
+	s[l1++] = '/';
+	memcpy(s + l1, name, l2 + 1);
+	v = bst_srch(&scan_db, (union bst_val)(void *)s, NULL);
+	free(s);
+	return v ? 0 : 1;
 }
 
 /* -1  Error, don't make DB entry

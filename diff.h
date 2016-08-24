@@ -8,3 +8,4 @@ struct filediff {
 int build_diff_db(void);
 void scan_subdir(char *);
 void follow(int);
+int is_diff_dir(char *);

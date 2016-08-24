@@ -32,7 +32,6 @@ enum sorting sorting;
 unsigned db_num;
 struct filediff **db_list;
 short noequal, real_diff;
-struct bst scan_db = { NULL, name_cmp };
 
 static struct bst db      = { NULL, cmp },
                   name_db = { NULL, name_cmp };
@@ -124,7 +123,8 @@ mk_list(struct bst_node *n)
 	if ((!noequal ||
 	     f->diff == '!' || S_ISDIR(f->ltype) || f->ltype != f->rtype) &&
 	    (!real_diff ||
-	     f->diff == '!' || (S_ISDIR(f->ltype) && S_ISDIR(f->rtype))))
+	     f->diff == '!' || (S_ISDIR(f->ltype) && S_ISDIR(f->rtype) &&
+	     is_diff_dir(f->name))))
 		db_list[db_idx++] = f;
 
 	mk_list(n->right);
