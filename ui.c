@@ -42,7 +42,7 @@ static void disp_curs(int);
 static void disp_line(unsigned, unsigned);
 static void push_state(void);
 static void pop_state(void);
-static void enter_dir(char *);
+static void enter_dir(char *, int);
 static void help(void);
 static void action(void);
 static char *type_name(mode_t);
@@ -122,11 +122,11 @@ build_ui(void)
 	/* Not in main since build_diff_db() uses printerr() */
 	if (recursive) {
 		scan = 1;
-		build_diff_db();
+		build_diff_db(3);
 		scan = 0;
 	}
 
-	build_diff_db();
+	build_diff_db(3);
 	disp_list();
 	ui_ctrl();
 	db_free();
@@ -262,9 +262,15 @@ action(void)
 
 	if (f->ltype == f->rtype) {
 		if (S_ISDIR(f->ltype))
-			enter_dir(f->name);
+			enter_dir(f->name, 3);
 		else if (f->diff == '!')
 			tool(f->name);
+	} else if (!f->ltype) {
+		if (S_ISDIR(f->rtype))
+			enter_dir(f->name, 2);
+	} else if (!f->rtype) {
+		if (S_ISDIR(f->ltype))
+			enter_dir(f->name, 1);
 	}
 }
 
@@ -593,10 +599,10 @@ pop_state(void)
 }
 
 static void
-enter_dir(char *name)
+enter_dir(char *name, int tree)
 {
 	push_state();
-	scan_subdir(name);
+	scan_subdir(name, tree);
 	disp_list();
 }
 

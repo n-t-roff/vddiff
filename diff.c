@@ -38,8 +38,11 @@ static int (*xstat)(const char *, struct stat *) = lstat;
 static struct filediff *diff;
 static struct bst scan_db = { NULL, name_cmp };
 
+/* 1: Proc left dir
+ * 2: Proc right dir
+ * 3: Proc both dirs */
 int
-build_diff_db(void)
+build_diff_db(int tree)
 {
 	DIR *d;
 	struct dirent *ent;
@@ -47,6 +50,9 @@ build_diff_db(void)
 	size_t l;
 	struct bst dirs = { NULL, name_cmp };
 	short dir_diff = 0;
+
+	if (!(tree & 1))
+		goto right_tree;
 
 	if (!(d = opendir(lpath))) {
 		printerr(strerror(errno), "opendir %s failed", lpath);
@@ -73,10 +79,13 @@ build_diff_db(void)
 
 		add_name(name);
 		lpath[llen++] = '/';
-		rpath[rlen++] = '/';
 		l = strlen(name);
 		memcpy(lpath + llen--, name, l+1);
-		memcpy(rpath + rlen--, name, l+1);
+
+		if (tree & 2) {
+			rpath[rlen++] = '/';
+			memcpy(rpath + rlen--, name, l+1);
+		}
 
 		if (xstat(lpath, &stat1) == -1) {
 			if (errno != ENOENT) {
@@ -88,6 +97,9 @@ build_diff_db(void)
 			stat1.st_mode = 0;
 		}
 
+		if (!(tree & 2))
+			goto no_tree2;
+
 		if (xstat(rpath, &stat2) == -1) {
 			if (errno != ENOENT) {
 				printerr(strerror(errno), "lstat %s failed",
@@ -95,6 +107,7 @@ build_diff_db(void)
 				continue;
 			}
 
+no_tree2:
 			if (!stat1.st_mode)
 				continue; /* ignore two dead links */
 			stat2.st_mode = 0;
@@ -142,8 +155,7 @@ build_diff_db(void)
 		diff->ltype = S_IFMT & stat1.st_mode;
 		diff->rtype = S_IFMT & stat2.st_mode;
 
-		if ((!diff->ltype && !diff->rtype) ||
-		    diff->ltype != diff->rtype) {
+		if (diff->ltype != diff->rtype) {
 
 			db_add(diff);
 			continue;
@@ -181,6 +193,7 @@ build_diff_db(void)
 				continue;
 			}
 
+		/* any other file type */
 		} else {
 			db_add(diff);
 			continue;
@@ -192,6 +205,10 @@ build_diff_db(void)
 	closedir(d);
 	lpath[llen] = 0;
 	rpath[rlen] = 0;
+
+right_tree:
+	if (!(tree & 2))
+		goto build_list;
 
 	if (scan && dir_diff)
 		goto dir_scan_end;
@@ -244,6 +261,7 @@ build_diff_db(void)
 
 	closedir(d);
 
+build_list:
 	if (!scan)
 		db_sort();
 
@@ -272,7 +290,7 @@ proc_subdirs(struct bst_node *n)
 	proc_subdirs(n->right);
 	l1 = llen;
 	l2 = rlen;
-	scan_subdir(n->key.p);
+	scan_subdir(n->key.p, 3);
 	lpath[llen = l1] = 0;
 	rpath[rlen = l2] = 0;
 	free(n->key.p);
@@ -280,19 +298,23 @@ proc_subdirs(struct bst_node *n)
 }
 
 void
-scan_subdir(char *name)
+scan_subdir(char *name, int tree)
 {
-	size_t l;
+	size_t l = strlen(name);
 
-	lpath[llen++] = '/';
-	rpath[rlen++] = '/';
-	l = strlen(name);
-	memcpy(lpath + llen, name, l + 1);
-	memcpy(rpath + rlen, name, l + 1);
-	llen += l;
-	rlen += l;
+	if (tree & 1) {
+		lpath[llen++] = '/';
+		memcpy(lpath + llen, name, l + 1);
+		llen += l;
+	}
 
-	build_diff_db();
+	if (tree & 2) {
+		rpath[rlen++] = '/';
+		memcpy(rpath + rlen, name, l + 1);
+		rlen += l;
+	}
+
+	build_diff_db(tree);
 }
 
 static void

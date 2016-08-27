@@ -36,7 +36,8 @@ NS [^ \t\n]
 ^{S}*dir_color		{ rc_col += yyleng; return DIR_COLOR    ; }
 ^{S}*unknown_color	{ rc_col += yyleng; return UNKNOWN_COLOR; }
 ^{S}*link_color		{ rc_col += yyleng; return LINK_COLOR   ; }
-[0-9]+			{ yylval.integer = atoi(yytext);
+[0-9]+			{ rc_col += yyleng;
+			  yylval.integer = atoi(yytext);
 			  return INTEGER; }
 \"[^\"]*\"		{ rc_col += yyleng;
 			  yytext[yyleng-1] = 0;
