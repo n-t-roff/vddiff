@@ -1,2 +1,5 @@
-void tool(char *);
-void set_difftool(char *);
+extern char *difftool[];
+extern char *viewtool[];
+
+void tool(char *, int);
+void set_tool(char **, char *);

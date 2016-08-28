@@ -22,26 +22,38 @@ PERFORMANCE OF THIS SOFTWARE.
 
 static size_t add_path(char *, size_t, char *, size_t, char *, size_t);
 
-static char *difftool[3];
+char *difftool[3];
+char *viewtool[3];
 
 void
-tool(char *name)
+tool(char *name, int tree)
 {
 	size_t ln = strlen(name);
-	size_t l0 = strlen(*difftool);
-	size_t l1 = difftool[1] ? strlen(difftool[1]) : 0;
-	size_t l2 = difftool[2] ? strlen(difftool[2]) : 0;
+	size_t l0 = tree == 3 ? strlen(*difftool) :
+	                        strlen(*viewtool) ;
+	size_t l1 = tree == 3 ?
+	            difftool[1] ? strlen(difftool[1]) : 0 :
+	            viewtool[1] ? strlen(viewtool[1]) : 0 ;
+	size_t l2 = tree != 3 ? 0 :
+	            difftool[2] ? strlen(difftool[2]) : 0 ;
 	size_t l;
 	char *cmd;
 
 	/*  " "        "/"      " "        " "      "\0" */
 	l = l0 + 1 + llen + 1 + ln + 1 + rlen + 1 + ln + 1 + l1 + l2;
 	cmd = malloc(l);
-	memcpy(cmd, *difftool, l0);
+	memcpy(cmd, tree == 3 ? *difftool : *viewtool, l0);
 
-	if (!l1) {
-		l0 = add_path(cmd, l0, lpath, llen, name, ln);
-		l0 = add_path(cmd, l0, rpath, rlen, name, ln);
+	if (!l1 || tree != 3) {
+		if (tree & 1)
+			l0 = add_path(cmd, l0, lpath, llen, name, ln);
+		if (tree & 2)
+			l0 = add_path(cmd, l0, rpath, rlen, name, ln);
+
+		if (l1 && tree != 3) {
+			memcpy(cmd + l0, viewtool[1] + 1, --l1);
+			l0 += l1;
+		}
 	} else {
 		switch (*difftool[1]) {
 		case '1':
@@ -93,23 +105,20 @@ add_path(char *cmd, size_t l0, char *path, size_t len, char *name, size_t ln)
 }
 
 void
-set_difftool(char *s)
+set_tool(char **t, char *s)
 {
-	static char *m;
-
-	free(m);
-	m = s = strdup(s);
-	*difftool = s;
-	difftool[1] = NULL;
-	difftool[2] = NULL;
+	free(*t);
+	*t = s = strdup(s);
+	t[1] = NULL;
+	t[2] = NULL;
 
 	while (*s) {
 		if (*s == '$' && (s[1] == '1' || s[1] == '2')) {
 			*s++ = 0;
-			if (difftool[1])
-				difftool[2] = s;
+			if (t[1])
+				t[2] = s;
 			else
-				difftool[1] = s;
+				t[1] = s;
 		}
 		s++;
 	}

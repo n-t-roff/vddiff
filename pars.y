@@ -42,20 +42,20 @@ option_list:
 	| option_list option
 	;
 option:
-	  DIFFTOOL STRING       { set_difftool($2)    ; }
-	| FILES                 { sorting = FILESFIRST; }
-	| MIXED                 { sorting = SORTMIXED ; }
-	| FOLLOW                { follow(1)           ; }
-	| MONO                  { color = 0           ; }
-	| NOEQUAL               { noequal = 1         ; }
-	| REAL_DIFF             { real_diff = 1       ; }
-	| RECURSIVE             { recursive = 1       ; }
-	| LEFT_COLOR INTEGER    { color_leftonly  = $2; }
-	| RIGHT_COLOR INTEGER   { color_rightonly = $2; }
-	| DIFF_COLOR INTEGER    { color_diff      = $2; }
-	| DIR_COLOR INTEGER     { color_dir       = $2; }
-	| UNKNOWN_COLOR INTEGER { color_unknown   = $2; }
-	| LINK_COLOR INTEGER    { color_link      = $2; }
+	  DIFFTOOL STRING       { set_tool(difftool, $2); }
+	| FILES                 { sorting = FILESFIRST  ; }
+	| MIXED                 { sorting = SORTMIXED   ; }
+	| FOLLOW                { follow(1)             ; }
+	| MONO                  { color = 0             ; }
+	| NOEQUAL               { noequal = 1           ; }
+	| REAL_DIFF             { real_diff = 1         ; }
+	| RECURSIVE             { recursive = 1         ; }
+	| LEFT_COLOR INTEGER    { color_leftonly    = $2; }
+	| RIGHT_COLOR INTEGER   { color_rightonly   = $2; }
+	| DIFF_COLOR INTEGER    { color_diff        = $2; }
+	| DIR_COLOR INTEGER     { color_dir         = $2; }
+	| UNKNOWN_COLOR INTEGER { color_unknown     = $2; }
+	| LINK_COLOR INTEGER    { color_link        = $2; }
 	;
 %%
 void

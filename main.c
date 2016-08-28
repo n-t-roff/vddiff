@@ -55,7 +55,8 @@ main(int argc, char **argv)
 	int opt;
 
 	prog = *argv;
-	set_difftool("vim -dR");
+	set_tool(difftool, "vim -dR");
+	set_tool(viewtool, "less");
 
 	if (read_rc())
 		return 1;
@@ -69,16 +70,17 @@ main(int argc, char **argv)
 			real_diff = 1;
 			break;
 		case 'd':
-			set_difftool("diff $1 $2 | less");
+			set_tool(difftool, "diff $1 $2 | less");
 			break;
 		case 'f':
 			sorting = FILESFIRST;
 			break;
 		case 'g':
-			set_difftool("gvim -dR");
+			set_tool(difftool, "gvim -dR");
+			set_tool(viewtool, "gvim -R");
 			break;
 		case 'k':
-			set_difftool("tkdiff $1 $2 &");
+			set_tool(difftool, "tkdiff $1 $2 &");
 			break;
 		case 'l':
 			follow(1);
@@ -93,7 +95,7 @@ main(int argc, char **argv)
 			recursive = 1;
 			break;
 		case 't':
-			set_difftool(optarg);
+			set_tool(difftool, optarg);
 			break;
 		default:
 			usage();
