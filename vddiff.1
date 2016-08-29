@@ -74,7 +74,7 @@ With this option files are displayed first.
 .It Fl g
 Use
 .Dq Li gvim
-as diff tool.
+as diff and view tool.
 .It Fl k
 Use
 .Dq Li tkdiff $1 $2 &
@@ -112,6 +112,12 @@ to the second file.
 Note that the shell may require quoting as in
 .Pp
 .Dl -t \(dqdiff \(rs$1 \(rs$2 | vim -R -\(dq
+.It Fl v Ar view_tool
+Specify view tool on the command line.
+The filenames is appended to the given string.
+To include it into the string the symbolic name
+.Dq Li $1
+can be embedded which is expanded to the filename.
 .El
 .Sh INTERACTIVE COMMANDS
 .Bl -tag
@@ -175,6 +181,23 @@ can be embedded into
 .Ar string
 (in any order).
 These symbols are expanded to the respective filename.
+.It Li viewtool Ar string
+Configure
+.Ar string
+as view tool.
+If
+.Ar string
+contains spaces it needs to be quoted with
+.Sq Li \(dq
+at begin and end.
+The filename is appended to this string.
+If the filename need to be before a background process symbol
+.Pq Sq Li &
+the symbol
+.Dq Li $1
+can be embedded into
+.Ar string ,
+which is expanded to the filename.
 .It Li mono
 Disable colors.
 .It Li followlinks

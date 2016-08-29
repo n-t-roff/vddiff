@@ -46,7 +46,8 @@ static void check_args(char **);
 static int read_rc(void);
 static void usage(void);
 static char *usage_txt =
-"Usage: %s [-bcdfgklmnr] [-t <diff_tool>] <directory_1> <directory_2>\n";
+"Usage: %s [-bcdfgklmnr] [-t <diff_tool>] [-v <view_tool>] <directory_1>\n"
+"           <directory_2>\n";
 static char *getopt_arg = "bcdfgklmnrt:";
 
 int
@@ -96,6 +97,9 @@ main(int argc, char **argv)
 			break;
 		case 't':
 			set_tool(difftool, optarg);
+			break;
+		case 'v':
+			set_tool(viewtool, optarg);
 			break;
 		default:
 			usage();

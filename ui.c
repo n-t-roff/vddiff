@@ -263,8 +263,12 @@ action(void)
 	if (f->ltype == f->rtype) {
 		if (S_ISDIR(f->ltype))
 			enter_dir(f->name, 3);
-		else if (f->diff == '!')
-			tool(f->name, 3);
+		else if (S_ISREG(f->ltype)) {
+			if (f->diff == '!')
+				tool(f->name, 3);
+			else
+				tool(f->name, 1);
+		}
 	} else if (!f->ltype) {
 		if (S_ISDIR(f->rtype))
 			enter_dir(f->name, 2);

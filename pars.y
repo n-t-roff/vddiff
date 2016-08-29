@@ -32,6 +32,7 @@ extern char *yytext;
 }
 %token DIFFTOOL FILES DIRS MIXED FOLLOW MONO NOEQUAL LEFT_COLOR RIGHT_COLOR
 %token DIFF_COLOR DIR_COLOR UNKNOWN_COLOR LINK_COLOR REAL_DIFF RECURSIVE
+%token VIEWTOOL
 %token <str>     STRING
 %token <integer> INTEGER
 %%
@@ -43,6 +44,7 @@ option_list:
 	;
 option:
 	  DIFFTOOL STRING       { set_tool(difftool, $2); }
+	| VIEWTOOL STRING       { set_tool(viewtool, $2); }
 	| FILES                 { sorting = FILESFIRST  ; }
 	| MIXED                 { sorting = SORTMIXED   ; }
 	| FOLLOW                { follow(1)             ; }

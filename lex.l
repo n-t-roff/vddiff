@@ -23,6 +23,7 @@ NS [^ \t\n]
 %%
 #.*			{ ; }
 ^{S}*difftool		{ rc_col += yyleng; return DIFFTOOL     ; }
+^{S}*viewtool		{ rc_col += yyleng; return VIEWTOOL     ; }
 ^{S}*filesfirst		{ rc_col += yyleng; return FILES        ; }
 ^{S}*mixed		{ rc_col += yyleng; return MIXED        ; }
 ^{S}*followlinks	{ rc_col += yyleng; return FOLLOW       ; }
