@@ -191,6 +191,8 @@ no_tree2:
 				diff->diff = '!';
 				/* fall through */
 			case 0:
+				diff->llink = strdup(lbuf);
+				diff->rlink = strdup(rbuf);
 				db_add(diff);
 				continue;
 			}
@@ -398,8 +400,6 @@ cmp_link(void)
 
 	lbuf[l1] = 0;
 	rbuf[l2] = 0;
-	diff->llink = strdup(lbuf);
-	diff->rlink = strdup(rbuf);
 
 	if (l1 != l2 || memcmp(lbuf, rbuf, l1))
 		return 1;
