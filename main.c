@@ -32,7 +32,8 @@ PERFORMANCE OF THIS SOFTWARE.
 int yyparse(void);
 
 char *prog,
-     *pwd;
+     *pwd,
+     *arg[2];
 size_t llen,
        rlen;
 char lpath[PATHSIZ],
@@ -172,6 +173,8 @@ check_args(char **argv)
 	char *s;
 	ino_t ino;
 
+	arg[0] = *argv;
+
 	if (stat(s = *argv++, &stat1) == -1) {
 		printf("stat(\"%s\") failed: %s\n", s, strerror(errno));
 		usage();
@@ -185,6 +188,7 @@ check_args(char **argv)
 	llen = strlen(s);
 	memcpy(lpath, s, llen + 1);
 	ino = stat1.st_ino;
+	arg[1] = *argv;
 
 	if (stat(s = *argv++, &stat1) == -1) {
 		printf("stat(\"%s\") failed: %s\n", s, strerror(errno));

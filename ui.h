@@ -9,6 +9,7 @@ struct ui_state {
 
 void build_ui(void);
 void printerr(char *, char *, ...);
+int dialog(char *, char *, char *, ...);
 void disp_list(void);
 
 extern short color;
@@ -18,3 +19,4 @@ extern short color_leftonly ,
              color_dir      ,
              color_unknown  ,
              color_link     ;
+extern unsigned top_idx, curs;

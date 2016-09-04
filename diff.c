@@ -47,7 +47,7 @@ build_diff_db(int tree)
 	DIR *d;
 	struct dirent *ent;
 	char *name;
-	size_t l;
+	size_t l, l2;
 	struct bst dirs = { NULL, name_cmp };
 	short dir_diff = 0;
 
@@ -78,13 +78,15 @@ build_diff_db(int tree)
 			continue;
 
 		add_name(name);
-		lpath[llen++] = '/';
+		l2 = llen;
+		PTHSEP(lpath, l2);
 		l = strlen(name);
-		memcpy(lpath + llen--, name, l+1);
+		memcpy(lpath + l2, name, l+1);
 
 		if (tree & 2) {
-			rpath[rlen++] = '/';
-			memcpy(rpath + rlen--, name, l+1);
+			l2 = rlen;
+			PTHSEP(rpath, l2);
+			memcpy(rpath + l2, name, l+1);
 		}
 
 		if (xstat(lpath, &stat1) == -1) {
@@ -102,7 +104,7 @@ build_diff_db(int tree)
 
 		if (xstat(rpath, &stat2) == -1) {
 			if (errno != ENOENT) {
-				printerr(strerror(errno), "lstat %s failed",
+				printerr(strerror(errno), "stat %s failed",
 				    rpath);
 				continue;
 			}
@@ -210,7 +212,7 @@ right_tree:
 	if (!(tree & 2))
 		goto build_list;
 
-	if (scan && dir_diff)
+	if (scan && (real_diff || dir_diff))
 		goto dir_scan_end;
 
 	if (!(d = opendir(rpath))) {
@@ -241,9 +243,10 @@ right_tree:
 			break;
 		}
 
-		rpath[rlen++] = '/';
+		l2 = rlen;
+		PTHSEP(rpath, l2);
 		l = strlen(name);
-		memcpy(rpath + rlen--, name, l+1);
+		memcpy(rpath + l2, name, l+1);
 
 		if (xstat(rpath, &stat2) == -1) {
 			if (errno != ENOENT) {
@@ -288,11 +291,15 @@ proc_subdirs(struct bst_node *n)
 
 	proc_subdirs(n->left);
 	proc_subdirs(n->right);
+
 	l1 = llen;
 	l2 = rlen;
 	scan_subdir(n->key.p, 3);
+	/* Not done in scan_subdirs(), since there are cases where
+	 * scan_subdirs() must not reset the path */
 	lpath[llen = l1] = 0;
 	rpath[rlen = l2] = 0;
+
 	free(n->key.p);
 	free(n);
 }
@@ -303,13 +310,13 @@ scan_subdir(char *name, int tree)
 	size_t l = strlen(name);
 
 	if (tree & 1) {
-		lpath[llen++] = '/';
+		PTHSEP(lpath, llen);
 		memcpy(lpath + llen, name, l + 1);
 		llen += l;
 	}
 
 	if (tree & 2) {
-		rpath[rlen++] = '/';
+		PTHSEP(rpath, rlen);
 		memcpy(rpath + rlen, name, l + 1);
 		rlen += l;
 	}
@@ -325,22 +332,26 @@ add_diff_dir(void)
 	if (!*pwd)
 		return;
 
-	path = pwd + 1;
+	path = strdup(PWD);
 	end = path + strlen(path);
 
 	while (1) {
 		if (!bst_srch(&scan_db, (union bst_val)(void *)path, NULL))
-			return;
+			goto ret;
 
 		avl_add(&scan_db, (union bst_val)(void *)strdup(path),
 			    (union bst_val)(int)0);
 
-		while (*--end != '/')
-			if (end <= path)
-				return;
+		do {
+			if (--end < path)
+				goto ret;
+		} while (*end != '/');
 
 		*end = 0;
 	}
+
+ret:
+	free(path);
 }
 
 int
@@ -353,12 +364,13 @@ is_diff_dir(char *name)
 	if (!recursive)
 		return 0;
 	if (!*pwd)
-		return bst_srch(&scan_db, (union bst_val)(void *)name, NULL) ? 0 : 1;
-	l1 = strlen(pwd + 1);
+		return bst_srch(&scan_db, (union bst_val)(void *)name, NULL) ?
+		    0 : 1;
+	l1 = strlen(PWD);
 	l2 = strlen(name);
 	s = malloc(l1 + l2 + 2);
-	memcpy(s, pwd + 1, l1);
-	s[l1++] = '/';
+	memcpy(s, PWD, l1);
+	PTHSEP(s, l1);
 	memcpy(s + l1, name, l2 + 1);
 	v = bst_srch(&scan_db, (union bst_val)(void *)s, NULL);
 	free(s);

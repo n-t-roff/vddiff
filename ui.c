@@ -25,6 +25,7 @@ PERFORMANCE OF THIS SOFTWARE.
 #include "ui.h"
 #include "db.h"
 #include "exec.h"
+#include "fs.h"
 
 #define COLOR_LEFTONLY  1
 #define COLOR_RIGHTONLY 2
@@ -56,10 +57,10 @@ short color_leftonly  = COLOR_CYAN   ,
       color_dir       = COLOR_YELLOW ,
       color_unknown   = COLOR_BLUE   ,
       color_link      = COLOR_MAGENTA;
+unsigned top_idx, curs;
 
 static unsigned listw, listh, statw;
 static WINDOW *wlist, *wstat;
-static unsigned top_idx, curs;
 static struct ui_state *ui_stack;
 /* Line scroll enable. Else only full screen is scrolled */
 static short scrollen = 1;
@@ -138,9 +139,11 @@ build_ui(void)
 static void
 ui_ctrl(void)
 {
-	int c;
+	int prev_key, c = 0;
 
 	while (1) {
+		prev_key = c;
+
 		switch (c = getch()) {
 #ifdef NCURSES_MOUSE_VERSION
 		case KEY_MOUSE:
@@ -174,7 +177,15 @@ ui_ctrl(void)
 			help();
 			break;
 		case 'p':
-			printerr(NULL, "%s", *pwd == '/' ? pwd + 1 : pwd);
+			printerr(NULL, "%s", PWD);
+			break;
+		case 'a':
+			werase(wstat);
+			wattron(wstat, A_REVERSE);
+			mvwprintw(wstat, 0, 0, "<   %s", arg[0]);
+			mvwprintw(wstat, 1, 0, ">   %s", arg[1]);
+			wrefresh(wstat);
+			wattron(wstat, A_NORMAL);
 			break;
 		case '!': case 'n':
 			noequal = noequal ? 0 : 1;
@@ -192,6 +203,31 @@ ui_ctrl(void)
 			break;
 		case KEY_RESIZE:
 			ui_resize();
+			break;
+		case 'd':
+			if (prev_key != 'd')
+				break;
+			fs_rm(3, NULL); /* allowed for single sided only */
+			break;
+		case 'l':
+			if (prev_key != 'd')
+				break;
+			fs_rm(1, NULL);
+			break;
+		case 'r':
+			if (prev_key != 'd')
+				break;
+			fs_rm(2, NULL);
+			break;
+		case '<':
+			if (prev_key != '<')
+				break;
+			fs_cp(2, 1);
+			break;
+		case '>':
+			if (prev_key != '>')
+				break;
+			fs_cp(1, 2);
 			break;
 		}
 	}
@@ -214,6 +250,14 @@ help(void) {
        "!, n		Toggle display of equal files\n"
        "c		Toggle showing only directories and really different files\n"
        "p		Show current relative work directory\n"
+       "a		Show command line directory arguments\n"
+       /*
+       "<<		Copy from second to first tree\n"
+       ">>		Copy from first to second tree\n"
+       "dd		Delete file or directory\n"
+       "dl		Delete file or directory in first tree\n"
+       "dr		Delete file or directory in second tree\n"
+       */
 	    );
 	refresh();
 	getch();
@@ -256,9 +300,7 @@ proc_mevent(void)
 static void
 action(void)
 {
-	struct filediff *f;
-
-	f = db_list[top_idx + curs];
+	struct filediff *f = db_list[top_idx + curs];
 
 	if (f->ltype == f->rtype) {
 		if (S_ISDIR(f->ltype))
@@ -632,6 +674,33 @@ printerr(char *s2, char *s1, ...)
 		werase(wstat);
 	}
 	wrefresh(wstat);
+}
+
+int
+dialog(char *quest, char *answ, char *fmt, ...)
+{
+	va_list ap;
+	int c, c2;
+	char *s;
+
+	werase(wstat);
+	wattrset(wstat, A_REVERSE);
+	wmove(wstat, 0, 0);
+	va_start(ap, fmt);
+	vwprintw(wstat, fmt, ap);
+	va_end(ap);
+	mvwaddstr(wstat, 1, 0, quest);
+	wrefresh(wstat);
+	do {
+		c = getch();
+		for (s = answ; s && (c2 = *s); s++)
+			if (c == c2)
+				break;
+	} while (s && !c2);
+	wattrset(wstat, A_NORMAL);
+	werase(wstat);
+	wrefresh(wstat);
+	return c;
 }
 
 static void
