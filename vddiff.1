@@ -123,29 +123,33 @@ can be embedded which is expanded to the filename.
 .Bl -tag
 .It Sq Li q
 Quit.
-.It So Li h Sc or So Li ? Sc
+.It So Li h Sc or Sq Li ?
 Display help.
-.It Aq Cm UP
+.It Ao Cm UP Ac , So Li k Sc or Sq Li -
 Move cursor line up.
-.It Aq Cm DOWN
+.It Ao Cm DOWN Ac , So Li j Sc or Sq Li +
 Move cursor line down.
 .It Aq Cm LEFT
 Leave directory (one directory up).
-.It Ao Cm RIGHT Ac or Ao Cm ENTER Ac
+.It Ao Cm RIGHT Ac or Aq Cm ENTER
 Enter directory or start diff tool.
 .It Aq Cm PAGE-UP
 Scroll one screen up.
 .It Aq Cm PAGE-DOWN
 Scroll one screen down.
-.It So Li ! Sc or So n Sc
+.It Ao Cm HOME Ac or Sq Li 1G
+Go to first file.
+.It Ao Cm END Ac or Sq Li G
+Go to last file.
+.It So Li ! Sc or Sq Li n
 Toggle display of equal files.
-.It Sq c
+.It Sq Li c
 Toggle display of all files or
 only directories which exist in both trees
 and really different files.
-.It Sq p
+.It Sq Li p
 Show current relative work directory.
-.It Sq a
+.It Sq Li a
 Show command line directory arguments.
 .El
 .Sh CONFIGURATION FILE ~/.vddiffrc

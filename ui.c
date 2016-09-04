@@ -37,6 +37,8 @@ PERFORMANCE OF THIS SOFTWARE.
 static void ui_ctrl(void);
 static void page_down(void);
 static void page_up(void);
+static void curs_last(void);
+static void curs_first(void);
 static void curs_down(void);
 static void curs_up(void);
 static void disp_curs(int);
@@ -152,10 +154,10 @@ ui_ctrl(void)
 #endif
 		case 'q':
 			return;
-		case KEY_DOWN:
+		case KEY_DOWN: case 'j': case '+':
 			curs_down();
 			break;
-		case KEY_UP:
+		case KEY_UP: case 'k': case '-':
 			curs_up();
 			break;
 		case KEY_LEFT:
@@ -229,6 +231,18 @@ ui_ctrl(void)
 				break;
 			fs_cp(1, 2);
 			break;
+		case KEY_HOME:
+			curs_first();
+			break;
+		case 'G':
+			if (prev_key == '1') {
+				curs_first();
+				break;
+			}
+			/* fall-through */
+		case KEY_END:
+			curs_last();
+			break;
 		}
 	}
 }
@@ -240,13 +254,15 @@ help(void) {
 	addstr(
        "q		Quit\n"
        "h, ?		Display help\n"
-       "<UP>		Move cursor up\n"
-       "<DOWN>		Move cursor down\n"
+       "<UP>, k, -	Move cursor up\n"
+       "<DOWN>, j, +	Move cursor down\n"
        "<LEFT>		Leave directory (one directory up)\n"
        "<RIGHT>, <ENTER>\n"
        "		Enter directory or start diff tool\n"
        "<PG-UP>		Scroll one screen up\n"
        "<PG-DOWN>	Scroll one screen down\n"
+       "1G		Go to first file\n"
+       "G		Go to last file\n"
        "!, n		Toggle display of equal files\n"
        "c		Toggle showing only directories and really different files\n"
        "p		Show current relative work directory\n"
@@ -366,6 +382,44 @@ page_up(void)
 		curs = listh - 1;
 	}
 
+	disp_list();
+}
+
+static void
+curs_last(void)
+{
+	if (db_num - top_idx <= listh) {
+		/* last line is currently displayed */
+		if (curs != db_num - top_idx - 1) {
+			disp_curs(0);
+			curs = db_num - top_idx - 1;
+			disp_curs(1);
+			wrefresh(wlist);
+			wrefresh(wstat);
+		}
+		return;
+	}
+
+	top_idx = db_num - listh;
+	curs = listh - 1;
+	disp_list();
+}
+
+static void
+curs_first(void)
+{
+	if (!top_idx) {
+		if (curs) {
+			disp_curs(0);
+			curs = 0;
+			disp_curs(1);
+			wrefresh(wlist);
+			wrefresh(wstat);
+		}
+		return;
+	}
+
+	top_idx = curs = 0;
 	disp_list();
 }
 

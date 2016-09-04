@@ -45,10 +45,13 @@ fs_rm(int tree, char *txt)
 	struct filediff *f = db_list[top_idx + curs];
 	size_t ln;
 
-	if (f->ltype)
-		tree &= ~2; /* then not right */
-	if (f->rtype)
-		tree &= ~1; /* then not left */
+	/* "dd" is not allowed if both files are present */
+	if (tree == 3 && f->ltype && f->rtype)
+		return;
+	if (!f->ltype)
+		tree &= ~1;
+	if (!f->rtype)
+		tree &= ~2;
 	if (tree & 1) {
 		lp = lpath;
 		ll = llen;
@@ -75,6 +78,9 @@ fs_rm(int tree, char *txt)
 		proc_dir();
 	} else
 		rm_file();
+	db_free();
+	build_diff_db(3);
+	disp_list();
 }
 
 void
