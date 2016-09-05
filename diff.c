@@ -80,13 +80,13 @@ build_diff_db(int tree)
 		add_name(name);
 		l2 = llen;
 		PTHSEP(lpath, l2);
-		l = strlen(name);
-		memcpy(lpath + l2, name, l+1);
+		l = strlen(name) + 1;
+		memcpy(lpath + l2, name, l);
 
 		if (tree & 2) {
 			l2 = rlen;
 			PTHSEP(rpath, l2);
-			memcpy(rpath + l2, name, l+1);
+			memcpy(rpath + l2, name, l);
 		}
 
 		if (xstat(lpath, &stat1) == -1) {
@@ -247,8 +247,7 @@ right_tree:
 
 		l2 = rlen;
 		PTHSEP(rpath, l2);
-		l = strlen(name);
-		memcpy(rpath + l2, name, l+1);
+		memcpy(rpath + l2, name, strlen(name) + 1);
 
 		if (xstat(rpath, &stat2) == -1) {
 			if (errno != ENOENT) {
@@ -369,11 +368,11 @@ is_diff_dir(char *name)
 		return bst_srch(&scan_db, (union bst_val)(void *)name, NULL) ?
 		    0 : 1;
 	l1 = strlen(PWD);
-	l2 = strlen(name);
-	s = malloc(l1 + l2 + 2);
+	l2 = strlen(name) + 1;
+	s = malloc(l1 + l2 + 1);
 	memcpy(s, PWD, l1);
 	PTHSEP(s, l1);
-	memcpy(s + l1, name, l2 + 1);
+	memcpy(s + l1, name, l2);
 	v = bst_srch(&scan_db, (union bst_val)(void *)s, NULL);
 	free(s);
 	return v ? 0 : 1;

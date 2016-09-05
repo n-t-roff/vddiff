@@ -39,6 +39,8 @@ static void page_down(void);
 static void page_up(void);
 static void curs_last(void);
 static void curs_first(void);
+static int last_line_is_disp(void);
+static int first_line_is_top(void);
 static void curs_down(void);
 static void curs_up(void);
 static void disp_curs(int);
@@ -261,8 +263,8 @@ help(void) {
        "		Enter directory or start diff tool\n"
        "<PG-UP>		Scroll one screen up\n"
        "<PG-DOWN>	Scroll one screen down\n"
-       "1G		Go to first file\n"
-       "G		Go to last file\n"
+       "<HOME>, 1G	Go to first file\n"
+       "<END>, G	Go to last file\n"
        "!, n		Toggle display of equal files\n"
        "c		Toggle showing only directories and really different files\n"
        "p		Show current relative work directory\n"
@@ -270,10 +272,10 @@ help(void) {
        /*
        "<<		Copy from second to first tree\n"
        ">>		Copy from first to second tree\n"
-       "dd		Delete file or directory\n"
+       */
        "dl		Delete file or directory in first tree\n"
        "dr		Delete file or directory in second tree\n"
-       */
+       "dd		Delete file or directory\n"
 	    );
 	refresh();
 	getch();
@@ -343,17 +345,8 @@ action(void)
 static void
 page_down(void)
 {
-	if (db_num - top_idx <= listh) {
-		/* last line is currently displayed */
-		if (curs != db_num - top_idx - 1) {
-			disp_curs(0);
-			curs = db_num - top_idx - 1;
-			disp_curs(1);
-			wrefresh(wlist);
-			wrefresh(wstat);
-		}
+	if (last_line_is_disp())
 		return;
-	}
 
 	top_idx += listh;
 	curs = 0;
@@ -361,18 +354,21 @@ page_down(void)
 }
 
 static void
+curs_last(void)
+{
+	if (last_line_is_disp())
+		return;
+
+	top_idx = db_num - listh;
+	curs = listh - 1;
+	disp_list();
+}
+
+static void
 page_up(void)
 {
-	if (!top_idx) {
-		if (curs) {
-			disp_curs(0);
-			curs = 0;
-			disp_curs(1);
-			wrefresh(wlist);
-			wrefresh(wstat);
-		}
+	if (first_line_is_top())
 		return;
-	}
 
 	if (top_idx < listh) {
 		top_idx = 0;
@@ -386,7 +382,17 @@ page_up(void)
 }
 
 static void
-curs_last(void)
+curs_first(void)
+{
+	if (first_line_is_top())
+		return;
+
+	top_idx = curs = 0;
+	disp_list();
+}
+
+static int
+last_line_is_disp(void)
 {
 	if (db_num - top_idx <= listh) {
 		/* last line is currently displayed */
@@ -397,16 +403,14 @@ curs_last(void)
 			wrefresh(wlist);
 			wrefresh(wstat);
 		}
-		return;
+		return 1;
 	}
 
-	top_idx = db_num - listh;
-	curs = listh - 1;
-	disp_list();
+	return 0;
 }
 
-static void
-curs_first(void)
+static int
+first_line_is_top(void)
 {
 	if (!top_idx) {
 		if (curs) {
@@ -416,11 +420,10 @@ curs_first(void)
 			wrefresh(wlist);
 			wrefresh(wstat);
 		}
-		return;
+		return 1;
 	}
 
-	top_idx = curs = 0;
-	disp_list();
+	return 0;
 }
 
 static void
@@ -572,6 +575,13 @@ void
 disp_list(void)
 {
 	unsigned y, i;
+
+	/* For the case that entries had been removed */
+	if (top_idx >= db_num)
+		top_idx = db_num - 1;
+
+	if (top_idx + curs >= db_num)
+		curs = db_num - top_idx - 1;
 
 	werase(wlist);
 	for (y = 0, i = top_idx; y < listh && i < db_num; y++, i++) {

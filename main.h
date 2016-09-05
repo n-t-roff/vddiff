@@ -1,6 +1,7 @@
 #define PATHSIZ	(1024*16)
 
 #define PWD (*pwd == '/' ? pwd + 1 : pwd)
+
 #define PTHSEP(p, l) \
 	if (p[l-1] != '/') \
 		p[l++] = '/'

@@ -63,6 +63,8 @@ fs_rm(int tree, char *txt)
 	PTHSEP(lp, ll);
 	ln = strlen(f->name);
 	memcpy(lp + ll, f->name, ln + 1);
+	ll += ln;
+
 	if (lstat(lp, &stat1) == -1) {
 		if (errno != ENOENT) {
 			printerr(strerror(errno),
@@ -78,6 +80,8 @@ fs_rm(int tree, char *txt)
 		proc_dir();
 	} else
 		rm_file();
+	lpath[llen] = 0;
+	rpath[rlen] = 0;
 	db_free();
 	build_diff_db(3);
 	disp_list();
@@ -97,7 +101,7 @@ proc_dir(void)
 	DIR *d;
 	struct dirent *ent;
 	char *name;
-	size_t l;
+	size_t l, l2;
 	struct bst dirs = { NULL, name_cmp };
 
 	if (!(d = opendir(lp))) {
@@ -122,9 +126,10 @@ proc_dir(void)
 		    !name[2])))
 			continue;
 
-		PTHSEP(lp, ll);
-		l = strlen(name);
-		memcpy(lp + ll--, name, l+1);
+		l2 = ll;
+		PTHSEP(lp, l2);
+		l = strlen(name) + 1;
+		memcpy(lp + l2, name, l);
 
 		if (lstat(lp, &stat1) == -1) {
 			if (errno != ENOENT) {
@@ -158,20 +163,30 @@ proc_dir(void)
 static void
 proc_subdirs(struct bst_node *n)
 {
-	size_t l1, l2;
+	size_t l, l1, l2;
 
 	if (!n)
 		return;
 
 	proc_subdirs(n->left);
 	proc_subdirs(n->right);
+	l = strlen(n->key.p) + 1;
 	l1 = ll;
-	l2 = rl;
 	PTHSEP(lp, ll);
-	PTHSEP(rp, rl);
+	memcpy(lp + ll, n->key.p, l);
+
+	if (tree_op == TREE_CP) {
+		l2 = rl;
+		PTHSEP(rp, rl);
+		memcpy(rp + rl, n->key.p, l);
+	}
+
 	proc_dir();
 	lp[ll = l1] = 0;
-	rp[rl = l2] = 0;
+
+	if (tree_op == TREE_CP)
+		rp[rl = l2] = 0;
+
 	free(n->key.p);
 	free(n);
 }

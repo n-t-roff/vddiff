@@ -20,7 +20,7 @@ PERFORMANCE OF THIS SOFTWARE.
 .Nd text terminal directory diff tool
 .Sh SYNOPSYS
 .Nm
-.Op Fl bcdfgklmnr
+.Op Fl ubcdfgklmnr
 .Op Fl t Ar diff_tool
 .Ar directory_1
 .Ar directory_2
@@ -47,6 +47,7 @@ First column: Difference type
 .It So Li ! Sc Ta "Different files or links (or directories with option" Fl r )
 .It So Li < Sc Ta "Files found in first directory only"
 .It So Li > Sc Ta "Files found in second directory only"
+.It So Li = Sc Ta "Files have same i-node"
 .El
 .Pp
 Second column: File type
@@ -112,6 +113,12 @@ to the second file.
 Note that the shell may require quoting as in
 .Pp
 .Dl -t \(dqdiff \(rs$1 \(rs$2 | vim -R -\(dq
+.It Fl u
+Skip reading the initialization file at start-up.
+This has only effect if
+.Fl u
+is the very first option.
+It is ignored elsewise.
 .It Fl v Ar view_tool
 Specify view tool on the command line.
 The filenames is appended to the given string.
@@ -151,6 +158,12 @@ and really different files.
 Show current relative work directory.
 .It Sq Li a
 Show command line directory arguments.
+.It Dq Li dl
+Delete file or directory in first tree.
+.It Dq Li dr
+Delete file or directory in second tree.
+.It Dq Li dd
+Delete file or directory, which must be present in one tree only.
 .El
 .Sh CONFIGURATION FILE ~/.vddiffrc
 Permanent non-default options can be set in the file

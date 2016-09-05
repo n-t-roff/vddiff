@@ -47,9 +47,9 @@ static void check_args(char **);
 static int read_rc(void);
 static void usage(void);
 static char *usage_txt =
-"Usage: %s [-bcdfgklmnr] [-t <diff_tool>] [-v <view_tool>] <directory_1>\n"
+"Usage: %s [-ubcdfgklmnr] [-t <diff_tool>] [-v <view_tool>] <directory_1>\n"
 "           <directory_2>\n";
-static char *getopt_arg = "bcdfgklmnrt:";
+static char *getopt_arg = "bcdfgklmnrt:uv:";
 
 int
 main(int argc, char **argv)
@@ -60,8 +60,9 @@ main(int argc, char **argv)
 	set_tool(difftool, "vim -dR");
 	set_tool(viewtool, "less");
 
-	if (read_rc())
-		return 1;
+	if (argc < 2 || argv[1][0] != '-' || argv[1][1] != 'u')
+		if (read_rc())
+			return 1;
 
 	while ((opt = getopt(argc, argv, getopt_arg)) != -1) {
 		switch (opt) {
@@ -101,6 +102,8 @@ main(int argc, char **argv)
 			break;
 		case 'v':
 			set_tool(viewtool, optarg);
+			break;
+		case 'u':
 			break;
 		default:
 			usage();
