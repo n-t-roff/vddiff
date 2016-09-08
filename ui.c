@@ -47,7 +47,7 @@ static int first_line_is_top(void);
 static void curs_down(void);
 static void curs_up(void);
 static void disp_curs(int);
-static void disp_line(unsigned, unsigned);
+static void disp_line(unsigned, unsigned, int);
 static void push_state(void);
 static void pop_state(void);
 static void enter_dir(char *, int);
@@ -525,7 +525,7 @@ scroll_up(unsigned num)
 	wscrl(wlist, -num);
 
 	for (y = 0, i = top_idx; y < num; y++, i++)
-		disp_line(y, i);
+		disp_line(y, i, 0);
 
 	if (move_curs)
 		disp_curs(1);
@@ -559,7 +559,7 @@ scroll_down(unsigned num)
 
 	for (y = listh - num, i = top_idx + y; y < listh && i < db_num;
 	    y++, i++)
-		disp_line(y, i);
+		disp_line(y, i, 0);
 
 	if (move_curs)
 		disp_curs(1);
@@ -573,7 +573,7 @@ disp_curs(int a)
 {
 	if (a)
 		wattron(wlist, A_REVERSE);
-	disp_line(curs, top_idx + curs);
+	disp_line(curs, top_idx + curs, 1);
 }
 
 void
@@ -593,14 +593,14 @@ disp_list(void)
 		if (y == curs)
 			disp_curs(1);
 		else
-			disp_line(y, i);
+			disp_line(y, i, 0);
 	}
 	wrefresh(wlist);
 	wrefresh(wstat);
 }
 
 static void
-disp_line(unsigned y, unsigned i)
+disp_line(unsigned y, unsigned i, int info)
 {
 	int diff, type;
 	mode_t mode;
@@ -664,6 +664,9 @@ disp_line(unsigned y, unsigned i)
 		waddstr(wlist, " -> ");
 		waddstr(wlist, link);
 	}
+
+	if (!info)
+		return;
 
 	werase(wstat);
 	if (diff == '!' && type == '@') {
@@ -758,31 +761,28 @@ file_stat(struct filediff *f)
 	if (f->rtype)
 		mvwprintw(wstat, 1, x, "%s", rbuf);
 
-	if (S_ISDIR(f->ltype))
-		return;
-
 	w1 = strlen(lbuf);
 	w2 = strlen(rbuf);
 	x += w1 > w2 ? w1 : w2;
 	x++;
 
-	if (f->ltype)
+	if (f->ltype && !S_ISDIR(f->ltype))
 		w1 = snprintf(lbuf, PATHSIZ, "%ld", f->lsiz);
-	if (f->rtype)
+	if (f->rtype && !S_ISDIR(f->rtype))
 		w2 = snprintf(rbuf, PATHSIZ, "%ld", f->rsiz);
 
 	w = w1 > w2 ? w1 : w2;
 
-	if (f->ltype)
+	if (f->ltype && !S_ISDIR(f->ltype))
 		mvwprintw(wstat, 0, x + w - w1, "%s", lbuf);
-	if (f->rtype)
+	if (f->rtype && !S_ISDIR(f->rtype))
 		mvwprintw(wstat, 1, x + w - w2, "%s", rbuf);
 
 	x += w + 1;
 
-	if (f->ltype)
+	if (f->ltype && !S_ISDIR(f->ltype))
 		mvwprintw(wstat, 0, x, "%s", ctime(&f->lmtim));
-	if (f->rtype)
+	if (f->rtype && !S_ISDIR(f->rtype))
 		mvwprintw(wstat, 1, x, "%s", ctime(&f->rmtim));
 }
 
