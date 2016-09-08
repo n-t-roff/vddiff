@@ -34,16 +34,19 @@ static void proc_dir(void);
 static void proc_subdirs(struct bst_node *);
 static void rm_file(void);
 static void cp_file(void);
+static void rebuild_db(void);
+static int creatdir(void);
+static void cp_link(void);
+static void cp_reg(void);
 
-static char *lp, *rp;
-static size_t ll, rl;
+static char *pth1, *pth2;
+static size_t len1, len2;
 static enum { TREE_RM, TREE_CP } tree_op;
 
 void
 fs_rm(int tree, char *txt)
 {
 	struct filediff *f = db_list[top_idx + curs];
-	size_t ln;
 
 	/* "dd" is not allowed if both files are present */
 	if (tree == 3 && f->ltype && f->rtype)
@@ -53,46 +56,98 @@ fs_rm(int tree, char *txt)
 	if (!f->rtype)
 		tree &= ~2;
 	if (tree & 1) {
-		lp = lpath;
-		ll = llen;
+		pth1 = lpath;
+		len1 = llen;
 	} else if (tree & 2) {
-		lp = rpath;
-		ll = rlen;
+		pth1 = rpath;
+		len1 = rlen;
 	} else
 		return;
-	PTHSEP(lp, ll);
-	ln = strlen(f->name);
-	memcpy(lp + ll, f->name, ln + 1);
-	ll += ln;
 
-	if (lstat(lp, &stat1) == -1) {
-		if (errno != ENOENT) {
-			printerr(strerror(errno),
-			    "lstat %s failed", lp);
-			return;
-		}
+	PTHCAT(pth1, len1, f->name, 1);
+
+	if (lstat(pth1, &stat1) == -1) {
+		if (errno != ENOENT)
+			printerr(strerror(errno), "lstat %s failed", pth1);
+		goto cancel;
 	}
+
 	if (dialog("[y] yes, [other key] no", NULL,
-	    "Really %s %s?", txt ? txt : "delete", lp) != 'y')
-		return;
+	    "Really %s %s%s?", txt ? txt : "delete",
+	    S_ISDIR(stat1.st_mode) ? "directory " : "", pth1) != 'y')
+		goto cancel;
+
 	if (S_ISDIR(stat1.st_mode)) {
 		tree_op = TREE_RM;
 		proc_dir();
 	} else
 		rm_file();
+
+	if (txt)
+		goto cancel; /* rebuild is done by others */
+
+	rebuild_db();
+	return;
+
+cancel:
+	lpath[llen] = 0;
+	rpath[rlen] = 0;
+}
+
+void
+fs_cp(int to)
+{
+	struct filediff *f = db_list[top_idx + curs];
+
+	fs_rm(to, "overwrite");
+
+	if (to == 1) {
+		pth1 = rpath;
+		len1 = rlen;
+		pth2 = lpath;
+		len2 = llen;
+	} else {
+		pth1 = lpath;
+		len1 = llen;
+		pth2 = rpath;
+		len2 = rlen;
+	}
+
+	PTHCAT(pth1, len1, f->name, 1);
+	PTHCAT(pth2, len2, f->name, 1);
+
+	if (lstat(pth1, &stat1) == -1) {
+		if (errno != ENOENT)
+			printerr(strerror(errno), "lstat %s failed", pth1);
+		goto cancel;
+	}
+
+	if (S_ISDIR(stat1.st_mode)) {
+		if (creatdir())
+			goto rebuild;
+
+		tree_op = TREE_CP;
+		proc_dir();
+	} else
+		cp_file();
+
+rebuild:
+	rebuild_db();
+	return;
+
+cancel:
+	lpath[llen] = 0;
+	rpath[rlen] = 0;
+}
+
+static void
+rebuild_db(void)
+{
 	lpath[llen] = 0;
 	rpath[rlen] = 0;
 	db_free();
 	build_diff_db(3);
 	disp_list();
-}
-
-void
-fs_cp(int from, int to)
-{
-	struct filediff *f = db_list[top_idx + curs];
-
-	fs_rm(to, "overwrite");
 }
 
 static void
@@ -101,22 +156,22 @@ proc_dir(void)
 	DIR *d;
 	struct dirent *ent;
 	char *name;
-	size_t l, l2;
+	size_t l;
 	struct bst dirs = { NULL, name_cmp };
 
-	if (!(d = opendir(lp))) {
-		printerr(strerror(errno), "opendir %s failed", lp);
+	if (!(d = opendir(pth1))) {
+		printerr(strerror(errno), "opendir %s failed", pth1);
 		return;
 	}
 
 	while (1) {
-		lp[ll] = 0;
-
 		errno = 0;
 		if (!(ent = readdir(d))) {
 			if (!errno)
 				break;
-			printerr(strerror(errno), "readdir %s failed", lpath);
+
+			pth1[len1] = 0;
+			printerr(strerror(errno), "readdir %s failed", pth1);
 			closedir(d);
 			return;
 		}
@@ -126,17 +181,16 @@ proc_dir(void)
 		    !name[2])))
 			continue;
 
-		l2 = ll;
-		PTHSEP(lp, l2);
-		l = strlen(name) + 1;
-		memcpy(lp + l2, name, l);
+		l = len1;
+		PTHCAT(pth1, l, name, 0);
 
-		if (lstat(lp, &stat1) == -1) {
+		if (lstat(pth1, &stat1) == -1) {
 			if (errno != ENOENT) {
 				printerr(strerror(errno),
-				    "lstat %s failed", lp);
-				return;
+				    "lstat %s failed", pth1);
+				goto closedir;
 			}
+			continue; /* deleted after readdir */
 		}
 
 		if (S_ISDIR(stat1.st_mode)) {
@@ -145,47 +199,56 @@ proc_dir(void)
 			    (union bst_val)(int)0);
 		} else if (tree_op == TREE_RM)
 			rm_file();
-		else
+		else {
+			l = len2;
+			PTHCAT(pth2, l, name, 0);
 			cp_file();
+		}
 	}
 
+closedir:
 	closedir(d);
-	lp[ll] = 0;
+	pth1[len1] = 0;
+
+	if (tree_op == TREE_CP)
+		pth2[len2] = 0;
+
 	proc_subdirs(dirs.root);
 
 	if (tree_op == TREE_RM) {
-		if (rmdir(lp) == -1)
+		if (rmdir(pth1) == -1)
 			printerr(strerror(errno),
-			    "unlink %s failed", lp);
+			    "unlink %s failed", pth1);
 	}
 }
 
 static void
 proc_subdirs(struct bst_node *n)
 {
-	size_t l, l1, l2;
+	size_t l1, l2;
 
 	if (!n)
 		return;
 
 	proc_subdirs(n->left);
 	proc_subdirs(n->right);
-	l = strlen(n->key.p) + 1;
-	l1 = ll;
-	PTHSEP(lp, ll);
-	memcpy(lp + ll, n->key.p, l);
+	l1 = len1;
+	PTHCAT(pth1, len1, n->key.p, 1);
 
 	if (tree_op == TREE_CP) {
-		l2 = rl;
-		PTHSEP(rp, rl);
-		memcpy(rp + rl, n->key.p, l);
+		l2 = len2;
+		PTHCAT(pth2, len2, n->key.p, 1);
+		if (creatdir())
+			goto exit;
 	}
 
 	proc_dir();
-	lp[ll = l1] = 0;
+
+exit:
+	pth1[len1 = l1] = 0;
 
 	if (tree_op == TREE_CP)
-		rp[rl = l2] = 0;
+		pth2[len2 = l2] = 0;
 
 	free(n->key.p);
 	free(n);
@@ -194,12 +257,100 @@ proc_subdirs(struct bst_node *n)
 static void
 rm_file(void)
 {
-	if (unlink(lp) == -1)
+	if (unlink(pth1) == -1)
 		printerr(strerror(errno),
-		    "unlink %s failed", lp);
+		    "unlink %s failed", pth1);
 }
 
 static void
 cp_file(void)
 {
+	if (S_ISREG(stat1.st_mode))
+		cp_reg();
+	else if (S_ISLNK(stat1.st_mode))
+		cp_link();
+	/* other file types are ignored */
+}
+
+static int
+creatdir(void)
+{
+	if (mkdir(pth2, stat1.st_mode & 07777) == -1) {
+		printerr(strerror(errno), "mkdir %s failed", pth2);
+		return -1;
+	}
+	return 0;
+}
+
+static void
+cp_link(void)
+{
+	ssize_t l;
+
+	if ((l = readlink(pth1, lbuf, sizeof(lbuf) - 1)) == -1) {
+		printerr(strerror(errno), "readlink %s failed", pth1);
+		return;
+	}
+
+	lbuf[l] = 0;
+
+	if (symlink(lbuf, pth2) == -1) {
+		printerr(strerror(errno), "symlink %s failed", pth2);
+		return;
+	}
+
+	/* setting symlink time is not supported on all file systems */
+}
+
+static void
+cp_reg(void)
+{
+	int f1, f2;
+	ssize_t l1, l2;
+	struct timespec ts[2];
+
+	if ((f2 = open(pth2, O_WRONLY | O_CREAT, stat1.st_mode & 07777))
+	    == -1) {
+		printerr(strerror(errno), "create %s failed", pth2);
+		return;
+	}
+
+	if (!stat1.st_size)
+		goto setattr;
+
+	if ((f1 = open(pth1, O_RDONLY)) == -1) {
+		printerr(strerror(errno), "open %s failed", pth1);
+		goto close2;
+	}
+
+	while (1) {
+		if ((l1 = read(f1, lbuf, PATHSIZ)) == -1) {
+			printerr(strerror(errno), "read %s failed", pth1);
+			break;
+		}
+
+		if (!l1)
+			break;
+
+		if ((l2 = write(f2, lbuf, l1)) == -1) {
+			printerr(strerror(errno), "write %s failed", pth2);
+			break;
+		}
+
+		if (l2 != l1)
+			break; /* error */
+
+		if (l1 < PATHSIZ)
+			break;
+	}
+
+	close(f1);
+
+setattr:
+	ts[0].tv_sec = stat1.st_atime;
+	ts[1].tv_sec = stat1.st_mtime;
+	futimens(f2, ts); /* error not checked */
+
+close2:
+	close(f2);
 }

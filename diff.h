@@ -1,8 +1,12 @@
 struct filediff {
-	char *name;
-	char *llink, *rlink;
-	mode_t ltype, rtype;
-	char diff;
+	char   *name;
+	char   *llink, *rlink;
+	mode_t  ltype,  rtype;
+	uid_t   luid,   ruid;
+	gid_t   lgid,   rgid;
+	off_t   lsiz,   rsiz;
+	time_t  lmtim,  rmtim;
+	char    diff;
 };
 
 int build_diff_db(int);

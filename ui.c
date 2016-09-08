@@ -18,6 +18,9 @@ PERFORMANCE OF THIS SOFTWARE.
 #include <stdlib.h>
 #include <sys/types.h>
 #include <sys/stat.h>
+#include <pwd.h>
+#include <grp.h>
+#include <time.h>
 #include "compat.h"
 #include "avlbst.h"
 #include "diff.h"
@@ -53,6 +56,8 @@ static void action(void);
 static char *type_name(mode_t);
 static void ui_resize(void);
 static void set_win_dim(void);
+static void statcol(void);
+static void file_stat(struct filediff *);
 
 short color = 1;
 short color_leftonly  = COLOR_CYAN   ,
@@ -226,12 +231,12 @@ ui_ctrl(void)
 		case '<':
 			if (prev_key != '<')
 				break;
-			fs_cp(2, 1);
+			fs_cp(1);
 			break;
 		case '>':
 			if (prev_key != '>')
 				break;
-			fs_cp(1, 2);
+			fs_cp(2);
 			break;
 		case KEY_HOME:
 			curs_first();
@@ -611,7 +616,7 @@ disp_line(unsigned y, unsigned i)
 		diff     = '<';
 		mode     = f->ltype;
 		color_id = COLOR_LEFTONLY;
-	} else if (f->ltype != f->rtype) {
+	} else if ((f->ltype & S_IFMT) != (f->rtype & S_IFMT)) {
 		diff = ' ';
 		mode = 0;
 		type = '!';
@@ -624,7 +629,10 @@ disp_line(unsigned y, unsigned i)
 	}
 
 	if (S_ISREG(mode)) {
-		type = ' ';
+		if (mode & 0100)
+			type = '*';
+		else
+			type = ' ';
 	} else if (S_ISDIR(mode)) {
 		type = '/';
 		if (!color_id) {
@@ -638,7 +646,7 @@ disp_line(unsigned y, unsigned i)
 		if (!color_id)
 			color_id = COLOR_LINK;
 		if (diff != '!')
-			link = f->llink;
+			link = f->llink ? f->llink : f->rlink;
 	} else if (mode) {
 		type = '?';
 		if (!color_id)
@@ -659,14 +667,26 @@ disp_line(unsigned y, unsigned i)
 
 	werase(wstat);
 	if (diff == '!' && type == '@') {
-		wattron(wstat, A_REVERSE);
-		mvwprintw(wstat, 0, 0, "<   -> %s", f->llink);
-		mvwprintw(wstat, 1, 0, ">   -> %s", f->rlink);
+		statcol();
+		mvwprintw(wstat, 0, 4, "-> %s", f->llink);
+		mvwprintw(wstat, 1, 4, "-> %s", f->rlink);
 	} else if (diff == ' ' && type == '!') {
-		wattron(wstat, A_REVERSE);
-		mvwprintw(wstat, 0, 0, "<   %s", type_name(f->ltype));
-		mvwprintw(wstat, 1, 0, ">   %s", type_name(f->rtype));
+		statcol();
+		mvwprintw(wstat, 0, 4, "%s", type_name(f->ltype));
+		mvwprintw(wstat, 1, 4, "%s", type_name(f->rtype));
+	} else if (type == '/' || type == ' ' || type == '*') {
+		statcol();
+		file_stat(f);
 	}
+}
+
+static void
+statcol(void)
+{
+	wattron(wstat, A_REVERSE);
+	mvwaddch(wstat, 0, 0, '<');
+	mvwaddch(wstat, 1, 0, '>');
+	wattroff(wstat, A_REVERSE);
 }
 
 static char *
@@ -680,6 +700,90 @@ type_name(mode_t m)
 	else if (S_ISCHR(m))  return "character device";
 	else if (S_ISBLK(m))  return "block device";
 	else                  return "unkown type";
+}
+
+static void
+file_stat(struct filediff *f)
+{
+	int x = 4, w, w1, w2;
+	struct passwd *pw;
+	struct group *gr;
+
+	if (f->ltype)
+		mvwprintw(wstat, 0, x, "%04o", f->ltype & 07777);
+	if (f->rtype)
+		mvwprintw(wstat, 1, x, "%04o", f->rtype & 07777);
+	x += 5;
+
+	if (!f->ltype)
+		*lbuf = 0;
+	else if ((pw = getpwuid(f->luid)))
+		memcpy(lbuf, pw->pw_name, strlen(pw->pw_name) + 1);
+	else
+		snprintf(lbuf, PATHSIZ, "%u", f->luid);
+
+	if (!f->rtype)
+		*rbuf = 0;
+	else if ((pw = getpwuid(f->ruid)))
+		memcpy(rbuf, pw->pw_name, strlen(pw->pw_name) + 1);
+	else
+		snprintf(rbuf, PATHSIZ, "%u", f->ruid);
+
+	if (f->ltype)
+		mvwprintw(wstat, 0, x, "%s", lbuf);
+	if (f->rtype)
+		mvwprintw(wstat, 1, x, "%s", rbuf);
+
+	w1 = strlen(lbuf);
+	w2 = strlen(rbuf);
+	x += w1 > w2 ? w1 : w2;
+	x++;
+
+	if (!f->ltype)
+		*lbuf = 0;
+	else if ((gr = getgrgid(f->lgid)))
+		memcpy(lbuf, gr->gr_name, strlen(gr->gr_name) + 1);
+	else
+		snprintf(lbuf, PATHSIZ, "%u", f->lgid);
+
+	if (!f->rtype)
+		*rbuf = 0;
+	else if ((gr = getgrgid(f->rgid)))
+		memcpy(rbuf, gr->gr_name, strlen(gr->gr_name) + 1);
+	else
+		snprintf(rbuf, PATHSIZ, "%u", f->rgid);
+
+	if (f->ltype)
+		mvwprintw(wstat, 0, x, "%s", lbuf);
+	if (f->rtype)
+		mvwprintw(wstat, 1, x, "%s", rbuf);
+
+	if (S_ISDIR(f->ltype))
+		return;
+
+	w1 = strlen(lbuf);
+	w2 = strlen(rbuf);
+	x += w1 > w2 ? w1 : w2;
+	x++;
+
+	if (f->ltype)
+		w1 = snprintf(lbuf, PATHSIZ, "%ld", f->lsiz);
+	if (f->rtype)
+		w2 = snprintf(rbuf, PATHSIZ, "%ld", f->rsiz);
+
+	w = w1 > w2 ? w1 : w2;
+
+	if (f->ltype)
+		mvwprintw(wstat, 0, x + w - w1, "%s", lbuf);
+	if (f->rtype)
+		mvwprintw(wstat, 1, x + w - w2, "%s", rbuf);
+
+	x += w + 1;
+
+	if (f->ltype)
+		mvwprintw(wstat, 0, x, "%s", ctime(&f->lmtim));
+	if (f->rtype)
+		mvwprintw(wstat, 1, x, "%s", ctime(&f->rmtim));
 }
 
 static void
@@ -726,7 +830,6 @@ printerr(char *s2, char *s1, ...)
 	va_list ap;
 
 	werase(wstat);
-	wattrset(wstat, A_NORMAL);
 	wmove(wstat, s2 ? 0 : 1, 0);
 	va_start(ap, s1);
 	vwprintw(wstat, s1, ap);

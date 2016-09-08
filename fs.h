@@ -1,2 +1,2 @@
 void fs_rm(int, char *);
-void fs_cp(int, int);
+void fs_cp(int);
