@@ -22,21 +22,21 @@ S [ \t]
 NS [^ \t\n]
 %%
 #.*			{ ; }
-^{S}*difftool		{ rc_col += yyleng; return DIFFTOOL     ; }
-^{S}*viewtool		{ rc_col += yyleng; return VIEWTOOL     ; }
-^{S}*filesfirst		{ rc_col += yyleng; return FILES        ; }
-^{S}*mixed		{ rc_col += yyleng; return MIXED        ; }
-^{S}*followlinks	{ rc_col += yyleng; return FOLLOW       ; }
-^{S}*mono		{ rc_col += yyleng; return MONO         ; }
-^{S}*noequal		{ rc_col += yyleng; return NOEQUAL      ; }
-^{S}*real_diff		{ rc_col += yyleng; return REAL_DIFF    ; }
-^{S}*recursive		{ rc_col += yyleng; return RECURSIVE    ; }
-^{S}*left_color		{ rc_col += yyleng; return LEFT_COLOR   ; }
-^{S}*right_color	{ rc_col += yyleng; return RIGHT_COLOR  ; }
-^{S}*diff_color		{ rc_col += yyleng; return DIFF_COLOR   ; }
-^{S}*dir_color		{ rc_col += yyleng; return DIR_COLOR    ; }
-^{S}*unknown_color	{ rc_col += yyleng; return UNKNOWN_COLOR; }
-^{S}*link_color		{ rc_col += yyleng; return LINK_COLOR   ; }
+difftool		{ rc_col += yyleng; return DIFFTOOL     ; }
+viewtool		{ rc_col += yyleng; return VIEWTOOL     ; }
+filesfirst		{ rc_col += yyleng; return FILES        ; }
+mixed			{ rc_col += yyleng; return MIXED        ; }
+followlinks		{ rc_col += yyleng; return FOLLOW       ; }
+mono			{ rc_col += yyleng; return MONO         ; }
+noequal			{ rc_col += yyleng; return NOEQUAL      ; }
+real_diff		{ rc_col += yyleng; return REAL_DIFF    ; }
+recursive		{ rc_col += yyleng; return RECURSIVE    ; }
+left_color		{ rc_col += yyleng; return LEFT_COLOR   ; }
+right_color		{ rc_col += yyleng; return RIGHT_COLOR  ; }
+diff_color		{ rc_col += yyleng; return DIFF_COLOR   ; }
+dir_color		{ rc_col += yyleng; return DIR_COLOR    ; }
+unknown_color		{ rc_col += yyleng; return UNKNOWN_COLOR; }
+link_color		{ rc_col += yyleng; return LINK_COLOR   ; }
 [0-9]+			{ rc_col += yyleng;
 			  yylval.integer = atoi(yytext);
 			  return INTEGER; }
