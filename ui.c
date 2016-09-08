@@ -129,6 +129,8 @@ build_ui(void)
 		scrollok(wlist, TRUE);
 	}
 
+	printerr(NULL, "Reading directories...");
+
 	/* Not in main since build_diff_db() uses printerr() */
 	if (recursive) {
 		scan = 1;
@@ -250,6 +252,8 @@ ui_ctrl(void)
 		case KEY_END:
 			curs_last();
 			break;
+		default:
+			printerr(NULL, "Invalid input");
 		}
 	}
 }
@@ -348,8 +352,10 @@ action(void)
 static void
 page_down(void)
 {
-	if (last_line_is_disp())
+	if (last_line_is_disp()) {
+		printerr(NULL, "At bottom");
 		return;
+	}
 
 	top_idx += listh;
 	curs = 0;
@@ -370,8 +376,10 @@ curs_last(void)
 static void
 page_up(void)
 {
-	if (first_line_is_top())
+	if (first_line_is_top()) {
+		printerr(NULL, "At top");
 		return;
+	}
 
 	if (top_idx < listh) {
 		top_idx = 0;
@@ -432,8 +440,10 @@ first_line_is_top(void)
 static void
 curs_down(void)
 {
-	if (top_idx + curs + 1 >= db_num)
+	if (top_idx + curs + 1 >= db_num) {
+		printerr(NULL, "At bottom");
 		return;
+	}
 
 	if (curs + 1 >= listh) {
 		if (scrollen) {
@@ -460,8 +470,10 @@ static void
 curs_up(void)
 {
 	if (!curs) {
-		if (!top_idx)
+		if (!top_idx) {
+			printerr(NULL, "At top");
 			return;
+		}
 
 		if (scrollen) {
 			disp_curs(0);
@@ -490,8 +502,10 @@ scroll_up(unsigned num)
 	unsigned move_curs, y, i;
 
 	if (!top_idx) {
-		if (!curs)
+		if (!curs) {
+			printerr(NULL, "At top");
 			return;
+		}
 
 		disp_curs(0);
 
@@ -536,8 +550,10 @@ scroll_down(unsigned num)
 {
 	unsigned move_curs, y, i;
 
-	if (top_idx >= db_num - 1)
+	if (top_idx >= db_num - 1) {
+		printerr(NULL, "At bottom");
 		return;
+	}
 
 	if (top_idx + num >= db_num)
 		num = db_num - 1 - top_idx;
@@ -587,12 +603,20 @@ disp_list(void)
 		curs = db_num - top_idx - 1;
 
 	werase(wlist);
+
+	if (!db_num) {
+		printerr(NULL, "Empty directory");
+		goto exit;
+	}
+
 	for (y = 0, i = top_idx; y < listh && i < db_num; y++, i++) {
 		if (y == curs)
 			disp_curs(1);
 		else
 			disp_line(y, i, 0);
 	}
+
+exit:
 	wrefresh(wlist);
 	wrefresh(wstat);
 }
@@ -801,8 +825,12 @@ static void
 pop_state(void)
 {
 	struct ui_state *st = ui_stack;
-	if (!st)
+
+	if (!st) {
+		printerr(NULL, "At top directory");
 		return;
+	}
+
 	ui_stack = st->next;
 	llen     = st->llen;
 	rlen     = st->rlen;
