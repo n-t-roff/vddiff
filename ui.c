@@ -616,10 +616,10 @@ disp_list(void)
 
 	/* For the case that entries had been removed */
 	if (top_idx >= db_num)
-		top_idx = db_num - 1;
+		top_idx = db_num ? db_num - 1 : 0;
 
 	if (top_idx + curs >= db_num)
-		curs = db_num - top_idx - 1;
+		curs = db_num ? db_num - top_idx - 1 : 0;
 
 	werase(wlist);
 
