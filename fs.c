@@ -123,15 +123,11 @@ fs_cp(int to)
 	}
 
 	if (S_ISDIR(stat1.st_mode)) {
-		if (creatdir())
-			goto rebuild;
-
 		tree_op = TREE_CP;
 		proc_dir();
 	} else
 		cp_file();
 
-rebuild:
 	rebuild_db();
 	return;
 
@@ -158,6 +154,11 @@ proc_dir(void)
 	char *name;
 	size_t l;
 	struct bst dirs = { NULL, name_cmp };
+
+	if (tree_op == TREE_CP) {
+		if (creatdir())
+			return;
+	}
 
 	if (!(d = opendir(pth1))) {
 		printerr(strerror(errno), "opendir %s failed", pth1);
@@ -238,13 +239,9 @@ proc_subdirs(struct bst_node *n)
 	if (tree_op == TREE_CP) {
 		l2 = len2;
 		PTHCAT(pth2, len2, n->key.p, 1);
-		if (creatdir())
-			goto exit;
 	}
 
 	proc_dir();
-
-exit:
 	pth1[len1 = l1] = 0;
 
 	if (tree_op == TREE_CP)
@@ -275,10 +272,19 @@ cp_file(void)
 static int
 creatdir(void)
 {
+	if (lstat(pth1, &stat1) == -1) {
+		if (errno != ENOENT) {
+			printerr(strerror(errno),
+			    "lstat %s failed", pth1);
+		}
+		return -1;
+	}
+
 	if (mkdir(pth2, stat1.st_mode & 07777) == -1) {
 		printerr(strerror(errno), "mkdir %s failed", pth2);
 		return -1;
 	}
+
 	return 0;
 }
 

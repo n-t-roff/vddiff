@@ -274,10 +274,8 @@ help(void) {
        "c		Toggle showing only directories and really different files\n"
        "p		Show current relative work directory\n"
        "a		Show command line directory arguments\n"
-       /*
        "<<		Copy from second to first tree\n"
        ">>		Copy from first to second tree\n"
-       */
        "dl		Delete file or directory in first tree\n"
        "dr		Delete file or directory in second tree\n"
        "dd		Delete file or directory\n"
