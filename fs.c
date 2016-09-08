@@ -64,7 +64,7 @@ fs_rm(int tree, char *txt)
 	} else
 		return;
 
-	PTHCAT(pth1, len1, f->name, 1);
+	len1 = pthcat(pth1, len1, f->name);
 
 	if (lstat(pth1, &stat1) == -1) {
 		if (errno != ENOENT)
@@ -113,8 +113,8 @@ fs_cp(int to)
 		len2 = rlen;
 	}
 
-	PTHCAT(pth1, len1, f->name, 1);
-	PTHCAT(pth2, len2, f->name, 1);
+	len1 = pthcat(pth1, len1, f->name);
+	len2 = pthcat(pth2, len2, f->name);
 
 	if (lstat(pth1, &stat1) == -1) {
 		if (errno != ENOENT)
@@ -152,7 +152,6 @@ proc_dir(void)
 	DIR *d;
 	struct dirent *ent;
 	char *name;
-	size_t l;
 	struct bst dirs = { NULL, name_cmp };
 
 	if (tree_op == TREE_CP) {
@@ -182,8 +181,7 @@ proc_dir(void)
 		    !name[2])))
 			continue;
 
-		l = len1;
-		PTHCAT(pth1, l, name, 0);
+		pthcat(pth1, len1, name);
 
 		if (lstat(pth1, &stat1) == -1) {
 			if (errno != ENOENT) {
@@ -201,8 +199,7 @@ proc_dir(void)
 		} else if (tree_op == TREE_RM)
 			rm_file();
 		else {
-			l = len2;
-			PTHCAT(pth2, l, name, 0);
+			pthcat(pth2, len2, name);
 			cp_file();
 		}
 	}
@@ -234,11 +231,11 @@ proc_subdirs(struct bst_node *n)
 	proc_subdirs(n->left);
 	proc_subdirs(n->right);
 	l1 = len1;
-	PTHCAT(pth1, len1, n->key.p, 1);
+	len1 = pthcat(pth1, len1, n->key.p);
 
 	if (tree_op == TREE_CP) {
 		l2 = len2;
-		PTHCAT(pth2, len2, n->key.p, 1);
+		len2 = pthcat(pth2, len2, n->key.p);
 	}
 
 	proc_dir();
@@ -292,20 +289,29 @@ static void
 cp_link(void)
 {
 	ssize_t l;
+	char *buf = malloc(stat1.st_size + 1);
 
-	if ((l = readlink(pth1, lbuf, sizeof(lbuf) - 1)) == -1) {
+	if ((l = readlink(pth1, buf, stat1.st_size)) == -1) {
 		printerr(strerror(errno), "readlink %s failed", pth1);
-		return;
+		goto exit;
 	}
 
-	lbuf[l] = 0;
+	if (l != stat1.st_size) {
+		printerr("Unexpected link lenght", "readlink %s failed", pth1);
+		goto exit;
+	}
 
-	if (symlink(lbuf, pth2) == -1) {
+	buf[l] = 0;
+
+	if (symlink(buf, pth2) == -1) {
 		printerr(strerror(errno), "symlink %s failed", pth2);
-		return;
+		goto exit;
 	}
 
 	/* setting symlink time is not supported on all file systems */
+
+exit:
+	free(buf);
 }
 
 static void
@@ -330,7 +336,7 @@ cp_reg(void)
 	}
 
 	while (1) {
-		if ((l1 = read(f1, lbuf, PATHSIZ)) == -1) {
+		if ((l1 = read(f1, lbuf, sizeof lbuf)) == -1) {
 			printerr(strerror(errno), "read %s failed", pth1);
 			break;
 		}
@@ -346,7 +352,7 @@ cp_reg(void)
 		if (l2 != l1)
 			break; /* error */
 
-		if (l1 < PATHSIZ)
+		if (l1 < (ssize_t)(sizeof lbuf))
 			break;
 	}
 

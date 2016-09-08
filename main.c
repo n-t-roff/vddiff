@@ -38,8 +38,8 @@ size_t llen,
        rlen;
 char lpath[PATHSIZ],
      rpath[PATHSIZ],
-     lbuf[PATHSIZ],
-     rbuf[PATHSIZ];
+     lbuf[BUFSIZ],
+     rbuf[BUFSIZ];
 struct stat stat1, stat2;
 short recursive, scan;
 

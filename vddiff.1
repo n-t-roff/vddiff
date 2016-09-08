@@ -82,6 +82,8 @@ Use
 as diff tool.
 .It Fl l
 Follow symbolic links.
+(Note that the integrated file copy and delete operations
+never follow symbolic links.)
 .It Fl m
 Normally directories are displayed on top.
 This is disabled with this option.
@@ -160,14 +162,19 @@ Show current relative work directory.
 Show command line directory arguments.
 .It Dq Li <<
 Copy from second to first tree.
+(Does not follow symbolic links.)
 .It Dq Li >>
 Copy from first to second tree.
+(Does not follow symbolic links.)
 .It Dq Li dl
 Delete file or directory in first tree.
+(Does not follow symbolic links.)
 .It Dq Li dr
 Delete file or directory in second tree.
+(Does not follow symbolic links.)
 .It Dq Li dd
 Delete file or directory, which must be present in one tree only.
+(Does not follow symbolic links.)
 .El
 .Sh CONFIGURATION FILE ~/.vddiffrc
 Permanent non-default options can be set in the file
@@ -225,6 +232,8 @@ which is expanded to the filename.
 Disable colors.
 .It Li followlinks
 Follow symbolic links.
+(Note that the integrated file copy and delete operations
+never follow symbolic links.)
 .It Li noequal
 Display differences only, hide equal files.
 .It Li real_diff
@@ -267,16 +276,4 @@ Default is 4 (blue).
 .Bl -tag -width ~/.vddiffrc -compact
 .It Pa ~/.vddiffrc
 Read on start-up to set non-default options.
-.El
-.Sh BUGS
-TODO issues are (in this order):
-.Pp
-.Bl -bullet -compact
-.It
-Make it possible to delete or copy files.
-(Merging will not be a feature of
-.Nm ,
-instead it is done by the diff tool.)
-.It
-The path buffer (16 KB) is currently not checked for overflows.
 .El

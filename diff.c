@@ -23,6 +23,7 @@ PERFORMANCE OF THIS SOFTWARE.
 #include <errno.h>
 #include <string.h>
 #include <avlbst.h>
+#include "compat.h"
 #include "main.h"
 #include "ui.h"
 #include "diff.h"
@@ -47,7 +48,6 @@ build_diff_db(int tree)
 	DIR *d;
 	struct dirent *ent;
 	char *name;
-	size_t l;
 	struct bst dirs = { NULL, name_cmp };
 	short dir_diff = 0;
 
@@ -77,8 +77,7 @@ build_diff_db(int tree)
 			continue;
 
 		add_name(name);
-		l = llen;
-		PTHCAT(lpath, l, name, 0);
+		pthcat(lpath, llen, name);
 
 		if (xstat(lpath, &stat1) == -1) {
 			if (errno != ENOENT) {
@@ -91,8 +90,7 @@ build_diff_db(int tree)
 		}
 
 		if (tree & 2) {
-			l = rlen;
-			PTHCAT(rpath, l, name, 0);
+			pthcat(rpath, rlen, name);
 		} else
 			goto no_tree2;
 
@@ -266,8 +264,7 @@ right_tree:
 			break;
 		}
 
-		l = rlen;
-		PTHCAT(rpath, l, name, 0);
+		pthcat(rpath, rlen, name);
 
 		if (xstat(rpath, &stat2) == -1) {
 			if (errno != ENOENT) {
@@ -337,10 +334,10 @@ void
 scan_subdir(char *name, int tree)
 {
 	if (tree & 1)
-		PTHCAT(lpath, llen, name, 1);
+		llen = pthcat(lpath, llen, name);
 
 	if (tree & 2)
-		PTHCAT(rpath, rlen, name, 1);
+		rlen = pthcat(rpath, rlen, name);
 
 	build_diff_db(tree);
 }
@@ -390,7 +387,7 @@ is_diff_dir(char *name)
 	l1 = strlen(PWD);
 	s = malloc(l1 + strlen(name) + 2);
 	memcpy(s, PWD, l1);
-	PTHCAT(s, l1, name, 0);
+	pthcat(s, l1, name);
 	v = bst_srch(&scan_db, (union bst_val)(void *)s, NULL);
 	free(s);
 	return v ? 0 : 1;
@@ -489,4 +486,21 @@ void
 follow(int f)
 {
 	xstat = f ? stat : lstat;
+}
+
+size_t
+pthcat(char *p, size_t l, char *n)
+{
+	size_t ln = strlen(n);
+
+	if (l + ln + 2 > PATHSIZ) {
+		printerr(NULL, "Path buffer overflow");
+		return l;
+	}
+
+	if (p[l-1] != '/')
+		p[l++] = '/';
+
+	memcpy(p + l, n, ln + 1);
+	return l + ln;
 }

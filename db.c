@@ -19,6 +19,7 @@ PERFORMANCE OF THIS SOFTWARE.
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <avlbst.h>
+#include "compat.h"
 #include "diff.h"
 #include "main.h"
 #include "ui.h"
@@ -121,7 +122,8 @@ mk_list(struct bst_node *n)
 	f = n->key.p;
 
 	if ((!noequal ||
-	     f->diff == '!' || S_ISDIR(f->ltype) || f->ltype != f->rtype) &&
+	     f->diff == '!' || S_ISDIR(f->ltype) ||
+	     (f->ltype & S_IFMT) != (f->rtype & S_IFMT)) &&
 	    (!real_diff ||
 	     f->diff == '!' || (S_ISDIR(f->ltype) && S_ISDIR(f->rtype) &&
 	     is_diff_dir(f->name))))

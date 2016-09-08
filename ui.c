@@ -163,10 +163,14 @@ ui_ctrl(void)
 #endif
 		case 'q':
 			return;
-		case KEY_DOWN: case 'j': case '+':
+		case KEY_DOWN:
+		case 'j':
+		case '+':
 			curs_down();
 			break;
-		case KEY_UP: case 'k': case '-':
+		case KEY_UP:
+		case 'k':
+		case '-':
 			curs_up();
 			break;
 		case KEY_LEFT:
@@ -184,21 +188,25 @@ ui_ctrl(void)
 		case KEY_PPAGE:
 			page_up();
 			break;
-		case 'h': case '?':
+		case 'h':
+		case '?':
 			help();
 			break;
 		case 'p':
-			printerr(NULL, "%s", PWD);
+			if (!*pwd)
+				printerr(NULL, "At top directory");
+			else
+				printerr(NULL, "%s", PWD);
 			break;
 		case 'a':
 			werase(wstat);
-			wattron(wstat, A_REVERSE);
-			mvwprintw(wstat, 0, 0, "<   %s", arg[0]);
-			mvwprintw(wstat, 1, 0, ">   %s", arg[1]);
+			statcol();
+			mvwaddstr(wstat, 0, 4, arg[0]);
+			mvwaddstr(wstat, 1, 4, arg[1]);
 			wrefresh(wstat);
-			wattron(wstat, A_NORMAL);
 			break;
-		case '!': case 'n':
+		case '!':
+		case 'n':
 			noequal = noequal ? 0 : 1;
 			db_sort();
 			top_idx = 0;
@@ -327,7 +335,7 @@ action(void)
 {
 	struct filediff *f = db_list[top_idx + curs];
 
-	if (f->ltype == f->rtype) {
+	if ((f->ltype & S_IFMT) == (f->rtype & S_IFMT)) {
 		if (S_ISDIR(f->ltype))
 			enter_dir(f->name, 3);
 		else if (S_ISREG(f->ltype)) {
@@ -335,18 +343,29 @@ action(void)
 				tool(f->name, 3);
 			else
 				tool(f->name, 1);
-		}
+		} else
+			goto typerr;
 	} else if (!f->ltype) {
 		if (S_ISDIR(f->rtype))
 			enter_dir(f->name, 2);
 		else if (S_ISREG(f->rtype))
 			tool(f->name, 2);
+		else
+			goto typerr;
 	} else if (!f->rtype) {
 		if (S_ISDIR(f->ltype))
 			enter_dir(f->name, 1);
 		else if (S_ISREG(f->ltype))
 			tool(f->name, 1);
-	}
+		else
+			goto typerr;
+	} else
+		printerr(NULL, "Different file type");
+
+	return;
+
+typerr:
+	printerr(NULL, "Not a directory or regular file");
 }
 
 static void
@@ -605,7 +624,7 @@ disp_list(void)
 	werase(wlist);
 
 	if (!db_num) {
-		printerr(NULL, "Empty directory");
+		printerr(NULL, "No file");
 		goto exit;
 	}
 
@@ -693,12 +712,12 @@ disp_line(unsigned y, unsigned i, int info)
 	werase(wstat);
 	if (diff == '!' && type == '@') {
 		statcol();
-		mvwprintw(wstat, 0, 4, "-> %s", f->llink);
-		mvwprintw(wstat, 1, 4, "-> %s", f->rlink);
+		mvwaddstr(wstat, 0, 4, f->llink);
+		mvwaddstr(wstat, 1, 4, f->rlink);
 	} else if (diff == ' ' && type == '!') {
 		statcol();
-		mvwprintw(wstat, 0, 4, "%s", type_name(f->ltype));
-		mvwprintw(wstat, 1, 4, "%s", type_name(f->rtype));
+		mvwaddstr(wstat, 0, 4, type_name(f->ltype));
+		mvwaddstr(wstat, 1, 4, type_name(f->rtype));
 	} else if (type == '/' || type == ' ' || type == '*') {
 		statcol();
 		file_stat(f);
@@ -745,19 +764,19 @@ file_stat(struct filediff *f)
 	else if ((pw = getpwuid(f->luid)))
 		memcpy(lbuf, pw->pw_name, strlen(pw->pw_name) + 1);
 	else
-		snprintf(lbuf, PATHSIZ, "%u", f->luid);
+		snprintf(lbuf, sizeof lbuf, "%u", f->luid);
 
 	if (!f->rtype)
 		*rbuf = 0;
 	else if ((pw = getpwuid(f->ruid)))
 		memcpy(rbuf, pw->pw_name, strlen(pw->pw_name) + 1);
 	else
-		snprintf(rbuf, PATHSIZ, "%u", f->ruid);
+		snprintf(rbuf, sizeof rbuf, "%u", f->ruid);
 
 	if (f->ltype)
-		mvwprintw(wstat, 0, x, "%s", lbuf);
+		mvwaddstr(wstat, 0, x, lbuf);
 	if (f->rtype)
-		mvwprintw(wstat, 1, x, "%s", rbuf);
+		mvwaddstr(wstat, 1, x, rbuf);
 
 	w1 = strlen(lbuf);
 	w2 = strlen(rbuf);
@@ -769,19 +788,19 @@ file_stat(struct filediff *f)
 	else if ((gr = getgrgid(f->lgid)))
 		memcpy(lbuf, gr->gr_name, strlen(gr->gr_name) + 1);
 	else
-		snprintf(lbuf, PATHSIZ, "%u", f->lgid);
+		snprintf(lbuf, sizeof lbuf, "%u", f->lgid);
 
 	if (!f->rtype)
 		*rbuf = 0;
 	else if ((gr = getgrgid(f->rgid)))
 		memcpy(rbuf, gr->gr_name, strlen(gr->gr_name) + 1);
 	else
-		snprintf(rbuf, PATHSIZ, "%u", f->rgid);
+		snprintf(rbuf, sizeof rbuf, "%u", f->rgid);
 
 	if (f->ltype)
-		mvwprintw(wstat, 0, x, "%s", lbuf);
+		mvwaddstr(wstat, 0, x, lbuf);
 	if (f->rtype)
-		mvwprintw(wstat, 1, x, "%s", rbuf);
+		mvwaddstr(wstat, 1, x, rbuf);
 
 	w1 = strlen(lbuf);
 	w2 = strlen(rbuf);
@@ -789,23 +808,23 @@ file_stat(struct filediff *f)
 	x++;
 
 	if (f->ltype && !S_ISDIR(f->ltype))
-		w1 = snprintf(lbuf, PATHSIZ, "%ld", f->lsiz);
+		w1 = snprintf(lbuf, sizeof lbuf, "%ld", f->lsiz);
 	if (f->rtype && !S_ISDIR(f->rtype))
-		w2 = snprintf(rbuf, PATHSIZ, "%ld", f->rsiz);
+		w2 = snprintf(rbuf, sizeof lbuf, "%ld", f->rsiz);
 
 	w = w1 > w2 ? w1 : w2;
 
 	if (f->ltype && !S_ISDIR(f->ltype))
-		mvwprintw(wstat, 0, x + w - w1, "%s", lbuf);
+		mvwaddstr(wstat, 0, x + w - w1, lbuf);
 	if (f->rtype && !S_ISDIR(f->rtype))
-		mvwprintw(wstat, 1, x + w - w2, "%s", rbuf);
+		mvwaddstr(wstat, 1, x + w - w2, rbuf);
 
 	x += w + 1;
 
 	if (f->ltype && !S_ISDIR(f->ltype))
-		mvwprintw(wstat, 0, x, "%s", ctime(&f->lmtim));
+		mvwaddstr(wstat, 0, x, ctime(&f->lmtim));
 	if (f->rtype && !S_ISDIR(f->rtype))
-		mvwprintw(wstat, 1, x, "%s", ctime(&f->rmtim));
+		mvwaddstr(wstat, 1, x, ctime(&f->rmtim));
 }
 
 static void
