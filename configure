@@ -113,6 +113,22 @@ EOT
 	bmake -f $TMPMK >> $LOG 2>&1
 	test_result && MAKE=bmake
 }
+check_futimens () {
+	check_for "futimens(3)"
+
+	cat <<EOT >$TMPC
+#include <fcntl.h>
+#include <sys/stat.h>
+int
+main() {
+	static struct timespec ts[2];
+	futimens(0, ts);
+	return 0;
+}
+EOT
+	compile
+	test_result && DEFS="$DEFS -DHAVE_FUTIMENS"
+}
 check_fixterm () {
 	check_for 'fixterm(3)'
 
@@ -316,6 +332,7 @@ rm -f $LOG
 gen_mk
 
 check_make
+check_futimens
 check_lib_curses
 #check_Sanitizer
 

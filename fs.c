@@ -23,6 +23,9 @@ PERFORMANCE OF THIS SOFTWARE.
 #include <fcntl.h>
 #include <unistd.h>
 #include <avlbst.h>
+#ifndef HAVE_FUTIMENS
+# include <utime.h>
+#endif
 #include "compat.h"
 #include "main.h"
 #include "diff.h"
@@ -319,7 +322,11 @@ cp_reg(void)
 {
 	int f1, f2;
 	ssize_t l1, l2;
+#ifdef HAVE_FUTIMENS
 	struct timespec ts[2];
+#else
+	struct utimbuf tb;
+#endif
 
 	if ((f2 = open(pth2, O_WRONLY | O_CREAT, stat1.st_mode & 07777))
 	    == -1) {
@@ -359,9 +366,15 @@ cp_reg(void)
 	close(f1);
 
 setattr:
-	ts[0].tv_sec = stat1.st_atime;
-	ts[1].tv_sec = stat1.st_mtime;
+#ifdef HAVE_FUTIMENS
+	ts[0] = stat1.st_atim;
+	ts[1] = stat1.st_mtim;
 	futimens(f2, ts); /* error not checked */
+#else
+	tb.actime  = stat1.st_atime;
+	tb.modtime = stat1.st_mtime;
+	utime(pth2, &tb);
+#endif
 
 close2:
 	close(f2);
