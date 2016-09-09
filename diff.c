@@ -320,7 +320,7 @@ proc_subdirs(struct bst_node *n)
 
 	l1 = llen;
 	l2 = rlen;
-	scan_subdir(n->key.p, 3);
+	scan_subdir(n->key.p, NULL, 3);
 	/* Not done in scan_subdirs(), since there are cases where
 	 * scan_subdirs() must not reset the path */
 	lpath[llen = l1] = 0;
@@ -331,13 +331,13 @@ proc_subdirs(struct bst_node *n)
 }
 
 void
-scan_subdir(char *name, int tree)
+scan_subdir(char *name, char *rnam, int tree)
 {
 	if (tree & 1)
 		llen = pthcat(lpath, llen, name);
 
 	if (tree & 2)
-		rlen = pthcat(rpath, rlen, name);
+		rlen = pthcat(rpath, rlen, rnam ? rnam : name);
 
 	build_diff_db(tree);
 }

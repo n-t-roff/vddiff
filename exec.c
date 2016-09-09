@@ -26,9 +26,10 @@ char *difftool[3];
 char *viewtool[3];
 
 void
-tool(char *name, int tree)
+tool(char *name, char *rnam, int tree)
 {
 	size_t ln = strlen(name);
+	size_t rn = rnam ? strlen(rnam) : ln;
 	size_t l0 = tree == 3 ? strlen(*difftool) :
 	                        strlen(*viewtool) ;
 	size_t l1 = tree == 3 ?
@@ -40,7 +41,7 @@ tool(char *name, int tree)
 	char *cmd;
 
 	/*  " "        "/"      " "        " "      "\0" */
-	l = l0 + 1 + llen + 1 + ln + 1 + rlen + 1 + ln + 1 + l1 + l2;
+	l = l0 + 1 + llen + 1 + ln + 1 + rlen + 1 + rn + 1 + l1 + l2;
 	cmd = malloc(l);
 	memcpy(cmd, tree == 3 ? *difftool : *viewtool, l0);
 
@@ -48,7 +49,8 @@ tool(char *name, int tree)
 		if (tree & 1)
 			l0 = add_path(cmd, l0, lpath, llen, name, ln);
 		if (tree & 2)
-			l0 = add_path(cmd, l0, rpath, rlen, name, ln);
+			l0 = add_path(cmd, l0, rpath, rlen,
+			    rnam ? rnam : name, rn);
 
 		if (l1 && tree != 3) {
 			memcpy(cmd + l0, viewtool[1] + 1, --l1);
@@ -60,7 +62,8 @@ tool(char *name, int tree)
 			l0 = add_path(cmd, l0, lpath, llen, name, ln);
 			break;
 		case '2':
-			l0 = add_path(cmd, l0, rpath, rlen, name, ln);
+			l0 = add_path(cmd, l0, rpath, rlen,
+			    rnam ? rnam : name, rn);
 			break;
 		}
 
@@ -73,7 +76,8 @@ tool(char *name, int tree)
 				l0 = add_path(cmd, l0, lpath, llen, name, ln);
 				break;
 			case '2':
-				l0 = add_path(cmd, l0, rpath, rlen, name, ln);
+				l0 = add_path(cmd, l0, rpath, rlen,
+				    rnam ? rnam : name, rn);
 				break;
 			}
 

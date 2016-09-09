@@ -50,7 +50,7 @@ static void disp_curs(int);
 static void disp_line(unsigned, unsigned, int);
 static void push_state(void);
 static void pop_state(void);
-static void enter_dir(char *, int);
+static void enter_dir(char *, char *, int);
 static void help(void);
 static void action(void);
 static char *type_name(mode_t);
@@ -63,9 +63,9 @@ static void help_pg_down(void);
 static void help_pg_up(void);
 static void help_down(void);
 static void help_up(void);
-#if NCURSES_MOUSE_VERSION >= 2
-static void help_mevent(void);
-#endif
+static void set_mark(void);
+static void clr_mark(void);
+static void disp_mark(void);
 
 short color = 1;
 short color_leftonly  = COLOR_CYAN   ,
@@ -81,12 +81,14 @@ static WINDOW *wlist, *wstat;
 static struct ui_state *ui_stack;
 /* Line scroll enable. Else only full screen is scrolled */
 static short scrollen = 1;
+static struct filediff *mark;
 
 #ifdef NCURSES_MOUSE_VERSION
 static void proc_mevent(void);
 # if NCURSES_MOUSE_VERSION >= 2
 static void scroll_up(unsigned);
 static void scroll_down(unsigned);
+static void help_mevent(void);
 # endif
 
 static MEVENT mevent;
@@ -192,9 +194,11 @@ ui_ctrl(void)
 			action();
 			break;
 		case KEY_NPAGE:
+		case ' ':
 			page_down();
 			break;
 		case KEY_PPAGE:
+		case KEY_BACKSPACE:
 			page_up();
 			break;
 		case 'h':
@@ -243,8 +247,11 @@ ui_ctrl(void)
 			fs_rm(1, NULL);
 			break;
 		case 'r':
-			if (prev_key != 'd')
+			if (prev_key != 'd') {
+				clr_mark();
 				break;
+			}
+
 			fs_rm(2, NULL);
 			break;
 		case '<':
@@ -269,6 +276,9 @@ ui_ctrl(void)
 		case KEY_END:
 			curs_last();
 			break;
+		case 'm':
+			set_mark();
+			break;
 		default:
 			printerr(NULL, "Invalid input (type h for help).");
 		}
@@ -283,8 +293,10 @@ static char *helptxt[] = {
        "<LEFT>		Leave directory (one directory up)",
        "<RIGHT>, <ENTER>",
        "		Enter directory or start diff tool",
-       "<PG-UP>		Scroll one screen up",
-       "<PG-DOWN>	Scroll one screen down",
+       "<PG-UP>, <BACKSPACE>",
+       "		Scroll one screen up",
+       "<PG-DOWN>, <SPACE>",
+       "		Scroll one screen down",
        "<HOME>, 1G	Go to first file",
        "<END>, G	Go to last file",
        "!, n		Toggle display of equal files",
@@ -295,9 +307,9 @@ static char *helptxt[] = {
        ">>		Copy from first to second tree",
        "dl		Delete file or directory in first tree",
        "dr		Delete file or directory in second tree",
-       "dd		Delete file or directory"/*,
-       "m		Mark file for compare",
-       "r		Remove mark"*/ };
+       "dd		Delete file or directory",
+       "m		Mark file or directory",
+       "r		Remove mark" };
 
 #define HELP_NUM (sizeof(helptxt) / sizeof(*helptxt))
 
@@ -329,9 +341,11 @@ help(void) {
 			help_up();
 			break;
 		case KEY_NPAGE:
+		case ' ':
 			help_pg_down();
 			break;
 		case KEY_PPAGE:
+		case KEY_BACKSPACE:
 			help_pg_up();
 			break;
 		}
@@ -362,12 +376,15 @@ disp_help(void)
 
 	werase(wlist);
 	werase(wstat);
-	wrefresh(wstat);
 
 	for (y = 0, i = help_top; y < listh && i < HELP_NUM; y++, i++)
 		mvwaddstr(wlist, y, 0, helptxt[i]);
 
+	if (!help_top && HELP_NUM > listh)
+		printerr(NULL, "Scroll down for more");
+
 	wrefresh(wlist);
+	wrefresh(wstat);
 }
 
 static void
@@ -472,28 +489,69 @@ action(void)
 {
 	struct filediff *f = db_list[top_idx + curs];
 
+	if (mark) {
+		mode_t ltyp = 0, rtyp = 0;
+		char *lnam, *rnam;
+
+		if (mark->ltype) {
+			if (f->ltype) {
+				printerr(NULL, "Both files in same directory");
+				return;
+			}
+
+			lnam = mark->name;
+			ltyp = mark->ltype;
+			rnam = f->name;
+			rtyp = f->rtype;
+
+		} else if (mark->rtype) {
+			if (f->rtype) {
+				printerr(NULL, "Both files in same directory");
+				return;
+			}
+
+			rnam = mark->name;
+			rtyp = mark->rtype;
+			lnam = f->name;
+			ltyp = f->ltype;
+		}
+
+		if ((ltyp & S_IFMT) != (rtyp & S_IFMT)) {
+			printerr(NULL, "Different file type");
+			return;
+		}
+
+		if (S_ISREG(ltyp))
+			tool(lnam, rnam, 3);
+		else if (S_ISDIR(ltyp)) {
+			enter_dir(lnam, rnam, 3);
+		}
+
+		return;
+	}
+
 	if ((f->ltype & S_IFMT) == (f->rtype & S_IFMT)) {
 		if (S_ISDIR(f->ltype))
-			enter_dir(f->name, 3);
+			enter_dir(f->name, NULL, 3);
 		else if (S_ISREG(f->ltype)) {
 			if (f->diff == '!')
-				tool(f->name, 3);
+				tool(f->name, NULL, 3);
 			else
-				tool(f->name, 1);
+				tool(f->name, NULL, 1);
 		} else
 			goto typerr;
 	} else if (!f->ltype) {
 		if (S_ISDIR(f->rtype))
-			enter_dir(f->name, 2);
+			enter_dir(f->name, NULL, 2);
 		else if (S_ISREG(f->rtype))
-			tool(f->name, 2);
+			tool(f->name, NULL, 2);
 		else
 			goto typerr;
 	} else if (!f->rtype) {
 		if (S_ISDIR(f->ltype))
-			enter_dir(f->name, 1);
+			enter_dir(f->name, NULL, 1);
 		else if (S_ISREG(f->ltype))
-			tool(f->name, 1);
+			tool(f->name, NULL, 1);
 		else
 			goto typerr;
 	} else
@@ -849,6 +907,11 @@ disp_line(unsigned y, unsigned i, int info)
 	if (!info)
 		return;
 
+	if (mark) {
+		disp_mark();
+		return;
+	}
+
 	werase(wstat);
 	if (diff == '!' && type == '@') {
 		statcol();
@@ -968,6 +1031,47 @@ file_stat(struct filediff *f)
 }
 
 static void
+set_mark(void)
+{
+	struct filediff *f = db_list[top_idx + curs];
+	mode_t mode = f->ltype ? f->ltype : f->rtype;
+
+	if (f->ltype && f->rtype) {
+		printerr(NULL, "Both files present");
+		return;
+	}
+
+	if (!S_ISDIR(mode) && !(S_ISREG(mode))) {
+		printerr(NULL, "Not a directory or regular file");
+		return;
+	}
+
+	mark = f;
+	disp_mark();
+}
+
+static void
+disp_mark(void)
+{
+	werase(wstat);
+	wattrset(wstat, A_REVERSE);
+	mvwaddstr(wstat, 1, 0, mark->name);
+	wattrset(wstat, A_NORMAL);
+	wrefresh(wstat);
+}
+
+static void
+clr_mark(void)
+{
+	if (!mark)
+		return;
+
+	mark = NULL;
+	werase(wstat);
+	wrefresh(wstat);
+}
+
+static void
 push_state(void)
 {
 	struct ui_state *st = malloc(sizeof(struct ui_state));
@@ -976,6 +1080,7 @@ push_state(void)
 	st->rlen    = rlen;
 	st->top_idx = top_idx;  top_idx = 0;
 	st->curs    = curs;     curs    = 0;
+	st->mark    = mark;     mark    = NULL;
 	st->next    = ui_stack;
 	ui_stack    = st;
 }
@@ -995,6 +1100,7 @@ pop_state(void)
 	rlen     = st->rlen;
 	top_idx  = st->top_idx;
 	curs     = st->curs;
+	mark     = st->mark;
 	lpath[llen] = 0; /* For 'p' (pwd) */
 	db_restore(st);
 	free(st);
@@ -1002,10 +1108,10 @@ pop_state(void)
 }
 
 static void
-enter_dir(char *name, int tree)
+enter_dir(char *name, char *rnam, int tree)
 {
 	push_state();
-	scan_subdir(name, tree);
+	scan_subdir(name, rnam, tree);
 	disp_list();
 }
 

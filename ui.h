@@ -4,6 +4,7 @@ struct ui_state {
 	unsigned num;
 	struct filediff **list;
 	unsigned top_idx, curs;
+	struct filediff *mark;
 	struct ui_state *next;
 };
 

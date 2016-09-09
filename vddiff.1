@@ -142,9 +142,9 @@ Move cursor line down.
 Leave directory (one directory up).
 .It Ao Cm RIGHT Ac or Aq Cm ENTER
 Enter directory or start diff tool.
-.It Aq Cm PAGE-UP
+.It Ao Cm PAGE-UP Ac or Aq Cm BACKSPACE
 Scroll one screen up.
-.It Aq Cm PAGE-DOWN
+.It Ao Cm PAGE-DOWN Ac or Aq Cm SPACE
 Scroll one screen down.
 .It Ao Cm HOME Ac or Sq Li 1G
 Go to first file.
@@ -175,6 +175,12 @@ Delete file or directory in second tree.
 .It Dq Li dd
 Delete file or directory, which must be present in one tree only.
 (Does not follow symbolic links.)
+.It Sq Li m
+Mark file or directory.
+This can be used to compare files or directories
+which had been renamed in one file tree.
+.It Sq Li r
+Remove mark.
 .El
 .Sh CONFIGURATION FILE ~/.vddiffrc
 Permanent non-default options can be set in the file
