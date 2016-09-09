@@ -58,6 +58,14 @@ static void ui_resize(void);
 static void set_win_dim(void);
 static void statcol(void);
 static void file_stat(struct filediff *);
+static void disp_help(void);
+static void help_pg_down(void);
+static void help_pg_up(void);
+static void help_down(void);
+static void help_up(void);
+#if NCURSES_MOUSE_VERSION >= 2
+static void help_mevent(void);
+#endif
 
 short color = 1;
 short color_leftonly  = COLOR_CYAN   ,
@@ -68,7 +76,7 @@ short color_leftonly  = COLOR_CYAN   ,
       color_link      = COLOR_MAGENTA;
 unsigned top_idx, curs;
 
-static unsigned listw, listh, statw;
+static unsigned listw, listh, statw, help_top;
 static WINDOW *wlist, *wstat;
 static struct ui_state *ui_stack;
 /* Line scroll enable. Else only full screen is scrolled */
@@ -267,37 +275,165 @@ ui_ctrl(void)
 	}
 }
 
+static char *helptxt[] = {
+       "q		Quit",
+       "h, ?		Display help",
+       "<UP>, k, -	Move cursor up",
+       "<DOWN>, j, +	Move cursor down",
+       "<LEFT>		Leave directory (one directory up)",
+       "<RIGHT>, <ENTER>",
+       "		Enter directory or start diff tool",
+       "<PG-UP>		Scroll one screen up",
+       "<PG-DOWN>	Scroll one screen down",
+       "<HOME>, 1G	Go to first file",
+       "<END>, G	Go to last file",
+       "!, n		Toggle display of equal files",
+       "c		Toggle showing only directories and really different files",
+       "p		Show current relative work directory",
+       "a		Show command line directory arguments",
+       "<<		Copy from second to first tree",
+       ">>		Copy from first to second tree",
+       "dl		Delete file or directory in first tree",
+       "dr		Delete file or directory in second tree",
+       "dd		Delete file or directory"/*,
+       "m		Mark file for compare",
+       "r		Remove mark"*/ };
+
+#define HELP_NUM (sizeof(helptxt) / sizeof(*helptxt))
+
 static void
 help(void) {
-	erase();
-	move(0, 0);
-	addstr(
-       "q		Quit\n"
-       "h, ?		Display help\n"
-       "<UP>, k, -	Move cursor up\n"
-       "<DOWN>, j, +	Move cursor down\n"
-       "<LEFT>		Leave directory (one directory up)\n"
-       "<RIGHT>, <ENTER>\n"
-       "		Enter directory or start diff tool\n"
-       "<PG-UP>		Scroll one screen up\n"
-       "<PG-DOWN>	Scroll one screen down\n"
-       "<HOME>, 1G	Go to first file\n"
-       "<END>, G	Go to last file\n"
-       "!, n		Toggle display of equal files\n"
-       "c		Toggle showing only directories and really different files\n"
-       "p		Show current relative work directory\n"
-       "a		Show command line directory arguments\n"
-       "<<		Copy from second to first tree\n"
-       ">>		Copy from first to second tree\n"
-       "dl		Delete file or directory in first tree\n"
-       "dr		Delete file or directory in second tree\n"
-       "dd		Delete file or directory\n"
-	    );
-	refresh();
-	getch();
-	erase();
-	refresh();
+
+	int c;
+
+	help_top = 0;
+	disp_help();
+
+	while (1) {
+		switch (c = getch()) {
+#if NCURSES_MOUSE_VERSION >= 2
+		case KEY_MOUSE:
+			help_mevent();
+			break;
+#endif
+		case 'q':
+			goto exit;
+		case KEY_DOWN:
+		case 'j':
+		case '+':
+			help_down();
+			break;
+		case KEY_UP:
+		case 'k':
+		case '-':
+			help_up();
+			break;
+		case KEY_NPAGE:
+			help_pg_down();
+			break;
+		case KEY_PPAGE:
+			help_pg_up();
+			break;
+		}
+	}
+
+exit:
 	disp_list();
+}
+
+#if NCURSES_MOUSE_VERSION >= 2
+static void
+help_mevent(void)
+{
+	if (getmouse(&mevent) != OK)
+		return;
+
+	if (mevent.bstate & BUTTON4_PRESSED)
+		help_up();
+	else if (mevent.bstate & BUTTON5_PRESSED)
+		help_down();
+}
+#endif
+
+static void
+disp_help(void)
+{
+	unsigned y, i;
+
+	werase(wlist);
+	werase(wstat);
+	wrefresh(wstat);
+
+	for (y = 0, i = help_top; y < listh && i < HELP_NUM; y++, i++)
+		mvwaddstr(wlist, y, 0, helptxt[i]);
+
+	wrefresh(wlist);
+}
+
+static void
+help_pg_down(void)
+{
+	if (help_top + listh >= HELP_NUM) {
+		printerr(NULL, "At bottom");
+		return; /* last line on display */
+	}
+
+	help_top += listh;
+	disp_help();
+}
+
+static void
+help_pg_up(void)
+{
+	if (!help_top) {
+		printerr(NULL, "At top");
+		return;
+	}
+
+	help_top = help_top > listh ? help_top - listh : 0;
+	disp_help();
+}
+
+static void
+help_down(void)
+{
+	if (!scrollen) {
+		help_pg_down();
+		return;
+	}
+
+	if (help_top + listh >= HELP_NUM) {
+		printerr(NULL, "At bottom");
+		return; /* last line on display */
+	}
+
+	wscrl(wlist, 1);
+	help_top++;
+	mvwaddstr(wlist, listh - 1, 0, helptxt[help_top + listh - 1]);
+	werase(wstat);
+	wrefresh(wstat);
+	wrefresh(wlist);
+}
+
+static void
+help_up(void)
+{
+	if (!scrollen) {
+		help_pg_up();
+		return;
+	}
+
+	if (!help_top) {
+		printerr(NULL, "At top");
+		return;
+	}
+
+	wscrl(wlist, -1);
+	help_top--;
+	mvwaddstr(wlist, 0, 0, helptxt[help_top]);
+	werase(wstat);
+	wrefresh(wstat);
+	wrefresh(wlist);
 }
 
 #ifdef NCURSES_MOUSE_VERSION
