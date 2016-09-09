@@ -176,7 +176,8 @@ ui_ctrl(void)
 		case KEY_LEFT:
 			pop_state();
 			break;
-		case KEY_RIGHT: case '\n':
+		case KEY_RIGHT:
+		case '\n':
 			if (!db_num)
 				break;
 
@@ -261,7 +262,7 @@ ui_ctrl(void)
 			curs_last();
 			break;
 		default:
-			printerr(NULL, "Invalid input");
+			printerr(NULL, "Invalid input (type h for help).");
 		}
 	}
 }
@@ -624,7 +625,10 @@ disp_list(void)
 	werase(wlist);
 
 	if (!db_num) {
-		printerr(NULL, "No file");
+		if (real_diff)
+			printerr(NULL, "No file (type c to view all files).");
+		else
+			printerr(NULL, "No file");
 		goto exit;
 	}
 
