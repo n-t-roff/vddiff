@@ -207,10 +207,20 @@ ui_ctrl(void)
 			help();
 			break;
 		case 'p':
-			if (!*pwd)
+			if (!*pwd && !*rpwd)
 				printerr(NULL, "At top directory");
 			else
-				printerr(NULL, "%s", PWD);
+				lpath[llen] = 0;
+				rpath[rlen] = 0;
+				if (!strcmp(PWD, RPWD))
+					printerr(NULL, "%s", PWD);
+				else {
+					werase(wstat);
+					statcol();
+					mvwaddstr(wstat, 0, 4, PWD);
+					mvwaddstr(wstat, 1, 4, RPWD);
+					wrefresh(wstat);
+				}
 			break;
 		case 'a':
 			werase(wstat);

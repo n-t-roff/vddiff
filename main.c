@@ -31,15 +31,9 @@ PERFORMANCE OF THIS SOFTWARE.
 
 int yyparse(void);
 
-char *prog,
-     *pwd,
-     *arg[2];
-size_t llen,
-       rlen;
-char lpath[PATHSIZ],
-     rpath[PATHSIZ],
-     lbuf[BUFSIZ],
-     rbuf[BUFSIZ];
+char *prog, *pwd, *rpwd, *arg[2];
+size_t llen, rlen;
+char lpath[PATHSIZ], rpath[PATHSIZ], lbuf[BUFSIZ], rbuf[BUFSIZ];
 struct stat stat1, stat2;
 short recursive, scan;
 
@@ -119,7 +113,8 @@ main(int argc, char **argv)
 	}
 
 	check_args(argv);
-	pwd = lpath + llen;
+	pwd  = lpath + llen;
+	rpwd = rpath + rlen;
 	build_ui();
 	return 0;
 }
