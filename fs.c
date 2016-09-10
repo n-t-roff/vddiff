@@ -226,7 +226,7 @@ closedir:
 static void
 proc_subdirs(struct bst_node *n)
 {
-	size_t l1, l2;
+	size_t l1, l2 = 0 /* silence warning */;
 
 	if (!n)
 		return;

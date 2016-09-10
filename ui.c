@@ -14,6 +14,7 @@ OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
 PERFORMANCE OF THIS SOFTWARE.
 */
 
+#include <stdarg.h>
 #include <string.h>
 #include <stdlib.h>
 #include <sys/types.h>
@@ -801,7 +802,9 @@ disp_curs(int a)
 {
 	if (a)
 		wattron(wlist, A_REVERSE);
-	disp_line(curs, top_idx + curs, 1);
+	disp_line(curs, top_idx + curs, a);
+	if (a)
+		wattroff(wlist, A_REVERSE);
 }
 
 void

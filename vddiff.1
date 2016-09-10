@@ -13,7 +13,7 @@ LOSS OF USE, DATA OR PROFITS, WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE OR
 OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
 PERFORMANCE OF THIS SOFTWARE.
 ..
-.Dd August 23, 2016
+.Dd September 10, 2016
 .Dt VDDIFF 1
 .Sh NAME
 .Nm vddiff
@@ -282,4 +282,19 @@ Default is 4 (blue).
 .Bl -tag -width ~/.vddiffrc -compact
 .It Pa ~/.vddiffrc
 Read on start-up to set non-default options.
+.El
+.Sh BUGS
+TODO issues:
+.Pp
+.Bl -bullet
+.It
+Does currently not work with NetBSD curses
+(use ncurses instead on NetBSD,
+will be fixed in later version).
+.It
+RC file option
+.Dq Li ext Ar extension Ar tool
+planned to configure view tool for specific file types.
+.It
+Compare of files which had been compressed in one file tree.
 .El

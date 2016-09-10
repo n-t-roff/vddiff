@@ -126,6 +126,7 @@ main() {
 	return 0;
 }
 EOT
+	gen_mk
 	compile
 	test_result && DEFS="$DEFS -DHAVE_FUTIMENS"
 }
@@ -143,7 +144,7 @@ EOT
 	gen_mk
 	cat <<EOT >>$OUTMK
 $TMPNAM: ${TMPNAM}.o
-	\$(CC) \$(_CFLAGS) \$(RPATH_CURSES) -o \$@ ${TMPNAM}.o \$(LIB)
+	\$(CC) \$(_CFLAGS) \$(_LDFLAGS) \$(RPATH_CURSES) -o \$@ ${TMPNAM}.o \$(LDADD)
 EOT
 	compile
 	test_result && DEFS="$DEFS -DHAVE_FIXTERM"
@@ -163,7 +164,7 @@ EOT
 	gen_mk
 	cat <<EOT >>$OUTMK
 $TMPNAM: ${TMPNAM}.o
-	\$(CC) \$(_CFLAGS) \$(RPATH_CURSES) -o \$@ ${TMPNAM}.o \$(LIB)
+	\$(CC) \$(_CFLAGS) \$(_LDFLAGS) \$(RPATH_CURSES) -o \$@ ${TMPNAM}.o \$(LDADD)
 EOT
 	compile
 	test_result && DEFS="$DEFS -DHAVE_RESETTERM"
@@ -180,7 +181,7 @@ EOT
 	gen_mk
 	cat <<EOT >>$OUTMK
 $TMPNAM: ${TMPNAM}.o
-	\$(CC) \$(_CFLAGS) \$(RPATH_CURSES) -o \$@ ${TMPNAM}.o \$(LIB)
+	\$(CC) \$(_CFLAGS) \$(_LDFLAGS) \$(RPATH_CURSES) -o \$@ ${TMPNAM}.o \$(LDADD)
 EOT
 	compile
 	test_result 1
@@ -284,7 +285,7 @@ EOT
 	gen_mk
 	cat <<EOT >>$OUTMK
 $TMPNAM: ${TMPNAM}.o
-	\$(CC) \$(_CFLAGS) -o \$@ ${TMPNAM}.o \$(LIB)
+	\$(CC) \$(_CFLAGS) -o \$@ ${TMPNAM}.o \$(LDADD)
 EOT
 	compile
 	test_result && DEFS="$DEFS -DHAVE_ATTR_GET"
@@ -332,9 +333,9 @@ rm -f $LOG
 gen_mk
 
 check_make
+#check_Sanitizer
 check_futimens
 check_lib_curses
-#check_Sanitizer
 
 gen_mk
 rm -f $TMPNAM*

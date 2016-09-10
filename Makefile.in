@@ -7,14 +7,14 @@ BIN=	vddiff
 OBJ=	main.o pars.o lex.o diff.o ui.o db.o exec.o fs.o
 
 YFLAGS=	-d
-_CFLAGS=$(CFLAGS) $(CPPFLAGS) $(DEFINES) -I$(INCDIR) \
+_CFLAGS=$(CFLAGS) $(CPPFLAGS) $(DEFINES) $(INCDIR_CURSES) -I$(INCDIR) \
 	$(__CDBG) $(__SAN) -Wall -Wextra
 _LDFLAGS=$(LDFLAGS) $(__SAN) -L${LIBDIR} -Wl,-rpath,${LIBDIR} \
 	#-s
-LDADD=	-lavlbst $(LIB_CURSES)
+LDADD=	-lavlbst $(LIBDIR_CURSES) $(LIB_CURSES)
 
 $(BIN):	$(OBJ)
-	$(CC) $(_CFLAGS) $(_LDFLAGS) -o $@ $(OBJ) $(LDADD)
+	$(CC) $(_CFLAGS) $(_LDFLAGS) $(RPATH_CURSES) -o $@ $(OBJ) $(LDADD)
 
 install:
 	[ -d $(BINDIR) ] || mkdir -p $(BINDIR)
@@ -27,6 +27,11 @@ clean:
 
 distclean: clean
 	rm -f Makefile config.log compat.h
+
+.y.o:
+	$(YACC) $(YFLAGS) $<
+	$(CC) $(_CFLAGS) -c y.tab.c -o $@
+	rm y.tab.c
 
 .c.o:
 	$(CC) $(_CFLAGS) -c $<
