@@ -160,6 +160,8 @@ and really different files.
 Show current relative work directory.
 .It Sq Li a
 Show command line directory arguments.
+.It Sq Li f
+Show full path.
 .It Dq Li <<
 Copy from second to first tree.
 (Does not follow symbolic links.)
@@ -296,5 +298,12 @@ RC file option
 .Dq Li ext Ar extension Ar tool
 planned to configure view tool for specific file types.
 .It
-Compare of files which had been compressed in one file tree.
+Comparing compressed files.
+.It
+Renaming files with
+.Do Li en Dc ,
+changing file mode with
+.Dq Li ep
+and executing files with
+.So Li x Sc .
 .El

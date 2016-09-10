@@ -207,26 +207,36 @@ ui_ctrl(void)
 			help();
 			break;
 		case 'p':
+			lpath[llen] = 0;
+			rpath[rlen] = 0;
+
 			if (!*pwd && !*rpwd)
 				printerr(NULL, "At top directory");
-			else
-				lpath[llen] = 0;
-				rpath[rlen] = 0;
-				if (!strcmp(PWD, RPWD))
-					printerr(NULL, "%s", PWD);
-				else {
-					werase(wstat);
-					statcol();
-					mvwaddstr(wstat, 0, 4, PWD);
-					mvwaddstr(wstat, 1, 4, RPWD);
-					wrefresh(wstat);
-				}
+			else if (!*pwd || !rpwd || !strcmp(PWD, RPWD))
+				printerr(NULL, "%s", *pwd ? PWD : RPWD);
+			else {
+				werase(wstat);
+				statcol();
+				mvwaddstr(wstat, 0, 2, PWD);
+				mvwaddstr(wstat, 1, 2, RPWD);
+				wrefresh(wstat);
+			}
+
+			break;
+		case 'f':
+			lpath[llen] = 0;
+			rpath[rlen] = 0;
+			werase(wstat);
+			statcol();
+			mvwaddstr(wstat, 0, 2, lpath);
+			mvwaddstr(wstat, 1, 2, rpath);
+			wrefresh(wstat);
 			break;
 		case 'a':
 			werase(wstat);
 			statcol();
-			mvwaddstr(wstat, 0, 4, arg[0]);
-			mvwaddstr(wstat, 1, 4, arg[1]);
+			mvwaddstr(wstat, 0, 2, arg[0]);
+			mvwaddstr(wstat, 1, 2, arg[1]);
 			wrefresh(wstat);
 			break;
 		case '!':
@@ -314,6 +324,7 @@ static char *helptxt[] = {
        "c		Toggle showing only directories and really different files",
        "p		Show current relative work directory",
        "a		Show command line directory arguments",
+       "f		Show full path",
        "<<		Copy from second to first tree",
        ">>		Copy from first to second tree",
        "dl		Delete file or directory in first tree",
@@ -928,12 +939,12 @@ disp_line(unsigned y, unsigned i, int info)
 	werase(wstat);
 	if (diff == '!' && type == '@') {
 		statcol();
-		mvwaddstr(wstat, 0, 4, f->llink);
-		mvwaddstr(wstat, 1, 4, f->rlink);
+		mvwaddstr(wstat, 0, 2, f->llink);
+		mvwaddstr(wstat, 1, 2, f->rlink);
 	} else if (diff == ' ' && type == '!') {
 		statcol();
-		mvwaddstr(wstat, 0, 4, type_name(f->ltype));
-		mvwaddstr(wstat, 1, 4, type_name(f->rtype));
+		mvwaddstr(wstat, 0, 2, type_name(f->ltype));
+		mvwaddstr(wstat, 1, 2, type_name(f->rtype));
 	} else if (type == '/' || type == ' ' || type == '*') {
 		statcol();
 		file_stat(f);
@@ -965,7 +976,7 @@ type_name(mode_t m)
 static void
 file_stat(struct filediff *f)
 {
-	int x = 4, w, w1, w2;
+	int x = 2, w, w1, w2;
 	struct passwd *pw;
 	struct group *gr;
 
