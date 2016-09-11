@@ -113,6 +113,7 @@ build_ui(void)
 		init_pair(COLOR_LINK     , color_link     , COLOR_BLACK);
 	}
 
+	cbreak();
 	noecho();
 	keypad(stdscr, TRUE);
 	curs_set(0);
@@ -155,6 +156,8 @@ build_ui(void)
 	db_free();
 	delwin(wstat);
 	delwin(wlist);
+	erase();
+	refresh();
 	endwin();
 }
 
@@ -1035,9 +1038,9 @@ file_stat(struct filediff *f)
 	x++;
 
 	if (f->ltype && !S_ISDIR(f->ltype))
-		w1 = snprintf(lbuf, sizeof lbuf, "%ld", f->lsiz);
+		w1 = snprintf(lbuf, sizeof lbuf, "%lld", (long long)f->lsiz);
 	if (f->rtype && !S_ISDIR(f->rtype))
-		w2 = snprintf(rbuf, sizeof lbuf, "%ld", f->rsiz);
+		w2 = snprintf(rbuf, sizeof lbuf, "%lld", (long long)f->rsiz);
 
 	w = w1 > w2 ? w1 : w2;
 

@@ -22,6 +22,7 @@ PERFORMANCE OF THIS SOFTWARE.
 #include <errno.h>
 #include <sys/types.h>
 #include <sys/wait.h>
+#include <signal.h>
 #include "compat.h"
 #include "main.h"
 #include "ui.h"
@@ -213,15 +214,14 @@ exec_tool(struct tool *t, char *name, char *rnam, int tree)
 		break;
 	case 0:
 		if (execvp(*av, av) == -1)
-			printerr(strerror(errno), "exec failed");
+			printerr(strerror(errno), "exec %s failed", *av);
 		break;
 	default:
 		if (t->bg)
 			break;
 
-		if (waitpid(pid, NULL, 0) == -1) {
-			printerr(strerror(errno), "waitpid failed");
-		}
+		/* did always return "interrupted sys call on OI */
+		waitpid(pid, NULL, 0);
 	}
 
 	if (o)
