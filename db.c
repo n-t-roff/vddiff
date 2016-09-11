@@ -24,6 +24,7 @@ PERFORMANCE OF THIS SOFTWARE.
 #include "main.h"
 #include "ui.h"
 #include "db.h"
+#include "exec.h"
 
 static int cmp(union bst_val, union bst_val);
 static void mk_list(struct bst_node *);
@@ -35,9 +36,43 @@ struct filediff **db_list;
 short noequal, real_diff;
 
 static struct bst db      = { NULL, cmp },
-                  name_db = { NULL, name_cmp };
+                  name_db = { NULL, name_cmp },
+                  ext_db  = { NULL, name_cmp };
 static unsigned db_idx,
                 tot_db_num;
+
+void
+db_def_ext(char *ext, char *tool, int bg)
+{
+	struct bst_node *n;
+	struct tool *t;
+
+	if (bst_srch(&ext_db, (union bst_val)(void *)ext, &n)) {
+		t = malloc(sizeof(struct tool));
+		*t->tool = tool;
+		(t->tool)[1] = NULL;
+		(t->tool)[2] = NULL;
+		t->bg = bg;
+		avl_add(&ext_db, (union bst_val)(void *)ext,
+		    (union bst_val)(void *)t);
+	} else {
+		free(ext);
+		t = n->data.p;
+		free(*t->tool);
+		*t->tool = tool;
+	}
+}
+
+struct tool *
+db_srch_ext(char *ext)
+{
+	struct bst_node *n;
+
+	if (bst_srch(&ext_db, (union bst_val)(void *)ext, &n))
+		return NULL;
+	else
+		return n->data.p;
+}
 
 void
 db_add(struct filediff *diff)

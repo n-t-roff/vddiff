@@ -9,6 +9,8 @@ void db_store(struct ui_state *);
 void db_free(void);
 void free_names(void);
 int name_cmp(union bst_val, union bst_val);
+void db_def_ext(char *, char *, int);
+struct tool *db_srch_ext(char *);
 
 extern enum sorting sorting;
 extern unsigned db_num;

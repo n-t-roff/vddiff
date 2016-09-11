@@ -51,8 +51,8 @@ main(int argc, char **argv)
 	int opt;
 
 	prog = *argv;
-	set_tool(difftool, "vim -dR");
-	set_tool(viewtool, "less");
+	set_tool(&difftool, strdup("vim -dR"), 0);
+	set_tool(&viewtool, strdup("less"), 0);
 
 	if (argc < 2 || argv[1][0] != '-' || argv[1][1] != 'u')
 		if (read_rc())
@@ -67,17 +67,17 @@ main(int argc, char **argv)
 			real_diff = 1;
 			break;
 		case 'd':
-			set_tool(difftool, "diff $1 $2 | less");
+			set_tool(&difftool, strdup("diff '$1' '$2' | less"), 0);
 			break;
 		case 'f':
 			sorting = FILESFIRST;
 			break;
 		case 'g':
-			set_tool(difftool, "gvim -dR");
-			set_tool(viewtool, "gvim -R");
+			set_tool(&difftool, strdup("gvim -dR"), 0);
+			set_tool(&viewtool, strdup("gvim -R"), 0);
 			break;
 		case 'k':
-			set_tool(difftool, "tkdiff $1 $2 &");
+			set_tool(&difftool, strdup("tkdiff"), 1);
 			break;
 		case 'l':
 			follow(1);
@@ -92,10 +92,10 @@ main(int argc, char **argv)
 			recursive = 1;
 			break;
 		case 't':
-			set_tool(difftool, optarg);
+			set_tool(&difftool, strdup(optarg), 0);
 			break;
 		case 'v':
-			set_tool(viewtool, optarg);
+			set_tool(&viewtool, strdup(optarg), 0);
 			break;
 		case 'u':
 			break;
@@ -115,6 +115,7 @@ main(int argc, char **argv)
 	check_args(argv);
 	pwd  = lpath + llen;
 	rpwd = rpath + rlen;
+	exec_sighdl();
 	build_ui();
 	return 0;
 }

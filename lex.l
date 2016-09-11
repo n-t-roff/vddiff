@@ -24,6 +24,8 @@ NS [^ \t\n]
 #.*			{ ; }
 difftool		{ rc_col += yyleng; return DIFFTOOL     ; }
 viewtool		{ rc_col += yyleng; return VIEWTOOL     ; }
+ext			{ rc_col += yyleng; return EXT          ; }
+bg			{ rc_col += yyleng; return BG           ; }
 filesfirst		{ rc_col += yyleng; return FILES        ; }
 mixed			{ rc_col += yyleng; return MIXED        ; }
 followlinks		{ rc_col += yyleng; return FOLLOW       ; }
@@ -42,10 +44,10 @@ link_color		{ rc_col += yyleng; return LINK_COLOR   ; }
 			  return INTEGER; }
 \"[^\"]*\"		{ rc_col += yyleng;
 			  yytext[yyleng-1] = 0;
-			  yylval.str = yytext+1;
+			  yylval.str = strdup(yytext+1);
 			  return STRING; }
 {NS}+			{ rc_col += yyleng;
-			  yylval.str = yytext;
+			  yylval.str = strdup(yytext);
 			  return STRING; }
 {S}+			{ rc_col += yyleng; }
 \n			{ rc_nline++;

@@ -32,7 +32,7 @@ extern char *yytext;
 }
 %token DIFFTOOL FILES DIRS MIXED FOLLOW MONO NOEQUAL LEFT_COLOR RIGHT_COLOR
 %token DIFF_COLOR DIR_COLOR UNKNOWN_COLOR LINK_COLOR REAL_DIFF RECURSIVE
-%token VIEWTOOL
+%token VIEWTOOL EXT BG
 %token <str>     STRING
 %token <integer> INTEGER
 %%
@@ -43,26 +43,30 @@ option_list:
 	| option_list option
 	;
 option:
-	  DIFFTOOL STRING       { set_tool(difftool, $2); }
-	| VIEWTOOL STRING       { set_tool(viewtool, $2); }
-	| FILES                 { sorting = FILESFIRST  ; }
-	| MIXED                 { sorting = SORTMIXED   ; }
-	| FOLLOW                { follow(1)             ; }
-	| MONO                  { color = 0             ; }
-	| NOEQUAL               { noequal = 1           ; }
-	| REAL_DIFF             { real_diff = 1         ; }
-	| RECURSIVE             { recursive = 1         ; }
-	| LEFT_COLOR INTEGER    { color_leftonly    = $2; }
-	| RIGHT_COLOR INTEGER   { color_rightonly   = $2; }
-	| DIFF_COLOR INTEGER    { color_diff        = $2; }
-	| DIR_COLOR INTEGER     { color_dir         = $2; }
-	| UNKNOWN_COLOR INTEGER { color_unknown     = $2; }
-	| LINK_COLOR INTEGER    { color_link        = $2; }
+	  DIFFTOOL STRING       { set_tool(&difftool, $2, 0); }
+	| DIFFTOOL BG STRING    { set_tool(&difftool, $3, 1); }
+	| VIEWTOOL STRING       { set_tool(&viewtool, $2, 0); }
+	| VIEWTOOL BG STRING    { set_tool(&viewtool, $3, 1); }
+	| EXT STRING STRING     { db_def_ext($2, $3, 0)     ; }
+	| EXT STRING BG STRING  { db_def_ext($2, $4, 1)     ; }
+	| FILES                 { sorting = FILESFIRST      ; }
+	| MIXED                 { sorting = SORTMIXED       ; }
+	| FOLLOW                { follow(1)                 ; }
+	| MONO                  { color = 0                 ; }
+	| NOEQUAL               { noequal = 1               ; }
+	| REAL_DIFF             { real_diff = 1             ; }
+	| RECURSIVE             { recursive = 1             ; }
+	| LEFT_COLOR INTEGER    { color_leftonly  = $2      ; }
+	| RIGHT_COLOR INTEGER   { color_rightonly = $2      ; }
+	| DIFF_COLOR INTEGER    { color_diff      = $2      ; }
+	| DIR_COLOR INTEGER     { color_dir       = $2      ; }
+	| UNKNOWN_COLOR INTEGER { color_unknown   = $2      ; }
+	| LINK_COLOR INTEGER    { color_link      = $2      ; }
 	;
 %%
 void
 yyerror(const char *s)
 {
-	printf("Parse error: %s on line %u column %u\n",
+	printf("Parse error: %s on line %u before column %u\n",
 	    s, rc_nline, rc_col);
 }

@@ -67,8 +67,14 @@ Show only directories which exist in both trees
 and really different files.
 .It Fl d
 Use
-.Dq Li diff $1 $2 | less
+.Dq Li diff '$1' '$2' | less
 as diff tool.
+Since the arguments to
+.Xr diff 1
+is quoted with
+.Sq Li \(aq ,
+this works only for filenames without
+.Sq Li \(aq .
 .It Fl f
 Normally directories are displayed on top.
 With this option files are displayed first.
@@ -78,7 +84,7 @@ Use
 as diff and view tool.
 .It Fl k
 Use
-.Dq Li tkdiff $1 $2 &
+.Dq Li tkdiff
 as diff tool.
 .It Fl l
 Follow symbolic links.
@@ -114,7 +120,18 @@ refers to the first and
 to the second file.
 Note that the shell may require quoting as in
 .Pp
-.Dl -t \(dqdiff \(rs$1 \(rs$2 | vim -R -\(dq
+.Dl -t \(dqdiff '\(rs$1' '\(rs$2' | vim -R -\(dq
+.Pp
+Also note the quoting of the filenames itself.
+When the symbolic names
+.Li $ Ns Ar n
+are used,
+.Xr system 3
+instead of
+.Xr execvp 3
+is used.
+This applies restrictions on the characters used
+in filenames.
 .It Fl u
 Skip reading the initialization file at start-up.
 This has only effect if
@@ -127,6 +144,11 @@ The filenames is appended to the given string.
 To include it into the string the symbolic name
 .Dq Li $1
 can be embedded which is expanded to the filename.
+Single quotes
+.Pq Sq \(aq
+can be put around
+.Dq Li $1
+to allow filenames with spaces.
 .El
 .Sh INTERACTIVE COMMANDS
 .Bl -tag
@@ -208,9 +230,7 @@ contains spaces it needs to be quoted with
 at begin and end.
 The two filenames are appended to this string.
 If the filenames need to be before a pipe symbol
-.Pq Sq Li |
-or a background process symbol
-.Pq Sq Li &
+.Pq Sq Li | ,
 the symbols
 .Dq Li $1
 and
@@ -219,6 +239,22 @@ can be embedded into
 .Ar string
 (in any order).
 These symbols are expanded to the respective filename.
+Since in this case the command is executed by
+.Xr sh 1
+instead of
+.Xr execvp 3 ,
+there are restrictions to the allowed characters
+in filenames.
+E.g. put
+.Li $ Ns Ar n
+in single quotes to allow filenames with spaces.
+.It Li difftool bg Ar string
+Start
+.Ar string
+as a background process (don't block
+.Nm
+while executing
+.Ar string ) .
 .It Li viewtool Ar string
 Configure
 .Ar string
@@ -229,13 +265,26 @@ contains spaces it needs to be quoted with
 .Sq Li \(dq
 at begin and end.
 The filename is appended to this string.
-If the filename need to be before a background process symbol
-.Pq Sq Li &
+If the filename need to be before a pipe symbol
+.Pq Sq Li |
 the symbol
 .Dq Li $1
 can be embedded into
 .Ar string ,
 which is expanded to the filename.
+.It Li viewtool bg Ar string
+Start
+.Ar string
+as a background process.
+.It Li ext Ar extension Ar string
+Configure view tool
+.Ar string
+for filenames ending with
+.Dq Li "." Ns Ar extension .
+.It Li ext Ar extension Li bg Ar string
+Start
+.Ar string
+as a background process.
 .It Li mono
 Disable colors.
 .It Li followlinks
