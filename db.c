@@ -19,6 +19,7 @@ PERFORMANCE OF THIS SOFTWARE.
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <avlbst.h>
+#include <ctype.h>
 #include "compat.h"
 #include "diff.h"
 #include "main.h"
@@ -46,8 +47,13 @@ db_def_ext(char *ext, char *tool, int bg)
 {
 	struct bst_node *n;
 	struct tool *t;
+	char *s;
+	int c;
 
 	if (bst_srch(&ext_db, (union bst_val)(void *)ext, &n)) {
+		for (s = tool; (c = *s); s++)
+			*s = tolower(c);
+
 		t = malloc(sizeof(struct tool));
 		*t->tool = tool;
 		(t->tool)[1] = NULL;

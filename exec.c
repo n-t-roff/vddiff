@@ -46,12 +46,19 @@ tool(char *name, char *rnam, int tree)
 
 	l = ln = strlen(name);
 
+	cmd = lbuf + sizeof lbuf;
+	*--cmd = 0;
 
 	while (l) {
-		if (name[--l] == '.') {
-			tmptool = db_srch_ext(name + l + 1);
+		*--cmd = tolower(name[--l]);
+
+		if (name[l] == '.') {
+			tmptool = db_srch_ext(++cmd);
 			break;
 		}
+
+		if (cmd == lbuf)
+			break;
 	}
 
 	if (!tmptool)
@@ -116,6 +123,8 @@ tool(char *name, char *rnam, int tree)
 	}
 
 	cmd[l0] = 0;
+	erase();
+	refresh();
 	def_prog_mode();
 	endwin();
 	system(cmd);
@@ -205,16 +214,21 @@ exec_tool(struct tool *t, char *name, char *rnam, int tree)
 	}
 
 	*a = NULL;
+	erase();
+	refresh();
 	def_prog_mode();
 	endwin();
 
 	switch ((pid = fork())) {
 	case -1:
-		printerr(strerror(errno), "fork failed");
 		break;
 	case 0:
-		if (execvp(*av, av) == -1)
-			printerr(strerror(errno), "exec %s failed", *av);
+		if (execvp(*av, av) == -1) {
+			/* only seen when vddiff exits later */
+			printf("exec %s failed: %s\n", *av, strerror(errno));
+			exit(1);
+		}
+		/* not reached */
 		break;
 	default:
 		if (t->bg)
@@ -229,6 +243,10 @@ exec_tool(struct tool *t, char *name, char *rnam, int tree)
 
 	free(av);
 	reset_prog_mode();
+
+	if (pid == -1)
+		printerr(strerror(errno), "fork failed");
+
 	disp_list();
 }
 
