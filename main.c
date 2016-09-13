@@ -21,6 +21,7 @@ PERFORMANCE OF THIS SOFTWARE.
 #include <unistd.h>
 #include <errno.h>
 #include <avlbst.h>
+#include <locale.h>
 #include "compat.h"
 #include "main.h"
 #include "y.tab.h"
@@ -51,6 +52,7 @@ main(int argc, char **argv)
 	int opt;
 
 	prog = *argv;
+	setlocale(LC_ALL, "");
 	set_tool(&difftool, strdup("vim -dR"), 0);
 	set_tool(&viewtool, strdup("less"), 0);
 
