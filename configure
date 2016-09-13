@@ -297,6 +297,7 @@ EOT
 check_lib_curses () {
 	cat <<EOT >>compat.h
 #if defined HAVE_NCURSESW_CURSES_H
+# define _XOPEN_SOURCE_EXTENDED
 # include <ncursesw/curses.h>
 #elif defined HAVE_NCURSES_CURSES_H
 # include <ncurses/curses.h>

@@ -22,6 +22,7 @@ PERFORMANCE OF THIS SOFTWARE.
 #include <pwd.h>
 #include <grp.h>
 #include <time.h>
+#include <ctype.h>
 #include "compat.h"
 #include "avlbst.h"
 #include "diff.h"
@@ -30,6 +31,7 @@ PERFORMANCE OF THIS SOFTWARE.
 #include "db.h"
 #include "exec.h"
 #include "fs.h"
+#include "ed.h"
 
 #define COLOR_LEFTONLY  1
 #define COLOR_RIGHTONLY 2
@@ -75,14 +77,16 @@ short color_leftonly  = COLOR_CYAN   ,
       color_dir       = COLOR_YELLOW ,
       color_unknown   = COLOR_BLUE   ,
       color_link      = COLOR_MAGENTA;
-unsigned top_idx, curs;
+unsigned top_idx, curs, statw;
 
-static unsigned listw, listh, statw, help_top;
-static WINDOW *wlist, *wstat;
+static unsigned listw, listh, help_top;
+static WINDOW *wlist;
+WINDOW *wstat;
 static struct ui_state *ui_stack;
 /* Line scroll enable. Else only full screen is scrolled */
 static short scrollen = 1;
 static struct filediff *mark;
+static short wstat_dirty;
 
 #ifdef NCURSES_MOUSE_VERSION
 static void proc_mevent(void);
@@ -165,6 +169,7 @@ static void
 ui_ctrl(void)
 {
 	int prev_key, c = 0;
+	struct filediff *f;
 
 	while (1) {
 		prev_key = c;
@@ -272,7 +277,11 @@ ui_ctrl(void)
 			break;
 		case 'r':
 			if (prev_key != 'd') {
-				clr_mark();
+				if (mark)
+					clr_mark();
+				else if (edit)
+					clr_edit();
+
 				break;
 			}
 
@@ -303,8 +312,18 @@ ui_ctrl(void)
 		case 'm':
 			set_mark();
 			break;
+		case 'y':
+			f = db_list[top_idx + curs];
+			ed_append(" ");
+			ed_append(f->name);
+			disp_edit();
+			break;
+		case '$':
+			enter_cmd();
+			break;
 		default:
-			printerr(NULL, "Invalid input (type h for help).");
+			printerr(NULL, "Invalid input '%c' (type h for help).",
+			    isgraph(c) ? c : '?');
 		}
 	}
 }
@@ -334,7 +353,9 @@ static char *helptxt[] = {
        "dr		Delete file or directory in second tree",
        "dd		Delete file or directory",
        "m		Mark file or directory",
-       "r		Remove mark" };
+       "r		Remove edit line or mark",
+       "y		Copy filename to edit line",
+       "$		Enter shell command" };
 
 #define HELP_NUM (sizeof(helptxt) / sizeof(*helptxt))
 
@@ -935,7 +956,12 @@ disp_line(unsigned y, unsigned i, int info)
 		return;
 
 	if (mark) {
-		disp_mark();
+		if (wstat_dirty)
+			disp_mark();
+		return;
+	} else if (edit) {
+		if (wstat_dirty)
+			disp_edit();
 		return;
 	}
 
@@ -1090,9 +1116,6 @@ disp_mark(void)
 static void
 clr_mark(void)
 {
-	if (!mark)
-		return;
-
 	mark = NULL;
 	werase(wstat);
 	wrefresh(wstat);
@@ -1147,6 +1170,7 @@ printerr(char *s2, char *s1, ...)
 {
 	va_list ap;
 
+	wstat_dirty = 1;
 	werase(wstat);
 	wmove(wstat, s2 ? 0 : 1, 0);
 	va_start(ap, s1);
@@ -1168,6 +1192,7 @@ dialog(char *quest, char *answ, char *fmt, ...)
 	int c, c2;
 	char *s;
 
+	wstat_dirty = 1;
 	werase(wstat);
 	wattrset(wstat, A_REVERSE);
 	wmove(wstat, 0, 0);

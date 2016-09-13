@@ -4,7 +4,7 @@ MANDIR=	$(PREFIX)/share/man
 INCDIR=	$(PREFIX)/include
 LIBDIR=	$(PREFIX)/lib
 BIN=	vddiff
-OBJ=	main.o pars.o lex.o diff.o ui.o db.o exec.o fs.o
+OBJ=	main.o pars.o lex.o diff.o ui.o db.o exec.o fs.o ed.o
 
 YFLAGS=	-d
 _CFLAGS=$(CFLAGS) $(CPPFLAGS) $(DEFINES) $(INCDIR_CURSES) -I$(INCDIR) \

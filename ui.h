@@ -20,4 +20,5 @@ extern short color_leftonly ,
              color_dir      ,
              color_unknown  ,
              color_link     ;
-extern unsigned top_idx, curs;
+extern unsigned top_idx, curs, statw;
+extern WINDOW *wstat;

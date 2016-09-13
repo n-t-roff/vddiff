@@ -123,13 +123,26 @@ tool(char *name, char *rnam, int tree)
 	}
 
 	cmd[l0] = 0;
+	sh_cmd(cmd, 0);
+	free(cmd);
+}
+
+void
+sh_cmd(char *cmd, int wait)
+{
 	erase();
 	refresh();
 	def_prog_mode();
 	endwin();
 	system(cmd);
+
+	if (wait) {
+		char s[] = "Type <ENTER> to continue ";
+		write(STDOUT_FILENO, s, sizeof s);
+		fgetc(stdin);
+	}
+
 	reset_prog_mode();
-	free(cmd);
 	disp_list();
 }
 
