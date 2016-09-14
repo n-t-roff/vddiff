@@ -32,6 +32,7 @@ PERFORMANCE OF THIS SOFTWARE.
 #include "ui.h"
 #include "db.h"
 #include "fs.h"
+#include "ed.h"
 
 static void proc_dir(void);
 static void proc_subdirs(struct bst_node *);
@@ -45,6 +46,45 @@ static void cp_reg(void);
 static char *pth1, *pth2;
 static size_t len1, len2;
 static enum { TREE_RM, TREE_CP } tree_op;
+
+void
+fs_rename(int tree)
+{
+	struct filediff *f = db_list[top_idx + curs];
+	char *s;
+
+	/* "en" is not allowed if both files are present */
+	if ((tree == 3 && f->ltype && f->rtype) ||
+	    (tree == 1 && !f->ltype) ||
+	    (tree == 2 && !f->rtype))
+		return;
+
+	if (ed_dialog("Enter new name (<ESC> to cancel):", f->name))
+		return;
+
+	if ((tree & 2) && f->rtype) {
+		pth1 = rpath;
+		len1 = rlen;
+	} else {
+		pth1 = lpath;
+		len1 = llen;
+	}
+
+	pthcat(pth1, len1, rbuf);
+	s = strdup(pth1);
+	pthcat(pth1, len1, f->name);
+
+	if (rename(pth1, s) == -1) {
+		printerr(strerror(errno), "rename %s failed");
+		goto exit;
+	}
+
+	rebuild_db();
+exit:
+	free(s);
+	lpath[llen] = 0;
+	rpath[rlen] = 0;
+}
 
 void
 fs_rm(int tree, char *txt)

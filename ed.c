@@ -69,9 +69,9 @@ ed_append(char *txt)
 	}
 
 #ifdef HAVE_NCURSESW_CURSES_H
-	mbstowcs(linebuf + linelen, txt, l);
+	mbstowcs(linebuf + linelen, txt, l + 1);
 #else
-	memcpy(linebuf + linelen, txt, l);
+	memcpy(linebuf + linelen, txt, l + 1);
 #endif
 	linelen += l;
 	linepos = linelen;
@@ -117,26 +117,30 @@ disp_edit(void)
 	wrefresh(wstat);
 }
 
-void
-enter_cmd(void)
+int
+ed_dialog(char *msg, char *ini)
 {
-	if (!edit)
-		init_edit();
+	if (edit)
+		return 1;
 
-	snprintf(lbuf, sizeof lbuf,
-       "Type command, <ENTER> to execute, <ESC> to cancel:");
+	init_edit();
+	memcpy(lbuf, msg, strlen(msg) + 1);
+
+	if (ini)
+		ed_append(ini);
+
 	disp_edit();
 
 	if (edit_line()) {
 		clr_edit();
-		return;
+		return 1;
 	}
 
 #ifdef HAVE_NCURSESW_CURSES_H
 	wcstombs(rbuf, linebuf, sizeof rbuf);
 #endif
 	clr_edit();
-	sh_cmd(rbuf, 1);
+	return 0;
 }
 
 static int

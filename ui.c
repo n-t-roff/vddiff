@@ -170,10 +170,11 @@ build_ui(void)
 static void
 ui_ctrl(void)
 {
-	int prev_key, c = 0;
+	int key[2] = { 0, 0 }, c = 0;
 
 	while (1) {
-		prev_key = c;
+		key[1] = *key;
+		*key = c;
 
 		switch (c = getch()) {
 #ifdef NCURSES_MOUSE_VERSION
@@ -250,6 +251,21 @@ ui_ctrl(void)
 			break;
 		case '!':
 		case 'n':
+			if (c == 'n') {
+				if (*key == 'e') {
+					fs_rename(3);
+					break;
+				} else if (key[1] == 'e') {
+					if (*key == 'l') {
+						fs_rename(1);
+						break;
+					} else if (*key == 'r') {
+						fs_rename(2);
+						break;
+					}
+				}
+			}
+
 			noequal = noequal ? 0 : 1;
 			db_sort();
 			top_idx = 0;
@@ -267,17 +283,17 @@ ui_ctrl(void)
 			ui_resize();
 			break;
 		case 'd':
-			if (prev_key != 'd')
+			if (*key != 'd')
 				break;
 			fs_rm(3, NULL); /* allowed for single sided only */
 			break;
 		case 'l':
-			if (prev_key != 'd')
+			if (*key != 'd')
 				break;
 			fs_rm(1, NULL);
 			break;
 		case 'r':
-			if (prev_key != 'd') {
+			if (*key != 'd') {
 				if (mark)
 					clr_mark();
 				else if (edit)
@@ -289,12 +305,12 @@ ui_ctrl(void)
 			fs_rm(2, NULL);
 			break;
 		case '<':
-			if (prev_key != '<')
+			if (*key != '<')
 				break;
 			fs_cp(1);
 			break;
 		case '>':
-			if (prev_key != '>')
+			if (*key != '>')
 				break;
 			fs_cp(2);
 			break;
@@ -302,7 +318,7 @@ ui_ctrl(void)
 			curs_first();
 			break;
 		case 'G':
-			if (prev_key == '1') {
+			if (*key == '1') {
 				curs_first();
 				break;
 			}
@@ -320,7 +336,11 @@ ui_ctrl(void)
 			yank_name(1);
 			break;
 		case '$':
-			enter_cmd();
+			if (!ed_dialog("Type command (<ESC> to cancel):",
+			    NULL))
+				sh_cmd(rbuf, 1);
+			break;
+		case 'e':
 			break;
 		default:
 			printerr(NULL, "Invalid input '%c' (type h for help).",
@@ -353,6 +373,12 @@ static char *helptxt[] = {
        "dl		Delete file or directory in first tree",
        "dr		Delete file or directory in second tree",
        "dd		Delete file or directory",
+       "en		Rename file",
+       "eln		Rename left file",
+       "ern		Rename right file",
+       "ep		Change file mode",
+       "elp		Change mode of left file",
+       "erp		Change mode of right file",
        "m		Mark file or directory",
        "r		Remove edit line or mark",
        "y		Copy filename to edit line",
