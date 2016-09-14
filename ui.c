@@ -145,6 +145,7 @@ build_ui(void)
 		scrollok(wlist, TRUE);
 	}
 
+	keypad(wstat, TRUE);
 	printerr(NULL, "Reading directories...");
 
 	/* Not in main since build_diff_db() uses printerr() */
