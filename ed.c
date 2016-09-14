@@ -32,6 +32,7 @@ PERFORMANCE OF THIS SOFTWARE.
 static void init_edit(void);
 static int edit_line(void);
 static void linebuf_delch(void);
+static void linebuf_insch(void);
 static void overful_del(void);
 
 short edit;
@@ -223,10 +224,13 @@ del_char:
 				wmove(wstat, 1, linepos - ++leftpos);
 			}
 
+			if (linepos == linelen++)
+				linebuf[linepos + 1] = 0;
+			else
+				linebuf_insch();
+
 			linebuf[linepos++] = c;
 
-			if (++linelen == linepos)
-				linebuf[linepos] = 0;
 #ifdef HAVE_NCURSESW_CURSES_H
 			*ws = c;
 			setcchar(&cc, ws, 0, 0, NULL);
@@ -275,6 +279,15 @@ linebuf_delch(void)
 		linebuf[i] = linebuf[++j];
 
 	linelen--;
+}
+
+static void
+linebuf_insch(void)
+{
+	unsigned i, j;
+
+	for (i = j = linelen; i > linepos; i = j)
+		linebuf[i] = linebuf[--j];
 }
 
 #ifdef NCURSES_MOUSE_VERSION

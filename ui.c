@@ -69,6 +69,7 @@ static void help_up(void);
 static void set_mark(void);
 static void clr_mark(void);
 static void disp_mark(void);
+static void yank_name(int);
 
 short color = 1;
 short color_leftonly  = COLOR_CYAN   ,
@@ -170,7 +171,6 @@ static void
 ui_ctrl(void)
 {
 	int prev_key, c = 0;
-	struct filediff *f;
 
 	while (1) {
 		prev_key = c;
@@ -314,10 +314,10 @@ ui_ctrl(void)
 			set_mark();
 			break;
 		case 'y':
-			f = db_list[top_idx + curs];
-			ed_append(" ");
-			ed_append(f->name);
-			disp_edit();
+			yank_name(0);
+			break;
+		case 'Y':
+			yank_name(1);
 			break;
 		case '$':
 			enter_cmd();
@@ -356,6 +356,7 @@ static char *helptxt[] = {
        "m		Mark file or directory",
        "r		Remove edit line or mark",
        "y		Copy filename to edit line",
+       "Y		Copy filename in reverse order to edit line",
        "$		Enter shell command" };
 
 #define HELP_NUM (sizeof(helptxt) / sizeof(*helptxt))
@@ -1120,6 +1121,35 @@ clr_mark(void)
 	mark = NULL;
 	werase(wstat);
 	wrefresh(wstat);
+}
+
+#define YANK(x) \
+	do { \
+		if (f->x##type) { \
+			x##path[x##len] = 0; \
+			ed_append(" "); \
+			ed_append(x##path); \
+			ed_append("/"); \
+			ed_append(f->name); \
+		} \
+	} while (0)
+
+static void
+yank_name(int reverse)
+{
+	struct filediff *f;
+
+	f = db_list[top_idx + curs];
+
+	if (reverse)
+		YANK(r);
+
+	YANK(l);
+
+	if (!reverse)
+		YANK(r);
+
+	disp_edit();
 }
 
 static void
