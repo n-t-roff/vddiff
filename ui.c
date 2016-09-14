@@ -217,6 +217,19 @@ ui_ctrl(void)
 			help();
 			break;
 		case 'p':
+			if (*key == 'e') {
+				fs_chmod(3);
+				break;
+			} else if (key[1] == 'e') {
+				if (*key == 'l') {
+					fs_chmod(1);
+					break;
+				} else if (*key == 'r') {
+					fs_chmod(2);
+					break;
+				}
+			}
+
 			lpath[llen] = 0;
 			rpath[rlen] = 0;
 

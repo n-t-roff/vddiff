@@ -87,6 +87,85 @@ exit:
 }
 
 void
+fs_chmod(int tree)
+{
+	struct filediff *f = db_list[top_idx + curs];
+	char *s;
+	int i, c;
+	mode_t m;
+
+	/* "en" is not allowed if both files are present */
+	if ((tree == 3 && f->ltype && f->rtype) ||
+	    (tree == 1 && !f->ltype) ||
+	    (tree == 2 && !f->rtype))
+		return;
+
+	if (edit)
+		return;
+
+	if ((tree & 2) && f->rtype) {
+		if (S_ISLNK(f->rtype))
+			return;
+
+		pth1 = rpath;
+		len1 = rlen;
+		m = f->rtype;
+	} else {
+		if (S_ISLNK(f->ltype))
+			return;
+
+		pth1 = lpath;
+		len1 = llen;
+		m = f->ltype;
+	}
+
+	pthcat(pth1, len1, f->name);
+	snprintf(lbuf, sizeof lbuf, "%04o", m & 07777);
+	s = strdup(lbuf);
+
+	if (ed_dialog("Enter new permissions (<ESC> to cancel):", s)) {
+		free(s);
+		return;
+	}
+
+	free(s);
+
+	for (m = 0, i = 0; ; i++) {
+		if (!(c = rbuf[i])) {
+			if (!i) {
+				printerr(NULL, "No input");
+				return;
+			}
+
+			break;
+		}
+
+		if (c < '0' || c > '7') {
+			printerr(NULL, "Digit '%s' out of range", c);
+			return;
+		}
+
+		if (i > 3) {
+			printerr(NULL, "Input has more than 4 digits");
+			return;
+		}
+
+		m <<= 3;
+		m |= c - '0';
+	}
+
+	if (chmod(pth1, m) == -1) {
+		printerr(strerror(errno), "chmod %s failed");
+		goto exit;
+	}
+
+	rebuild_db();
+exit:
+	lpath[llen] = 0;
+	rpath[rlen] = 0;
+}
+
+void
 fs_rm(int tree, char *txt)
 {
 	struct filediff *f = db_list[top_idx + curs];
