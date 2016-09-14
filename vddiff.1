@@ -190,21 +190,57 @@ Copy from second to first tree.
 .It Dq Li >>
 Copy from first to second tree.
 (Does not follow symbolic links.)
+.It Dq Li dd
+Delete file or directory, which must be present in one tree only.
+(Does not follow symbolic links.)
 .It Dq Li dl
 Delete file or directory in first tree.
 (Does not follow symbolic links.)
 .It Dq Li dr
 Delete file or directory in second tree.
 (Does not follow symbolic links.)
-.It Dq Li dd
-Delete file or directory, which must be present in one tree only.
-(Does not follow symbolic links.)
+.It Dq Li en
+Rename file, which must be present in one tree only.
+.It Dq Li eln
+Rename file in first tree.
+.It Dq Li ern
+Rename file in second tree.
+.It Dq Li ep
+Change permissions of file, which must be present in one tree only.
+.It Dq Li elp
+Change permissions of file in first tree.
+.It Dq Li erp
+Change permissions of file in second tree.
 .It Sq Li m
 Mark file or directory.
 This can be used to compare files or directories
 which had been renamed in one file tree.
 .It Sq Li r
-Remove mark.
+Remove edit line or mark.
+.It Sq Li y
+Copy file path(s) to edit line.
+If a
+.Sq Li $
+command is entered later, this file path can be used
+to build a
+.Xr sh 1
+command.
+.It Sq Li Y
+Copy file paths to edit line in reverse order.
+.It Sq Li $
+Enter
+.Xr sh 1
+command.
+If paths had been copied to the edit line before using the
+.Sq Li y
+or
+.Sq Li Y
+command, the shell command can be prepended by pressing
+.Aq Cm HOME
+and then  entering the command.
+The work directory is the directory where
+.Nm
+had been started.
 .El
 .Sh CONFIGURATION FILE ~/.vddiffrc
 Permanent non-default options can be set in the file
@@ -343,10 +379,6 @@ TODO issues:
 .It
 Comparing compressed files.
 .It
-Renaming files with
-.Do Li en Dc ,
-changing file mode with
-.Dq Li ep
-and executing files with
+Executing files with
 .So Li x Sc .
 .El

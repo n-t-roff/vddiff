@@ -383,9 +383,9 @@ static char *helptxt[] = {
        "f		Show full path",
        "<<		Copy from second to first tree",
        ">>		Copy from first to second tree",
+       "dd		Delete file or directory",
        "dl		Delete file or directory in first tree",
        "dr		Delete file or directory in second tree",
-       "dd		Delete file or directory",
        "en		Rename file",
        "eln		Rename left file",
        "ern		Rename right file",
@@ -394,8 +394,8 @@ static char *helptxt[] = {
        "erp		Change mode of right file",
        "m		Mark file or directory",
        "r		Remove edit line or mark",
-       "y		Copy filename to edit line",
-       "Y		Copy filename in reverse order to edit line",
+       "y		Copy file path to edit line",
+       "Y		Copy file path in reverse order to edit line",
        "$		Enter shell command" };
 
 #define HELP_NUM (sizeof(helptxt) / sizeof(*helptxt))
