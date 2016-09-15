@@ -258,7 +258,7 @@ del_char:
 #ifdef HAVE_NCURSESW_CURSES_H
 				wins_wch(wstat, &cc);
 #else
-				winschr(wstat, c);
+				winsch(wstat, c);
 #endif
 				wmove(wstat, 1, linepos - leftpos);
 			}
@@ -284,7 +284,7 @@ overful_del(void)
 	setcchar(&cc, ws, 0, 0, NULL);
 	wins_wch(wstat, &cc);
 #else
-	winschr(wstat, linebuf[leftpos]);
+	winsch(wstat, linebuf[leftpos]);
 #endif
 	wmove(wstat, 1, linepos - leftpos);
 }
