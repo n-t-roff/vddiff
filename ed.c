@@ -317,7 +317,8 @@ proc_mevent(void)
 		return;
 
 	if (mevent.bstate & BUTTON1_CLICKED ||
-	    mevent.bstate & BUTTON1_DOUBLE_CLICKED) {
+	    mevent.bstate & BUTTON1_DOUBLE_CLICKED ||
+	    mevent.bstate & BUTTON1_PRESSED) {
 		if (mevent.y != LINES - 1)
 			return;
 
