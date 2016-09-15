@@ -16,7 +16,7 @@ PERFORMANCE OF THIS SOFTWARE.
 
 #include "compat.h"
 
-#ifdef HAVE_NCURSESW_CURSES_H
+#ifdef HAVE_CURSES_WCH
 # include <wctype.h>
 #endif
 
@@ -39,7 +39,7 @@ short edit;
 
 static unsigned linelen, linepos, leftpos;
 
-#ifdef HAVE_NCURSESW_CURSES_H
+#ifdef HAVE_CURSES_WCH
 static wchar_t *linebuf;
 static wchar_t ws[2];
 static cchar_t cc;
@@ -68,7 +68,7 @@ ed_append(char *txt)
 		return;
 	}
 
-#ifdef HAVE_NCURSESW_CURSES_H
+#ifdef HAVE_CURSES_WCH
 	mbstowcs(linebuf + linelen, txt, l + 1);
 #else
 	memcpy(linebuf + linelen, txt, l + 1);
@@ -81,7 +81,7 @@ static void
 init_edit(void)
 {
 	edit = 1;
-#ifdef HAVE_NCURSESW_CURSES_H
+#ifdef HAVE_CURSES_WCH
 	linebuf = malloc(LINESIZ * sizeof(*linebuf));
 #else
 	linebuf = rbuf;
@@ -96,7 +96,7 @@ void
 clr_edit(void)
 {
 	edit = 0;
-#ifdef HAVE_NCURSESW_CURSES_H
+#ifdef HAVE_CURSES_WCH
 	free(linebuf);
 #endif
 	curs_set(0);
@@ -109,7 +109,7 @@ disp_edit(void)
 {
 	werase(wstat);
 	mvwaddstr(wstat, 0, 0, lbuf);
-#ifdef HAVE_NCURSESW_CURSES_H
+#ifdef HAVE_CURSES_WCH
 	mvwaddwstr(wstat, 1, 0, linebuf + leftpos);
 #else
 	mvwaddstr(wstat, 1, 0, linebuf + leftpos);
@@ -136,7 +136,7 @@ ed_dialog(char *msg, char *ini, void (*callback)(char *))
 		return 1;
 	}
 
-#ifdef HAVE_NCURSESW_CURSES_H
+#ifdef HAVE_CURSES_WCH
 	wcstombs(rbuf, linebuf, sizeof rbuf);
 #endif
 	clr_edit();
@@ -146,14 +146,14 @@ ed_dialog(char *msg, char *ini, void (*callback)(char *))
 static int
 edit_line(void (*callback)(char *))
 {
-#ifdef HAVE_NCURSESW_CURSES_H
+#ifdef HAVE_CURSES_WCH
 	wint_t c;
 #else
 	int c;
 #endif
 
 	while (1) {
-#ifdef HAVE_NCURSESW_CURSES_H
+#ifdef HAVE_CURSES_WCH
 		get_wch(&c);
 #else
 		c = getch();
@@ -219,7 +219,7 @@ del_char:
 			wrefresh(wstat);
 
 			if (callback) {
-#ifdef HAVE_NCURSESW_CURSES_H
+#ifdef HAVE_CURSES_WCH
 				wcstombs(rbuf, linebuf, sizeof rbuf);
 #endif
 				callback(rbuf);
@@ -243,19 +243,19 @@ del_char:
 
 			linebuf[linepos++] = c;
 
-#ifdef HAVE_NCURSESW_CURSES_H
+#ifdef HAVE_CURSES_WCH
 			*ws = c;
 			setcchar(&cc, ws, 0, 0, NULL);
 #endif
 
 			if (linepos == linelen) {
-#ifdef HAVE_NCURSESW_CURSES_H
+#ifdef HAVE_CURSES_WCH
 				wadd_wch(wstat, &cc);
 #else
 				waddch(wstat, c);
 #endif
 			} else {
-#ifdef HAVE_NCURSESW_CURSES_H
+#ifdef HAVE_CURSES_WCH
 				wins_wch(wstat, &cc);
 #else
 				winsch(wstat, c);
@@ -266,7 +266,7 @@ del_char:
 			wrefresh(wstat);
 
 			if (callback) {
-#ifdef HAVE_NCURSESW_CURSES_H
+#ifdef HAVE_CURSES_WCH
 				wcstombs(rbuf, linebuf, sizeof rbuf);
 #endif
 				callback(rbuf);
@@ -279,7 +279,7 @@ static void
 overful_del(void)
 {
 	wmove(wstat, 1, 0);
-#ifdef HAVE_NCURSESW_CURSES_H
+#ifdef HAVE_CURSES_WCH
 	*ws = linebuf[--leftpos];
 	setcchar(&cc, ws, 0, 0, NULL);
 	wins_wch(wstat, &cc);

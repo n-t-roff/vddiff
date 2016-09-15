@@ -296,8 +296,8 @@ EOT
 
 check_lib_curses () {
 	cat <<EOT >>compat.h
+#define _XOPEN_SOURCE_EXTENDED
 #if defined HAVE_NCURSESW_CURSES_H
-# define _XOPEN_SOURCE_EXTENDED
 # include <ncursesw/curses.h>
 #elif defined HAVE_NCURSES_CURSES_H
 # include <ncurses/curses.h>
@@ -320,6 +320,47 @@ EOT
 	# If mouse support is not required, NetBSD curses works perfectly.
 	check_curses && return
 }
+check_curses_wch () {
+	check_for "wget_wch(3)"
+
+	cat <<EOT >$TMPC
+#include "compat.h"
+int
+main() {
+	wint_t c;
+	wget_wch(stdscr, &c);
+	return 0;
+}
+EOT
+	gen_mk
+	cat <<EOT >>$OUTMK
+$TMPNAM: ${TMPNAM}.o
+	\$(CC) \$(_CFLAGS) \$(_LDFLAGS) \$(RPATH_CURSES) -o \$@ ${TMPNAM}.o \$(LDADD)
+EOT
+	compile
+	test_result || return;
+
+	check_for "wins_wch(3)"
+
+	cat <<EOT >$TMPC
+#include "compat.h"
+int
+main() {
+	cchar_t c;
+	wins_wch(stdscr, &c);
+	return 0;
+}
+EOT
+	gen_mk
+	cat <<EOT >>$OUTMK
+$TMPNAM: ${TMPNAM}.o
+	\$(CC) \$(_CFLAGS) \$(_LDFLAGS) \$(RPATH_CURSES) -o \$@ ${TMPNAM}.o \$(LDADD)
+EOT
+	compile
+	test_result || return;
+
+	DEFS="$DEFS -DHAVE_CURSES_WCH"
+}
 	[ ! -s compat.h ] && rm compat.h
 OUTMK=Makefile
 INMK=${OUTMK}.in
@@ -337,6 +378,7 @@ check_make
 #check_Sanitizer
 check_futimens
 check_lib_curses
+check_curses_wch
 
 gen_mk
 rm -f $TMPNAM*
