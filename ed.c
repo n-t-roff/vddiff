@@ -120,10 +120,9 @@ disp_edit(void)
 int
 ed_dialog(char *msg, char *ini, void (*callback)(char *))
 {
-	if (edit)
-		return 1;
+	if (!edit)
+		init_edit(); /* conditional, else rbuf is cleared! */
 
-	init_edit();
 	memcpy(lbuf, msg, strlen(msg) + 1);
 
 	if (ini)
