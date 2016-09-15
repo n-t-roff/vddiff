@@ -30,7 +30,7 @@ PERFORMANCE OF THIS SOFTWARE.
 #define LINESIZ (sizeof rbuf)
 
 static void init_edit(void);
-static int edit_line(void);
+static int edit_line(void (*)(char *));
 static void linebuf_delch(void);
 static void linebuf_insch(void);
 static void overful_del(void);
@@ -118,7 +118,7 @@ disp_edit(void)
 }
 
 int
-ed_dialog(char *msg, char *ini)
+ed_dialog(char *msg, char *ini, void (*callback)(char *))
 {
 	if (edit)
 		return 1;
@@ -131,7 +131,7 @@ ed_dialog(char *msg, char *ini)
 
 	disp_edit();
 
-	if (edit_line()) {
+	if (edit_line(callback)) {
 		clr_edit();
 		return 1;
 	}
@@ -144,7 +144,7 @@ ed_dialog(char *msg, char *ini)
 }
 
 static int
-edit_line(void)
+edit_line(void (*callback)(char *))
 {
 #ifdef HAVE_NCURSESW_CURSES_H
 	wint_t c;
@@ -154,9 +154,9 @@ edit_line(void)
 
 	while (1) {
 #ifdef HAVE_NCURSESW_CURSES_H
-		wget_wch(wstat, &c);
+		get_wch(&c);
 #else
-		c = wgetch(wstat);
+		c = getch();
 #endif
 		switch (c) {
 #ifdef NCURSES_MOUSE_VERSION
@@ -217,6 +217,14 @@ del_char:
 				overful_del();
 
 			wrefresh(wstat);
+
+			if (callback) {
+#ifdef HAVE_NCURSESW_CURSES_H
+				wcstombs(rbuf, linebuf, sizeof rbuf);
+#endif
+				callback(rbuf);
+			}
+
 			break;
 		default:
 			if (linelen + 1 >= LINESIZ)
@@ -256,6 +264,13 @@ del_char:
 			}
 
 			wrefresh(wstat);
+
+			if (callback) {
+#ifdef HAVE_NCURSESW_CURSES_H
+				wcstombs(rbuf, linebuf, sizeof rbuf);
+#endif
+				callback(rbuf);
+			}
 		}
 	}
 }
@@ -303,10 +318,10 @@ proc_mevent(void)
 
 	if (mevent.bstate & BUTTON1_CLICKED ||
 	    mevent.bstate & BUTTON1_DOUBLE_CLICKED) {
-		if (mevent.y != 1)
+		if (mevent.y != LINES - 1)
 			return;
 
-		linepos = mevent.x;
+		linepos = leftpos + mevent.x;
 		wmove(wstat, 1, linepos - leftpos);
 		wrefresh(wstat);
 	}

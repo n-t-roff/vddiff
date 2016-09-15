@@ -38,7 +38,6 @@ static void proc_dir(void);
 static void proc_subdirs(struct bst_node *);
 static void rm_file(void);
 static void cp_file(void);
-static void rebuild_db(void);
 static int creatdir(void);
 static void cp_link(void);
 static void cp_reg(void);
@@ -59,7 +58,7 @@ fs_rename(int tree)
 	    (tree == 2 && !f->rtype))
 		return;
 
-	if (ed_dialog("Enter new name (<ESC> to cancel):", f->name))
+	if (ed_dialog("Enter new name (<ESC> to cancel):", f->name, NULL))
 		return;
 
 	if ((tree & 2) && f->rtype) {
@@ -123,7 +122,7 @@ fs_chmod(int tree)
 	snprintf(lbuf, sizeof lbuf, "%04o", m & 07777);
 	s = strdup(lbuf);
 
-	if (ed_dialog("Enter new permissions (<ESC> to cancel):", s)) {
+	if (ed_dialog("Enter new permissions (<ESC> to cancel):", s, NULL)) {
 		free(s);
 		return;
 	}
@@ -258,7 +257,7 @@ cancel:
 	rpath[rlen] = 0;
 }
 
-static void
+void
 rebuild_db(void)
 {
 	lpath[llen] = 0;

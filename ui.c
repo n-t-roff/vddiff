@@ -70,6 +70,9 @@ static void set_mark(void);
 static void clr_mark(void);
 static void disp_mark(void);
 static void yank_name(int);
+static void srch_file(char *);
+static void no_file(void);
+static void center(unsigned);
 
 short color = 1;
 short color_leftonly  = COLOR_CYAN   ,
@@ -88,6 +91,7 @@ static struct ui_state *ui_stack;
 static short scrollen = 1;
 static struct filediff *mark;
 static short wstat_dirty;
+static unsigned srch_idx;
 
 #ifdef NCURSES_MOUSE_VERSION
 static void proc_mevent(void);
@@ -146,7 +150,6 @@ build_ui(void)
 		scrollok(wlist, TRUE);
 	}
 
-	keypad(wstat, TRUE);
 	printerr(NULL, "Reading directories...");
 
 	/* Not in main since build_diff_db() uses printerr() */
@@ -171,6 +174,7 @@ static void
 ui_ctrl(void)
 {
 	int key[2] = { 0, 0 }, c = 0;
+	enum sorting prev_sorting;
 
 	while (1) {
 		key[1] = *key;
@@ -199,8 +203,10 @@ ui_ctrl(void)
 			break;
 		case KEY_RIGHT:
 		case '\n':
-			if (!db_num)
+			if (!db_num) {
+				no_file();
 				break;
+			}
 
 			action();
 			break;
@@ -350,10 +356,27 @@ ui_ctrl(void)
 			break;
 		case '$':
 			if (!ed_dialog("Type command (<ESC> to cancel):",
-			    NULL))
+			    NULL, NULL))
 				sh_cmd(rbuf, 1);
 			break;
 		case 'e':
+			break;
+		case '/':
+			if (!db_num) {
+				no_file();
+				break;
+			}
+
+			if (sorting != SORTMIXED) {
+				prev_sorting = sorting;
+				sorting = SORTMIXED;
+				rebuild_db();
+			}
+
+			srch_idx = 0;
+			ed_dialog("Type first characters of filename:",
+			    NULL, srch_file);
+			sorting = prev_sorting;
 			break;
 		default:
 			printerr(NULL, "Invalid input '%c' (type h for help).",
@@ -376,6 +399,7 @@ static char *helptxt[] = {
        "		Scroll one screen down",
        "<HOME>, 1G	Go to first file",
        "<END>, G	Go to last file",
+       "/		Search file",
        "!, n		Toggle display of equal files",
        "c		Toggle showing only directories and really different files",
        "p		Show current relative work directory",
@@ -908,10 +932,7 @@ disp_list(void)
 	werase(wlist);
 
 	if (!db_num) {
-		if (real_diff)
-			printerr(NULL, "No file (type c to view all files).");
-		else
-			printerr(NULL, "No file");
+		no_file();
 		goto exit;
 	}
 
@@ -1189,6 +1210,63 @@ yank_name(int reverse)
 		YANK(r);
 
 	disp_edit();
+}
+
+static void
+no_file(void)
+{
+	if (real_diff)
+		printerr(NULL, "No file (type c to view all files).");
+	else
+		printerr(NULL, "No file");
+}
+
+static void
+srch_file(char *pattern)
+{
+	unsigned idx;
+	int o, oo;
+
+
+	if (!*pattern || !db_num)
+		return;
+
+	if (srch_idx >= db_num)
+		srch_idx = db_num - 1;
+
+	idx = srch_idx;
+	o = 0;
+
+	while (1) {
+		oo = o;
+
+		if (!(o = strncmp(db_list[idx]->name, pattern, strlen(pattern)))) {
+			center(srch_idx = idx);
+			break;
+		} else if (o < 0) {
+			if (oo > 0 || ++idx >= db_num)
+				break;
+		} else if (o > 0) {
+			if (oo < 0 || !idx)
+				break;
+
+			idx--;
+		}
+	}
+}
+
+static void
+center(unsigned idx)
+{
+	if (db_num <= listh || idx <= listh / 2)
+		top_idx = 0;
+	else if (db_num - idx < listh / 2)
+		top_idx = db_num - listh;
+	else
+		top_idx = idx - listh / 2;
+
+	curs = idx - top_idx;
+	disp_list();
 }
 
 static void
