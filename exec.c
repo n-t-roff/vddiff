@@ -30,7 +30,7 @@ PERFORMANCE OF THIS SOFTWARE.
 #include "db.h"
 #include "diff.h"
 
-static size_t add_path(char *, size_t, char *, size_t, char *, size_t);
+static size_t add_path(char *, size_t, char *, char *);
 static void exec_tool(struct tool *, char *, char *, int);
 static void sig_child(int);
 
@@ -76,17 +76,16 @@ tool(char *name, char *rnam, int tree)
 	l1 = toolp[1] ? strlen(toolp[1]) : 0;
 	l2 = toolp[2] ? strlen(toolp[2]) : 0;
 
-	/*             "/"             " "      "\0"       */
-	l = l0 + llen + 1 + ln + rlen + 1 + rn + 1 + l1 + l2;
+	l = l0 + (llen + ln + rlen + rn) * 2 + 3 + l1 + l2;
 	cmd = malloc(l);
 	memcpy(cmd, *toolp, l0);
 
 	if (!l1 || tree != 3) {
 		if (tree & 1)
-			l0 = add_path(cmd, l0, lpath, llen, name, ln);
+			l0 = add_path(cmd, l0, lpath, name);
 		if (tree & 2)
-			l0 = add_path(cmd, l0, rpath, rlen,
-			    rnam ? rnam : name, rn);
+			l0 = add_path(cmd, l0, rpath,
+			    rnam ? rnam : name);
 
 		if (l1 && tree != 3) {
 			memcpy(cmd + l0, toolp[1] + 1, --l1);
@@ -95,11 +94,11 @@ tool(char *name, char *rnam, int tree)
 	} else {
 		switch (*toolp[1]) {
 		case '1':
-			l0 = add_path(cmd, l0, lpath, llen, name, ln);
+			l0 = add_path(cmd, l0, lpath, name);
 			break;
 		case '2':
-			l0 = add_path(cmd, l0, rpath, rlen,
-			    rnam ? rnam : name, rn);
+			l0 = add_path(cmd, l0, rpath,
+			    rnam ? rnam : name);
 			break;
 		}
 
@@ -109,11 +108,11 @@ tool(char *name, char *rnam, int tree)
 		if (l2) {
 			switch (*toolp[2]) {
 			case '1':
-				l0 = add_path(cmd, l0, lpath, llen, name, ln);
+				l0 = add_path(cmd, l0, lpath, name);
 				break;
 			case '2':
-				l0 = add_path(cmd, l0, rpath, rlen,
-				    rnam ? rnam : name, rn);
+				l0 = add_path(cmd, l0, rpath,
+				    rnam ? rnam : name);
 				break;
 			}
 
@@ -147,13 +146,17 @@ sh_cmd(char *cmd, int wait)
 }
 
 static size_t
-add_path(char *cmd, size_t l0, char *path, size_t len, char *name, size_t ln)
+add_path(char *cmd, size_t l0, char *path, char *name)
 {
-	memcpy(cmd + l0, path, len);
-	l0 += len;
+	size_t l;
+
+	l = shell_quote(lbuf, path, sizeof lbuf);
+	memcpy(cmd + l0, lbuf, l);
+	l0 += l;
 	cmd[l0++] = '/';
-	memcpy(cmd + l0, name, ln);
-	l0 += ln;
+	l = shell_quote(lbuf, name, sizeof lbuf);
+	memcpy(cmd + l0, lbuf, l);
+	l0 += l;
 	return l0;
 }
 
@@ -261,6 +264,46 @@ exec_tool(struct tool *t, char *name, char *rnam, int tree)
 		printerr(strerror(errno), "fork failed");
 
 	disp_list();
+}
+
+size_t
+shell_quote(char *to, char *from, size_t siz)
+{
+	int c;
+	size_t len = 0;
+
+	siz--; /* for last \0 byte */
+
+	while (len < siz && (c = *from++)) {
+		switch (c) {
+		case '|':
+		case '&':
+		case ';':
+		case '<': case '>':
+		case '(': case ')':
+		case '$':
+		case '`':
+		case '\\':
+		case '"':
+		case '\'':
+		case ' ':
+		case '\t':
+		case '\n':
+			*to++ = '\\';
+			len++;
+
+			if (len >= siz)
+				break;
+
+			/* fall through */
+		default:
+			*to++ = c;
+			len++;
+		}
+	}
+
+	*to = 0;
+	return len;
 }
 
 void

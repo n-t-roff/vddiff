@@ -67,14 +67,8 @@ Show only directories which exist in both trees
 and really different files.
 .It Fl d
 Use
-.Dq Li diff '$1' '$2' | less
+.Dq Li diff $1 $2 | less
 as diff tool.
-Since the arguments to
-.Xr diff 1
-is quoted with
-.Sq Li \(aq ,
-this works only for filenames without
-.Sq Li \(aq .
 .It Fl f
 Normally directories are displayed on top.
 With this option files are displayed first.
@@ -144,11 +138,6 @@ The filenames is appended to the given string.
 To include it into the string the symbolic name
 .Dq Li $1
 can be embedded which is expanded to the filename.
-Single quotes
-.Pq Sq \(aq
-can be put around
-.Dq Li $1
-to allow filenames with spaces.
 .El
 .Sh INTERACTIVE COMMANDS
 .Bl -tag
@@ -176,6 +165,9 @@ Go to last file.
 Search file in list.
 This changes the list sorting order
 by mixing files and directories.
+(Type
+.Sq Li u
+to rebuild the file list in initial sorting order.)
 .It So Li ! Sc or Sq Li n
 Toggle display of equal files.
 .It Sq Li c
@@ -229,14 +221,6 @@ command is entered later, this file path can be used
 to build a
 .Xr sh 1
 command.
-If the path does not contain a single quote character
-.Pq Sq \(aq ,
-the path is delimited with single quotes.
-Else double quotes
-.Pq Sq \(dq
-are used.
-In this case the path needs to be checked for additional
-characters which needs quoting.
 .It Sq Li Y
 Copy file paths to edit line in reverse order.
 .It Sq Li $
@@ -263,6 +247,13 @@ This string is usually the name of a UNIX tool.
 Regularly used strings can be set using the RC file
 .Dq Li fkey
 command.
+.It Sq Li u
+Rebuild file list.
+This may make sense after
+.Sq Li /
+did change the sorting order or after deleting or creating files using a
+.Sq Li $
+shell command.
 .El
 .Sh CONFIGURATION FILE ~/.vddiffrc
 Permanent non-default options can be set in the file
@@ -404,12 +395,9 @@ Default is 4 (blue).
 Read on start-up to set non-default options.
 .El
 .Sh BUGS
-TODO issues:
-.Pp
-.Bl -bullet
-.It
 TODO issue:
+.\"Pp
+.\"Bl -bullet
+.\"It
 Comparing compressed files.
-.It
-Automatic quoting of shell metacharacters in filenames.
-.El
+.\"El

@@ -34,7 +34,7 @@ int yyparse(void);
 
 char *prog, *pwd, *rpwd, *arg[2];
 size_t llen, rlen;
-char lpath[PATHSIZ], rpath[PATHSIZ], lbuf[BUFSIZ], rbuf[BUFSIZ];
+char lpath[PATHSIZ], rpath[PATHSIZ], lbuf[BUF_SIZE], rbuf[BUF_SIZE];
 struct stat stat1, stat2;
 short recursive, scan;
 
@@ -69,7 +69,7 @@ main(int argc, char **argv)
 			real_diff = 1;
 			break;
 		case 'd':
-			set_tool(&difftool, strdup("diff '$1' '$2' | less"), 0);
+			set_tool(&difftool, strdup("diff $1 $2 | less"), 0);
 			break;
 		case 'f':
 			sorting = FILESFIRST;

@@ -411,6 +411,9 @@ next_key:
 			    "" /* remove existing */, srch_file, 0);
 			sorting = prev_sorting;
 			break;
+		case 'u':
+			rebuild_db();
+			break;
 		default:
 			printerr(NULL, "Invalid input '%c' (type h for help).",
 			    isgraph(c) ? c : '?');
@@ -454,7 +457,11 @@ static char *helptxt[] = {
        "y		Copy file path to edit line",
        "Y		Copy file path in reverse order to edit line",
        "$		Enter shell command",
-       "<F1> - <F10>	Define string to be used in shell command" };
+       "<F1> - <F10>	Define string to be used in shell command",
+       "u		Update file list"/*,
+       "s		Open shell",
+       "sl		Open shell in left directory",
+       "sr		Open shell in right directory"*/ };
 
 #define HELP_NUM (sizeof(helptxt) / sizeof(*helptxt))
 
@@ -1221,11 +1228,11 @@ clr_mark(void)
 #define YANK(x) \
 	do { \
 		if (f->x##type) { \
-			*delim = strchr(x##path, '\'') ? '"' : '\''; \
 			ed_append(" "); \
-			ed_append(delim); \
-			ed_append(x##path); \
-			ed_append(delim); \
+			/* here because 1st ed_append deletes lbuf */ \
+			shell_quote(lbuf, x##path, sizeof lbuf); \
+			ed_append(lbuf); \
+			*lbuf = 0; \
 		} \
 	} while (0)
 
@@ -1233,10 +1240,8 @@ static void
 yank_name(int reverse)
 {
 	struct filediff *f;
-	char delim[2];
 
 	f = db_list[top_idx + curs];
-	delim[1] = 0;
 
 	if (f->ltype)
 		pthcat(lpath, llen, f->name);
