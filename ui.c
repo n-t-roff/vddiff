@@ -454,7 +454,7 @@ static char *helptxt[] = {
        "y		Copy file path to edit line",
        "Y		Copy file path in reverse order to edit line",
        "$		Enter shell command",
-       "F1-F10		Define string to be used in shell command" };
+       "<F1> - <F10>	Define string to be used in shell command" };
 
 #define HELP_NUM (sizeof(helptxt) / sizeof(*helptxt))
 

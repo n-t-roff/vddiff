@@ -200,14 +200,13 @@ next_key:
 			    KEY_F(i))
 				continue;
 
+			if (!sh_str[i])
+				goto next_key;
 #ifdef HAVE_CURSES_WCH
 			l = wcslen(sh_str[i]);
 #else
 			l = strlen(sh_str[i]);
 #endif
-			if (!l)
-				goto next_key;
-
 			if (linelen + l >= LINESIZ) {
 				printerr(NULL, "Line buffer overflow");
 				goto next_key;

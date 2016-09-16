@@ -249,10 +249,20 @@ or
 .Sq Li Y
 command, the shell command can be prepended by pressing
 .Aq Cm HOME
-and then  entering the command.
+and then entering the command.
+Predefined strings can be inserted by pressing a
+function key.
 The work directory is the directory where
 .Nm
 had been started.
+.It Ao Cm F1 Ac \(en Aq Cm F10
+Define string which can be inserted later with this function key
+when entering a sh command using
+.Sq Li $ .
+This string is usually the name of a UNIX tool.
+Regularly used strings can be set using the RC file
+.Dq Li fkey
+command.
 .El
 .Sh CONFIGURATION FILE ~/.vddiffrc
 Permanent non-default options can be set in the file
@@ -335,6 +345,15 @@ is compared case-insensitive.
 Start
 .Ar string
 as a background process.
+.It Li fkey Ar number Ar string
+Define
+.Ar string
+which can be inserted later with this function key
+when entering a sh command using
+.Sq Li $ .
+This string is usually the name of a UNIX tool.
+.Ar number
+must be between 1 and 10 (inclusive).
 .It Li mono
 Disable colors.
 .It Li followlinks
