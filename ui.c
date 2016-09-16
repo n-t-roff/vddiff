@@ -1187,11 +1187,11 @@ clr_mark(void)
 #define YANK(x) \
 	do { \
 		if (f->x##type) { \
-			x##path[x##len] = 0; \
+			*delim = strchr(x##path, '\'') ? '"' : '\''; \
 			ed_append(" "); \
+			ed_append(delim); \
 			ed_append(x##path); \
-			ed_append("/"); \
-			ed_append(f->name); \
+			ed_append(delim); \
 		} \
 	} while (0)
 
@@ -1199,8 +1199,16 @@ static void
 yank_name(int reverse)
 {
 	struct filediff *f;
+	char delim[2];
 
 	f = db_list[top_idx + curs];
+	delim[1] = 0;
+
+	if (f->ltype)
+		pthcat(lpath, llen, f->name);
+
+	if (f->rtype)
+		pthcat(rpath, rlen, f->name);
 
 	if (reverse)
 		YANK(r);

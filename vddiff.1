@@ -229,6 +229,14 @@ command is entered later, this file path can be used
 to build a
 .Xr sh 1
 command.
+If the path does not contain a single quote character
+.Pq Sq \(aq ,
+the path is delimited with single quotes.
+Else double quotes
+.Pq Sq \(dq
+are used.
+In this case the path needs to be checked for additional
+characters which needs quoting.
 .It Sq Li Y
 Copy file paths to edit line in reverse order.
 .It Sq Li $
@@ -377,5 +385,12 @@ Default is 4 (blue).
 Read on start-up to set non-default options.
 .El
 .Sh BUGS
+TODO issues:
+.Pp
+.Bl -bullet
+.It
 TODO issue:
 Comparing compressed files.
+.It
+Automatic quoting of shell metacharacters in filenames.
+.El
