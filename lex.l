@@ -27,6 +27,7 @@ difftool		{ rc_col += yyleng; return DIFFTOOL     ; }
 viewtool		{ rc_col += yyleng; return VIEWTOOL     ; }
 ext			{ rc_col += yyleng; return EXT          ; }
 bg			{ rc_col += yyleng; return BG           ; }
+fkey			{ rc_col += yyleng; return FKEY         ; }
 filesfirst		{ rc_col += yyleng; return FILES        ; }
 mixed			{ rc_col += yyleng; return MIXED        ; }
 followlinks		{ rc_col += yyleng; return FOLLOW       ; }

@@ -202,13 +202,14 @@ next_key:
 #ifdef HAVE_CURSES_WCH
 			sh_str[i] = linebuf;
 			linebuf = NULL;
+			clr_edit();
 			printerr(NULL, "%ls"
 #else
 			sh_str[i] = strdup(rbuf);
+			clr_edit();
 			printerr(NULL, "%s"
 #endif
 			    " saved for F%d", sh_str[i], i);
-			clr_edit();
 			goto next_key;
 		}
 

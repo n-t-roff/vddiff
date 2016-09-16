@@ -118,6 +118,30 @@ disp_edit(void)
 	wrefresh(wstat);
 }
 
+void
+set_fkey(int i, char *s)
+{
+#ifdef HAVE_CURSES_WCH
+	size_t l;
+#endif
+
+	if (i < 1 || i > 10) {
+		printf("Function key number must be in range 1-10\n");
+		exit(1);
+	}
+
+	free(sh_str[i]);
+#ifdef HAVE_CURSES_WCH
+	/* wcslen(wcs) should be <= strlen(mbs) */
+	l = strlen(s) + 1;
+	sh_str[i] = malloc(l * sizeof(wchar_t));
+	mbstowcs(sh_str[i], s, l);
+	free(s);
+#else
+	sh_str[i] = s;
+#endif
+}
+
 int
 ed_dialog(char *msg,
     /* NULL: leave buffer as-is */

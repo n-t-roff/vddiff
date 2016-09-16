@@ -20,6 +20,7 @@ PERFORMANCE OF THIS SOFTWARE.
 #include "ui.h"
 #include "db.h"
 #include "main.h"
+#include "ed.h"
 void yyerror(const char *);
 int yylex(void);
 void follow(int);
@@ -32,7 +33,7 @@ extern char *yytext;
 }
 %token DIFFTOOL FILES DIRS MIXED FOLLOW MONO NOEQUAL LEFT_COLOR RIGHT_COLOR
 %token DIFF_COLOR DIR_COLOR UNKNOWN_COLOR LINK_COLOR REAL_DIFF RECURSIVE
-%token VIEWTOOL EXT BG
+%token VIEWTOOL EXT BG FKEY
 %token <str>     STRING
 %token <integer> INTEGER
 %%
@@ -49,6 +50,7 @@ option:
 	| VIEWTOOL BG STRING    { set_tool(&viewtool, $3, 1); }
 	| EXT STRING STRING     { db_def_ext($2, $3, 0)     ; }
 	| EXT STRING BG STRING  { db_def_ext($2, $4, 1)     ; }
+	| FKEY INTEGER STRING   { set_fkey($2, $3)          ; }
 	| FILES                 { sorting = FILESFIRST      ; }
 	| MIXED                 { sorting = SORTMIXED       ; }
 	| FOLLOW                { follow(1)                 ; }
