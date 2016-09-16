@@ -32,7 +32,7 @@ PERFORMANCE OF THIS SOFTWARE.
 static void init_edit(void);
 static int edit_line(void (*)(char *));
 static void linebuf_delch(void);
-static void linebuf_insch(void);
+static void linebuf_insch(unsigned);
 static void overful_del(void);
 
 short edit;
@@ -40,11 +40,11 @@ short edit;
 static unsigned linelen, linepos, leftpos;
 
 #ifdef HAVE_CURSES_WCH
-static wchar_t *linebuf;
+wchar_t *linebuf;
 static wchar_t ws[2];
 static cchar_t cc;
 #else
-static char *linebuf;
+char *linebuf;
 #endif
 
 #ifdef NCURSES_MOUSE_VERSION
@@ -114,19 +114,24 @@ disp_edit(void)
 #else
 	mvwaddstr(wstat, 1, 0, linebuf + leftpos);
 #endif
+	wmove(wstat, 1, linepos - leftpos);
 	wrefresh(wstat);
 }
 
 int
-ed_dialog(char *msg, char *ini, void (*callback)(char *))
+ed_dialog(char *msg,
+    /* NULL: leave buffer as-is */
+    char *ini, void (*callback)(char *), int keep_buf)
 {
 	if (!edit)
 		init_edit(); /* conditional, else rbuf is cleared! */
 
 	memcpy(lbuf, msg, strlen(msg) + 1);
 
-	if (ini)
+	if (ini) {
+		linelen = 0; /* remove any existing text */
 		ed_append(ini);
+	}
 
 	disp_edit();
 
@@ -138,7 +143,8 @@ ed_dialog(char *msg, char *ini, void (*callback)(char *))
 #ifdef HAVE_CURSES_WCH
 	wcstombs(rbuf, linebuf, sizeof rbuf);
 #endif
-	clr_edit();
+	if (!keep_buf)
+		clr_edit();
 	return 0;
 }
 
@@ -150,13 +156,50 @@ edit_line(void (*callback)(char *))
 #else
 	int c;
 #endif
+	int i;
+	size_t l;
 
 	while (1) {
+next_key:
 #ifdef HAVE_CURSES_WCH
 		get_wch(&c);
 #else
 		c = getch();
 #endif
+
+		for (i = 0; i < (ssize_t)(sizeof(sh_str)/sizeof(*sh_str));
+		    i++) {
+			if (c !=
+#ifdef HAVE_CURSES_WCH
+			    (wint_t)
+#endif
+			    KEY_F(i))
+				continue;
+
+#ifdef HAVE_CURSES_WCH
+			l = wcslen(sh_str[i]);
+#else
+			l = strlen(sh_str[i]);
+#endif
+			if (!l)
+				goto next_key;
+
+			if (linelen + l >= LINESIZ) {
+				printerr(NULL, "Line buffer overflow");
+				goto next_key;
+			}
+
+			linebuf_insch(l);
+#ifdef HAVE_CURSES_WCH
+			wmemcpy(linebuf + linepos, sh_str[i], l);
+#else
+			memcpy(linebuf + linepos, sh_str[i], l);
+#endif
+			linepos += l;
+			disp_edit();
+			goto next_key;
+		}
+
 		switch (c) {
 #ifdef NCURSES_MOUSE_VERSION
 		case KEY_MOUSE:
@@ -235,10 +278,11 @@ del_char:
 				wmove(wstat, 1, linepos - ++leftpos);
 			}
 
-			if (linepos == linelen++)
+			if (linepos == linelen) {
+				linelen++;
 				linebuf[linepos + 1] = 0;
-			else
-				linebuf_insch();
+			} else
+				linebuf_insch(1);
 
 			linebuf[linepos++] = c;
 
@@ -300,12 +344,14 @@ linebuf_delch(void)
 }
 
 static void
-linebuf_insch(void)
+linebuf_insch(unsigned num)
 {
-	unsigned i, j;
+	int i, j;
 
-	for (i = j = linelen; i > linepos; i = j)
-		linebuf[i] = linebuf[--j];
+	linelen += num;
+
+	for (j = linelen, i = j - num; i >= (int)linepos; i--, j--)
+		linebuf[j] = linebuf[i];
 }
 
 #ifdef NCURSES_MOUSE_VERSION

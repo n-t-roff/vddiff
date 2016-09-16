@@ -22,3 +22,9 @@ extern short color_leftonly ,
              color_link     ;
 extern unsigned top_idx, curs, statw;
 extern WINDOW *wstat;
+
+#ifdef HAVE_CURSES_WCH
+extern wchar_t *sh_str[10];
+#else
+extern char *sh_str[10];
+#endif

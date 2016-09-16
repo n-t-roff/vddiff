@@ -83,6 +83,12 @@ short color_leftonly  = COLOR_CYAN   ,
       color_link      = COLOR_MAGENTA;
 unsigned top_idx, curs, statw;
 
+#ifdef HAVE_CURSES_WCH
+wchar_t *sh_str[10];
+#else
+char *sh_str[10];
+#endif
+
 static unsigned listw, listh, help_top;
 static WINDOW *wlist;
 WINDOW *wstat;
@@ -173,14 +179,40 @@ build_ui(void)
 static void
 ui_ctrl(void)
 {
-	int key[2] = { 0, 0 }, c = 0;
+	int key[2] = { 0, 0 }, c = 0, i;
 	enum sorting prev_sorting;
 
 	while (1) {
+next_key:
 		key[1] = *key;
 		*key = c;
+		c = getch();
 
-		switch (c = getch()) {
+		for (i = 0; i < (ssize_t)(sizeof(sh_str)/sizeof(*sh_str));
+		    i++) {
+			if (c != KEY_F(i))
+				continue;
+
+			if (ed_dialog(
+			    "Type text to be saved for function key:",
+			    "", NULL, 1))
+				break;
+
+			free(sh_str[i]);
+#ifdef HAVE_CURSES_WCH
+			sh_str[i] = linebuf;
+			linebuf = NULL;
+			printerr(NULL, "%ls"
+#else
+			sh_str[i] = strdup(rbuf);
+			printerr(NULL, "%s"
+#endif
+			    " saved for F%d", sh_str[i], i);
+			clr_edit();
+			goto next_key;
+		}
+
+		switch (c) {
 #ifdef NCURSES_MOUSE_VERSION
 		case KEY_MOUSE:
 			proc_mevent();
@@ -356,7 +388,7 @@ ui_ctrl(void)
 			break;
 		case '$':
 			if (!ed_dialog("Type command (<ESC> to cancel):",
-			    NULL, NULL))
+			    NULL /* must be NULL !!! */, NULL, 0))
 				sh_cmd(rbuf, 1);
 			break;
 		case 'e':
@@ -375,7 +407,7 @@ ui_ctrl(void)
 
 			srch_idx = 0;
 			ed_dialog("Type first characters of filename:",
-			    NULL, srch_file);
+			    "" /* remove existing */, srch_file, 0);
 			sorting = prev_sorting;
 			break;
 		default:
@@ -420,7 +452,8 @@ static char *helptxt[] = {
        "r		Remove edit line or mark",
        "y		Copy file path to edit line",
        "Y		Copy file path in reverse order to edit line",
-       "$		Enter shell command" };
+       "$		Enter shell command",
+       "F1-F10		Define string to be used in shell command" };
 
 #define HELP_NUM (sizeof(helptxt) / sizeof(*helptxt))
 
