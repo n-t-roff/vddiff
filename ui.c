@@ -355,21 +355,26 @@ next_key:
 			fs_rm(3, NULL); /* allowed for single sided only */
 			break;
 		case 'l':
-			if (*key != 'd')
-				break;
-			fs_rm(1, NULL);
+			if (*key == 'd')
+				fs_rm(1, NULL);
+			else if (*key == 's')
+				open_sh(1);
+
 			break;
 		case 'r':
-			if (*key != 'd') {
-				if (mark)
-					clr_mark();
-				else if (edit)
-					clr_edit();
-
+			if (*key == 'd') {
+				fs_rm(2, NULL);
+				break;
+			} else if (*key == 's') {
+				open_sh(2);
 				break;
 			}
 
-			fs_rm(2, NULL);
+			if (mark)
+				clr_mark();
+			else if (edit)
+				clr_edit();
+
 			break;
 		case '<':
 			if (*key != '<')
@@ -429,6 +434,9 @@ next_key:
 		case 'u':
 			rebuild_db();
 			break;
+		case 's':
+			open_sh(3);
+			break;
 		default:
 			printerr(NULL, "Invalid input '%c' (type h for help).",
 			    isgraph(c) ? c : '?');
@@ -473,10 +481,10 @@ static char *helptxt[] = {
        "Y		Copy file path in reverse order to edit line",
        "$		Enter shell command",
        "<F1> - <F10>	Define string to be used in shell command",
-       "u		Update file list"/*,
+       "u		Update file list",
        "s		Open shell",
        "sl		Open shell in left directory",
-       "sr		Open shell in right directory"*/ };
+       "sr		Open shell in right directory" };
 
 #define HELP_NUM (sizeof(helptxt) / sizeof(*helptxt))
 

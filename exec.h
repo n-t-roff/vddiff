@@ -11,3 +11,4 @@ void set_tool(struct tool *, char *, int);
 void exec_sighdl(void);
 void sh_cmd(char *, int);
 size_t shell_quote(char *, char *, size_t);
+void open_sh(int);

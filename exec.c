@@ -21,6 +21,7 @@ PERFORMANCE OF THIS SOFTWARE.
 #include <ctype.h>
 #include <errno.h>
 #include <sys/types.h>
+#include <pwd.h>
 #include <sys/wait.h>
 #include <signal.h>
 #include "compat.h"
@@ -33,6 +34,7 @@ PERFORMANCE OF THIS SOFTWARE.
 static size_t add_path(char *, size_t, char *, char *);
 static void exec_tool(struct tool *, char *, char *, int);
 static void sig_child(int);
+static void exec_cmd(char **, int, char *, char *);
 
 struct tool difftool;
 struct tool viewtool;
@@ -190,7 +192,6 @@ exec_tool(struct tool *t, char *name, char *rnam, int tree)
 {
 	int o, c;
 	char *s, **a, **av;
-	pid_t pid;
 
 	s = *t->tool;
 	o = 0;
@@ -230,6 +231,19 @@ exec_tool(struct tool *t, char *name, char *rnam, int tree)
 	}
 
 	*a = NULL;
+	exec_cmd(av, t->bg, NULL, NULL);
+
+	if (o)
+		free(*av);
+
+	free(av);
+}
+
+static void
+exec_cmd(char **av, int bg, char *path, char *msg)
+{
+	pid_t pid;
+
 	erase();
 	refresh();
 	def_prog_mode();
@@ -239,25 +253,32 @@ exec_tool(struct tool *t, char *name, char *rnam, int tree)
 	case -1:
 		break;
 	case 0:
-		if (execvp(*av, av) == -1) {
-			/* only seen when vddiff exits later */
-			printf("exec %s failed: %s\n", *av, strerror(errno));
+		if (path && chdir(path) == -1) {
+			printf("chdir \"%s\" failed: %s\n", path,
+			    strerror(errno));
 			exit(1);
 		}
+
+		if (msg)
+			puts(msg);
+
+		if (execvp(*av, av) == -1) {
+			/* only seen when vddiff exits later */
+			printf("exec \"%s\" failed: %s\n", *av,
+			    strerror(errno));
+			exit(1);
+		}
+
 		/* not reached */
 		break;
 	default:
-		if (t->bg)
+		if (bg)
 			break;
 
 		/* did always return "interrupted sys call on OI */
 		waitpid(pid, NULL, 0);
 	}
 
-	if (o)
-		free(*av);
-
-	free(av);
 	reset_prog_mode();
 
 	if (pid == -1)
@@ -304,6 +325,38 @@ shell_quote(char *to, char *from, size_t siz)
 
 	*to = 0;
 	return len;
+}
+
+void
+open_sh(int tree)
+{
+	struct filediff *f = db_list[top_idx + curs];
+	char *s;
+	struct passwd *pw;
+	char *av[2];
+
+	if ((tree == 3 && f->ltype && f->rtype) ||
+	    (tree == 1 && !f->ltype) ||
+	    (tree == 2 && !f->rtype))
+		return;
+
+	if ((tree & 2) && f->rtype) {
+		rpath[rlen] = 0;
+		s = rpath;
+	} else {
+		lpath[llen] = 0;
+		s = lpath;
+	}
+
+	if (!(pw = getpwuid(getuid()))) {
+		printerr(strerror(errno),
+		    "getpwuid failed");
+		return;
+	}
+
+	*av = pw->pw_shell;
+	av[1] = NULL;
+	exec_cmd(av, 0, s, "\nType \"exit\" or '^D' to return to vddiff.\n");
 }
 
 void
