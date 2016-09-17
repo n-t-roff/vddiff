@@ -38,7 +38,8 @@ short noequal, real_diff;
 
 static struct bst db      = { NULL, cmp },
                   name_db = { NULL, name_cmp },
-                  ext_db  = { NULL, name_cmp };
+                  ext_db  = { NULL, name_cmp },
+                  curs_db = { NULL, name_cmp };
 static unsigned db_idx,
                 tot_db_num;
 
@@ -75,6 +76,35 @@ db_srch_ext(char *ext)
 	struct bst_node *n;
 
 	if (bst_srch(&ext_db, (union bst_val)(void *)ext, &n))
+		return NULL;
+	else
+		return n->data.p;
+}
+
+void
+db_set_curs(char *path, unsigned top_idx, unsigned curs)
+{
+	struct bst_node *n;
+	unsigned *uv;
+
+	if (!bst_srch(&curs_db, (union bst_val)(void *)path, &n)) {
+		uv = n->data.p;
+	} else {
+		uv = malloc(2 * sizeof(unsigned));
+		avl_add(&curs_db, (union bst_val)(void *)strdup(path),
+		    (union bst_val)(void *)uv);
+	}
+
+	*uv++ = top_idx;
+	*uv   = curs;
+}
+
+unsigned *
+db_get_curs(char *path)
+{
+	struct bst_node *n;
+
+	if (bst_srch(&curs_db, (union bst_val)(void *)path, &n))
 		return NULL;
 	else
 		return n->data.p;

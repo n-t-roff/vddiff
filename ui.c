@@ -1400,6 +1400,10 @@ enter_dir(char *name, char *rnam, int tree)
 		push_state();
 		scan_subdir(name, rnam, tree);
 	} else {
+		unsigned *uv;
+
+		db_set_curs(rpath, top_idx, curs);
+
 		if (chdir(name) == -1) {
 			printerr(strerror(errno),
 			    "chdir %s failed", name);
@@ -1411,6 +1415,11 @@ enter_dir(char *name, char *rnam, int tree)
 		mark = NULL;
 		db_free();
 		scan_subdir(NULL, NULL, 1);
+
+		if ((uv = db_get_curs(rpath))) {
+			top_idx = *uv++;
+			curs    = *uv;
+		}
 	}
 
 	disp_list();

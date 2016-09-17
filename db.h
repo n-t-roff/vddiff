@@ -11,6 +11,8 @@ void free_names(void);
 int name_cmp(union bst_val, union bst_val);
 void db_def_ext(char *, char *, int);
 struct tool *db_srch_ext(char *);
+void db_set_curs(char *, unsigned, unsigned);
+unsigned *db_get_curs(char *);
 
 extern enum sorting sorting;
 extern unsigned db_num;

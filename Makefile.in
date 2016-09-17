@@ -23,7 +23,7 @@ install:
 	install -m 644 $(BIN).1 $(MANDIR)/man1/
 
 clean:
-	rm -f $(BIN) $(OBJ) y.tab.h
+	rm -f $(BIN) $(OBJ) y.tab.h $(BIN).1.html
 
 distclean: clean
 	rm -f Makefile config.log compat.h
@@ -35,6 +35,19 @@ distclean: clean
 
 .c.o:
 	$(CC) $(_CFLAGS) -c $<
+
+html:
+	make $(BIN).1.html
+
+$(BIN).1.html: $(BIN).1
+	tbl $(BIN).1 | eqn | troff -Thtml -mandoc -dToc=/tmp/toc \
+	    2> /tmp/err | dhtml -t "$(BIN)(1)" > $@
+	sed -n 's/^Toc://p' /tmp/err > /tmp/toc
+	tbl $(BIN).1 | eqn | troff -Thtml -mandoc -dToc=/tmp/toc \
+	    2> /tmp/err | dhtml -t "$(BIN)(1)" > $@
+	sed -n 's/^Toc://p' /tmp/err > /tmp/toc
+	tbl $(BIN).1 | eqn | troff -Thtml -mandoc -dToc=/tmp/toc \
+	    2> /tmp/err | dhtml -t "$(BIN)(1)" > $@
 
 main.o: pars.o # y.tab.h
 lex.o: pars.o # y.tab.h
