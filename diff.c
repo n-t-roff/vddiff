@@ -54,6 +54,9 @@ build_diff_db(int tree)
 	if (!(tree & 1))
 		goto right_tree;
 
+	if (bmode && !getcwd(rpath, sizeof rpath))
+		printerr(strerror(errno), "getcwd failed");
+
 	if (!(d = opendir(lpath))) {
 		printerr(strerror(errno), "opendir %s failed", lpath);
 		return -1;
@@ -227,7 +230,9 @@ free_a:
 
 	closedir(d);
 	lpath[llen] = 0;
-	rpath[rlen] = 0;
+
+	if (tree & 2)
+		rpath[rlen] = 0;
 
 right_tree:
 	if (!(tree & 2))
@@ -333,8 +338,12 @@ proc_subdirs(struct bst_node *n)
 void
 scan_subdir(char *name, char *rnam, int tree)
 {
-	if (tree & 1)
-		llen = pthcat(lpath, llen, name);
+	if (tree & 1) {
+		if (name)
+			llen = pthcat(lpath, llen, name);
+		else
+			lpath[llen] = 0;
+	}
 
 	if (tree & 2)
 		rlen = pthcat(rpath, rlen, rnam ? rnam : name);

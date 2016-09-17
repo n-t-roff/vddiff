@@ -14,6 +14,7 @@ OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
 PERFORMANCE OF THIS SOFTWARE.
 */
 
+#include <unistd.h>
 #include <stdarg.h>
 #include <string.h>
 #include <stdlib.h>
@@ -23,6 +24,7 @@ PERFORMANCE OF THIS SOFTWARE.
 #include <grp.h>
 #include <time.h>
 #include <ctype.h>
+#include <errno.h>
 #include "compat.h"
 #include "avlbst.h"
 #include "diff.h"
@@ -159,13 +161,13 @@ build_ui(void)
 	printerr(NULL, "Reading directories...");
 
 	/* Not in main since build_diff_db() uses printerr() */
-	if (recursive) {
+	if (recursive && !bmode) {
 		scan = 1;
 		build_diff_db(3);
 		scan = 0;
 	}
 
-	build_diff_db(3);
+	build_diff_db(bmode ? 1 : 3);
 	disp_list();
 	ui_ctrl();
 	db_free();
@@ -232,7 +234,11 @@ next_key:
 			curs_up();
 			break;
 		case KEY_LEFT:
-			pop_state();
+			if (bmode)
+				enter_dir("..", NULL, 1);
+			else
+				pop_state();
+
 			break;
 		case KEY_RIGHT:
 		case '\n':
@@ -269,6 +275,9 @@ next_key:
 				}
 			}
 
+			if (bmode)
+				break;
+
 			lpath[llen] = 0;
 			rpath[rlen] = 0;
 
@@ -286,6 +295,9 @@ next_key:
 
 			break;
 		case 'f':
+			if (bmode)
+				break;
+
 			lpath[llen] = 0;
 			rpath[rlen] = 0;
 			werase(wstat);
@@ -295,6 +307,9 @@ next_key:
 			wrefresh(wstat);
 			break;
 		case 'a':
+			if (bmode)
+				break;
+
 			werase(wstat);
 			statcol();
 			mvwaddstr(wstat, 0, 2, arg[0]);
@@ -999,7 +1014,9 @@ disp_line(unsigned y, unsigned i, int info)
 	char *link = NULL;
 	short color_id = 0;
 
-	if (!f->ltype) {
+	if (bmode) {
+		goto no_diff;
+	} else if (!f->ltype) {
 		diff     = '>';
 		mode     = f->rtype;
 		color_id = COLOR_RIGHTONLY;
@@ -1013,6 +1030,7 @@ disp_line(unsigned y, unsigned i, int info)
 		type = '!';
 		color_id = COLOR_DIFF;
 	} else {
+no_diff:
 		diff = f->diff;
 		mode = f->ltype;
 		if (diff == '!')
@@ -1049,7 +1067,10 @@ disp_line(unsigned y, unsigned i, int info)
 		if (color_id)
 			wattron(wlist, COLOR_PAIR(color_id));
 	}
-	mvwprintw(wlist, y, 0, "%c %c %s", diff, type, f->name);
+	if (bmode)
+		mvwprintw(wlist, y, 0, "%c %s", type, f->name);
+	else
+		mvwprintw(wlist, y, 0, "%c %c %s", diff, type, f->name);
 	wattrset(wlist, A_NORMAL);
 	if (link) {
 		waddstr(wlist, " -> ");
@@ -1087,6 +1108,9 @@ disp_line(unsigned y, unsigned i, int info)
 static void
 statcol(void)
 {
+	if (bmode)
+		return;
+
 	wattron(wstat, A_REVERSE);
 	mvwaddch(wstat, 0, 0, '<');
 	mvwaddch(wstat, 1, 0, '>');
@@ -1109,61 +1133,69 @@ type_name(mode_t m)
 static void
 file_stat(struct filediff *f)
 {
-	int x = 2, w, w1, w2;
+	int x = 2, w, w1, w2, yl;
 	struct passwd *pw;
 	struct group *gr;
 
+	x  = bmode ? 0 : 2;
+	yl = 0;
+
+	if (bmode) {
+		/* TODO: Right align */
+		mvwaddstr(wstat, 1, 0, rpath);
+	}
+
 	if (f->ltype)
-		mvwprintw(wstat, 0, x, "%04o", f->ltype & 07777);
+		mvwprintw(wstat, yl, x, "%04o", f->ltype & 07777);
 	if (f->rtype)
 		mvwprintw(wstat, 1, x, "%04o", f->rtype & 07777);
 	x += 5;
 
-	if (!f->ltype)
-		*lbuf = 0;
-	else if ((pw = getpwuid(f->luid)))
-		memcpy(lbuf, pw->pw_name, strlen(pw->pw_name) + 1);
-	else
-		snprintf(lbuf, sizeof lbuf, "%u", f->luid);
+	if (f->ltype) {
+		if ((pw = getpwuid(f->luid)))
+			memcpy(lbuf, pw->pw_name, strlen(pw->pw_name) + 1);
+		else
+			snprintf(lbuf, sizeof lbuf, "%u", f->luid);
+	}
 
-	if (!f->rtype)
-		*rbuf = 0;
-	else if ((pw = getpwuid(f->ruid)))
-		memcpy(rbuf, pw->pw_name, strlen(pw->pw_name) + 1);
-	else
-		snprintf(rbuf, sizeof rbuf, "%u", f->ruid);
+	if (f->rtype) {
+		if ((pw = getpwuid(f->ruid)))
+			memcpy(rbuf, pw->pw_name, strlen(pw->pw_name) + 1);
+		else
+			snprintf(rbuf, sizeof rbuf, "%u", f->ruid);
+	}
 
 	if (f->ltype)
-		mvwaddstr(wstat, 0, x, lbuf);
+		mvwaddstr(wstat, yl, x, lbuf);
 	if (f->rtype)
 		mvwaddstr(wstat, 1, x, rbuf);
 
-	w1 = strlen(lbuf);
-	w2 = strlen(rbuf);
+	w1 = f->ltype ? strlen(lbuf) : 0;
+	w2 = f->rtype ? strlen(rbuf) : 0;
 	x += w1 > w2 ? w1 : w2;
 	x++;
 
-	if (!f->ltype)
-		*lbuf = 0;
-	else if ((gr = getgrgid(f->lgid)))
-		memcpy(lbuf, gr->gr_name, strlen(gr->gr_name) + 1);
-	else
-		snprintf(lbuf, sizeof lbuf, "%u", f->lgid);
+	if (f->ltype) {
+		if ((gr = getgrgid(f->lgid)))
+			memcpy(lbuf, gr->gr_name, strlen(gr->gr_name) + 1);
+		else
+			snprintf(lbuf, sizeof lbuf, "%u", f->lgid);
+	}
 
-	if (!f->rtype)
-		*rbuf = 0;
-	else if ((gr = getgrgid(f->rgid)))
-		memcpy(rbuf, gr->gr_name, strlen(gr->gr_name) + 1);
-	else
-		snprintf(rbuf, sizeof rbuf, "%u", f->rgid);
+	if (f->rtype) {
+		if ((gr = getgrgid(f->rgid)))
+			memcpy(rbuf, gr->gr_name, strlen(gr->gr_name) + 1);
+		else
+			snprintf(rbuf, sizeof rbuf, "%u", f->rgid);
+	}
 
 	if (f->ltype)
-		mvwaddstr(wstat, 0, x, lbuf);
+		mvwaddstr(wstat, yl, x, lbuf);
 	if (f->rtype)
 		mvwaddstr(wstat, 1, x, rbuf);
 
-	w1 = strlen(lbuf);
-	w2 = strlen(rbuf);
+	w1 = f->ltype ? strlen(lbuf) : 0;
+	w2 = f->rtype ? strlen(rbuf) : 0;
 	x += w1 > w2 ? w1 : w2;
 	x++;
 
@@ -1175,14 +1207,14 @@ file_stat(struct filediff *f)
 	w = w1 > w2 ? w1 : w2;
 
 	if (f->ltype && !S_ISDIR(f->ltype))
-		mvwaddstr(wstat, 0, x + w - w1, lbuf);
+		mvwaddstr(wstat, yl, x + w - w1, lbuf);
 	if (f->rtype && !S_ISDIR(f->rtype))
 		mvwaddstr(wstat, 1, x + w - w2, rbuf);
 
 	x += w + 1;
 
 	if (f->ltype && !S_ISDIR(f->ltype))
-		mvwaddstr(wstat, 0, x, ctime(&f->lmtim));
+		mvwaddstr(wstat, yl, x, ctime(&f->lmtim));
 	if (f->rtype && !S_ISDIR(f->rtype))
 		mvwaddstr(wstat, 1, x, ctime(&f->rmtim));
 }
@@ -1263,7 +1295,7 @@ yank_name(int reverse)
 static void
 no_file(void)
 {
-	if (real_diff)
+	if (real_diff && !bmode)
 		printerr(NULL, "No file (type c to view all files).");
 	else
 		printerr(NULL, "No file");
@@ -1356,8 +1388,23 @@ pop_state(void)
 static void
 enter_dir(char *name, char *rnam, int tree)
 {
-	push_state();
-	scan_subdir(name, rnam, tree);
+	if (!bmode) {
+		push_state();
+		scan_subdir(name, rnam, tree);
+	} else {
+		if (chdir(name) == -1) {
+			printerr(strerror(errno),
+			    "chdir %s failed", name);
+			return;
+		}
+
+		top_idx = 0;
+		curs = 0;
+		mark = NULL;
+		db_free();
+		scan_subdir(NULL, NULL, 1);
+	}
+
 	disp_list();
 }
 

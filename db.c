@@ -162,13 +162,16 @@ mk_list(struct bst_node *n)
 	mk_list(n->left);
 	f = n->key.p;
 
-	if ((!noequal ||
-	     f->diff == '!' || S_ISDIR(f->ltype) ||
-	     (f->ltype & S_IFMT) != (f->rtype & S_IFMT)) &&
-	    (!real_diff ||
-	     f->diff == '!' || (S_ISDIR(f->ltype) && S_ISDIR(f->rtype) &&
-	     is_diff_dir(f->name))))
+	if (bmode ||
+	    ((!noequal ||
+	      f->diff == '!' || S_ISDIR(f->ltype) ||
+	      (f->ltype & S_IFMT) != (f->rtype & S_IFMT)) &&
+	     (!real_diff ||
+	      f->diff == '!' || (S_ISDIR(f->ltype) && S_ISDIR(f->rtype) &&
+	      is_diff_dir(f->name)))))
+	{
 		db_list[db_idx++] = f;
+	}
 
 	mk_list(n->right);
 }

@@ -37,6 +37,7 @@ size_t llen, rlen;
 char lpath[PATHSIZ], rpath[PATHSIZ], lbuf[BUF_SIZE], rbuf[BUF_SIZE];
 struct stat stat1, stat2;
 short recursive, scan;
+short bmode;
 
 static void check_args(char **);
 static int read_rc(void);
@@ -44,7 +45,7 @@ static void usage(void);
 static char *usage_txt =
 "Usage: %s [-ubcdfgklmnr] [-t <diff_tool>] [-v <view_tool>] <directory_1>\n"
 "           <directory_2>\n";
-static char *getopt_arg = "bcdfgklmnrt:uv:";
+static char *getopt_arg = "Bbcdfgklmnrt:uv:";
 
 int
 main(int argc, char **argv)
@@ -62,6 +63,9 @@ main(int argc, char **argv)
 
 	while ((opt = getopt(argc, argv, getopt_arg)) != -1) {
 		switch (opt) {
+		case 'B':
+			bmode = 1;
+			break;
 		case 'b':
 			color = 0;
 			break;
@@ -109,12 +113,35 @@ main(int argc, char **argv)
 	argc -= optind;
 	argv += optind;
 
-	if (argc != 2) {
+	if (argc == 2)
+		bmode = 0;
+	else if (argc > 2 || !bmode) {
 		printf("Two arguments expected\n");
 		usage();
 	}
 
-	check_args(argv);
+	if (argc)
+		check_args(argv);
+	else {
+		if (!getcwd(lpath, sizeof lpath)) {
+			printf("getcwd failed: %s\n",
+			    strerror(errno));
+			exit(1);
+		}
+	}
+
+	if (bmode) {
+		if (chdir(lpath) == -1) {
+			printf("chdir \"%s\" failed: %s\n",
+			    lpath, strerror(errno));
+			exit(1);
+		}
+
+		*lpath = '.';
+		lpath[1] = 0;
+		llen = 1;
+	}
+
 	pwd  = lpath + llen;
 	rpwd = rpath + rlen;
 	exec_sighdl();
@@ -188,6 +215,10 @@ check_args(char **argv)
 
 	llen = strlen(s);
 	memcpy(lpath, s, llen + 1);
+
+	if (bmode)
+		return;
+
 	ino = stat1.st_ino;
 	arg[1] = *argv;
 

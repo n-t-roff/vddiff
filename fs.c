@@ -263,7 +263,7 @@ rebuild_db(void)
 	lpath[llen] = 0;
 	rpath[rlen] = 0;
 	db_free();
-	build_diff_db(3);
+	build_diff_db(bmode ? 1 : 3);
 	disp_list();
 }
 
