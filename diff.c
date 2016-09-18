@@ -36,7 +36,6 @@ static char *read_link(char *, off_t);
 
 static int (*xstat)(const char *, struct stat *) = lstat;
 static struct filediff *diff;
-static struct bst scan_db = { NULL, name_cmp };
 
 /* 1: Proc left dir
  * 2: Proc right dir
@@ -346,11 +345,10 @@ add_diff_dir(void)
 	end = path + strlen(path);
 
 	while (1) {
-		if (!bst_srch(&scan_db, (union bst_val)(void *)path, NULL))
+		if (!scan_db_find)
 			goto ret;
 
-		avl_add(&scan_db, (union bst_val)(void *)strdup(path),
-			    (union bst_val)(int)0);
+		scan_db_add(path);
 
 		do {
 			if (--end < path)
@@ -374,13 +372,13 @@ is_diff_dir(char *name)
 	if (!recursive)
 		return 0;
 	if (!*pwd)
-		return bst_srch(&scan_db, (union bst_val)(void *)name, NULL) ?
+		return scan_db_find(name) ?
 		    0 : 1;
 	l1 = strlen(PWD);
 	s = malloc(l1 + strlen(name) + 2);
 	memcpy(s, PWD, l1);
 	pthcat(s, l1, name);
-	v = bst_srch(&scan_db, (union bst_val)(void *)s, NULL);
+	v = scan_db_find(s);
 	free(s);
 	return v ? 0 : 1;
 }

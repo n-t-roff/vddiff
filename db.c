@@ -43,8 +43,15 @@ static struct bst db      = { NULL, cmp },
                   curs_db = { NULL, name_cmp };
 static unsigned db_idx,
                 tot_db_num;
+static void *scan_db;
 
 /* alloc space for empty DB tree */
+
+void
+db_init(void)
+{
+	scan_db = db_new(name_cmp);
+}
 
 void *
 db_new(int (*compare)(union bst_val, union bst_val))
@@ -99,6 +106,19 @@ proc_subdirs(struct bst_node *n)
 
 	free(n->key.p);
 	free(n);
+}
+
+int
+scan_db_find(char *path)
+{
+	return bst_srch(scan_db, (union bst_val)(void *)path, NULL);
+}
+
+void
+scan_db_add(char *path)
+{
+	avl_add(scan_db, (union bst_val)(void *)strdup(path),
+		    (union bst_val)(int)0);
 }
 
 void

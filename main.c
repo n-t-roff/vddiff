@@ -54,6 +54,7 @@ main(int argc, char **argv)
 
 	prog = *argv;
 	setlocale(LC_ALL, "");
+	db_init();
 	set_tool(&difftool, strdup("vim -dR"), 0);
 	set_tool(&viewtool, strdup("less"), 0);
 
