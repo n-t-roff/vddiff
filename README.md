@@ -17,3 +17,6 @@ $ su
 # exit
 $ make distclean
 ```
+If there are any problems please report them at the
+[issue list](https://github.com/n-t-roff/vddiff/issues)
+or write a mail to troff@arcor.de
