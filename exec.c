@@ -55,7 +55,7 @@ tool(char *name, char *rnam, int tree)
 		*--cmd = tolower(name[--l]);
 
 		if (name[l] == '.') {
-			tmptool = db_srch_ext(++cmd);
+			tmptool = db_srch_str(ext_db, ++cmd);
 			break;
 		}
 

@@ -25,8 +25,8 @@ PERFORMANCE OF THIS SOFTWARE.
 #include <time.h>
 #include <ctype.h>
 #include <errno.h>
+#include <avlbst.h>
 #include "compat.h"
-#include "avlbst.h"
 #include "diff.h"
 #include "main.h"
 #include "ui.h"
@@ -1416,7 +1416,7 @@ enter_dir(char *name, char *rnam, int tree)
 		db_free();
 		scan_subdir(NULL, NULL, 1);
 
-		if ((uv = db_get_curs(rpath))) {
+		if ((uv = db_srch_str(curs_db, rpath))) {
 			top_idx = *uv++;
 			curs    = *uv;
 		}

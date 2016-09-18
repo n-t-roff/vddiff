@@ -1,6 +1,6 @@
 struct ui_state {
 	size_t llen, rlen;
-	struct bst_node *bst;
+	void *bst;
 	unsigned num;
 	struct filediff **list;
 	unsigned top_idx, curs;

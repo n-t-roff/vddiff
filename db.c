@@ -30,27 +30,28 @@ PERFORMANCE OF THIS SOFTWARE.
 static int cmp(union bst_val, union bst_val);
 static void mk_list(struct bst_node *);
 static void del_tree(struct bst_node *);
-static void proc_subdirs(struct bst_node *);
+static void proc_nodes(struct bst_node *);
 
 enum sorting sorting;
 unsigned db_num;
 struct filediff **db_list;
 short noequal, real_diff;
 
-static struct bst db      = { NULL, cmp },
-                  name_db = { NULL, name_cmp },
-                  ext_db  = { NULL, name_cmp },
-                  curs_db = { NULL, name_cmp };
+static struct bst db      = { NULL, cmp };
 static unsigned db_idx,
                 tot_db_num;
-static void *scan_db;
-
-/* alloc space for empty DB tree */
+void *scan_db;
+void *name_db;
+void *curs_db;
+void *ext_db;
 
 void
 db_init(void)
 {
 	scan_db = db_new(name_cmp);
+	name_db = db_new(name_cmp);
+	curs_db = db_new(name_cmp);
+	ext_db = db_new(name_cmp);
 }
 
 void *
@@ -64,8 +65,6 @@ db_new(int (*compare)(union bst_val, union bst_val))
 	return (void *)bst;
 }
 
-/* free empty DB tree */
-
 void
 db_destroy(void *t)
 {
@@ -73,28 +72,39 @@ db_destroy(void *t)
 }
 
 void
-db_scan_add(void *db, char *name)
+str_db_add(void *db, char *s)
 {
-	avl_add(db, (union bst_val)(void *)strdup(name),
+	avl_add(db, (union bst_val)(void *)strdup(s),
 	    (union bst_val)(int)0);
 }
 
-void
-db_scan_walk(void *db)
+void *
+db_srch_str(void *db, char *s)
 {
-	proc_subdirs(((struct bst *)db)->root);
+	struct bst_node *n;
+
+	if (bst_srch(db, (union bst_val)(void *)s, &n))
+		return NULL;
+	else
+		return n;
+}
+
+void
+db_walk(void *db)
+{
+	proc_nodes(((struct bst *)db)->root);
 }
 
 static void
-proc_subdirs(struct bst_node *n)
+proc_nodes(struct bst_node *n)
 {
 	size_t l1, l2;
 
 	if (!n)
 		return;
 
-	proc_subdirs(n->left);
-	proc_subdirs(n->right);
+	proc_nodes(n->left);
+	proc_nodes(n->right);
 
 	l1 = llen;
 	l2 = rlen;
@@ -108,19 +118,6 @@ proc_subdirs(struct bst_node *n)
 	free(n);
 }
 
-int
-scan_db_find(char *path)
-{
-	return bst_srch(scan_db, (union bst_val)(void *)path, NULL);
-}
-
-void
-scan_db_add(char *path)
-{
-	avl_add(scan_db, (union bst_val)(void *)strdup(path),
-		    (union bst_val)(int)0);
-}
-
 void
 db_def_ext(char *ext, char *tool, int bg)
 {
@@ -129,7 +126,7 @@ db_def_ext(char *ext, char *tool, int bg)
 	char *s;
 	int c;
 
-	if (bst_srch(&ext_db, (union bst_val)(void *)ext, &n)) {
+	if (bst_srch(ext_db, (union bst_val)(void *)ext, &n)) {
 		for (s = tool; (c = *s); s++)
 			*s = tolower(c);
 
@@ -138,7 +135,7 @@ db_def_ext(char *ext, char *tool, int bg)
 		(t->tool)[1] = NULL;
 		(t->tool)[2] = NULL;
 		t->bg = bg;
-		avl_add(&ext_db, (union bst_val)(void *)ext,
+		avl_add(ext_db, (union bst_val)(void *)ext,
 		    (union bst_val)(void *)t);
 	} else {
 		free(ext);
@@ -148,28 +145,17 @@ db_def_ext(char *ext, char *tool, int bg)
 	}
 }
 
-struct tool *
-db_srch_ext(char *ext)
-{
-	struct bst_node *n;
-
-	if (bst_srch(&ext_db, (union bst_val)(void *)ext, &n))
-		return NULL;
-	else
-		return n->data.p;
-}
-
 void
 db_set_curs(char *path, unsigned top_idx, unsigned curs)
 {
 	struct bst_node *n;
 	unsigned *uv;
 
-	if (!bst_srch(&curs_db, (union bst_val)(void *)path, &n)) {
+	if (!bst_srch(curs_db, (union bst_val)(void *)path, &n)) {
 		uv = n->data.p;
 	} else {
 		uv = malloc(2 * sizeof(unsigned));
-		avl_add(&curs_db, (union bst_val)(void *)strdup(path),
+		avl_add(curs_db, (union bst_val)(void *)strdup(path),
 		    (union bst_val)(void *)uv);
 	}
 
@@ -177,35 +163,11 @@ db_set_curs(char *path, unsigned top_idx, unsigned curs)
 	*uv   = curs;
 }
 
-unsigned *
-db_get_curs(char *path)
-{
-	struct bst_node *n;
-
-	if (bst_srch(&curs_db, (union bst_val)(void *)path, &n))
-		return NULL;
-	else
-		return n->data.p;
-}
-
 void
 db_add(struct filediff *diff)
 {
 	avl_add(&db, (union bst_val)(void *)diff, (union bst_val)(int)0);
 	tot_db_num++;
-}
-
-void
-add_name(char *name)
-{
-	avl_add(&name_db, (union bst_val)(void *)strdup(name),
-	    (union bst_val)(int)0);
-}
-
-int
-srch_name(char *name)
-{
-	return bst_srch(&name_db, (union bst_val)(void *)name, NULL);
 }
 
 int
@@ -342,5 +304,6 @@ db_free(void)
 void
 free_names(void)
 {
-	del_names(name_db.root); name_db.root = NULL;
+	del_names(((struct bst *)name_db)->root);
+	((struct bst *)name_db)->root = NULL;
 }

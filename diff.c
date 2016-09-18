@@ -83,7 +83,7 @@ build_diff_db(int tree)
 		    !name[2])))
 			continue;
 
-		add_name(name);
+		str_db_add(name_db, name);
 		pthcat(lpath, llen, name);
 
 		if (xstat(lpath, &stat1) == -1) {
@@ -117,7 +117,7 @@ no_tree2:
 		if (scan) {
 			if (S_ISDIR(stat1.st_mode) &&
 			    S_ISDIR(stat2.st_mode)) {
-				db_scan_add(dirs, name);
+				str_db_add(dirs, name);
 				continue;
 			}
 
@@ -265,7 +265,7 @@ right_tree:
 		    !name[2])))
 			continue;
 
-		if (!srch_name(name))
+		if (db_srch_str(name_db, name))
 			continue;
 
 		if (scan) {
@@ -312,7 +312,7 @@ dir_scan_end:
 	if (dir_diff)
 		add_diff_dir();
 
-	db_scan_walk(dirs);
+	db_walk(dirs);
 	db_destroy(dirs);
 	return retval;
 }
@@ -345,10 +345,10 @@ add_diff_dir(void)
 	end = path + strlen(path);
 
 	while (1) {
-		if (!scan_db_find)
+		if (db_srch_str(scan_db, path))
 			goto ret;
 
-		scan_db_add(path);
+		str_db_add(scan_db, path);
 
 		do {
 			if (--end < path)
@@ -372,15 +372,14 @@ is_diff_dir(char *name)
 	if (!recursive)
 		return 0;
 	if (!*pwd)
-		return scan_db_find(name) ?
-		    0 : 1;
+		return db_srch_str(scan_db, name) ? 1 : 0;
 	l1 = strlen(PWD);
 	s = malloc(l1 + strlen(name) + 2);
 	memcpy(s, PWD, l1);
 	pthcat(s, l1, name);
-	v = scan_db_find(s);
+	v = db_srch_str(scan_db, s) ? 1 : 0;
 	free(s);
-	return v ? 0 : 1;
+	return v;
 }
 
 static char *
