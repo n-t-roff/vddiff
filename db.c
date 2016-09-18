@@ -30,6 +30,7 @@ PERFORMANCE OF THIS SOFTWARE.
 static int cmp(union bst_val, union bst_val);
 static void mk_list(struct bst_node *);
 static void del_tree(struct bst_node *);
+static void proc_subdirs(struct bst_node *);
 
 enum sorting sorting;
 unsigned db_num;
@@ -42,6 +43,63 @@ static struct bst db      = { NULL, cmp },
                   curs_db = { NULL, name_cmp };
 static unsigned db_idx,
                 tot_db_num;
+
+/* alloc space for empty DB tree */
+
+void *
+db_new(int (*compare)(union bst_val, union bst_val))
+{
+	struct bst *bst;
+
+	bst = malloc(sizeof(struct bst));
+	bst->root = NULL;
+	bst->cmp = compare;
+	return (void *)bst;
+}
+
+/* free empty DB tree */
+
+void
+db_destroy(void *t)
+{
+	free(t);
+}
+
+void
+db_scan_add(void *db, char *name)
+{
+	avl_add(db, (union bst_val)(void *)strdup(name),
+	    (union bst_val)(int)0);
+}
+
+void
+db_scan_walk(void *db)
+{
+	proc_subdirs(((struct bst *)db)->root);
+}
+
+static void
+proc_subdirs(struct bst_node *n)
+{
+	size_t l1, l2;
+
+	if (!n)
+		return;
+
+	proc_subdirs(n->left);
+	proc_subdirs(n->right);
+
+	l1 = llen;
+	l2 = rlen;
+	scan_subdir(n->key.p, NULL, 3);
+	/* Not done in scan_subdirs(), since there are cases where
+	 * scan_subdirs() must not reset the path */
+	lpath[llen = l1] = 0;
+	rpath[rlen = l2] = 0;
+
+	free(n->key.p);
+	free(n);
+}
 
 void
 db_def_ext(char *ext, char *tool, int bg)

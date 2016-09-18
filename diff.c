@@ -31,7 +31,6 @@ PERFORMANCE OF THIS SOFTWARE.
 
 static int cmp_file(void);
 static struct filediff *alloc_diff(char *);
-static void proc_subdirs(struct bst_node *);
 static void add_diff_dir(void);
 static char *read_link(char *, off_t);
 
@@ -48,8 +47,12 @@ build_diff_db(int tree)
 	DIR *d;
 	struct dirent *ent;
 	char *name;
-	struct bst dirs = { NULL, name_cmp };
+	void *dirs;
 	short dir_diff = 0;
+	int retval = 0;
+
+	if (scan)
+		dirs = db_new(name_cmp);
 
 	if (!(tree & 1))
 		goto right_tree;
@@ -59,7 +62,8 @@ build_diff_db(int tree)
 
 	if (!(d = opendir(lpath))) {
 		printerr(strerror(errno), "opendir %s failed", lpath);
-		return -1;
+		retval = -1;
+		goto dir_scan_end;
 	}
 
 	while (1) {
@@ -71,7 +75,8 @@ build_diff_db(int tree)
 			lpath[llen] = 0;
 			printerr(strerror(errno), "readdir %s failed", lpath);
 			closedir(d);
-			return -1;
+			retval = -1;
+			goto dir_scan_end;
 		}
 
 		name = ent->d_name;
@@ -113,9 +118,7 @@ no_tree2:
 		if (scan) {
 			if (S_ISDIR(stat1.st_mode) &&
 			    S_ISDIR(stat2.st_mode)) {
-				avl_add(&dirs,
-				    (union bst_val)(void *)strdup(name),
-				    (union bst_val)(int)0);
+				db_scan_add(dirs, name);
 				continue;
 			}
 
@@ -243,7 +246,8 @@ right_tree:
 
 	if (!(d = opendir(rpath))) {
 		printerr(strerror(errno), "opendir %s failed", rpath);
-		return -1;
+		retval = -1;
+		goto dir_scan_end;
 	}
 
 	while (1) {
@@ -253,7 +257,8 @@ right_tree:
 				break;
 			printerr(strerror(errno), "readdir %s failed", rpath);
 			closedir(d);
-			return -1;
+			retval = -1;
+			goto dir_scan_end;
 		}
 
 		name = ent->d_name;
@@ -303,36 +308,14 @@ dir_scan_end:
 	free_names();
 
 	if (!scan)
-		return 0;
+		return retval;
 
 	if (dir_diff)
 		add_diff_dir();
 
-	proc_subdirs(dirs.root);
-	return 0;
-}
-
-static void
-proc_subdirs(struct bst_node *n)
-{
-	size_t l1, l2;
-
-	if (!n)
-		return;
-
-	proc_subdirs(n->left);
-	proc_subdirs(n->right);
-
-	l1 = llen;
-	l2 = rlen;
-	scan_subdir(n->key.p, NULL, 3);
-	/* Not done in scan_subdirs(), since there are cases where
-	 * scan_subdirs() must not reset the path */
-	lpath[llen = l1] = 0;
-	rpath[rlen = l2] = 0;
-
-	free(n->key.p);
-	free(n);
+	db_scan_walk(dirs);
+	db_destroy(dirs);
+	return retval;
 }
 
 void

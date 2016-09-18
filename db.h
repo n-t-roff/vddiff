@@ -1,5 +1,9 @@
 enum sorting { DIRSFIRST, FILESFIRST, SORTMIXED };
 
+void *db_new(int (*)(union bst_val, union bst_val));
+void db_destroy(void *);
+void db_scan_add(void *, char *);
+void db_scan_walk(void *);
 void db_add(struct filediff *);
 void add_name(char *);
 int srch_name(char *);
