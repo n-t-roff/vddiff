@@ -5,7 +5,6 @@ void *db_new(int (*)(union bst_val, union bst_val));
 void db_destroy(void *);
 void str_db_add(void *, char *);
 void *db_srch_str(void *, char *);
-void db_walk(void *);
 void db_add(struct filediff *);
 void db_sort(void);
 void db_restore(struct ui_state *);

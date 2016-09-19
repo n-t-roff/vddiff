@@ -55,7 +55,10 @@ tool(char *name, char *rnam, int tree)
 		*--cmd = tolower(name[--l]);
 
 		if (name[l] == '.') {
-			tmptool = db_srch_str(ext_db, ++cmd);
+			struct bst_node *n;
+
+			if ((n = db_srch_str(ext_db, ++cmd)))
+				tmptool = n->data.p;
 			break;
 		}
 

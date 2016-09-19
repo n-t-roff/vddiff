@@ -226,11 +226,13 @@ next_key:
 		case KEY_DOWN:
 		case 'j':
 		case '+':
+			c = 0;
 			curs_down();
 			break;
 		case KEY_UP:
 		case 'k':
 		case '-':
+			c = 0;
 			curs_up();
 			break;
 		case KEY_LEFT:
@@ -251,6 +253,7 @@ next_key:
 			break;
 		case KEY_NPAGE:
 		case ' ':
+			c = 0;
 			page_down();
 			break;
 		case KEY_PPAGE:
@@ -259,21 +262,27 @@ next_key:
 			break;
 		case 'h':
 		case '?':
+			c = 0;
 			help();
 			break;
 		case 'p':
 			if (*key == 'e') {
+				c = 0;
 				fs_chmod(3);
 				break;
 			} else if (key[1] == 'e') {
 				if (*key == 'l') {
+					c = 0;
 					fs_chmod(1);
 					break;
 				} else if (*key == 'r') {
+					c = 0;
 					fs_chmod(2);
 					break;
 				}
 			}
+
+			c = 0;
 
 			if (bmode)
 				break;
@@ -295,6 +304,8 @@ next_key:
 
 			break;
 		case 'f':
+			c = 0;
+
 			if (bmode)
 				break;
 
@@ -307,6 +318,8 @@ next_key:
 			wrefresh(wstat);
 			break;
 		case 'a':
+			c = 0;
+
 			if (bmode)
 				break;
 
@@ -320,19 +333,23 @@ next_key:
 		case 'n':
 			if (c == 'n') {
 				if (*key == 'e') {
+					c = 0;
 					fs_rename(3);
 					break;
 				} else if (key[1] == 'e') {
 					if (*key == 'l') {
+						c = 0;
 						fs_rename(1);
 						break;
 					} else if (*key == 'r') {
+						c = 0;
 						fs_rename(2);
 						break;
 					}
 				}
 			}
 
+			c = 0;
 			noequal = noequal ? 0 : 1;
 			db_sort();
 			top_idx = 0;
@@ -340,6 +357,7 @@ next_key:
 			disp_list();
 			break;
 		case 'c':
+			c = 0;
 			real_diff = real_diff ? 0 : 1;
 			db_sort();
 			top_idx = 0;
@@ -352,38 +370,49 @@ next_key:
 		case 'd':
 			if (*key != 'd')
 				break;
+			c = 0;
 			fs_rm(3, NULL); /* allowed for single sided only */
 			break;
 		case 'l':
-			if (*key == 'd')
+			if (*key == 'd') {
+				c = 0;
 				fs_rm(1, NULL);
-			else if (*key == 's')
+			} else if (*key == 's') {
+				c = 0;
 				open_sh(1);
+			}
 
 			break;
 		case 'r':
 			if (*key == 'd') {
+				c = 0;
 				fs_rm(2, NULL);
 				break;
 			} else if (*key == 's') {
+				c = 0;
 				open_sh(2);
 				break;
 			}
 
-			if (mark)
+			if (mark) {
+				c = 0;
 				clr_mark();
-			else if (edit)
+			} else if (edit) {
+				c = 0;
 				clr_edit();
+			}
 
 			break;
 		case '<':
 			if (*key != '<')
 				break;
+			c = 0;
 			fs_cp(1);
 			break;
 		case '>':
 			if (*key != '>')
 				break;
+			c = 0;
 			fs_cp(2);
 			break;
 		case KEY_HOME:
@@ -391,23 +420,29 @@ next_key:
 			break;
 		case 'G':
 			if (*key == '1') {
+				c = 0;
 				curs_first();
 				break;
 			}
 			/* fall-through */
 		case KEY_END:
+			c = 0;
 			curs_last();
 			break;
 		case 'm':
+			c = 0;
 			set_mark();
 			break;
 		case 'y':
+			c = 0;
 			yank_name(0);
 			break;
 		case 'Y':
+			c = 0;
 			yank_name(1);
 			break;
 		case '$':
+			c = 0;
 			if (!ed_dialog("Type command (<ESC> to cancel):",
 			    NULL /* must be NULL !!! */, NULL, 0))
 				sh_cmd(rbuf, 1);
@@ -432,9 +467,11 @@ next_key:
 			sorting = prev_sorting;
 			break;
 		case 'u':
+			c = 0;
 			rebuild_db();
 			break;
 		case 's':
+			c = 0;
 			open_sh(3);
 			break;
 		default:
@@ -1400,6 +1437,7 @@ enter_dir(char *name, char *rnam, int tree)
 		push_state();
 		scan_subdir(name, rnam, tree);
 	} else {
+		struct bst_node *n;
 		unsigned *uv;
 
 		db_set_curs(rpath, top_idx, curs);
@@ -1416,7 +1454,8 @@ enter_dir(char *name, char *rnam, int tree)
 		db_free();
 		scan_subdir(NULL, NULL, 1);
 
-		if ((uv = db_srch_str(curs_db, rpath))) {
+		if ((n = db_srch_str(curs_db, rpath))) {
+			uv = n->data.p;
 			top_idx = *uv++;
 			curs    = *uv;
 		}

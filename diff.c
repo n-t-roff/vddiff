@@ -29,6 +29,11 @@ PERFORMANCE OF THIS SOFTWARE.
 #include "diff.h"
 #include "db.h"
 
+struct str_list {
+	char *s;
+	struct str_list *next;
+};
+
 static int cmp_file(void);
 static struct filediff *alloc_diff(char *);
 static void add_diff_dir(void);
@@ -46,12 +51,9 @@ build_diff_db(int tree)
 	DIR *d;
 	struct dirent *ent;
 	char *name;
-	void *dirs;
+	struct str_list *dirs = NULL;
 	short dir_diff = 0;
 	int retval = 0;
-
-	if (scan)
-		dirs = db_new(name_cmp);
 
 	if (!(tree & 1))
 		goto right_tree;
@@ -117,7 +119,11 @@ no_tree2:
 		if (scan) {
 			if (S_ISDIR(stat1.st_mode) &&
 			    S_ISDIR(stat2.st_mode)) {
-				str_db_add(dirs, name);
+				struct str_list *se =
+				    malloc(sizeof(struct str_list));
+				se->s = strdup(name);
+				se->next = dirs ? dirs : NULL;
+				dirs = se;
 				continue;
 			}
 
@@ -312,8 +318,24 @@ dir_scan_end:
 	if (dir_diff)
 		add_diff_dir();
 
-	db_walk(dirs);
-	db_destroy(dirs);
+	while (dirs) {
+		size_t l1, l2 = 0 /* silence warning */;
+		struct str_list *p;
+
+		l1 = llen;
+		l2 = rlen;
+		scan_subdir(dirs->s, NULL, 3);
+		/* Not done in scan_subdirs(), since there are cases where
+		 * scan_subdirs() must not reset the path */
+		lpath[llen = l1] = 0;
+		rpath[rlen = l2] = 0;
+
+		free(dirs->s);
+		p = dirs;
+		dirs = dirs->next;
+		free(p);
+	}
+
 	return retval;
 }
 

@@ -34,8 +34,12 @@ PERFORMANCE OF THIS SOFTWARE.
 #include "fs.h"
 #include "ed.h"
 
+struct str_list {
+	char *s;
+	struct str_list *next;
+};
+
 static void proc_dir(void);
-static void proc_subdirs(struct bst_node *);
 static void rm_file(void);
 static void cp_file(void);
 static int creatdir(void);
@@ -273,7 +277,7 @@ proc_dir(void)
 	DIR *d;
 	struct dirent *ent;
 	char *name;
-	struct bst dirs = { NULL, name_cmp };
+	struct str_list *dirs = NULL;
 
 	if (tree_op == TREE_CP) {
 		if (creatdir())
@@ -314,9 +318,10 @@ proc_dir(void)
 		}
 
 		if (S_ISDIR(stat1.st_mode)) {
-			avl_add(&dirs,
-			    (union bst_val)(void *)strdup(name),
-			    (union bst_val)(int)0);
+			struct str_list *se = malloc(sizeof(struct str_list));
+			se->s = strdup(name);
+			se->next = dirs ? dirs : NULL;
+			dirs = se;
 		} else if (tree_op == TREE_RM)
 			rm_file();
 		else {
@@ -332,41 +337,35 @@ closedir:
 	if (tree_op == TREE_CP)
 		pth2[len2] = 0;
 
-	proc_subdirs(dirs.root);
+	while (dirs) {
+		size_t l1, l2 = 0 /* silence warning */;
+		struct str_list *p;
+
+		l1 = len1;
+		len1 = pthcat(pth1, len1, dirs->s);
+
+		if (tree_op == TREE_CP) {
+			l2 = len2;
+			len2 = pthcat(pth2, len2, dirs->s);
+		}
+
+		proc_dir();
+		pth1[len1 = l1] = 0;
+
+		if (tree_op == TREE_CP)
+			pth2[len2 = l2] = 0;
+
+		free(dirs->s);
+		p = dirs;
+		dirs = dirs->next;
+		free(p);
+	}
 
 	if (tree_op == TREE_RM) {
 		if (rmdir(pth1) == -1)
 			printerr(strerror(errno),
 			    "unlink %s failed", pth1);
 	}
-}
-
-static void
-proc_subdirs(struct bst_node *n)
-{
-	size_t l1, l2 = 0 /* silence warning */;
-
-	if (!n)
-		return;
-
-	proc_subdirs(n->left);
-	proc_subdirs(n->right);
-	l1 = len1;
-	len1 = pthcat(pth1, len1, n->key.p);
-
-	if (tree_op == TREE_CP) {
-		l2 = len2;
-		len2 = pthcat(pth2, len2, n->key.p);
-	}
-
-	proc_dir();
-	pth1[len1 = l1] = 0;
-
-	if (tree_op == TREE_CP)
-		pth2[len2 = l2] = 0;
-
-	free(n->key.p);
-	free(n);
 }
 
 static void

@@ -30,21 +30,19 @@ PERFORMANCE OF THIS SOFTWARE.
 static int cmp(union bst_val, union bst_val);
 static void mk_list(struct bst_node *);
 static void del_tree(struct bst_node *);
-static void proc_nodes(struct bst_node *);
 
 enum sorting sorting;
 unsigned db_num;
 struct filediff **db_list;
 short noequal, real_diff;
-
-static struct bst db      = { NULL, cmp };
-static unsigned db_idx,
-                tot_db_num;
 void *scan_db;
 void *name_db;
 void *curs_db;
 void *ext_db;
 
+static struct bst db      = { NULL, cmp };
+static unsigned db_idx,
+                tot_db_num;
 void
 db_init(void)
 {
@@ -87,35 +85,6 @@ db_srch_str(void *db, char *s)
 		return NULL;
 	else
 		return n;
-}
-
-void
-db_walk(void *db)
-{
-	proc_nodes(((struct bst *)db)->root);
-}
-
-static void
-proc_nodes(struct bst_node *n)
-{
-	size_t l1, l2;
-
-	if (!n)
-		return;
-
-	proc_nodes(n->left);
-	proc_nodes(n->right);
-
-	l1 = llen;
-	l2 = rlen;
-	scan_subdir(n->key.p, NULL, 3);
-	/* Not done in scan_subdirs(), since there are cases where
-	 * scan_subdirs() must not reset the path */
-	lpath[llen = l1] = 0;
-	rpath[rlen = l2] = 0;
-
-	free(n->key.p);
-	free(n);
 }
 
 void
