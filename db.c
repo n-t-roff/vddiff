@@ -20,6 +20,7 @@ PERFORMANCE OF THIS SOFTWARE.
 #include <sys/stat.h>
 #include <avlbst.h>
 #include <ctype.h>
+#include <search.h>
 #include "compat.h"
 #include "diff.h"
 #include "main.h"
@@ -27,9 +28,16 @@ PERFORMANCE OF THIS SOFTWARE.
 #include "db.h"
 #include "exec.h"
 
-static int cmp(union bst_val, union bst_val);
+static void del_names(struct bst_node *);
+
+#ifdef HAVE_LIBAVLBST
+static int diff_cmp(union bst_val, union bst_val);
 static void mk_list(struct bst_node *);
-static void del_tree(struct bst_node *);
+static void diff_db_delete(struct bst_node *);
+#else
+static int diff_cmp(const void *, const void *);
+static void mk_list(const void *, const VISIT, const int);
+#endif
 
 enum sorting sorting;
 unsigned db_num;
@@ -40,9 +48,14 @@ void *name_db;
 void *curs_db;
 void *ext_db;
 
-static struct bst db      = { NULL, cmp };
-static unsigned db_idx,
-                tot_db_num;
+static unsigned db_idx, tot_db_num;
+
+#ifdef HAVE_LIBAVLBST
+static struct bst diff_db = { NULL, diff_cmp };
+#else
+static void *diff_db;
+#endif
+
 void
 db_init(void)
 {
@@ -132,13 +145,6 @@ db_set_curs(char *path, unsigned top_idx, unsigned curs)
 	*uv   = curs;
 }
 
-void
-db_add(struct filediff *diff)
-{
-	avl_add(&db, (union bst_val)(void *)diff, (union bst_val)(int)0);
-	tot_db_num++;
-}
-
 int
 name_cmp(union bst_val a, union bst_val b)
 {
@@ -147,6 +153,118 @@ name_cmp(union bst_val a, union bst_val b)
 
 	return strcmp(s1, s2);
 }
+
+void
+free_names(void)
+{
+	del_names(((struct bst *)name_db)->root);
+	((struct bst *)name_db)->root = NULL;
+}
+
+static void
+del_names(struct bst_node *n)
+{
+	if (!n)
+		return;
+
+	del_names(n->left);
+	del_names(n->right);
+	free(n->key.p);
+	free(n);
+}
+
+/***********
+ * diff DB *
+ ***********/
+
+void
+diff_db_store(struct ui_state *st)
+{
+#ifdef HAVE_LIBAVLBST
+	st->bst  = diff_db.root; diff_db.root = NULL;
+#else
+	st->bst  = diff_db; diff_db = NULL;
+#endif
+	st->num  = db_num ; db_num  = 0;
+	st->list = db_list; db_list = NULL;
+}
+
+void
+diff_db_restore(struct ui_state *st)
+{
+	diff_db_free();
+#ifdef HAVE_LIBAVLBST
+	diff_db.root = st->bst;
+#else
+	diff_db = st->bst;
+#endif
+	db_num  = st->num;
+	db_list = st->list;
+}
+
+void
+diff_db_sort(void)
+{
+	if (!tot_db_num)
+		return;
+	if (!db_list)
+		db_list = malloc(tot_db_num * sizeof(struct filediff *));
+	db_idx = 0;
+#ifdef HAVE_LIBAVLBST
+	mk_list(diff_db.root);
+#else
+	twalk(diff_db, mk_list);
+#endif
+	db_num = db_idx;
+}
+
+#define PROC_DIFF_NODE() \
+	do { \
+	if (bmode || \
+	    ((!noequal || \
+	      f->diff == '!' || S_ISDIR(f->ltype) || \
+	      (f->ltype & S_IFMT) != (f->rtype & S_IFMT)) && \
+	     (!real_diff || \
+	      f->diff == '!' || (S_ISDIR(f->ltype) && S_ISDIR(f->rtype) && \
+	      is_diff_dir(f->name))))) \
+	{ \
+		db_list[db_idx++] = f; \
+	} \
+	} while (0)
+
+#ifdef HAVE_LIBAVLBST
+static void
+mk_list(struct bst_node *n)
+{
+	struct filediff *f;
+
+	if (!n)
+		return;
+
+	mk_list(n->left);
+	f = n->key.p;
+	PROC_DIFF_NODE();
+	mk_list(n->right);
+}
+#else
+static void
+mk_list(const void *n, const VISIT which, const int depth)
+{
+	struct filediff *f;
+
+	(void)depth;
+
+	switch (which) {
+	case postorder:
+	case leaf:
+		f = *(struct filediff **)n;
+		PROC_DIFF_NODE();
+		break;
+	default:
+		;
+	}
+}
+#endif
 
 #define IS_F_DIR(n) \
     /* both are dirs */ \
@@ -157,10 +275,22 @@ name_cmp(union bst_val a, union bst_val b)
     (S_ISDIR(f##n->rtype) && !f##n->ltype)
 
 static int
-cmp(union bst_val a, union bst_val b)
+diff_cmp(
+#ifdef HAVE_LIBAVLBST
+    union bst_val a, union bst_val b
+#else
+    const void *a, const void *b
+#endif
+    )
 {
-	struct filediff *f1 = a.p,
-	                *f2 = b.p;
+	struct filediff
+#ifdef HAVE_LIBAVLBST
+	    *f1 = a.p,
+	    *f2 = b.p;
+#else
+	    *f1 = (struct filediff *)a,
+	    *f2 = (struct filediff *)b;
+#endif
 
 	if (sorting != SORTMIXED) {
 		short f1_dir = IS_F_DIR(1),
@@ -180,99 +310,54 @@ cmp(union bst_val a, union bst_val b)
 }
 
 void
-db_sort(void)
+diff_db_add(struct filediff *diff)
 {
-	if (!tot_db_num)
-		return;
-	if (!db_list)
-		db_list = malloc(tot_db_num * sizeof(struct filediff *));
-	db_idx = 0;
-	mk_list(db.root);
-	db_num = db_idx;
+#ifdef HAVE_LIBAVLBST
+	avl_add(&diff_db, (union bst_val)(void *)diff, (union bst_val)(int)0);
+#else
+	tsearch(diff, &diff_db, diff_cmp);
+#endif
+	tot_db_num++;
 }
 
-static void
-mk_list(struct bst_node *n)
-{
-	struct filediff *f;
-
-	if (!n)
-		return;
-	mk_list(n->left);
-	f = n->key.p;
-
-	if (bmode ||
-	    ((!noequal ||
-	      f->diff == '!' || S_ISDIR(f->ltype) ||
-	      (f->ltype & S_IFMT) != (f->rtype & S_IFMT)) &&
-	     (!real_diff ||
-	      f->diff == '!' || (S_ISDIR(f->ltype) && S_ISDIR(f->rtype) &&
-	      is_diff_dir(f->name)))))
-	{
-		db_list[db_idx++] = f;
-	}
-
-	mk_list(n->right);
-}
-
-static void
-del_tree(struct bst_node *n)
-{
-	struct filediff *f;
-
-	if (!n)
-		return;
-
-	del_tree(n->left);
-	del_tree(n->right);
-	f = n->key.p;
-	free(f->name);
-	free(f->llink);
-	free(f->rlink);
+#define FREE_DIFF() \
+	free(f->name); \
+	free(f->llink); \
+	free(f->rlink); \
 	free(f);
-	free(n);
+
+void
+diff_db_free(void)
+{
+#ifdef HAVE_LIBAVLBST
+	diff_db_delete(diff_db.root);
+	diff_db.root = NULL;
+	free(db_list);
+	db_list = NULL;
+#else
+	struct filediff *f;
+
+	while (diff_db != NULL) {
+		f = *(struct filediff **)diff_db;
+		tdelete(f, &diff_db, diff_cmp);
+		FREE_DIFF();
+	}
+#endif
 }
 
-
+#ifdef HAVE_LIBAVLBST
 static void
-del_names(struct bst_node *n)
+diff_db_delete(struct bst_node *n)
 {
+	struct filediff *f;
+
 	if (!n)
 		return;
 
-	del_names(n->left);
-	del_names(n->right);
-	free(n->key.p);
+	diff_db_delete(n->left);
+	diff_db_delete(n->right);
+	f = n->key.p;
+	FREE_DIFF();
 	free(n);
 }
-
-void
-db_store(struct ui_state *st)
-{
-	st->bst  = db.root; db.root = NULL;
-	st->num  = db_num ; db_num  = 0;
-	st->list = db_list; db_list = NULL;
-}
-
-void
-db_restore(struct ui_state *st)
-{
-	db_free();
-	db.root = st->bst;
-	db_num  = st->num;
-	db_list = st->list;
-}
-
-void
-db_free(void)
-{
-	del_tree(db.root); db.root = NULL;
-	free(db_list)    ; db_list = NULL;
-}
-
-void
-free_names(void)
-{
-	del_names(((struct bst *)name_db)->root);
-	((struct bst *)name_db)->root = NULL;
-}
+#endif

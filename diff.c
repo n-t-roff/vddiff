@@ -193,13 +193,13 @@ free_a:
 
 		if ((diff->ltype & S_IFMT) != (diff->rtype & S_IFMT)) {
 
-			db_add(diff);
+			diff_db_add(diff);
 			continue;
 
 		} else if (stat1.st_ino == stat2.st_ino) {
 
 			diff->diff = '=';
-			db_add(diff);
+			diff_db_add(diff);
 			continue;
 
 		} else if (S_ISREG(stat1.st_mode)) {
@@ -209,13 +209,13 @@ free_a:
 				diff->diff = '!';
 				/* fall through */
 			case 0:
-				db_add(diff);
+				diff_db_add(diff);
 				continue;
 			}
 
 		} else if (S_ISDIR(stat1.st_mode)) {
 
-			db_add(diff);
+			diff_db_add(diff);
 			continue;
 
 		} else if (S_ISLNK(stat1.st_mode)) {
@@ -223,13 +223,13 @@ free_a:
 			if (diff->llink && diff->rlink) {
 				if (strcmp(diff->llink, diff->rlink))
 					diff->diff = '!';
-				db_add(diff);
+				diff_db_add(diff);
 				continue;
 			}
 
 		/* any other file type */
 		} else {
-			db_add(diff);
+			diff_db_add(diff);
 			continue;
 		}
 
@@ -300,14 +300,14 @@ right_tree:
 		if (S_ISLNK(stat2.st_mode))
 			diff->rlink = read_link(rpath, stat2.st_size);
 
-		db_add(diff);
+		diff_db_add(diff);
 	}
 
 	closedir(d);
 
 build_list:
 	if (!scan)
-		db_sort();
+		diff_db_sort();
 
 dir_scan_end:
 	free_names();

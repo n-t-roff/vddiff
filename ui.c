@@ -170,7 +170,7 @@ build_ui(void)
 	build_diff_db(bmode ? 1 : 3);
 	disp_list();
 	ui_ctrl();
-	db_free();
+	diff_db_free();
 	delwin(wstat);
 	delwin(wlist);
 	erase();
@@ -351,7 +351,7 @@ next_key:
 
 			c = 0;
 			noequal = noequal ? 0 : 1;
-			db_sort();
+			diff_db_sort();
 			top_idx = 0;
 			curs    = 0;
 			disp_list();
@@ -359,7 +359,7 @@ next_key:
 		case 'c':
 			c = 0;
 			real_diff = real_diff ? 0 : 1;
-			db_sort();
+			diff_db_sort();
 			top_idx = 0;
 			curs    = 0;
 			disp_list();
@@ -1398,7 +1398,7 @@ static void
 push_state(void)
 {
 	struct ui_state *st = malloc(sizeof(struct ui_state));
-	db_store(st);
+	diff_db_store(st);
 	st->llen    = llen;
 	st->rlen    = rlen;
 	st->top_idx = top_idx;  top_idx = 0;
@@ -1425,7 +1425,7 @@ pop_state(void)
 	curs     = st->curs;
 	mark     = st->mark;
 	lpath[llen] = 0; /* For 'p' (pwd) */
-	db_restore(st);
+	diff_db_restore(st);
 	free(st);
 	disp_list();
 }
@@ -1451,7 +1451,7 @@ enter_dir(char *name, char *rnam, int tree)
 		top_idx = 0;
 		curs = 0;
 		mark = NULL;
-		db_free();
+		diff_db_free();
 		scan_subdir(NULL, NULL, 1);
 
 		if ((n = db_srch_str(curs_db, rpath))) {
