@@ -25,7 +25,6 @@ PERFORMANCE OF THIS SOFTWARE.
 #include <time.h>
 #include <ctype.h>
 #include <errno.h>
-#include <avlbst.h>
 #include "compat.h"
 #include "diff.h"
 #include "main.h"
@@ -1437,7 +1436,6 @@ enter_dir(char *name, char *rnam, int tree)
 		push_state();
 		scan_subdir(name, rnam, tree);
 	} else {
-		struct bst_node *n;
 		unsigned *uv;
 
 		db_set_curs(rpath, top_idx, curs);
@@ -1454,8 +1452,7 @@ enter_dir(char *name, char *rnam, int tree)
 		diff_db_free();
 		scan_subdir(NULL, NULL, 1);
 
-		if ((n = db_srch_str(curs_db, rpath))) {
-			uv = n->data.p;
+		if ((uv = db_get_curs(rpath))) {
 			top_idx = *uv++;
 			curs    = *uv;
 		}

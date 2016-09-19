@@ -20,7 +20,6 @@ PERFORMANCE OF THIS SOFTWARE.
 #include <sys/stat.h>
 #include <unistd.h>
 #include <errno.h>
-#include <avlbst.h>
 #include <locale.h>
 #include "compat.h"
 #include "main.h"
@@ -54,7 +53,9 @@ main(int argc, char **argv)
 
 	prog = *argv;
 	setlocale(LC_ALL, "");
+#ifdef HAVE_LIBAVLBST
 	db_init();
+#endif
 	set_tool(&difftool, strdup("vim -dR"), 0);
 	set_tool(&viewtool, strdup("less"), 0);
 

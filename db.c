@@ -18,7 +18,6 @@ PERFORMANCE OF THIS SOFTWARE.
 #include <stdlib.h>
 #include <sys/types.h>
 #include <sys/stat.h>
-#include <avlbst.h>
 #include <ctype.h>
 #include <search.h>
 #include "compat.h"
@@ -28,14 +27,23 @@ PERFORMANCE OF THIS SOFTWARE.
 #include "db.h"
 #include "exec.h"
 
-static void del_names(struct bst_node *);
+struct curs_pos {
+	char *path;
+	unsigned uv[2];
+};
 
 #ifdef HAVE_LIBAVLBST
+static void *db_new(int (*)(union bst_val, union bst_val));
+static int name_cmp(union bst_val, union bst_val);
 static int diff_cmp(union bst_val, union bst_val);
 static void mk_list(struct bst_node *);
 static void diff_db_delete(struct bst_node *);
+static void del_names(struct bst_node *);
 #else
+static int name_cmp(const void *, const void *);
 static int diff_cmp(const void *, const void *);
+static int curs_cmp(const void *, const void *);
+static int ext_cmp(const void *, const void *);
 static void mk_list(const void *, const VISIT, const int);
 #endif
 
@@ -45,9 +53,9 @@ struct filediff **db_list;
 short noequal, real_diff;
 void *scan_db;
 void *name_db;
-void *curs_db;
-void *ext_db;
 
+static void *curs_db;
+static void *ext_db;
 static unsigned db_idx, tot_db_num;
 
 #ifdef HAVE_LIBAVLBST
@@ -56,16 +64,17 @@ static struct bst diff_db = { NULL, diff_cmp };
 static void *diff_db;
 #endif
 
+#ifdef HAVE_LIBAVLBST
 void
 db_init(void)
 {
 	scan_db = db_new(name_cmp);
 	name_db = db_new(name_cmp);
 	curs_db = db_new(name_cmp);
-	ext_db = db_new(name_cmp);
+	ext_db  = db_new(name_cmp);
 }
 
-void *
+static void *
 db_new(int (*compare)(union bst_val, union bst_val))
 {
 	struct bst *bst;
@@ -75,40 +84,80 @@ db_new(int (*compare)(union bst_val, union bst_val))
 	bst->cmp = compare;
 	return (void *)bst;
 }
+#endif
+
+/********************
+ * simple char * DB *
+ ********************/
 
 void
-db_destroy(void *t)
+str_db_add(void **db, char *s)
 {
-	free(t);
-}
-
-void
-str_db_add(void *db, char *s)
-{
-	avl_add(db, (union bst_val)(void *)strdup(s),
+#ifdef HAVE_LIBAVLBST
+	avl_add(*db, (union bst_val)(void *)strdup(s),
 	    (union bst_val)(int)0);
+#else
+	tsearch(strdup(s), db, name_cmp);
+#endif
 }
 
-void *
-db_srch_str(void *db, char *s)
+int
+str_db_srch(void **db, char *s)
 {
-	struct bst_node *n;
-
-	if (bst_srch(db, (union bst_val)(void *)s, &n))
-		return NULL;
-	else
-		return n;
+#ifdef HAVE_LIBAVLBST
+	return bst_srch(*db, (union bst_val)(void *)s, NULL);
+#else
+	return tfind(s, db, name_cmp) ? 0 : 1;
+#endif
 }
+
+static int
+name_cmp(
+#ifdef HAVE_LIBAVLBST
+    union bst_val a, union bst_val b
+#else
+    const void *a, const void *b
+#endif
+    )
+{
+#ifdef HAVE_LIBAVLBST
+	char *s1 = a.p,
+	     *s2 = b.p;
+#else
+	char *s1 = (char *)a,
+	     *s2 = (char *)b;
+#endif
+
+	return strcmp(s1, s2);
+}
+
+/**********
+ * ext DB *
+ **********/
 
 void
 db_def_ext(char *ext, char *tool, int bg)
 {
-	struct bst_node *n;
 	struct tool *t;
 	char *s;
 	int c;
 
-	if (bst_srch(ext_db, (union bst_val)(void *)ext, &n)) {
+#ifdef HAVE_LIBAVLBST
+	struct bst_node *n;
+
+	if (!bst_srch(ext_db, (union bst_val)(void *)ext, &n)) {
+		t = n->data.p;
+#else
+	struct tool key;
+
+	key.ext = ext;
+
+	if ((t = tfind(&key, &ext_db, ext_cmp))) {
+#endif
+		free(ext);
+		free(*t->tool);
+		*t->tool = tool;
+	} else {
 		for (s = tool; (c = *s); s++)
 			*s = tolower(c);
 
@@ -117,21 +166,57 @@ db_def_ext(char *ext, char *tool, int bg)
 		(t->tool)[1] = NULL;
 		(t->tool)[2] = NULL;
 		t->bg = bg;
+#ifdef HAVE_LIBAVLBST
 		avl_add(ext_db, (union bst_val)(void *)ext,
 		    (union bst_val)(void *)t);
-	} else {
-		free(ext);
-		t = n->data.p;
-		free(*t->tool);
-		*t->tool = tool;
+#else
+		t->ext = ext;
+		tsearch(t, &ext_db, ext_cmp);
+#endif
 	}
 }
+
+struct tool *
+db_srch_ext(char *ext)
+{
+#ifdef HAVE_LIBAVLBST
+	struct bst_node *n;
+
+	if (!bst_srch(ext_db, (union bst_val)(void *)ext, &n))
+		return n->data.p;
+#else
+	struct tool *t, key;
+
+	key.ext = ext;
+
+	if ((t = tfind(&key, &ext_db, ext_cmp)))
+		return t;
+#endif
+	else
+		return NULL;
+}
+
+#ifndef HAVE_LIBAVLBST
+static int
+ext_cmp(const void *a, const void *b)
+{
+	return strcmp(
+	    ((const struct tool *)a)->ext,
+	    ((const struct tool *)b)->ext);
+}
+#endif
+
+/***********
+ * curs DB *
+ ***********/
 
 void
 db_set_curs(char *path, unsigned top_idx, unsigned curs)
 {
-	struct bst_node *n;
 	unsigned *uv;
+
+#ifdef HAVE_LIBAVLBST
+	struct bst_node *n;
 
 	if (!bst_srch(curs_db, (union bst_val)(void *)path, &n)) {
 		uv = n->data.p;
@@ -140,27 +225,76 @@ db_set_curs(char *path, unsigned top_idx, unsigned curs)
 		avl_add(curs_db, (union bst_val)(void *)strdup(path),
 		    (union bst_val)(void *)uv);
 	}
+#else
+	struct curs_pos *cp, key;
+
+	key.path = path;
+
+	if (!(cp = tfind(&key, &curs_db, curs_cmp))) {
+		cp = malloc(sizeof(struct curs_pos));
+		cp->path = strdup(path);
+		tsearch(cp, &curs_db, curs_cmp);
+	}
+
+	uv = (unsigned *)&cp->uv;
+#endif
 
 	*uv++ = top_idx;
 	*uv   = curs;
 }
 
-int
-name_cmp(union bst_val a, union bst_val b)
+unsigned *
+db_get_curs(char *path)
 {
-	char *s1 = a.p,
-	     *s2 = b.p;
+#ifdef HAVE_LIBAVLBST
+	struct bst_node *n;
 
-	return strcmp(s1, s2);
+	if (!bst_srch(curs_db, (union bst_val)(void *)path, &n))
+		return n->data.p;
+#else
+	struct curs_pos *cp, key;
+
+	key.path = path;
+
+	if ((cp = tfind(&key, &curs_db, curs_cmp)))
+		return (unsigned *)&cp->uv;
+#endif
+	else
+		return NULL;
 }
+
+#ifndef HAVE_LIBAVLBST
+static int
+curs_cmp(const void *a, const void *b)
+{
+	return strcmp(
+	    ((const struct curs_pos *)a)->path,
+	    ((const struct curs_pos *)b)->path);
+}
+#endif
+
+/***********
+ * name DB *
+ ***********/
 
 void
 free_names(void)
 {
+#ifdef HAVE_LIBAVLBST
 	del_names(((struct bst *)name_db)->root);
 	((struct bst *)name_db)->root = NULL;
+#else
+	char *s;
+
+	while (name_db != NULL) {
+		s = *(char **)name_db;
+		tdelete(s, &name_db, name_cmp);
+		free(s);
+	}
+#endif
 }
 
+#ifdef HAVE_LIBAVLBST
 static void
 del_names(struct bst_node *n)
 {
@@ -172,6 +306,7 @@ del_names(struct bst_node *n)
 	free(n->key.p);
 	free(n);
 }
+#endif
 
 /***********
  * diff DB *
@@ -320,7 +455,7 @@ diff_db_add(struct filediff *diff)
 	tot_db_num++;
 }
 
-#define FREE_DIFF() \
+#define FREE_DIFF(f) \
 	free(f->name); \
 	free(f->llink); \
 	free(f->rlink); \
@@ -332,17 +467,17 @@ diff_db_free(void)
 #ifdef HAVE_LIBAVLBST
 	diff_db_delete(diff_db.root);
 	diff_db.root = NULL;
-	free(db_list);
-	db_list = NULL;
 #else
 	struct filediff *f;
 
 	while (diff_db != NULL) {
 		f = *(struct filediff **)diff_db;
 		tdelete(f, &diff_db, diff_cmp);
-		FREE_DIFF();
+		FREE_DIFF(f);
 	}
 #endif
+	free(db_list);
+	db_list = NULL;
 }
 
 #ifdef HAVE_LIBAVLBST
@@ -357,7 +492,7 @@ diff_db_delete(struct bst_node *n)
 	diff_db_delete(n->left);
 	diff_db_delete(n->right);
 	f = n->key.p;
-	FREE_DIFF();
+	FREE_DIFF(f);
 	free(n);
 }
 #endif

@@ -22,7 +22,6 @@ PERFORMANCE OF THIS SOFTWARE.
 #include <dirent.h>
 #include <errno.h>
 #include <string.h>
-#include <avlbst.h>
 #include "compat.h"
 #include "main.h"
 #include "ui.h"
@@ -85,7 +84,7 @@ build_diff_db(int tree)
 		    !name[2])))
 			continue;
 
-		str_db_add(name_db, name);
+		str_db_add(&name_db, name);
 		pthcat(lpath, llen, name);
 
 		if (xstat(lpath, &stat1) == -1) {
@@ -271,7 +270,7 @@ right_tree:
 		    !name[2])))
 			continue;
 
-		if (db_srch_str(name_db, name))
+		if (!str_db_srch(&name_db, name))
 			continue;
 
 		if (scan) {
@@ -367,10 +366,10 @@ add_diff_dir(void)
 	end = path + strlen(path);
 
 	while (1) {
-		if (db_srch_str(scan_db, path))
+		if (!str_db_srch(&scan_db, path))
 			goto ret;
 
-		str_db_add(scan_db, path);
+		str_db_add(&scan_db, path);
 
 		do {
 			if (--end < path)
@@ -393,13 +392,15 @@ is_diff_dir(char *name)
 
 	if (!recursive)
 		return 0;
+
 	if (!*pwd)
-		return db_srch_str(scan_db, name) ? 1 : 0;
+		return str_db_srch(&scan_db, name) ? 0 : 1;
+
 	l1 = strlen(PWD);
 	s = malloc(l1 + strlen(name) + 2);
 	memcpy(s, PWD, l1);
 	pthcat(s, l1, name);
-	v = db_srch_str(scan_db, s) ? 1 : 0;
+	v = str_db_srch(&scan_db, s) ? 0 : 1;
 	free(s);
 	return v;
 }

@@ -22,7 +22,6 @@ PERFORMANCE OF THIS SOFTWARE.
 #include <dirent.h>
 #include <fcntl.h>
 #include <unistd.h>
-#include <avlbst.h>
 #ifndef HAVE_FUTIMENS
 # include <utime.h>
 #endif

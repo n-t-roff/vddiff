@@ -1,6 +1,9 @@
 struct tool {
 	char *tool[3];
 	int bg;
+#ifndef HAVE_LIBAVLBST
+	char *ext;
+#endif
 };
 
 extern struct tool difftool;

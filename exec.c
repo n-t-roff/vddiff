@@ -16,7 +16,6 @@ PERFORMANCE OF THIS SOFTWARE.
 
 #include <stdlib.h>
 #include <string.h>
-#include <avlbst.h>
 #include <unistd.h>
 #include <ctype.h>
 #include <errno.h>
@@ -55,10 +54,7 @@ tool(char *name, char *rnam, int tree)
 		*--cmd = tolower(name[--l]);
 
 		if (name[l] == '.') {
-			struct bst_node *n;
-
-			if ((n = db_srch_str(ext_db, ++cmd)))
-				tmptool = n->data.p;
+			tmptool = db_srch_ext(++cmd);
 			break;
 		}
 
