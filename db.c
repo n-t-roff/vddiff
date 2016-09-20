@@ -220,13 +220,14 @@ db_set_curs(char *path, unsigned top_idx, unsigned curs)
 
 #ifdef HAVE_LIBAVLBST
 	struct bst_node *n;
+	int br;
 
-	if (!bst_srch(curs_db, (union bst_val)(void *)path, &n)) {
+	if (!(br = bst_srch(curs_db, (union bst_val)(void *)path, &n))) {
 		uv = n->data.p;
 	} else {
 		uv = malloc(2 * sizeof(unsigned));
-		avl_add(curs_db, (union bst_val)(void *)strdup(path),
-		    (union bst_val)(void *)uv);
+		avl_add_at(curs_db, (union bst_val)(void *)strdup(path),
+		    (union bst_val)(void *)uv, br, n);
 	}
 #else
 	struct curs_pos *cp, *cp2;

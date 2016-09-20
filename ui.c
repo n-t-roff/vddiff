@@ -266,7 +266,6 @@ next_key:
 			break;
 		case 'p':
 			if (*key == 'e') {
-				c = 0;
 				fs_chmod(3);
 				break;
 			} else if (key[1] == 'e') {
@@ -332,7 +331,6 @@ next_key:
 		case 'n':
 			if (c == 'n') {
 				if (*key == 'e') {
-					c = 0;
 					fs_rename(3);
 					break;
 				} else if (key[1] == 'e') {
@@ -470,7 +468,6 @@ next_key:
 			rebuild_db();
 			break;
 		case 's':
-			c = 0;
 			open_sh(3);
 			break;
 		default:
