@@ -1,4 +1,6 @@
-#include <avlbst.h>
+#ifdef HAVE_LIBAVLBST
+# include <avlbst.h>
+#endif
 
 enum sorting { DIRSFIRST, FILESFIRST, SORTMIXED };
 

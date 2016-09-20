@@ -149,10 +149,12 @@ db_def_ext(char *ext, char *tool, int bg)
 		t = n->data.p;
 #else
 	struct tool key;
+	void *vp;
 
 	key.ext = ext;
 
-	if ((t = tfind(&key, &ext_db, ext_cmp))) {
+	if ((vp = tfind(&key, &ext_db, ext_cmp))) {
+		t = *(struct tool **)vp;
 #endif
 		free(ext);
 		free(*t->tool);
@@ -185,12 +187,13 @@ db_srch_ext(char *ext)
 	if (!bst_srch(ext_db, (union bst_val)(void *)ext, &n))
 		return n->data.p;
 #else
-	struct tool *t, key;
+	struct tool key;
+	void *vp;
 
 	key.ext = ext;
 
-	if ((t = tfind(&key, &ext_db, ext_cmp)))
-		return t;
+	if ((vp = tfind(&key, &ext_db, ext_cmp)))
+		return *(struct tool **)vp;
 #endif
 	else
 		return NULL;
@@ -226,17 +229,23 @@ db_set_curs(char *path, unsigned top_idx, unsigned curs)
 		    (union bst_val)(void *)uv);
 	}
 #else
-	struct curs_pos *cp, key;
+	struct curs_pos *cp, *cp2;
+	void *vp;
 
-	key.path = path;
+	cp = malloc(sizeof(struct curs_pos));
+	cp->path = strdup(path);
+	vp = tsearch(cp, &curs_db, curs_cmp);
+	cp2 = *(struct curs_pos **)vp;
 
-	if (!(cp = tfind(&key, &curs_db, curs_cmp))) {
-		cp = malloc(sizeof(struct curs_pos));
-		cp->path = strdup(path);
-		tsearch(cp, &curs_db, curs_cmp);
+	if (cp2 != cp) {
+		free(cp->path);
+		free(cp);
 	}
 
-	uv = (unsigned *)&cp->uv;
+	if (!cp2)
+		return;
+
+	uv = (unsigned *)&cp2->uv;
 #endif
 
 	*uv++ = top_idx;
@@ -253,11 +262,14 @@ db_get_curs(char *path)
 		return n->data.p;
 #else
 	struct curs_pos *cp, key;
+	void *vp;
 
 	key.path = path;
 
-	if ((cp = tfind(&key, &curs_db, curs_cmp)))
+	if ((vp = tfind(&key, &curs_db, curs_cmp))) {
+		cp = *(struct curs_pos **)vp;
 		return (unsigned *)&cp->uv;
+	}
 #endif
 	else
 		return NULL;

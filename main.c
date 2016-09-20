@@ -37,6 +37,9 @@ char lpath[PATHSIZ], rpath[PATHSIZ], lbuf[BUF_SIZE], rbuf[BUF_SIZE];
 struct stat stat1, stat2;
 short recursive, scan;
 short bmode;
+#ifdef TRACE
+FILE *debug;
+#endif
 
 static void check_args(char **);
 static int read_rc(void);
@@ -53,6 +56,9 @@ main(int argc, char **argv)
 
 	prog = *argv;
 	setlocale(LC_ALL, "");
+#ifdef TRACE
+	debug = fopen(TRACE, "w");
+#endif
 #ifdef HAVE_LIBAVLBST
 	db_init();
 #endif
