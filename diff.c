@@ -497,6 +497,12 @@ alloc_diff(char *name)
 void
 follow(int f)
 {
+	static int pf;
+
+	if (f < 0)
+		f = pf ? 0 : 1;
+
+	pf = f;
 	xstat = f ? stat : lstat;
 }
 

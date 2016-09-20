@@ -374,11 +374,36 @@ next_key:
 			if (*key == 'd') {
 				c = 0;
 				fs_rm(1, NULL);
+				break;
 			} else if (*key == 's') {
 				c = 0;
 				open_sh(1);
+				break;
 			}
 
+			c = 0;
+			werase(wlist);
+
+			for (i = 0;
+			    i < (ssize_t)(sizeof(sh_str)/sizeof(*sh_str));
+			    i++) {
+				mvwprintw(wlist, i, 0, "F%d", i + 1);
+
+				if (!sh_str[i])
+					continue;
+
+				mvwprintw(wlist, i, 5,
+#ifdef HAVE_CURSES_WCH
+				    "\"%ls\""
+#else
+				    "\"%s\""
+#endif
+				    , sh_str[i]);
+			}
+
+			wrefresh(wlist);
+			getch();
+			disp_list();
 			break;
 		case 'r':
 			if (*key == 'd') {
@@ -470,6 +495,20 @@ next_key:
 		case 's':
 			open_sh(3);
 			break;
+		case 'z':
+			break;
+		case '.':
+			if (*key == 'z') {
+				c = 0;
+				center(top_idx + curs);
+			}
+
+			break;
+		case 'L':
+			c = 0;
+			follow(-1); /* toggle */
+			rebuild_db();
+			break;
 		default:
 			printerr(NULL, "Invalid input '%c' (type h for help).",
 			    isgraph(c) ? c : '?');
@@ -492,8 +531,10 @@ static char *helptxt[] = {
        "<HOME>, 1G	Go to first file",
        "<END>, G	Go to last file",
        "/		Search file",
+       "z.		Center selected file",
        "!, n		Toggle display of equal files",
        "c		Toggle showing only directories and really different files",
+       "L		Toggle following symbolic links",
        "p		Show current relative work directory",
        "a		Show command line directory arguments",
        "f		Show full path",
@@ -514,6 +555,7 @@ static char *helptxt[] = {
        "Y		Copy file path in reverse order to edit line",
        "$		Enter shell command",
        "<F1> - <F10>	Define string to be used in shell command",
+       "l		List function key strings",
        "u		Update file list",
        "s		Open shell",
        "sl		Open shell in left directory",
