@@ -196,7 +196,7 @@ next_key:
 
 			if (ed_dialog(
 			    "Type text to be saved for function key:",
-			    "", NULL, 1))
+			    "", NULL, 1, 0))
 				break;
 
 			free(sh_str[i]);
@@ -465,9 +465,12 @@ next_key:
 			break;
 		case '$':
 			c = 0;
+
 			if (!ed_dialog("Type command (<ESC> to cancel):",
-			    NULL /* must be NULL !!! */, NULL, 0))
+			    NULL /* must be NULL !!! */, NULL, 0, 1)) {
 				sh_cmd(rbuf, 1);
+			}
+
 			break;
 		case 'e':
 			break;
@@ -485,7 +488,7 @@ next_key:
 
 			srch_idx = 0;
 			ed_dialog("Type first characters of filename:",
-			    "" /* remove existing */, srch_file, 0);
+			    "" /* remove existing */, srch_file, 0, 0);
 			sorting = prev_sorting;
 			break;
 		case 'u':

@@ -29,15 +29,27 @@ PERFORMANCE OF THIS SOFTWARE.
 
 #define LINESIZ (sizeof rbuf)
 
+struct hist_ent {
+	char *line;
+	struct hist_ent *next, *prev;
+};
+
 static void init_edit(void);
 static int edit_line(void (*)(char *));
 static void linebuf_delch(void);
 static void linebuf_insch(unsigned);
 static void overful_del(void);
+static void hist_add(void);
+static void hist_up(void);
+static void hist_down(void);
 
 short edit;
+unsigned histsize = 100;
 
 static unsigned linelen, linepos, leftpos;
+static struct hist_ent *history, *hist_ent;
+static short have_hist_ent;
+static unsigned histlen;
 
 #ifdef HAVE_CURSES_WCH
 wchar_t *linebuf;
@@ -145,7 +157,7 @@ set_fkey(int i, char *s)
 int
 ed_dialog(char *msg,
     /* NULL: leave buffer as-is */
-    char *ini, void (*callback)(char *), int keep_buf)
+    char *ini, void (*callback)(char *), int keep_buf, int use_hist)
 {
 	if (!edit)
 		init_edit(); /* conditional, else rbuf is cleared! */
@@ -169,7 +181,47 @@ ed_dialog(char *msg,
 #endif
 	if (!keep_buf)
 		clr_edit();
+
+	if (use_hist) {
+		if (have_hist_ent) {
+			have_hist_ent = 0;
+			free(history->line);
+			history->line = strdup(rbuf);
+		} else
+			hist_add();
+	}
+
 	return 0;
+}
+
+static void
+hist_add(void)
+{
+	struct hist_ent *p;
+
+	if (!histsize)
+		return;
+
+	if (histlen < histsize)
+		histlen++;
+	} else {
+		struct hist_ent *p2;
+
+		for (p = history; p2 = p->next && p2->next; p = p2)
+			;
+
+		free(p2);
+		p->next = NULL;
+	}
+
+	p = malloc(sizeof(struct hist_ent));
+	p->line = strdup(rbuf);
+	p->prev = NULL;
+
+	if ((p->next = history))
+		history->prev = p;
+
+	history = p;
 }
 
 static int
@@ -291,6 +343,14 @@ del_char:
 			}
 
 			break;
+		case KEY_UP:
+			if (history)
+				hist_up();
+			break;
+		case KEY_DOWN:
+			if (have_hist_ent) /* else there had not been an up */
+				hist_down();
+			break;
 		default:
 			if (linelen + 1 >= LINESIZ)
 				break;
@@ -396,3 +456,43 @@ proc_mevent(void)
 	}
 }
 #endif
+
+static void
+hist_up(void)
+{
+	if (!histsize || (have_hist_ent && !hist_ent->next))
+		return;
+
+#ifdef HAVE_CURSES_WCH
+	if (!have_hist_ent || !hist_ent->prev)
+		wcstombs(rbuf, linebuf, sizeof rbuf);
+#endif
+
+	if (!have_hist_ent) {
+		have_hist_ent = 1;
+		hist_add();
+		hist_ent = history;
+	} else if (!hist_ent->prev) {
+		free(history->line);
+		history->line = strdup(rbuf);
+	}
+
+	hist_ent = hist_ent->next;
+	*linebuf = 0;
+	linelen = 0;
+	ed_append(hist_ent->line);
+	disp_edit();
+}
+
+static void
+hist_down(void)
+{
+	if (!histsize || !hist_ent->prev)
+		return;
+
+	hist_ent = hist_ent->prev;
+	*linebuf = 0;
+	linelen = 0;
+	ed_append(hist_ent->line);
+	disp_edit();
+}

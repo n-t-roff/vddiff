@@ -41,6 +41,7 @@ diff_color		{ rc_col += yyleng; return DIFF_COLOR   ; }
 dir_color		{ rc_col += yyleng; return DIR_COLOR    ; }
 unknown_color		{ rc_col += yyleng; return UNKNOWN_COLOR; }
 link_color		{ rc_col += yyleng; return LINK_COLOR   ; }
+histsize		{ rc_col += yyleng; return HISTSIZE     ; }
 bmode			{ rc_col += yyleng; return BMODE        ; }
 [0-9]+			{ rc_col += yyleng;
 			  yylval.integer = atoi(yytext);

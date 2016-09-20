@@ -32,7 +32,7 @@ extern char *yytext;
 }
 %token DIFFTOOL FILES DIRS MIXED FOLLOW MONO NOEQUAL LEFT_COLOR RIGHT_COLOR
 %token DIFF_COLOR DIR_COLOR UNKNOWN_COLOR LINK_COLOR REAL_DIFF RECURSIVE
-%token VIEWTOOL EXT BG FKEY BMODE
+%token VIEWTOOL EXT BG FKEY BMODE HISTSIZE
 %token <str>     STRING
 %token <integer> INTEGER
 %%
@@ -63,6 +63,7 @@ option:
 	| DIR_COLOR INTEGER     { color_dir       = $2      ; }
 	| UNKNOWN_COLOR INTEGER { color_unknown   = $2      ; }
 	| LINK_COLOR INTEGER    { color_link      = $2      ; }
+	| HISTSIZE INTEGER      { histsize        = $2      ; }
 	| BMODE                 { bmode = 1                 ; }
 	;
 %%

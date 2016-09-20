@@ -13,7 +13,7 @@ LOSS OF USE, DATA OR PROFITS, WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE OR
 OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
 PERFORMANCE OF THIS SOFTWARE.
 ..
-.Dd September 11, 2016
+.Dd September 20, 2016
 .Dt VDDIFF 1
 .Sh NAME
 .Nm vddiff
@@ -245,6 +245,12 @@ function key.
 The work directory is the directory where
 .Nm
 had been started.
+Each entered command is saved in a history.
+The keys
+.Aq Cm UP
+and
+.Aq Cm DOWN
+fetch other history entries.
 .It Ao Cm F1 Ac \(en Aq Cm F10
 Define string which can be inserted later with this function key
 when entering a sh command using
@@ -404,6 +410,11 @@ Default is 2 (green).
 .It Li unknown_color Ar integer
 Set color for unknown file types.
 Default is 4 (blue).
+.It Li histsize Ar integer
+Set shell command history size (command number) to
+.Ar integer .
+Default is 100.
+0 disables the history.
 .It Li bmode
 Special test mode option, don't use it.
 .El

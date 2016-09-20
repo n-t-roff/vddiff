@@ -61,7 +61,7 @@ fs_rename(int tree)
 	    (tree == 2 && !f->rtype))
 		return;
 
-	if (ed_dialog("Enter new name (<ESC> to cancel):", f->name, NULL, 0))
+	if (ed_dialog("Enter new name (<ESC> to cancel):", f->name, NULL, 0, 0))
 		return;
 
 	if ((tree & 2) && f->rtype) {
@@ -125,7 +125,8 @@ fs_chmod(int tree)
 	snprintf(lbuf, sizeof lbuf, "%04o", m & 07777);
 	s = strdup(lbuf);
 
-	if (ed_dialog("Enter new permissions (<ESC> to cancel):", s, NULL, 0)) {
+	if (ed_dialog("Enter new permissions (<ESC> to cancel):", s, NULL, 0,
+	    0)) {
 		free(s);
 		return;
 	}
