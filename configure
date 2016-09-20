@@ -362,14 +362,32 @@ EOT
 
 	DEFS="$DEFS -DHAVE_CURSES_WCH"
 }
+check_mkdtemp () {
+	check_for "mkdtemp(3)"
+
+	cat <<EOT >$TMPC
+#include <stdlib.h>
+int
+main() {
+	char a[] = "";
+	mkdtemp(a);
+	return 0;
+}
+EOT
+	gen_mk
+	compile
+	test_result && DEFS="$DEFS -DHAVE_MKDTEMP"
+}
 check_libavlbst () {
-	check_for "libavlbst(3)"
+	check_for "libavlbst(3) version 2"
 
 	cat <<EOT >$TMPC
 #include <avlbst.h>
 int
 bst_cmp(union bst_val a, union bst_val b)
 {
+	(void)a;
+	(void)b;
 	return 0;
 }
 
@@ -378,7 +396,10 @@ main()
 {
 	struct bst bst = { NULL, bst_cmp };
 	struct bst_node *n;
-	bst_srch(&bst, (union bst_val)(void *)"test", &n);
+	int i;
+	i = bst_srch(&bst, (union bst_val)(void *)"test", &n);
+	avl_add_at(&bst, (union bst_val)(void *)"test", (union bst_val)(int)0,
+	    i, n);
 	return 0;
 }
 EOT
@@ -414,7 +435,7 @@ check_make
 check_futimens
 check_lib_curses
 check_curses_wch
-#check_mkdtemp
+check_mkdtemp
 check_libavlbst
 
 gen_mk
