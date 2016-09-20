@@ -47,7 +47,7 @@ short edit;
 unsigned histsize = 100;
 
 static unsigned linelen, linepos, leftpos;
-static struct hist_ent *history, *hist_ent;
+static struct hist_ent *history, *hist_ent, *hist_end;
 static short have_hist_ent;
 static unsigned histlen;
 
@@ -199,19 +199,17 @@ hist_add(void)
 {
 	struct hist_ent *p;
 
-	if (!histsize)
+	if (histsize < 2)
 		return;
 
 	if (histlen < histsize)
 		histlen++;
-	} else {
-		struct hist_ent *p2;
+	else {
+		if ((p = hist_end->prev))
+			p->next = NULL;
 
-		for (p = history; p2 = p->next && p2->next; p = p2)
-			;
-
-		free(p2);
-		p->next = NULL;
+		free(hist_end);
+		hist_end = p;
 	}
 
 	p = malloc(sizeof(struct hist_ent));
@@ -220,6 +218,8 @@ hist_add(void)
 
 	if ((p->next = history))
 		history->prev = p;
+	else
+		hist_end = p;
 
 	history = p;
 }

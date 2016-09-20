@@ -5,6 +5,7 @@ void clr_edit(void);
 void set_fkey(int, char *);
 
 extern short edit;
+extern unsigned histsize;
 
 #ifdef HAVE_CURSES_WCH
 wchar_t *linebuf;

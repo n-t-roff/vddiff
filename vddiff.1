@@ -414,7 +414,9 @@ Default is 4 (blue).
 Set shell command history size (command number) to
 .Ar integer .
 Default is 100.
-0 disables the history.
+A size less than 2 disables the history
+(at least the current command line and one previous
+entry need to be saved to use this feature).
 .It Li bmode
 Special test mode option, don't use it.
 .El
