@@ -33,7 +33,6 @@ PERFORMANCE OF THIS SOFTWARE.
 static size_t add_path(char *, size_t, char *, char *);
 static void exec_tool(struct tool *, char *, char *, int);
 static void sig_child(int);
-static void exec_cmd(char **, int, char *, char *);
 
 struct tool difftool;
 struct tool viewtool;
@@ -238,7 +237,7 @@ exec_tool(struct tool *t, char *name, char *rnam, int tree)
 	free(av);
 }
 
-static void
+void
 exec_cmd(char **av, int bg, char *path, char *msg)
 {
 	pid_t pid;

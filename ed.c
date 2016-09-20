@@ -142,6 +142,7 @@ set_fkey(int i, char *s)
 		exit(1);
 	}
 
+	i--; /* key 1-10, storage 0-9 */
 	free(sh_str[i]);
 #ifdef HAVE_CURSES_WCH
 	/* wcslen(wcs) should be <= strlen(mbs) */
@@ -249,7 +250,7 @@ next_key:
 #ifdef HAVE_CURSES_WCH
 			    (wint_t)
 #endif
-			    KEY_F(i))
+			    KEY_F(i + 1))
 				continue;
 
 			if (!sh_str[i])

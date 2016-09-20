@@ -33,6 +33,7 @@ PERFORMANCE OF THIS SOFTWARE.
 #include "exec.h"
 #include "fs.h"
 #include "ed.h"
+#include "uzp.h"
 
 #define COLOR_LEFTONLY  1
 #define COLOR_RIGHTONLY 2
@@ -191,7 +192,7 @@ next_key:
 
 		for (i = 0; i < (ssize_t)(sizeof(sh_str)/sizeof(*sh_str));
 		    i++) {
-			if (c != KEY_F(i))
+			if (c != KEY_F(i + 1))
 				continue;
 
 			if (ed_dialog(
@@ -210,7 +211,7 @@ next_key:
 			clr_edit();
 			printerr(NULL, "%s"
 #endif
-			    " saved for F%d", sh_str[i], i);
+			    " saved for F%d", sh_str[i], i + 1);
 			goto next_key;
 		}
 
@@ -741,16 +742,24 @@ proc_mevent(void)
 static void
 action(void)
 {
-	struct filediff *f = db_list[top_idx + curs];
+	struct filediff *f, *z1 = NULL, *z2 = NULL;
+
+	f = db_list[top_idx + curs];
 
 	if (mark) {
 		mode_t ltyp = 0, rtyp = 0;
 		char *lnam, *rnam;
 
+		if ((z1 = unzip(mark, mark->ltype ? 1 : 2)))
+			mark = z1;
+
+		if ((z2 = unzip(f, mark->ltype ? 2 : 1)))
+			f = z2;
+
 		if (mark->ltype) {
 			if (f->ltype) {
 				printerr(NULL, "Both files in same directory");
-				return;
+				goto ret;
 			}
 
 			lnam = mark->name;
@@ -761,7 +770,7 @@ action(void)
 		} else if (mark->rtype) {
 			if (f->rtype) {
 				printerr(NULL, "Both files in same directory");
-				return;
+				goto ret;
 			}
 
 			rnam = mark->name;
@@ -772,7 +781,7 @@ action(void)
 
 		if ((ltyp & S_IFMT) != (rtyp & S_IFMT)) {
 			printerr(NULL, "Different file type");
-			return;
+			goto ret;
 		}
 
 		if (S_ISREG(ltyp))
@@ -781,8 +790,14 @@ action(void)
 			enter_dir(lnam, rnam, 3);
 		}
 
-		return;
+		goto ret;
 	}
+
+	if (f->ltype && (z1 = unzip(f, 1)))
+		f = z1;
+
+	if (f->rtype && (z2 = unzip(f, 2)))
+		f = z2;
 
 	if ((f->ltype & S_IFMT) == (f->rtype & S_IFMT)) {
 		if (S_ISDIR(f->ltype))
@@ -811,10 +826,25 @@ action(void)
 	} else
 		printerr(NULL, "Different file type");
 
+ret:
+	if (z1) {
+		free(z1->name);
+		free(z1);
+	}
+
+	if (z2) {
+		free(z2->name);
+		free(z2);
+	}
+
+	if (z1 || z2)
+		rmtmpdirs();
+
 	return;
 
 typerr:
 	printerr(NULL, "Not a directory or regular file");
+	goto ret; /* Oops, did use assembler too many years */
 }
 
 static void
