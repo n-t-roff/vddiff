@@ -48,7 +48,6 @@ tool(char *name, char *rnam, int tree)
 	int c;
 
 	l = ln = strlen(name);
-
 	cmd = lbuf + sizeof lbuf;
 	*--cmd = 0;
 
@@ -88,6 +87,8 @@ tool(char *name, char *rnam, int tree)
 	l = l0 + (llen + ln + rlen + rn) * 2 + 3 + l1 + l2;
 	cmd = malloc(l);
 	memcpy(cmd, *toolp, l0);
+	lpath[llen] = 0; /* in add_path() used without len */
+	rpath[rlen] = 0;
 
 	if (!l1 || tree != 3) {
 		if (tree & 1)
@@ -159,10 +160,13 @@ add_path(char *cmd, size_t l0, char *path, char *name)
 {
 	size_t l;
 
-	l = shell_quote(lbuf, path, sizeof lbuf);
-	memcpy(cmd + l0, lbuf, l);
-	l0 += l;
-	cmd[l0++] = '/';
+	if (*name != '/') {
+		l = shell_quote(lbuf, path, sizeof lbuf);
+		memcpy(cmd + l0, lbuf, l);
+		l0 += l;
+		cmd[l0++] = '/';
+	}
+
 	l = shell_quote(lbuf, name, sizeof lbuf);
 	memcpy(cmd + l0, lbuf, l);
 	l0 += l;
@@ -200,6 +204,9 @@ exec_tool(struct tool *t, char *name, char *rnam, int tree)
 	int o, c;
 	char *s, **a, **av;
 
+	if (!rnam)
+		rnam = name;
+
 	s = *t->tool;
 	o = 0;
 	while (1) {
@@ -228,13 +235,21 @@ exec_tool(struct tool *t, char *name, char *rnam, int tree)
 	}
 
 	if (tree & 1) {
-		pthcat(lpath, llen, name);
-		*a++ = lpath;
+		if (*name == '/')
+			*a++ = name;
+		else {
+			pthcat(lpath, llen, name);
+			*a++ = lpath;
+		}
 	}
 
 	if (tree & 2) {
-		pthcat(rpath, rlen, rnam ? rnam : name);
-		*a++ = rpath;
+		if (*rnam == '/')
+			*a++ = rnam;
+		else {
+			pthcat(rpath, rlen, rnam);
+			*a++ = rpath;
+		}
 	}
 
 	*a = NULL;
@@ -282,7 +297,7 @@ exec_cmd(char **av, int bg, char *path, char *msg)
 		if (bg)
 			break;
 
-		/* did always return "interrupted sys call on OI */
+		/* did always return "interrupted sys call" on OI */
 		waitpid(pid, NULL, 0);
 	}
 
