@@ -29,11 +29,11 @@ PERFORMANCE OF THIS SOFTWARE.
 #include "diff.h"
 #include "main.h"
 #include "ui.h"
+#include "uzp.h"
 #include "db.h"
 #include "exec.h"
 #include "fs.h"
 #include "ed.h"
-#include "uzp.h"
 
 #define COLOR_LEFTONLY  1
 #define COLOR_RIGHTONLY 2

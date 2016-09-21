@@ -26,6 +26,7 @@ PERFORMANCE OF THIS SOFTWARE.
 #include "main.h"
 #include "ui.h"
 #include "diff.h"
+#include "uzp.h"
 #include "db.h"
 
 struct str_list {

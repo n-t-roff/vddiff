@@ -359,6 +359,18 @@ for filenames ending with
 .Dq Li "." Ns Ar extension .
 .Ar extension
 is compared case-insensitive.
+If
+.Ar extension
+is an integer number it needs to be enclosed
+in double quotes
+.Pq Sq \(dq
+as in
+.Pp
+.Dl ext \(dq1\(dq \(dqtbl $1 | neqn | nroff -mandoc | less\(dq
+.Pp
+because the parser expects a string (and not a number)
+after the keyword
+.Li ext .
 .It Li ext Ar extension Li bg Ar string
 Start
 .Ar string

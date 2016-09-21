@@ -24,13 +24,9 @@ PERFORMANCE OF THIS SOFTWARE.
 #include "diff.h"
 #include "main.h"
 #include "ui.h"
+#include "uzp.h"
 #include "db.h"
 #include "exec.h"
-
-struct curs_pos {
-	char *path;
-	unsigned uv[2];
-};
 
 #ifdef HAVE_LIBAVLBST
 static void *db_new(int (*)(union bst_val, union bst_val));
@@ -40,10 +36,16 @@ static void mk_list(struct bst_node *);
 static void diff_db_delete(struct bst_node *);
 static void del_names(struct bst_node *);
 #else
+struct curs_pos {
+	char *path;
+	unsigned uv[2];
+};
+
 static int name_cmp(const void *, const void *);
 static int diff_cmp(const void *, const void *);
 static int curs_cmp(const void *, const void *);
 static int ext_cmp(const void *, const void *);
+static int uz_cmp(const void *, const void *);
 static void mk_list(const void *, const VISIT, const int);
 #endif
 
@@ -57,6 +59,7 @@ void *skipext_db;
 
 static void *curs_db;
 static void *ext_db;
+static void *uz_db;
 static unsigned db_idx, tot_db_num;
 
 #ifdef HAVE_LIBAVLBST
@@ -73,6 +76,7 @@ db_init(void)
 	name_db    = db_new(name_cmp);
 	curs_db    = db_new(name_cmp);
 	ext_db     = db_new(name_cmp);
+	uz_db      = db_new(name_cmp);
 	skipext_db = db_new(name_cmp);
 }
 
@@ -133,6 +137,52 @@ name_cmp(
 	return strcmp(s1, s2);
 }
 
+/****************
+ * unzip ext DB *
+ ****************/
+
+void
+uz_db_add(struct uz_ext *p)
+{
+#ifdef HAVE_LIBAVLBST
+	avl_add(uz_db, (union bst_val)(void *)p->str,
+	    (union bst_val)(void *)p);
+#else
+	tsearch(p, &uz_db, uz_cmp);
+#endif
+}
+
+enum uz_id
+uz_db_srch(char *str)
+{
+#ifdef HAVE_LIBAVLBST
+	struct bst_node *n;
+
+	if (!bst_srch(uz_db, (union bst_val)(void *)str, &n))
+		return ((struct uz_ext *)n->data.p)->id;
+#else
+	struct uz_ext key;
+	void *vp;
+
+	key.str = str;
+
+	if ((vp = tfind(&key, &uz_db, uz_cmp)))
+		return (*(struct uz_ext **)vp)->id;
+#endif
+	else
+		return UZ_NONE;
+}
+
+#ifndef HAVE_LIBAVLBST
+static int
+uz_cmp(const void *a, const void *b)
+{
+	return strcmp(
+	    ((const struct uz_ext *)a)->str,
+	    ((const struct uz_ext *)b)->str);
+}
+#endif
+
 /**********
  * ext DB *
  **********/
@@ -141,16 +191,18 @@ void
 db_def_ext(char *ext, char *tool, int bg)
 {
 	struct tool *t;
-
 #ifdef HAVE_LIBAVLBST
 	struct bst_node *n;
-
-	if (!bst_srch(ext_db, (union bst_val)(void *)ext, &n)) {
-		t = n->data.p;
 #else
 	struct tool key;
 	void *vp;
+#endif
 
+	str_tolower(ext);
+#ifdef HAVE_LIBAVLBST
+	if (!bst_srch(ext_db, (union bst_val)(void *)ext, &n)) {
+		t = n->data.p;
+#else
 	key.ext = ext;
 
 	if ((vp = tfind(&key, &ext_db, ext_cmp))) {
@@ -161,10 +213,8 @@ db_def_ext(char *ext, char *tool, int bg)
 		*t->tool = tool;
 	} else {
 		t = malloc(sizeof(struct tool));
-		*t->tool = str_tolower(tool);
-		(t->tool)[1] = NULL;
-		(t->tool)[2] = NULL;
-		t->bg = bg;
+		*t->tool = NULL; /* set_tool makes a free() */
+		set_tool(t, tool, bg);
 #ifdef HAVE_LIBAVLBST
 		avl_add(ext_db, (union bst_val)(void *)ext,
 		    (union bst_val)(void *)t);

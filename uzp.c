@@ -24,11 +24,31 @@ PERFORMANCE OF THIS SOFTWARE.
 #include "exec.h"
 #include "diff.h"
 #include "uzp.h"
+#include "db.h"
 
 static int mktmpdirs(void);
 static int check_ext(char *);
 
 static char *tmp_dir;
+
+static struct uz_ext exttab[] = {
+	{ "bz2"    , UZ_BZ2 },
+	{ "gz"     , UZ_GZ  },
+	{ "tar"    , UZ_TAR },
+	{ "tar.bz2", UZ_TBZ },
+	{ "tar.gz" , UZ_TGZ },
+	{ "tbz"    , UZ_TBZ },
+	{ "tgz"    , UZ_TGZ }
+};
+
+void
+uz_init(void)
+{
+	int i;
+
+	for (i = 0; i < (ssize_t)(sizeof(exttab)/sizeof(*exttab)); i++)
+		uz_db_add(exttab + i);
+}
 
 static int
 mktmpdirs(void)

@@ -27,6 +27,7 @@ PERFORMANCE OF THIS SOFTWARE.
 #include "main.h"
 #include "ui.h"
 #include "exec.h"
+#include "uzp.h"
 #include "db.h"
 #include "diff.h"
 

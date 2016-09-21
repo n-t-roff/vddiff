@@ -26,6 +26,7 @@ PERFORMANCE OF THIS SOFTWARE.
 #include "y.tab.h"
 #include "ui.h"
 #include "exec.h"
+#include "uzp.h"
 #include "db.h"
 #include "diff.h"
 
@@ -62,6 +63,7 @@ main(int argc, char **argv)
 #ifdef HAVE_LIBAVLBST
 	db_init();
 #endif
+	uz_init();
 	set_tool(&difftool, strdup("vim -dR"), 0);
 	set_tool(&viewtool, strdup("less"), 0);
 
