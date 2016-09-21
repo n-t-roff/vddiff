@@ -53,6 +53,7 @@ struct filediff **db_list;
 short noequal, real_diff;
 void *scan_db;
 void *name_db;
+void *skipext_db;
 
 static void *curs_db;
 static void *ext_db;
@@ -68,10 +69,11 @@ static void *diff_db;
 void
 db_init(void)
 {
-	scan_db = db_new(name_cmp);
-	name_db = db_new(name_cmp);
-	curs_db = db_new(name_cmp);
-	ext_db  = db_new(name_cmp);
+	scan_db    = db_new(name_cmp);
+	name_db    = db_new(name_cmp);
+	curs_db    = db_new(name_cmp);
+	ext_db     = db_new(name_cmp);
+	skipext_db = db_new(name_cmp);
 }
 
 static void *
@@ -139,8 +141,6 @@ void
 db_def_ext(char *ext, char *tool, int bg)
 {
 	struct tool *t;
-	char *s;
-	int c;
 
 #ifdef HAVE_LIBAVLBST
 	struct bst_node *n;
@@ -160,11 +160,8 @@ db_def_ext(char *ext, char *tool, int bg)
 		free(*t->tool);
 		*t->tool = tool;
 	} else {
-		for (s = tool; (c = *s); s++)
-			*s = tolower(c);
-
 		t = malloc(sizeof(struct tool));
-		*t->tool = tool;
+		*t->tool = str_tolower(tool);
 		(t->tool)[1] = NULL;
 		(t->tool)[2] = NULL;
 		t->bg = bg;
@@ -509,3 +506,19 @@ diff_db_delete(struct bst_node *n)
 	free(n);
 }
 #endif
+
+/********
+ * misc *
+ ********/
+
+char *
+str_tolower(char *in)
+{
+	int c;
+	char *s = in;
+
+	while ((c = *s))
+		*s++ = tolower(c);
+
+	return in;
+}

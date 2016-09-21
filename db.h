@@ -24,9 +24,12 @@ struct tool *db_srch_ext(char *);
 void db_set_curs(char *, unsigned, unsigned);
 unsigned *db_get_curs(char *);
 
+char *str_tolower(char *);
+
 extern enum sorting sorting;
 extern unsigned db_num;
 extern struct filediff **db_list;
 extern short noequal, real_diff;
 extern void *scan_db;
 extern void *name_db;
+extern void *skipext_db;

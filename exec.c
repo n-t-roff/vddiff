@@ -43,6 +43,8 @@ tool(char *name, char *rnam, int tree)
 	size_t ln, rn, l0, l1, l2, l;
 	char **toolp, *cmd;
 	struct tool *tmptool = NULL;
+	short skipped = 0;
+	int c;
 
 	l = ln = strlen(name);
 
@@ -52,12 +54,18 @@ tool(char *name, char *rnam, int tree)
 	while (l) {
 		*--cmd = tolower(name[--l]);
 
-		if (name[l] == '.') {
-			tmptool = db_srch_ext(++cmd);
-			break;
+		if (!skipped && *cmd == '.' &&
+		    !str_db_srch(&skipext_db, cmd + 1)) {
+			*cmd = 0;
+			skipped = 1;
 		}
 
 		if (cmd == lbuf)
+			break;
+	}
+
+	while ((c = *cmd++)) {
+		if (c == '.' && *cmd && (tmptool = db_srch_ext(cmd)))
 			break;
 	}
 

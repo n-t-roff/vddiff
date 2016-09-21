@@ -61,7 +61,12 @@ Second column: File type
 .Sh OPTIONS
 .Bl -tag
 .It Fl B
-Special test mode option, don't use it.
+Debug option.
+(If
+.Nm
+is started with only one or no argument
+it behaves like a simple single directory view
+file browser.)
 .It Fl b
 Disable color.
 .It Fl c
@@ -358,6 +363,18 @@ is compared case-insensitive.
 Start
 .Ar string
 as a background process.
+.It Li skipext Ar extension
+When checking a filename extension skip
+.Ar extension
+at the end of the filename.
+E.g.
+.Pp
+.Dl skipext old
+.Pp
+would remove
+.Dq Li .old
+from the end of each filename before checking the
+extension.
 .It Li fkey Ar number Ar string
 Define
 .Ar string
@@ -418,17 +435,21 @@ A size less than 2 disables the history
 (at least the current command line and one previous
 entry need to be saved to use this feature).
 .It Li bmode
-Special test mode option, don't use it.
+Debug option.
+(If
+.Nm
+is started with only one or no argument
+it behaves like a simple single directory view
+file browser.)
 .El
 .Sh FILES
 .Bl -tag -width ~/.vddiffrc -compact
 .It Pa ~/.vddiffrc
 Read on start-up to set non-default options.
 .El
-.Sh BUGS
-TODO issue:
+.\".Sh BUGS
+.\"TODO issue:
 .\"Pp
 .\"Bl -bullet
 .\"It
-Comparing compressed files.
 .\"El
