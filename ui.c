@@ -100,6 +100,7 @@ static short scrollen = 1;
 static struct filediff *mark;
 static short wstat_dirty;
 static unsigned srch_idx;
+static char *dlpth, *drpth, *dcwd;
 
 #ifdef NCURSES_MOUSE_VERSION
 static void proc_mevent(void);
@@ -1566,7 +1567,7 @@ pop_state(void)
 static void
 enter_dir(char *name, char *rnam, int tree)
 {
-	if (!bmode) {
+	if (!bmode && *name != '/') {
 		push_state();
 		scan_subdir(name, rnam, tree);
 	} else {
@@ -1576,6 +1577,20 @@ enter_dir(char *name, char *rnam, int tree)
 #else
 		struct ptr_db_ent *n;
 #endif
+		if (!bmode) {
+			push_state();
+			dlpth = strdup(lpath);
+			drpth = strdup(rpath);
+			bmode--;
+			*lpath = '.';
+			lpath[1] = 0;
+			llen = 1;
+
+			if (!getcwd(rpath, sizeof rpath))
+				printerr(strerror(errno), "getcwd failed");
+
+			dcwd = strdup(rpath);
+		}
 
 		db_set_curs(rpath, top_idx, curs);
 		n = NULL; /* flag */
@@ -1599,17 +1614,32 @@ enter_dir(char *name, char *rnam, int tree)
 		} else
 			n = NULL;
 
-		if (chdir(name) == -1) {
-			printerr(strerror(errno),
-			    "chdir \"%s\" failed", name);
-			return;
-		}
+		if (n && bmode < 0) {
+			bmode = 0;
+			memcpy(lpath, dlpth, strlen(dlpth) + 1);
+			memcpy(rpath, drpth, strlen(drpth) + 1);
 
-		top_idx = 0;
-		curs = 0;
-		mark = NULL;
-		diff_db_free();
-		scan_subdir(NULL, NULL, 1);
+			if (chdir(dcwd) == -1)
+				printerr(strerror(errno),
+				    "chdir \"%s\" failed", dcwd);
+
+			free(dlpth);
+			free(drpth);
+			free(dcwd);
+			pop_state();
+		} else {
+			if (chdir(name) == -1) {
+				printerr(strerror(errno),
+				    "chdir \"%s\" failed", name);
+				return;
+			}
+
+			top_idx = 0;
+			curs = 0;
+			mark = NULL;
+			diff_db_free();
+			scan_subdir(NULL, NULL, 1);
+		}
 
 		if (n) {
 			rmtmpdirs(rnam); /* does a free() */
