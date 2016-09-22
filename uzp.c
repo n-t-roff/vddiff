@@ -34,7 +34,6 @@ static struct filediff *zcat(char *, struct filediff *, int, int);
 static struct filediff *tar(char *, struct filediff *, int, int);
 static char *zpths(struct filediff *, struct filediff **, int, size_t *,
     int, int);
-static void push_path(char *, size_t, int);
 
 static char *tmp_dir;
 
@@ -92,7 +91,7 @@ mktmpdirs(void)
 	if (mkdir(d1, 0700) == -1) {
 		printerr(strerror(errno),
 		    "mkdir %s failed", tmp_dir);
-		rmtmpdirs();
+		rmtmpdirs(tmp_dir);
 		return 1;
 	}
 
@@ -101,7 +100,7 @@ mktmpdirs(void)
 	if (mkdir(d1, 0700) == -1) {
 		printerr(strerror(errno),
 		    "mkdir %s failed", tmp_dir);
-		rmtmpdirs();
+		rmtmpdirs(tmp_dir);
 		return 1;
 	}
 
@@ -111,14 +110,13 @@ mktmpdirs(void)
 }
 
 void
-rmtmpdirs(void)
+rmtmpdirs(char *s)
 {
 	static char *av[] = { "rm", "-rf", NULL, NULL };
 
-	av[2] = tmp_dir;
+	av[2] = s;
 	exec_cmd(av, 0, NULL, NULL);
-	free(tmp_dir);
-	tmp_dir = NULL;
+	free(s); /* either tmp_dir or a DB entry */
 }
 
 struct filediff *
@@ -145,7 +143,7 @@ unzip(struct filediff *f, int tree)
 		z = tar("xjf", f, tree, i);
 		break;
 	default:
-		rmtmpdirs();
+		rmtmpdirs(tmp_dir);
 		return NULL;
 	}
 
@@ -241,6 +239,7 @@ zpths(struct filediff *f, struct filediff **z2, int tree, size_t *l2, int i,
 	l = strlen(tmp_dir);
 	s = malloc(l + 3 + i);
 	memcpy(s, tmp_dir, l);
+	free(tmp_dir);
 	s[l++] = tree == 1 ? 'l' : 'r';
 
 	if (fn) {
@@ -251,7 +250,7 @@ zpths(struct filediff *f, struct filediff **z2, int tree, size_t *l2, int i,
 	s[l + i] = 0;
 	z->name = s;
 
-	if (lstat(s, &stat1) == -1) {
+	if (!fn && lstat(s, &stat1) == -1) {
 		if (errno != ENOENT) {
 			printerr(strerror(errno), "stat %s failed",
 			   lpath);
@@ -261,72 +260,22 @@ zpths(struct filediff *f, struct filediff **z2, int tree, size_t *l2, int i,
 	if (tree == 1) {
 		s = lpath;
 		l = llen;
-		z->ltype = stat1.st_mode;
+
+		if (!fn)
+			z->ltype = stat1.st_mode;
 	} else {
 		s = rpath;
 		l = rlen;
-		z->rtype = stat1.st_mode;
+
+		if (!fn)
+			z->rtype = stat1.st_mode;
 	}
 
 	pthcat(s, l, f->name);
 	shell_quote(lbuf, s, sizeof lbuf);
 	shell_quote(rbuf, z->name, sizeof rbuf);
-	push_path(s, l, tree);
 	l = *l2;
 	l = strlen(lbuf) + strlen(rbuf) + l;
 	*l2 = l;
 	return malloc(l);
-}
-
-struct path_stack {
-	char *path;
-	size_t len;
-	short tree;
-	struct path_stack *next;
-};
-
-static struct path_stack *path_stack;
-
-static void
-push_path(char *path, size_t len, int tree)
-{
-	struct path_stack *p;
-
-	path[len] = 0;
-	p = malloc(sizeof(struct path_stack));
-	p->path = strdup(path);
-	p->len  = len;
-	p->tree = tree;
-	p->next = path_stack;
-	path_stack = p;
-	*path = 0;
-
-	if (tree == 1)
-		llen = 0;
-	else
-		rlen = 0;
-}
-
-void
-pop_path(void)
-{
-	struct path_stack *p;
-	char *s;
-
-	if (!(p = path_stack))
-		return;
-
-	path_stack = p->next;
-
-	if (p->tree == 1) {
-		s = lpath;
-		llen = p->len;
-	} else {
-		s = rpath;
-		rlen = p->len;
-	}
-
-	memcpy(s, p->path, p->len + 1);
-	free(p->path);
-	free(p);
 }

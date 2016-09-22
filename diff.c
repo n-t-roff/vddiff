@@ -354,7 +354,7 @@ scan_subdir(char *name, char *rnam, int tree)
 		if (name)
 			llen = pthcat(lpath, llen, name);
 		else
-			lpath[llen] = 0;
+			lpath[llen] = 0; /* -> lpath = "." */
 	}
 
 	if (tree & 2)
@@ -548,7 +548,7 @@ pthcat(char *p, size_t l, char *n)
 		return l;
 	}
 
-	if (p[l-1] != '/')
+	if (p[l-1] != '/' && *n != '/')
 		p[l++] = '/';
 
 	memcpy(p + l, n, ln + 1);

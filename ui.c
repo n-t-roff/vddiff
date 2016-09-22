@@ -232,6 +232,22 @@ next_key:
 		case KEY_UP:
 		case 'k':
 		case '-':
+			if (*key == 'z') {
+				c = 0;
+				if (!top_idx)
+					break;
+				else if (top_idx >= listh - 1 - curs) {
+					top_idx -= listh - 1 - curs;
+					curs = listh - 1;
+				} else {
+					curs += top_idx;
+					top_idx = 0;
+				}
+
+				disp_list();
+				break;
+			}
+
 			c = 0;
 			curs_up();
 			break;
@@ -244,6 +260,17 @@ next_key:
 			break;
 		case KEY_RIGHT:
 		case '\n':
+			if (*key == 'z') {
+				c = 0;
+				if (!curs)
+					break;
+
+				top_idx += curs;
+				curs = 0;
+				disp_list();
+				break;
+			}
+
 			if (!db_num) {
 				no_file();
 				break;
@@ -281,46 +308,52 @@ next_key:
 				}
 			}
 
-			c = 0;
+			if (!bmode) {
+				c = 0;
+				lpath[llen] = 0;
+				rpath[rlen] = 0;
 
-			if (bmode)
+				if (!*pwd && !*rpwd)
+					printerr(NULL, "At top directory");
+				else if (!*pwd || !rpwd || !strcmp(PWD, RPWD))
+					printerr(NULL, "%s", *pwd ? PWD : RPWD);
+				else {
+					werase(wstat);
+					statcol();
+					mvwaddstr(wstat, 0, 2, PWD);
+					mvwaddstr(wstat, 1, 2, RPWD);
+					wrefresh(wstat);
+				}
+
 				break;
-
-			lpath[llen] = 0;
-			rpath[rlen] = 0;
-
-			if (!*pwd && !*rpwd)
-				printerr(NULL, "At top directory");
-			else if (!*pwd || !rpwd || !strcmp(PWD, RPWD))
-				printerr(NULL, "%s", *pwd ? PWD : RPWD);
-			else {
+			}
+		case 'f':
+			if (!bmode) {
+				c = 0;
+				lpath[llen] = 0;
+				rpath[rlen] = 0;
 				werase(wstat);
 				statcol();
-				mvwaddstr(wstat, 0, 2, PWD);
-				mvwaddstr(wstat, 1, 2, RPWD);
+				mvwaddstr(wstat, 0, 2, lpath);
+				mvwaddstr(wstat, 1, 2, rpath);
 				wrefresh(wstat);
-			}
-
-			break;
-		case 'f':
-			c = 0;
-
-			if (bmode)
 				break;
-
-			lpath[llen] = 0;
-			rpath[rlen] = 0;
-			werase(wstat);
-			statcol();
-			mvwaddstr(wstat, 0, 2, lpath);
-			mvwaddstr(wstat, 1, 2, rpath);
-			wrefresh(wstat);
-			break;
+			}
 		case 'a':
 			c = 0;
 
-			if (bmode)
+			if (bmode) {
+				if (!getcwd(rpath, sizeof rpath)) {
+					printerr(strerror(errno),
+					    "getcwd failed");
+					break;
+				}
+
+				werase(wstat);
+				mvwaddstr(wstat, 1, 0, rpath);
+				wrefresh(wstat);
 				break;
+			}
 
 			werase(wstat);
 			statcol();
@@ -508,10 +541,36 @@ next_key:
 			}
 
 			break;
-		case 'L':
+		case 'F':
 			c = 0;
 			follow(-1); /* toggle */
 			rebuild_db();
+			break;
+		case 'H':
+			c = 0;
+			if (!curs)
+				break;
+
+			curs = 0;
+			disp_list();
+			break;
+		case 'M':
+			c = 0;
+			if (db_num < top_idx + listh)
+				curs = (db_num - top_idx) / 2;
+			else
+				curs = listh / 2;
+
+			disp_list();
+			break;
+		case 'L':
+			c = 0;
+			if (db_num < top_idx + listh)
+				curs = db_num - top_idx - 1;
+			else
+				curs = listh - 1;
+
+			disp_list();
 			break;
 		default:
 			printerr(NULL, "Invalid input '%c' (type h for help).",
@@ -535,10 +594,15 @@ static char *helptxt[] = {
        "<HOME>, 1G	Go to first file",
        "<END>, G	Go to last file",
        "/		Search file",
+       "H		Put cursor to top line",
+       "M		Put cursor on middle line",
+       "L		Put cursor on bottom line",
+       "z<ENTER>	Put selected line to top of screen",
        "z.		Center selected file",
+       "z-		Put selected line to bottom of screen",
        "!, n		Toggle display of equal files",
        "c		Toggle showing only directories and really different files",
-       "L		Toggle following symbolic links",
+       "F		Toggle following symbolic links",
        "p		Show current relative work directory",
        "a		Show command line directory arguments",
        "f		Show full path",
@@ -830,17 +894,12 @@ ret:
 	if (z1) {
 		free(z1->name);
 		free(z1);
-		pop_path();
 	}
 
 	if (z2) {
 		free(z2->name);
 		free(z2);
-		pop_path();
 	}
-
-	if (z1 || z2)
-		rmtmpdirs();
 
 	return;
 
@@ -1438,7 +1497,8 @@ srch_file(char *pattern)
 	while (1) {
 		oo = o;
 
-		if (!(o = strncmp(db_list[idx]->name, pattern, strlen(pattern)))) {
+		if (!(o = strncmp(db_list[idx]->name, pattern,
+		    strlen(pattern)))) {
 			center(srch_idx = idx);
 			break;
 		} else if (o < 0) {
@@ -1511,12 +1571,37 @@ enter_dir(char *name, char *rnam, int tree)
 		scan_subdir(name, rnam, tree);
 	} else {
 		unsigned *uv;
+#ifdef HAVE_LIBAVLBST
+		struct bst_node *n;
+#else
+		struct ptr_db_ent *n;
+#endif
 
 		db_set_curs(rpath, top_idx, curs);
+		n = NULL; /* flag */
+
+		if (*name == '/')
+			ptr_db_add(&uz_path_db, strdup(name), strdup(rpath)
+#ifdef HAVE_LIBAVLBST
+			    , 0, NULL
+#endif
+			    );
+		else if (*name == '.' && name[1] == '.' && !name[2] &&
+		    !ptr_db_srch(&uz_path_db, rpath, (void **)&rnam,
+		    (void **)&n)) {
+			name = rnam; /* dat */
+#ifdef HAVE_LIBAVLBST
+			rnam = n->key.p;
+#else
+			rnam = n->key;
+#endif
+			ptr_db_del(&uz_path_db, n);
+		} else
+			n = NULL;
 
 		if (chdir(name) == -1) {
 			printerr(strerror(errno),
-			    "chdir %s failed", name);
+			    "chdir \"%s\" failed", name);
 			return;
 		}
 
@@ -1525,6 +1610,11 @@ enter_dir(char *name, char *rnam, int tree)
 		mark = NULL;
 		diff_db_free();
 		scan_subdir(NULL, NULL, 1);
+
+		if (n) {
+			rmtmpdirs(rnam); /* does a free() */
+			free(name); /* dat */
+		}
 
 		if ((uv = db_get_curs(rpath))) {
 			top_idx = *uv++;

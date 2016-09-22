@@ -46,6 +46,7 @@ static int diff_cmp(const void *, const void *);
 static int curs_cmp(const void *, const void *);
 static int ext_cmp(const void *, const void *);
 static int uz_cmp(const void *, const void *);
+static int ptr_db_cmp(const void *, const void *);
 static void mk_list(const void *, const VISIT, const int);
 #endif
 
@@ -56,10 +57,11 @@ short noequal, real_diff;
 void *scan_db;
 void *name_db;
 void *skipext_db;
+void *uz_path_db;
 
 static void *curs_db;
 static void *ext_db;
-static void *uz_db;
+static void *uz_ext_db;
 static unsigned db_idx, tot_db_num;
 
 #ifdef HAVE_LIBAVLBST
@@ -76,8 +78,9 @@ db_init(void)
 	name_db    = db_new(name_cmp);
 	curs_db    = db_new(name_cmp);
 	ext_db     = db_new(name_cmp);
-	uz_db      = db_new(name_cmp);
+	uz_ext_db  = db_new(name_cmp);
 	skipext_db = db_new(name_cmp);
+	uz_path_db = db_new(name_cmp);
 }
 
 static void *
@@ -92,6 +95,90 @@ db_new(int (*compare)(union bst_val, union bst_val))
 }
 #endif
 
+/**************
+ * ptr DB *
+ **************/
+
+#ifdef HAVE_LIBAVLBST
+void
+ptr_db_add(void **db, char *key, void *dat, int br, struct bst_node *n)
+{
+	avl_add_at(*db, (union bst_val)(void *)key,
+	    (union bst_val)(void *)dat, br, n);
+}
+#else
+int
+ptr_db_add(void **db, char *key, void *dat)
+{
+	struct ptr_db_ent *pe;
+	void *vp;
+
+	pe = malloc(sizeof(struct ptr_db_ent));
+	pe->key = key;
+	pe->dat = dat;
+	vp = tsearch(pe, db, ptr_db_cmp);
+
+	if (*(struct ptr_db_ent **)vp != pe) {
+		free(pe);
+		return 0; /* free mem */
+	} else
+		return 1; /* don't free mem */
+}
+#endif
+
+int
+ptr_db_srch(void **db, char *key, void **dat, void **n)
+{
+#ifdef HAVE_LIBAVLBST
+	int i;
+
+	if (!(i = bst_srch(*db, (union bst_val)(void *)key,
+	    (struct bst_node **)n)) && dat)
+		*dat = (*(struct bst_node **)n)->data.p;
+
+	return i;
+#else
+	struct ptr_db_ent pe;
+	void *vp;
+
+	pe.key = key;
+
+	vp = tfind(&pe, db, ptr_db_cmp);
+
+	if (vp) {
+		if (dat)
+			*dat = (*(struct ptr_db_ent **)vp)->dat;
+
+		if (n)
+			*n = *(struct ptr_db_ent **)vp;
+
+		return 0;
+	} else
+		return 1;
+#endif
+}
+
+void
+ptr_db_del(void **db, void *node)
+{
+#ifdef HAVE_LIBAVLBST
+	avl_del_node(*db, node);
+#else
+	tdelete(node, db, ptr_db_cmp);
+	free(node);
+#endif
+}
+
+#ifndef HAVE_LIBAVLBST
+static int
+ptr_db_cmp(const void *a, const void *b)
+{
+	return strcmp(
+	    ((const struct ptr_db_ent *)a)->key,
+	    ((const struct ptr_db_ent *)b)->key);
+}
+#endif
+
 /********************
  * simple char * DB *
  ********************/
@@ -103,12 +190,6 @@ str_db_add(void **db, char *s, int br, struct bst_node *n)
 	avl_add_at(*db, (union bst_val)(void *)s,
 	    (union bst_val)(int)0, br, n);
 }
-
-int
-str_db_srch(void **db, char *s, struct bst_node **n)
-{
-	return bst_srch(*db, (union bst_val)(void *)s, n);
-}
 #else
 char *
 str_db_add(void **db, char *s)
@@ -118,7 +199,15 @@ str_db_add(void **db, char *s)
 	vp = tsearch(s, db, name_cmp);
 	return *(char **)vp;
 }
+#endif
 
+#ifdef HAVE_LIBAVLBST
+int
+str_db_srch(void **db, char *s, struct bst_node **n)
+{
+	return bst_srch(*db, (union bst_val)(void *)s, n);
+}
+#else
 int
 str_db_srch(void **db, char *s)
 {
@@ -154,10 +243,10 @@ void
 uz_db_add(struct uz_ext *p)
 {
 #ifdef HAVE_LIBAVLBST
-	avl_add(uz_db, (union bst_val)(void *)p->str,
+	avl_add(uz_ext_db, (union bst_val)(void *)p->str,
 	    (union bst_val)(void *)p);
 #else
-	tsearch(p, &uz_db, uz_cmp);
+	tsearch(p, &uz_ext_db, uz_cmp);
 #endif
 }
 
@@ -167,7 +256,7 @@ uz_db_srch(char *str)
 #ifdef HAVE_LIBAVLBST
 	struct bst_node *n;
 
-	if (!bst_srch(uz_db, (union bst_val)(void *)str, &n))
+	if (!bst_srch(uz_ext_db, (union bst_val)(void *)str, &n))
 		return ((struct uz_ext *)n->data.p)->id;
 #else
 	struct uz_ext key;
@@ -175,7 +264,7 @@ uz_db_srch(char *str)
 
 	key.str = str;
 
-	if ((vp = tfind(&key, &uz_db, uz_cmp)))
+	if ((vp = tfind(&key, &uz_ext_db, uz_cmp)))
 		return (*(struct uz_ext **)vp)->id;
 #endif
 	else
