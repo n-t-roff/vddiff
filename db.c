@@ -96,26 +96,35 @@ db_new(int (*compare)(union bst_val, union bst_val))
  * simple char * DB *
  ********************/
 
+#ifdef HAVE_LIBAVLBST
 void
+str_db_add(void **db, char *s, int br, struct bst_node *n)
+{
+	avl_add_at(*db, (union bst_val)(void *)s,
+	    (union bst_val)(int)0, br, n);
+}
+
+int
+str_db_srch(void **db, char *s, struct bst_node **n)
+{
+	return bst_srch(*db, (union bst_val)(void *)s, n);
+}
+#else
+char *
 str_db_add(void **db, char *s)
 {
-#ifdef HAVE_LIBAVLBST
-	avl_add(*db, (union bst_val)(void *)strdup(s),
-	    (union bst_val)(int)0);
-#else
-	tsearch(strdup(s), db, name_cmp);
-#endif
+	void *vp;
+
+	vp = tsearch(s, db, name_cmp);
+	return *(char **)vp;
 }
 
 int
 str_db_srch(void **db, char *s)
 {
-#ifdef HAVE_LIBAVLBST
-	return bst_srch(*db, (union bst_val)(void *)s, NULL);
-#else
 	return tfind(s, db, name_cmp) ? 0 : 1;
-#endif
 }
+#endif
 
 static int
 name_cmp(

@@ -85,7 +85,11 @@ build_diff_db(int tree)
 		    !name[2])))
 			continue;
 
-		str_db_add(&name_db, name);
+		str_db_add(&name_db, strdup(name)
+#ifdef HAVE_LIBAVLBST
+		    , 0, NULL
+#endif
+		    );
 		pthcat(lpath, llen, name);
 
 		if (xstat(lpath, &stat1) == -1) {
@@ -271,7 +275,11 @@ right_tree:
 		    !name[2])))
 			continue;
 
-		if (!str_db_srch(&name_db, name))
+		if (!str_db_srch(&name_db, name
+#ifdef HAVE_LIBAVLBST
+		    , NULL
+#endif
+		    ))
 			continue;
 
 		if (scan) {
@@ -367,10 +375,25 @@ add_diff_dir(void)
 	end = path + strlen(path);
 
 	while (1) {
-		if (!str_db_srch(&scan_db, path))
+#ifdef HAVE_LIBAVLBST
+		struct bst_node *n;
+		int i;
+
+		if (!(i = str_db_srch(&scan_db, path, &n)))
 			goto ret;
 
-		str_db_add(&scan_db, path);
+		str_db_add(&scan_db, strdup(path), i, n);
+#else
+		char *s, *s2;
+
+		s = strdup(path);
+		s2 = str_db_add(&scan_db, s);
+
+		if (s2 != s) {
+			free(s);
+			goto ret;
+		}
+#endif
 
 		do {
 			if (--end < path)
@@ -395,13 +418,21 @@ is_diff_dir(char *name)
 		return 0;
 
 	if (!*pwd)
-		return str_db_srch(&scan_db, name) ? 0 : 1;
+		return str_db_srch(&scan_db, name
+#ifdef HAVE_LIBAVLBST
+		    , NULL
+#endif
+		    ) ? 0 : 1;
 
 	l1 = strlen(PWD);
 	s = malloc(l1 + strlen(name) + 2);
 	memcpy(s, PWD, l1);
 	pthcat(s, l1, name);
-	v = str_db_srch(&scan_db, s) ? 0 : 1;
+	v = str_db_srch(&scan_db, s
+#ifdef HAVE_LIBAVLBST
+	    , NULL
+#endif
+	    ) ? 0 : 1;
 	free(s);
 	return v;
 }

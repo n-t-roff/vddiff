@@ -830,11 +830,13 @@ ret:
 	if (z1) {
 		free(z1->name);
 		free(z1);
+		pop_path();
 	}
 
 	if (z2) {
 		free(z2->name);
 		free(z2);
+		pop_path();
 	}
 
 	if (z1 || z2)

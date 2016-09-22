@@ -8,3 +8,4 @@ struct uz_ext {
 struct filediff *unzip(struct filediff *, int);
 void rmtmpdirs(void);
 void uz_init(void);
+void pop_path(void);

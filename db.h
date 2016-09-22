@@ -6,9 +6,12 @@ enum sorting { DIRSFIRST, FILESFIRST, SORTMIXED };
 
 #ifdef HAVE_LIBAVLBST
 void db_init(void);
-#endif
-void str_db_add(void **, char *);
+void str_db_add(void **, char *, int, struct bst_node *);
+int str_db_srch(void **, char *, struct bst_node **);
+#else
+char *str_db_add(void **, char *);
 int str_db_srch(void **, char *);
+#endif
 void diff_db_add(struct filediff *);
 void diff_db_sort(void);
 void diff_db_restore(struct ui_state *);

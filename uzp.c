@@ -30,9 +30,11 @@ PERFORMANCE OF THIS SOFTWARE.
 
 static int mktmpdirs(void);
 static enum uz_id check_ext(char *, int *);
-static void gunzip(struct filediff *, struct filediff *, int);
-static void bunzip2(struct filediff *, struct filediff *, int);
-static char *zpths(struct filediff *, struct filediff *, int, size_t *);
+static struct filediff *zcat(char *, struct filediff *, int, int);
+static struct filediff *tar(char *, struct filediff *, int, int);
+static char *zpths(struct filediff *, struct filediff **, int, size_t *,
+    int, int);
+static void push_path(char *, size_t, int);
 
 static char *tmp_dir;
 
@@ -125,8 +127,6 @@ unzip(struct filediff *f, int tree)
 	enum uz_id id;
 	struct filediff *z;
 	int i;
-	char *s;
-	size_t l;
 
 	if ((id = check_ext(f->name, &i)) == UZ_NONE)
 		return NULL;
@@ -134,26 +134,19 @@ unzip(struct filediff *f, int tree)
 	if (mktmpdirs())
 		return NULL;
 
-	z = malloc(sizeof(struct filediff));
-	*z = *f;
-	l = strlen(tmp_dir);
-	s = malloc(l + 2 + i + 1);
-	memcpy(s, tmp_dir, l);
-	s[l++] = tree == 1 ? 'l' : 'r';
-	s[l++] = '/';
-	memcpy(s + l, f->name, i);
-	s[l+i] = 0;
-	z->name = s;
-
 	switch (id) {
 	case UZ_GZ:
-		gunzip(f, z, tree);
+		z = zcat("zcat", f, tree, i);
 		break;
 	case UZ_BZ2:
-		bunzip2(f, z, tree);
+		z = zcat("bzcat", f, tree, i);
+		break;
+	case UZ_TBZ:
+		z = tar("xjf", f, tree, i);
 		break;
 	default:
-		;
+		rmtmpdirs();
+		return NULL;
 	}
 
 	return z;
@@ -177,7 +170,11 @@ check_ext(char *name, int *pos)
 		*--s = tolower(name[--l]);
 
 		if (!skipped && *s == '.' &&
-		    !str_db_srch(&skipext_db, s + 1)) {
+		    !str_db_srch(&skipext_db, s + 1
+#ifdef HAVE_LIBAVLBST
+		    , NULL
+#endif
+		    )) {
 			*s = 0;
 			skipped = 1;
 		}
@@ -197,51 +194,139 @@ check_ext(char *name, int *pos)
 	return UZ_NONE;
 }
 
-static void
-gunzip(struct filediff *f, struct filediff *z, int tree)
+static struct filediff *
+zcat(char *cmd, struct filediff *f, int tree, int i)
 {
 	char *s;
 	size_t l;
+	struct filediff *z;
 
 	l = 20;
-	s = zpths(f, z, tree, &l);
-	snprintf(s, l, "zcat %s > %s", lbuf, rbuf);
+	s = zpths(f, &z, tree, &l, i, 1);
+	snprintf(s, l, "%s %s > %s", cmd, lbuf, rbuf);
 	sh_cmd(s, 0);
 	free(s);
+	return z;
 }
 
-static void
-bunzip2(struct filediff *f, struct filediff *z, int tree)
+static struct filediff *
+tar(char *opt, struct filediff *f, int tree, int i)
 {
 	char *s;
 	size_t l;
+	struct filediff *z;
 
 	l = 20;
-	s = zpths(f, z, tree, &l);
-	snprintf(s, l, "bzcat %s > %s", lbuf, rbuf);
+	s = zpths(f, &z, tree, &l, i, 0);
+	snprintf(s, l, "tar %s %s -C %s", opt, lbuf, rbuf);
 	sh_cmd(s, 0);
 	free(s);
+	return z;
 }
 
 static char *
-zpths(struct filediff *f, struct filediff *z, int tree, size_t *l2)
+zpths(struct filediff *f, struct filediff **z2, int tree, size_t *l2, int i,
+    int fn)
 {
 	char *s;
 	size_t l;
+	struct filediff *z;
+
+	if (!fn)
+		i = 0;
+
+	z = malloc(sizeof(struct filediff));
+	*z2 = z;
+	*z = *f;
+	l = strlen(tmp_dir);
+	s = malloc(l + 3 + i);
+	memcpy(s, tmp_dir, l);
+	s[l++] = tree == 1 ? 'l' : 'r';
+
+	if (fn) {
+		s[l++] = '/';
+		memcpy(s + l, f->name, i);
+	}
+
+	s[l + i] = 0;
+	z->name = s;
+
+	if (lstat(s, &stat1) == -1) {
+		if (errno != ENOENT) {
+			printerr(strerror(errno), "stat %s failed",
+			   lpath);
+		}
+	}
 
 	if (tree == 1) {
 		s = lpath;
 		l = llen;
+		z->ltype = stat1.st_mode;
 	} else {
 		s = rpath;
 		l = rlen;
+		z->rtype = stat1.st_mode;
 	}
 
 	pthcat(s, l, f->name);
 	shell_quote(lbuf, s, sizeof lbuf);
 	shell_quote(rbuf, z->name, sizeof rbuf);
+	push_path(s, l, tree);
 	l = *l2;
 	l = strlen(lbuf) + strlen(rbuf) + l;
 	*l2 = l;
 	return malloc(l);
+}
+
+struct path_stack {
+	char *path;
+	size_t len;
+	short tree;
+	struct path_stack *next;
+};
+
+static struct path_stack *path_stack;
+
+static void
+push_path(char *path, size_t len, int tree)
+{
+	struct path_stack *p;
+
+	path[len] = 0;
+	p = malloc(sizeof(struct path_stack));
+	p->path = strdup(path);
+	p->len  = len;
+	p->tree = tree;
+	p->next = path_stack;
+	path_stack = p;
+	*path = 0;
+
+	if (tree == 1)
+		llen = 0;
+	else
+		rlen = 0;
+}
+
+void
+pop_path(void)
+{
+	struct path_stack *p;
+	char *s;
+
+	if (!(p = path_stack))
+		return;
+
+	path_stack = p->next;
+
+	if (p->tree == 1) {
+		s = lpath;
+		llen = p->len;
+	} else {
+		s = rpath;
+		rlen = p->len;
+	}
+
+	memcpy(s, p->path, p->len + 1);
+	free(p->path);
+	free(p);
 }

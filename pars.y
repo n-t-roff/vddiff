@@ -50,7 +50,11 @@ option:
 	| VIEWTOOL BG STRING    { set_tool(&viewtool, $3, 1)              ; }
 	| EXT STRING STRING     { db_def_ext($2, $3, 0)                   ; }
 	| EXT STRING BG STRING  { db_def_ext($2, $4, 1)                   ; }
-	| SKIPEXT STRING        { str_db_add(&skipext_db, str_tolower($2)); }
+	| SKIPEXT STRING        { str_db_add(&skipext_db, str_tolower($2)
+#ifdef HAVE_LIBAVLBST
+	                              , 0, NULL
+#endif
+	                              ); }
 	| FKEY INTEGER STRING   { set_fkey($2, $3)                        ; }
 	| FILES                 { sorting = FILESFIRST                    ; }
 	| MIXED                 { sorting = SORTMIXED                     ; }
