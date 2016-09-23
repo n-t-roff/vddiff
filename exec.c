@@ -42,7 +42,7 @@ struct tool difftool;
 struct tool viewtool;
 
 void
-tool(char *name, char *rnam, int tree)
+tool(char *name, char *rnam, int tree, int ign_ext)
 {
 	size_t ln, rn, l0, l1, l2, l;
 	char **toolp, *cmd;
@@ -53,6 +53,9 @@ tool(char *name, char *rnam, int tree)
 	l = ln = strlen(name);
 	cmd = lbuf + sizeof lbuf;
 	*--cmd = 0;
+
+	if (ign_ext)
+		goto settool;
 
 	while (l) {
 		*--cmd = tolower(name[--l]);
@@ -77,6 +80,7 @@ tool(char *name, char *rnam, int tree)
 	}
 
 	if (!tmptool)
+settool:
 		tmptool = tree == 3 ? &difftool : &viewtool;
 
 	toolp = tmptool->tool;
@@ -263,7 +267,7 @@ exec_tool(struct tool *t, char *name, char *rnam, int tree)
 	if (WIFEXITED(status) && WEXITSTATUS(status) == 77 &&
 	    !strcmp(*t->tool, vimdiff)) {
 		set_tool(&difftool, strdup(diffless), 0);
-		tool(name, rnam, tree);
+		tool(name, rnam, tree, 0);
 	}
 }
 

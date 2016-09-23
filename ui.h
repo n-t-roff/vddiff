@@ -29,3 +29,4 @@ extern wchar_t *sh_str[FKEY_NUM];
 #else
 extern char *sh_str[FKEY_NUM];
 #endif
+extern char *fkey_cmd[FKEY_NUM];

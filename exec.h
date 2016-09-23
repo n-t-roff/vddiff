@@ -12,7 +12,7 @@ extern const char *const diffless;
 extern struct tool difftool;
 extern struct tool viewtool;
 
-void tool(char *, char *, int);
+void tool(char *, char *, int, int);
 void set_tool(struct tool *, char *, int);
 void exec_sighdl(void);
 void sh_cmd(char *, int);

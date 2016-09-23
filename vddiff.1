@@ -277,6 +277,21 @@ This string is usually the name of a UNIX tool.
 Regularly used strings can be set using the RC file
 .Dq Li fkey
 command.
+.Pp
+If the string begins with a
+.Sq Li $
+followed by at least one space
+.Pq Sq Li " "
+it is treated as shell command itself, which is
+applied to a selected file.
+If that function key is pressed later, a dialog opens
+to ask if the command should be executed or the function
+key should be redefined.
+The filename is appended to the saved string.
+To embed it,
+.Dq Li $1
+can be used, as in
+.Dq Li "$ nroff $1 | less" .
 .It Sq Li l
 List strings which had been defined for a function key.
 .It Sq Li u
@@ -414,7 +429,17 @@ when entering a sh command using
 .Sq Li $ .
 This string is usually the name of a UNIX tool.
 .Ar number
-must be between 1 and 10 (inclusive).
+must be between 1 and 12 (inclusive).
+.Pp
+If
+.Ar string
+begins with a
+.Sq Li $
+followed by at least one space (the string needs to be
+enclosed in double quotes in this case),
+it defines a shell command to be executed
+for the selected file
+when pressing the function key.
 .It Li mono
 Disable colors.
 .It Li followlinks

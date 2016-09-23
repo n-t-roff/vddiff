@@ -57,7 +57,7 @@ static void push_state(void);
 static void pop_state(void);
 static void enter_dir(char *, char *, int);
 static void help(void);
-static void action(void);
+static void action(int);
 static char *type_name(mode_t);
 static void ui_resize(void);
 static void set_win_dim(void);
@@ -90,6 +90,7 @@ wchar_t *sh_str[FKEY_NUM];
 #else
 char *sh_str[FKEY_NUM];
 #endif
+char *fkey_cmd[FKEY_NUM];
 
 static unsigned listw, listh, help_top;
 static WINDOW *wlist;
@@ -194,28 +195,67 @@ next_key:
 		*key = c;
 		c = getch();
 
-		for (i = 0; i < (ssize_t)(sizeof(sh_str)/sizeof(*sh_str));
-		    i++) {
+		for (i = 0; i < FKEY_NUM; i++) {
 			if (c != KEY_F(i + 1))
 				continue;
 
+			if (fkey_cmd[i]) {
+				struct tool t;
+
+				switch (dialog("[ENTER] execute, [e] edit"
+				    " [other key] cancel", NULL,
+				    "Really execute %s?", fkey_cmd[i])) {
+				case 'e':
+					break;
+				case '\n':
+					t = viewtool;
+					*viewtool.tool = NULL;
+					set_tool(&viewtool, fkey_cmd[i], 0);
+					action(1);
+					free(*viewtool.tool);
+					viewtool = t;
+					/* fall through */
+				default:
+					goto next_key;
+				}
+			}
+
 			if (ed_dialog(
 			    "Type text to be saved for function key:",
-			    "", NULL, 1, 0))
+			    fkey_cmd[i] ? fkey_cmd[i] : "", NULL, 1, 0))
 				break;
 
 			free(sh_str[i]);
+			sh_str[i] = NULL;
+			free(fkey_cmd[i]);
+			fkey_cmd[i] = NULL;
+
+			if (*rbuf == '$') {
+				int c;
+				int j = 0;
+
+				while ((c = rbuf[++j]) && isspace(c));
+
+				if (!c)
+					goto next_key; /* empty input */
+
+				fkey_cmd[i] = strdup(rbuf + j);
+				clr_edit();
+				printerr(NULL, "$ %s saved for F%d",
+				    fkey_cmd[i], i + 1);
+			} else {
 #ifdef HAVE_CURSES_WCH
-			sh_str[i] = linebuf;
-			linebuf = NULL;
-			clr_edit();
-			printerr(NULL, "%ls"
+				sh_str[i] = linebuf;
+				linebuf = NULL; /* clr_edit(): free(linebuf) */
+				clr_edit();
+				printerr(NULL, "%ls"
 #else
-			sh_str[i] = strdup(rbuf);
-			clr_edit();
-			printerr(NULL, "%s"
+				sh_str[i] = strdup(rbuf);
+				clr_edit();
+				printerr(NULL, "%s"
 #endif
-			    " saved for F%d", sh_str[i], i + 1);
+				    " saved for F%d", sh_str[i], i + 1);
+			}
 			goto next_key;
 		}
 
@@ -280,7 +320,7 @@ next_key:
 				break;
 			}
 
-			action();
+			action(0);
 			break;
 		case KEY_NPAGE:
 		case ' ':
@@ -426,6 +466,12 @@ next_key:
 			    i < (ssize_t)(sizeof(sh_str)/sizeof(*sh_str));
 			    i++) {
 				mvwprintw(wlist, i, 0, "F%d", i + 1);
+
+				if (fkey_cmd[i]) {
+					mvwprintw(wlist, i, 5,
+					    "\"$ %s\"", fkey_cmd[i]);
+					continue;
+				}
 
 				if (!sh_str[i])
 					continue;
@@ -796,7 +842,7 @@ proc_mevent(void)
 		wrefresh(wstat);
 
 		if (mevent.bstate & BUTTON1_DOUBLE_CLICKED)
-			action();
+			action(0);
 # if NCURSES_MOUSE_VERSION >= 2
 	} else if (mevent.bstate & BUTTON4_PRESSED) {
 		scroll_up(3);
@@ -808,7 +854,7 @@ proc_mevent(void)
 #endif
 
 static void
-action(void)
+action(int ign_ext)
 {
 	struct filediff *f, *z1 = NULL, *z2 = NULL;
 	short isdir = 0;
@@ -854,7 +900,7 @@ action(void)
 		}
 
 		if (S_ISREG(ltyp))
-			tool(lnam, rnam, 3);
+			tool(lnam, rnam, 3, ign_ext);
 		else if (S_ISDIR(ltyp)) {
 			isdir = 1;
 			enter_dir(lnam, rnam, 3);
@@ -875,9 +921,9 @@ action(void)
 			enter_dir(f->name, NULL, 3);
 		} else if (S_ISREG(f->ltype)) {
 			if (f->diff == '!')
-				tool(f->name, NULL, 3);
+				tool(f->name, NULL, 3, ign_ext);
 			else
-				tool(f->name, NULL, 1);
+				tool(f->name, NULL, 1, ign_ext);
 		} else
 			goto typerr;
 	} else if (!f->ltype) {
@@ -885,7 +931,7 @@ action(void)
 			isdir = 1;
 			enter_dir(f->name, NULL, 2);
 		} else if (S_ISREG(f->rtype))
-			tool(f->name, NULL, 2);
+			tool(f->name, NULL, 2, ign_ext);
 		else
 			goto typerr;
 	} else if (!f->rtype) {
@@ -893,7 +939,7 @@ action(void)
 			isdir = 1;
 			enter_dir(f->name, NULL, 1);
 		} else if (S_ISREG(f->ltype))
-			tool(f->name, NULL, 1);
+			tool(f->name, NULL, 1, ign_ext);
 		else
 			goto typerr;
 	} else

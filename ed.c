@@ -137,13 +137,34 @@ set_fkey(int i, char *s)
 	size_t l;
 #endif
 
-	if (i < 1 || i > 10) {
-		printf("Function key number must be in range 1-10\n");
+	if (i < 1 || i > FKEY_NUM) {
+		printf("Function key number must be in range 1-%d\n",
+		    FKEY_NUM);
 		exit(1);
 	}
 
-	i--; /* key 1-10, storage 0-9 */
+	i--; /* key 1-12, storage 0-11 */
 	free(sh_str[i]);
+	sh_str[i] = NULL;
+	free(fkey_cmd[i]);
+	fkey_cmd[i] = NULL;
+
+	if (*s == '$') {
+		int c;
+		char *p = s;
+
+		while ((c = *++p) && isspace(c));
+
+		if (!c)
+			goto free; /* empty input */
+
+		fkey_cmd[i] = strdup(p);
+
+free:
+		free(s);
+		return;
+	}
+
 #ifdef HAVE_CURSES_WCH
 	/* wcslen(wcs) should be <= strlen(mbs) */
 	l = strlen(s) + 1;
@@ -178,6 +199,7 @@ ed_dialog(char *msg,
 	}
 
 #ifdef HAVE_CURSES_WCH
+	/* both rbuf and linebuf are used by ui.c */
 	wcstombs(rbuf, linebuf, sizeof rbuf);
 #endif
 	if (!keep_buf)
@@ -244,8 +266,7 @@ next_key:
 		c = getch();
 #endif
 
-		for (i = 0; i < (ssize_t)(sizeof(sh_str)/sizeof(*sh_str));
-		    i++) {
+		for (i = 0; i < FKEY_NUM; i++) {
 			if (c !=
 #ifdef HAVE_CURSES_WCH
 			    (wint_t)
