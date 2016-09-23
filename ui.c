@@ -86,9 +86,9 @@ short color_leftonly  = COLOR_CYAN   ,
 unsigned top_idx, curs, statw;
 
 #ifdef HAVE_CURSES_WCH
-wchar_t *sh_str[10];
+wchar_t *sh_str[FKEY_NUM];
 #else
-char *sh_str[10];
+char *sh_str[FKEY_NUM];
 #endif
 
 static unsigned listw, listh, help_top;
@@ -623,7 +623,7 @@ static char *helptxt[] = {
        "y		Copy file path to edit line",
        "Y		Copy file path in reverse order to edit line",
        "$		Enter shell command",
-       "<F1> - <F10>	Define string to be used in shell command",
+       "<F1> - <F12>	Define string to be used in shell command",
        "l		List function key strings",
        "u		Update file list",
        "s		Open shell",

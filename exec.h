@@ -6,6 +6,9 @@ struct tool {
 #endif
 };
 
+extern const char *const vimdiff;
+extern const char *const diffless;
+
 extern struct tool difftool;
 extern struct tool viewtool;
 
@@ -15,4 +18,4 @@ void exec_sighdl(void);
 void sh_cmd(char *, int);
 size_t shell_quote(char *, char *, size_t);
 void open_sh(int);
-void exec_cmd(char **, int, char *, char *);
+int exec_cmd(char **, int, char *, char *);

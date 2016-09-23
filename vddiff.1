@@ -27,10 +27,13 @@ PERFORMANCE OF THIS SOFTWARE.
 .Sh DESCRIPTION
 .Nm
 stands for
-.Dq vim directory diff .
+.Dq Vim Directory DIFF .
 It is a simple text terminal directory diff tool using
 .Xr vim 1
 for the actual diff operation.
+(If vim is not installed,
+.Dq Li diff Ar file_1 Ar file_2 Li | less
+is used instead.)
 A file browser displays the names found in the directories
 given on the command line.
 Only plain files and symbolic links are compared.
@@ -266,7 +269,7 @@ The keys
 and
 .Aq Cm DOWN
 fetch other history entries.
-.It Ao Cm F1 Ac \(en Aq Cm F10
+.It Ao Cm F1 Ac \(en Aq Cm F12
 Define string which can be inserted later with this function key
 when entering a sh command using
 .Sq Li $ .
@@ -334,6 +337,12 @@ in filenames.
 E.g. put
 .Li $ Ns Ar n
 in single quotes to allow filenames with spaces.
+.Pp
+Other possible diff tools are
+.Xr colordiff 1 ,
+.Xr mgdiff 1 ,
+and
+.Xr tkxcd 1 .
 .It Li difftool bg Ar string
 Start
 .Ar string

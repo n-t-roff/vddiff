@@ -31,6 +31,9 @@ PERFORMANCE OF THIS SOFTWARE.
 #include "db.h"
 #include "diff.h"
 
+const char *const vimdiff  = "vim -dR";
+const char *const diffless = "diff $1 $2 | less";
+
 static size_t add_path(char *, size_t, char *, char *);
 static void exec_tool(struct tool *, char *, char *, int);
 static void sig_child(int);
@@ -207,6 +210,7 @@ exec_tool(struct tool *t, char *name, char *rnam, int tree)
 {
 	int o, c;
 	char *s, **a, **av;
+	int status;
 
 	if (!rnam)
 		rnam = name;
@@ -249,18 +253,25 @@ exec_tool(struct tool *t, char *name, char *rnam, int tree)
 	}
 
 	*a = NULL;
-	exec_cmd(av, t->bg, NULL, NULL);
+	status = exec_cmd(av, t->bg, NULL, NULL);
 
 	if (o)
 		free(*av);
 
 	free(av);
+
+	if (WIFEXITED(status) && WEXITSTATUS(status) == 77 &&
+	    !strcmp(*t->tool, vimdiff)) {
+		set_tool(&difftool, strdup(diffless), 0);
+		tool(name, rnam, tree);
+	}
 }
 
-void
+int
 exec_cmd(char **av, int bg, char *path, char *msg)
 {
 	pid_t pid;
+	int status = 0;
 
 	erase();
 	refresh();
@@ -284,7 +295,7 @@ exec_cmd(char **av, int bg, char *path, char *msg)
 			/* only seen when vddiff exits later */
 			printf("exec \"%s\" failed: %s\n", *av,
 			    strerror(errno));
-			exit(1);
+			exit(77);
 		}
 
 		/* not reached */
@@ -294,7 +305,7 @@ exec_cmd(char **av, int bg, char *path, char *msg)
 			break;
 
 		/* did always return "interrupted sys call" on OI */
-		waitpid(pid, NULL, 0);
+		waitpid(pid, &status, 0);
 	}
 
 	reset_prog_mode();
@@ -303,6 +314,7 @@ exec_cmd(char **av, int bg, char *path, char *msg)
 		printerr(strerror(errno), "fork failed");
 
 	disp_list();
+	return status;
 }
 
 size_t

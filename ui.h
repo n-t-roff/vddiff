@@ -23,8 +23,9 @@ extern short color_leftonly ,
 extern unsigned top_idx, curs, statw;
 extern WINDOW *wstat;
 
+#define FKEY_NUM 12
 #ifdef HAVE_CURSES_WCH
-extern wchar_t *sh_str[10];
+extern wchar_t *sh_str[FKEY_NUM];
 #else
-extern char *sh_str[10];
+extern char *sh_str[FKEY_NUM];
 #endif
