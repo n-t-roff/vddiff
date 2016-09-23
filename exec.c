@@ -247,8 +247,12 @@ exec_tool(struct tool *t, char *name, char *rnam, int tree)
 	}
 
 	if (tree & 1) {
-		pthcat(lpath, llen, name);
-		*a++ = lpath;
+		if (bmode)
+			*a++ = name;
+		else {
+			pthcat(lpath, llen, name);
+			*a++ = lpath;
+		}
 	}
 
 	if (tree & 2) {

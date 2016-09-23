@@ -210,7 +210,8 @@ next_key:
 				case '\n':
 					t = viewtool;
 					*viewtool.tool = NULL;
-					set_tool(&viewtool, fkey_cmd[i], 0);
+					set_tool(&viewtool,
+					    strdup(fkey_cmd[i]), 0);
 					action(1);
 					free(*viewtool.tool);
 					viewtool = t;
