@@ -169,6 +169,16 @@ ptr_db_del(void **db, void *node)
 #endif
 }
 
+void *
+ptr_db_get_node(void *db)
+{
+#ifdef HAVE_LIBAVLBST
+	return (db)->root;
+#else
+	return db ? *(struct ptr_db_ent **)db : NULL;
+#endif
+}
+
 #ifndef HAVE_LIBAVLBST
 static int
 ptr_db_cmp(const void *a, const void *b)
@@ -637,6 +647,11 @@ diff_db_free(void)
 	free(db_list);
 	db_list = NULL;
 }
+
+/* In the libavlbst case the nodes are not really deleted, just the memory
+ * is freed after both subtrees had been visited.  This is much faster than
+ * rebalancing the tree for each delete.  It is not dangerous since the tree
+ * structure does not change due to the node memory free. */
 
 #ifdef HAVE_LIBAVLBST
 static void

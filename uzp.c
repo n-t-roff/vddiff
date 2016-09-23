@@ -35,7 +35,7 @@ static struct filediff *tar(char *, struct filediff *, int, int);
 static char *zpths(struct filediff *, struct filediff **, int, size_t *,
     int, int);
 
-static char *tmp_dir;
+char *tmp_dir;
 
 static struct uz_ext exttab[] = {
 	{ "bz2"    , UZ_BZ2 },
@@ -54,6 +54,33 @@ uz_init(void)
 
 	for (i = 0; i < (ssize_t)(sizeof(exttab)/sizeof(*exttab)); i++)
 		uz_db_add(exttab + i);
+}
+
+void
+uz_exit(void)
+{
+#ifdef HAVE_LIBAVLBST
+	struct bst_node *n;
+#else
+	struct ptr_db_ent *n;
+#endif
+	char *key, *dat;
+
+	while ((n = ptr_db_get_node(uz_path_db))) {
+#ifdef HAVE_LIBAVLBST
+		key = n->key.p;
+		dat = n->data.p;
+#else
+		key = n->key;
+		dat = n->dat;
+#endif
+		/* before rmtmpdirs(key) since DB needs key which is freed
+		 * in rmtmpdirs() */
+		ptr_db_del(&uz_path_db, n);
+		key[strlen(key) - 2] = 0;
+		rmtmpdirs(key);
+		free(dat);
+	}
 }
 
 static int
@@ -239,7 +266,10 @@ zpths(struct filediff *f, struct filediff **z2, int tree, size_t *l2, int i,
 	l = strlen(tmp_dir);
 	s = malloc(l + 3 + i);
 	memcpy(s, tmp_dir, l);
-	free(tmp_dir);
+
+	if (!fn) /* else needed in ui.c */
+		free(tmp_dir);
+
 	s[l++] = tree == 1 ? 'l' : 'r';
 
 	if (fn) {

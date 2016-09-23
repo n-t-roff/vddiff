@@ -34,6 +34,7 @@ void uz_db_add(struct uz_ext *);
 enum uz_id uz_db_srch(char *);
 int ptr_db_srch(void **, char *, void **, void **);
 void ptr_db_del(void **, void *);
+void *ptr_db_get_node(void *);
 
 extern enum sorting sorting;
 extern unsigned db_num;

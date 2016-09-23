@@ -171,6 +171,9 @@ build_ui(void)
 	build_diff_db(bmode ? 1 : 3);
 	disp_list();
 	ui_ctrl();
+	/* before diff_db_free() since uz_exit() calls exec_cmd() which
+	 * calls disp_list() which needs diff_db */
+	uz_exit();
 	diff_db_free();
 	delwin(wstat);
 	delwin(wlist);
@@ -808,6 +811,7 @@ static void
 action(void)
 {
 	struct filediff *f, *z1 = NULL, *z2 = NULL;
+	short isdir = 0;
 
 	f = db_list[top_idx + curs];
 
@@ -852,6 +856,7 @@ action(void)
 		if (S_ISREG(ltyp))
 			tool(lnam, rnam, 3);
 		else if (S_ISDIR(ltyp)) {
+			isdir = 1;
 			enter_dir(lnam, rnam, 3);
 		}
 
@@ -865,9 +870,10 @@ action(void)
 		f = z2;
 
 	if ((f->ltype & S_IFMT) == (f->rtype & S_IFMT)) {
-		if (S_ISDIR(f->ltype))
+		if (S_ISDIR(f->ltype)) {
+			isdir = 1;
 			enter_dir(f->name, NULL, 3);
-		else if (S_ISREG(f->ltype)) {
+		} else if (S_ISREG(f->ltype)) {
 			if (f->diff == '!')
 				tool(f->name, NULL, 3);
 			else
@@ -875,16 +881,18 @@ action(void)
 		} else
 			goto typerr;
 	} else if (!f->ltype) {
-		if (S_ISDIR(f->rtype))
+		if (S_ISDIR(f->rtype)) {
+			isdir = 1;
 			enter_dir(f->name, NULL, 2);
-		else if (S_ISREG(f->rtype))
+		} else if (S_ISREG(f->rtype))
 			tool(f->name, NULL, 2);
 		else
 			goto typerr;
 	} else if (!f->rtype) {
-		if (S_ISDIR(f->ltype))
+		if (S_ISDIR(f->ltype)) {
+			isdir = 1;
 			enter_dir(f->name, NULL, 1);
-		else if (S_ISREG(f->ltype))
+		} else if (S_ISREG(f->ltype))
 			tool(f->name, NULL, 1);
 		else
 			goto typerr;
@@ -901,6 +909,9 @@ ret:
 		free(z2->name);
 		free(z2);
 	}
+
+	if (!isdir && (z1 || z2))
+		rmtmpdirs(tmp_dir);
 
 	return;
 
@@ -1595,13 +1606,16 @@ enter_dir(char *name, char *rnam, int tree)
 		db_set_curs(rpath, top_idx, curs);
 		n = NULL; /* flag */
 
-		if (*name == '/')
+		if (*name == '/') {
+			if (!getcwd(rpath, sizeof rpath))
+				printerr(strerror(errno), "getcwd failed");
+
 			ptr_db_add(&uz_path_db, strdup(name), strdup(rpath)
 #ifdef HAVE_LIBAVLBST
 			    , 0, NULL
 #endif
 			    );
-		else if (*name == '.' && name[1] == '.' && !name[2] &&
+		} else if (*name == '.' && name[1] == '.' && !name[2] &&
 		    !ptr_db_srch(&uz_path_db, rpath, (void **)&rnam,
 		    (void **)&n)) {
 			name = rnam; /* dat */
@@ -1642,6 +1656,7 @@ enter_dir(char *name, char *rnam, int tree)
 		}
 
 		if (n) {
+			rnam[strlen(rnam) - 2] = 0; /* remove "/[lr]" */
 			rmtmpdirs(rnam); /* does a free() */
 			free(name); /* dat */
 		}

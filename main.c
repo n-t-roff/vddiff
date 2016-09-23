@@ -45,6 +45,7 @@ FILE *debug;
 static void check_args(char **);
 static int read_rc(void);
 static void usage(void);
+
 static char *usage_txt =
 "Usage: %s [-ubcdfgklmnr] [-t <diff_tool>] [-v <view_tool>] <directory_1>\n"
 "           <directory_2>\n";
@@ -64,6 +65,7 @@ main(int argc, char **argv)
 	db_init();
 #endif
 	uz_init();
+
 	set_tool(&difftool, strdup(vimdiff), 0);
 	set_tool(&viewtool, strdup("less"), 0);
 

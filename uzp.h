@@ -5,6 +5,9 @@ struct uz_ext {
 	enum uz_id id;
 };
 
+extern char *tmp_dir;
+
 struct filediff *unzip(struct filediff *, int);
 void rmtmpdirs(char *);
 void uz_init(void);
+void uz_exit(void);
