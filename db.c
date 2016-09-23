@@ -173,7 +173,7 @@ void *
 ptr_db_get_node(void *db)
 {
 #ifdef HAVE_LIBAVLBST
-	return (db)->root;
+	return ((struct bst *)db)->root;
 #else
 	return db ? *(struct ptr_db_ent **)db : NULL;
 #endif
