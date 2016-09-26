@@ -267,6 +267,7 @@ rebuild_db(void)
 {
 	lpath[llen] = 0;
 	rpath[rlen] = 0;
+	mark = NULL; /* pointer is freed in next line */
 	diff_db_free();
 	build_diff_db(bmode ? 1 : 3);
 	disp_list();

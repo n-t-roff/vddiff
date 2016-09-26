@@ -247,7 +247,7 @@ exec_tool(struct tool *t, char *name, char *rnam, int tree)
 	}
 
 	if (tree & 1) {
-		if (bmode)
+		if (*name == '/')
 			*a++ = name;
 		else {
 			pthcat(lpath, llen, name);
@@ -256,8 +256,12 @@ exec_tool(struct tool *t, char *name, char *rnam, int tree)
 	}
 
 	if (tree & 2) {
-		pthcat(rpath, rlen, rnam);
-		*a++ = rpath;
+		if (*rnam == '/')
+			*a++ = rnam;
+		else {
+			pthcat(rpath, rlen, rnam);
+			*a++ = rpath;
+		}
 	}
 
 	*a = NULL;

@@ -98,7 +98,7 @@ WINDOW *wstat;
 static struct ui_state *ui_stack;
 /* Line scroll enable. Else only full screen is scrolled */
 static short scrollen = 1;
-static struct filediff *mark;
+struct filediff *mark;
 static short wstat_dirty;
 static unsigned srch_idx;
 static char *dlpth, *drpth, *dcwd;
@@ -215,6 +215,9 @@ next_key:
 					action(1);
 					free(*viewtool.tool);
 					viewtool = t;
+					/* action() did likely create or
+					 * delete files */
+					rebuild_db();
 					/* fall through */
 				default:
 					goto next_key;
@@ -556,6 +559,8 @@ next_key:
 				sh_cmd(rbuf, 1);
 			}
 
+			/* sh_cmd() did likely create or delete files */
+			rebuild_db();
 			break;
 		case 'e':
 			break;
@@ -863,34 +868,37 @@ action(int ign_ext)
 	f = db_list[top_idx + curs];
 
 	if (mark) {
+		struct filediff *m = mark;
 		mode_t ltyp = 0, rtyp = 0;
 		char *lnam, *rnam;
 
-		if ((z1 = unzip(mark, mark->ltype ? 1 : 2)))
-			mark = z1;
+		/* check if mark needs to be unzipped */
+		if ((z1 = unzip(m, m->ltype ? 1 : 2)))
+			m = z1;
 
-		if ((z2 = unzip(f, mark->ltype ? 2 : 1)))
+		/* check if other file needs to be unchecked */
+		if ((z2 = unzip(f, m->ltype ? 2 : 1)))
 			f = z2;
 
-		if (mark->ltype) {
+		if (m->ltype) {
 			if (f->ltype) {
 				printerr(NULL, "Both files in same directory");
 				goto ret;
 			}
 
-			lnam = mark->name;
-			ltyp = mark->ltype;
+			lnam = m->name;
+			ltyp = m->ltype;
 			rnam = f->name;
 			rtyp = f->rtype;
 
-		} else if (mark->rtype) {
+		} else if (m->rtype) {
 			if (f->rtype) {
 				printerr(NULL, "Both files in same directory");
 				goto ret;
 			}
 
-			rnam = mark->name;
-			rtyp = mark->rtype;
+			rnam = m->name;
+			rtyp = m->rtype;
 			lnam = f->name;
 			ltyp = f->ltype;
 		}
@@ -912,8 +920,7 @@ action(int ign_ext)
 
 	if (f->ltype && (z1 = unzip(f, 1)))
 		f = z1;
-
-	if (f->rtype && (z2 = unzip(f, 2)))
+	else if (f->rtype && (z2 = unzip(f, 2)))
 		f = z2;
 
 	if ((f->ltype & S_IFMT) == (f->rtype & S_IFMT)) {
@@ -1635,7 +1642,9 @@ enter_dir(char *name, char *rnam, int tree)
 #else
 		struct ptr_db_ent *n;
 #endif
-		if (!bmode) {
+		if (bmode < 0 && *name == '/')
+			bmode--;
+		else if (!bmode) {
 			push_state();
 			dlpth = strdup(lpath);
 			drpth = strdup(rpath);
@@ -1675,7 +1684,7 @@ enter_dir(char *name, char *rnam, int tree)
 		} else
 			n = NULL;
 
-		if (n && bmode < 0) {
+		if (n && bmode == -1) {
 			bmode = 0;
 			memcpy(lpath, dlpth, strlen(dlpth) + 1);
 			memcpy(rpath, drpth, strlen(drpth) + 1);
@@ -1689,6 +1698,9 @@ enter_dir(char *name, char *rnam, int tree)
 			free(dcwd);
 			pop_state();
 		} else {
+			if (n && bmode < 0)
+				bmode++;
+
 			if (chdir(name) == -1) {
 				printerr(strerror(errno),
 				    "chdir \"%s\" failed", name);
@@ -1746,7 +1758,6 @@ dialog(char *quest, char *answ, char *fmt, ...)
 
 	wstat_dirty = 1;
 	werase(wstat);
-	wattrset(wstat, A_REVERSE);
 	wmove(wstat, 0, 0);
 	va_start(ap, fmt);
 	vwprintw(wstat, fmt, ap);
@@ -1759,7 +1770,6 @@ dialog(char *quest, char *answ, char *fmt, ...)
 			if (c == c2)
 				break;
 	} while (s && !c2);
-	wattrset(wstat, A_NORMAL);
 	werase(wstat);
 	wrefresh(wstat);
 	return c;

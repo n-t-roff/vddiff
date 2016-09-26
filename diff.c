@@ -548,7 +548,7 @@ pthcat(char *p, size_t l, char *n)
 		return l;
 	}
 
-	if (p[l-1] != '/' && *n != '/')
+	if (p[l-1] != '/')
 		p[l++] = '/';
 
 	memcpy(p + l, n, ln + 1);

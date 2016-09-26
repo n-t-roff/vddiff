@@ -22,6 +22,7 @@ extern short color_leftonly ,
              color_link     ;
 extern unsigned top_idx, curs, statw;
 extern WINDOW *wstat;
+extern struct filediff *mark;
 
 #define FKEY_NUM 12
 #ifdef HAVE_CURSES_WCH

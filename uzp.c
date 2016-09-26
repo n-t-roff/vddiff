@@ -153,6 +153,10 @@ unzip(struct filediff *f, int tree)
 	struct filediff *z;
 	int i;
 
+	if ((tree == 1 && !S_ISREG(f->ltype)) ||
+	    (tree == 2 && !S_ISREG(f->rtype)))
+		return NULL;
+
 	if ((id = check_ext(f->name, &i)) == UZ_NONE)
 		return NULL;
 
@@ -280,25 +284,31 @@ zpths(struct filediff *f, struct filediff **z2, int tree, size_t *l2, int i,
 	s[l + i] = 0;
 	z->name = s;
 
+	/* stat is done on the extracted file or directory and hence needs
+	 * to be a lstat */
 	if (!fn && lstat(s, &stat1) == -1) {
-		if (errno != ENOENT) {
-			printerr(strerror(errno), "stat %s failed",
-			   lpath);
-		}
+		if (errno != ENOENT)
+			printerr(strerror(errno), "stat \"%s\" failed", s);
+		else
+			printerr("", "\"%s\" does not exist", s);
 	}
 
 	if (tree == 1) {
 		s = lpath;
 		l = llen;
 
-		if (!fn)
+		if (!fn) {
 			z->ltype = stat1.st_mode;
+			z->rtype = 0;
+		}
 	} else {
 		s = rpath;
 		l = rlen;
 
-		if (!fn)
+		if (!fn) {
 			z->rtype = stat1.st_mode;
+			z->ltype = 0;
+		}
 	}
 
 	pthcat(s, l, f->name);
