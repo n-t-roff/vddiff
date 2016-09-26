@@ -880,10 +880,10 @@ proc_mevent(void)
 static void
 action(int ign_ext, int tree)
 {
-	struct filediff *f, *z1 = NULL, *z2 = NULL;
-	short isdir = 0;
+	struct filediff *f1, *f2, *z1 = NULL, *z2 = NULL;
+	char *t1 = NULL, *t2 = NULL;
 
-	f = db_list[top_idx + curs];
+	f1 = f2 = db_list[top_idx + curs];
 
 	if (mark) {
 		struct filediff *m = mark;
@@ -891,34 +891,34 @@ action(int ign_ext, int tree)
 		char *lnam, *rnam;
 
 		/* check if mark needs to be unzipped */
-		if ((z1 = unzip(m, m->ltype ? 1 : 2)))
+		if ((z1 = unzip(m, m->ltype ? 1 : 2, &t1)))
 			m = z1;
 
 		/* check if other file needs to be unchecked */
-		if ((z2 = unzip(f, m->ltype ? 2 : 1)))
-			f = z2;
+		if ((z2 = unzip(f1, m->ltype ? 2 : 1, &t2)))
+			f1 = z2;
 
 		if (m->ltype) {
-			if (f->ltype && !f->rtype) {
+			if (f1->ltype && !f1->rtype) {
 				printerr(NULL, "Both files in same directory");
 				goto ret;
 			}
 
 			lnam = m->name;
 			ltyp = m->ltype;
-			rnam = f->name;
-			rtyp = f->rtype;
+			rnam = f1->name;
+			rtyp = f1->rtype;
 
 		} else if (m->rtype) {
-			if (f->rtype && !f->ltype) {
+			if (f1->rtype && !f1->ltype) {
 				printerr(NULL, "Both files in same directory");
 				goto ret;
 			}
 
 			rnam = m->name;
 			rtyp = m->rtype;
-			lnam = f->name;
-			ltyp = f->ltype;
+			lnam = f1->name;
+			ltyp = f1->ltype;
 		}
 
 		if ((ltyp & S_IFMT) != (rtyp & S_IFMT)) {
@@ -929,43 +929,44 @@ action(int ign_ext, int tree)
 		if (S_ISREG(ltyp))
 			tool(lnam, rnam, 3, ign_ext);
 		else if (S_ISDIR(ltyp)) {
-			isdir = 1;
+			t1 = t2 = NULL;
 			enter_dir(lnam, rnam, 3);
 		}
 
 		goto ret;
 	}
 
-	if (f->ltype && (z1 = unzip(f, 1)))
-		f = z1;
-	else if (f->rtype && (z2 = unzip(f, 2)))
-		f = z2;
+	if (f1->ltype && (z1 = unzip(f1, 1, &t1)))
+		f1 = z1;
 
-	if ((f->ltype & S_IFMT) == (f->rtype & S_IFMT)) {
-		if (S_ISDIR(f->ltype)) {
-			isdir = 1;
-			enter_dir(f->name, NULL, 3);
-		} else if (S_ISREG(f->ltype)) {
-			if (f->diff == '!')
-				tool(f->name, NULL, 3, ign_ext);
+	if (f2->rtype && (z2 = unzip(f2, 2, &t2)))
+		f2 = z2;
+
+	if ((f1->ltype & S_IFMT) == (f2->rtype & S_IFMT)) {
+		if (S_ISDIR(f1->ltype)) {
+			t1 = t2 = NULL;
+			enter_dir(f1->name, f2->name, 3);
+		} else if (S_ISREG(f1->ltype)) {
+			if (f1->diff == '!')
+				tool(f1->name, f2->name, 3, ign_ext);
 			else
-				tool(f->name, NULL, 1, ign_ext);
+				tool(f1->name, NULL, 1, ign_ext);
 		} else
 			goto typerr;
-	} else if (!f->ltype || tree == 2) {
-		if (S_ISDIR(f->rtype)) {
-			isdir = 1;
-			enter_dir(f->name, NULL, 2);
-		} else if (S_ISREG(f->rtype))
-			tool(f->name, NULL, 2, ign_ext);
+	} else if (!f1->ltype || tree == 2) {
+		if (S_ISDIR(f2->rtype)) {
+			t1 = t2 = NULL;
+			enter_dir(f2->name, NULL, 2);
+		} else if (S_ISREG(f2->rtype))
+			tool(f2->name, NULL, 2, ign_ext);
 		else
 			goto typerr;
-	} else if (!f->rtype || tree == 1) {
-		if (S_ISDIR(f->ltype)) {
-			isdir = 1;
-			enter_dir(f->name, NULL, 1);
-		} else if (S_ISREG(f->ltype))
-			tool(f->name, NULL, 1, ign_ext);
+	} else if (!f2->rtype || tree == 1) {
+		if (S_ISDIR(f1->ltype)) {
+			t1 = t2 = NULL;
+			enter_dir(f1->name, NULL, 1);
+		} else if (S_ISREG(f1->ltype))
+			tool(f1->name, NULL, 1, ign_ext);
 		else
 			goto typerr;
 	} else
@@ -975,15 +976,18 @@ ret:
 	if (z1) {
 		free(z1->name);
 		free(z1);
+
+		if (t1)
+			rmtmpdirs(t1);
 	}
 
 	if (z2) {
 		free(z2->name);
 		free(z2);
-	}
 
-	if (!isdir && (z1 || z2))
-		rmtmpdirs(tmp_dir);
+		if (t2)
+			rmtmpdirs(t2);
+	}
 
 	return;
 

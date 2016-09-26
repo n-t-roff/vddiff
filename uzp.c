@@ -147,7 +147,7 @@ rmtmpdirs(char *s)
 }
 
 struct filediff *
-unzip(struct filediff *f, int tree)
+unzip(struct filediff *f, int tree, char **tmp)
 {
 	enum uz_id id;
 	struct filediff *z;
@@ -184,6 +184,7 @@ unzip(struct filediff *f, int tree)
 		return NULL;
 	}
 
+	*tmp = tmp_dir;
 	return z;
 }
 
