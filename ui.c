@@ -57,7 +57,7 @@ static void push_state(void);
 static void pop_state(void);
 static void enter_dir(char *, char *, int);
 static void help(void);
-static void action(int);
+static void action(int, int);
 static char *type_name(mode_t);
 static void ui_resize(void);
 static void set_win_dim(void);
@@ -212,7 +212,7 @@ next_key:
 					*viewtool.tool = NULL;
 					set_tool(&viewtool,
 					    strdup(fkey_cmd[i]), 0);
-					action(1);
+					action(1, 3);
 					free(*viewtool.tool);
 					viewtool = t;
 					/* action() did likely create or
@@ -324,7 +324,7 @@ next_key:
 				break;
 			}
 
-			action(0);
+			action(0, 3);
 			break;
 		case KEY_NPAGE:
 		case ' ':
@@ -453,14 +453,21 @@ next_key:
 			fs_rm(3, NULL); /* allowed for single sided only */
 			break;
 		case 'l':
-			if (*key == 'd') {
+			switch (*key) {
+			case 'd':
 				c = 0;
 				fs_rm(1, NULL);
-				break;
-			} else if (*key == 's') {
+				goto next_key;
+			case 's':
 				c = 0;
 				open_sh(1);
-				break;
+				goto next_key;
+			case 'o':
+				c = 0;
+				action(0, 1);
+				goto next_key;
+			default:
+				;
 			}
 
 			c = 0;
@@ -494,14 +501,21 @@ next_key:
 			disp_list();
 			break;
 		case 'r':
-			if (*key == 'd') {
+			switch (*key) {
+			case 'd':
 				c = 0;
 				fs_rm(2, NULL);
-				break;
-			} else if (*key == 's') {
+				goto next_key;
+			case 's':
 				c = 0;
 				open_sh(2);
-				break;
+				goto next_key;
+			case 'o':
+				c = 0;
+				action(0, 2);
+				goto next_key;
+			default:
+				;
 			}
 
 			if (mark) {
@@ -628,6 +642,8 @@ next_key:
 
 			disp_list();
 			break;
+		case 'o':
+			break;
 		default:
 			printerr(NULL, "Invalid input '%c' (type h for help).",
 			    isgraph(c) ? c : '?');
@@ -683,7 +699,9 @@ static char *helptxt[] = {
        "u		Update file list",
        "s		Open shell",
        "sl		Open shell in left directory",
-       "sr		Open shell in right directory" };
+       "sr		Open shell in right directory",
+       "ol		Open left file or directory",
+       "or		Open right file or directory" };
 
 #define HELP_NUM (sizeof(helptxt) / sizeof(*helptxt))
 
@@ -848,7 +866,7 @@ proc_mevent(void)
 		wrefresh(wstat);
 
 		if (mevent.bstate & BUTTON1_DOUBLE_CLICKED)
-			action(0);
+			action(0, 3);
 # if NCURSES_MOUSE_VERSION >= 2
 	} else if (mevent.bstate & BUTTON4_PRESSED) {
 		scroll_up(3);
@@ -860,7 +878,7 @@ proc_mevent(void)
 #endif
 
 static void
-action(int ign_ext)
+action(int ign_ext, int tree)
 {
 	struct filediff *f, *z1 = NULL, *z2 = NULL;
 	short isdir = 0;
@@ -881,7 +899,7 @@ action(int ign_ext)
 			f = z2;
 
 		if (m->ltype) {
-			if (f->ltype) {
+			if (f->ltype && !f->rtype) {
 				printerr(NULL, "Both files in same directory");
 				goto ret;
 			}
@@ -892,7 +910,7 @@ action(int ign_ext)
 			rtyp = f->rtype;
 
 		} else if (m->rtype) {
-			if (f->rtype) {
+			if (f->rtype && !f->ltype) {
 				printerr(NULL, "Both files in same directory");
 				goto ret;
 			}
@@ -934,7 +952,7 @@ action(int ign_ext)
 				tool(f->name, NULL, 1, ign_ext);
 		} else
 			goto typerr;
-	} else if (!f->ltype) {
+	} else if (!f->ltype || tree == 2) {
 		if (S_ISDIR(f->rtype)) {
 			isdir = 1;
 			enter_dir(f->name, NULL, 2);
@@ -942,7 +960,7 @@ action(int ign_ext)
 			tool(f->name, NULL, 2, ign_ext);
 		else
 			goto typerr;
-	} else if (!f->rtype) {
+	} else if (!f->rtype || tree == 1) {
 		if (S_ISDIR(f->ltype)) {
 			isdir = 1;
 			enter_dir(f->name, NULL, 1);
