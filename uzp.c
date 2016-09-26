@@ -170,8 +170,14 @@ unzip(struct filediff *f, int tree)
 	case UZ_BZ2:
 		z = zcat("bzcat", f, tree, i);
 		break;
+	case UZ_TGZ:
+		z = tar("xzf", f, tree, i);
+		break;
 	case UZ_TBZ:
 		z = tar("xjf", f, tree, i);
+		break;
+	case UZ_TAR:
+		z = tar("xf", f, tree, i);
 		break;
 	default:
 		rmtmpdirs(tmp_dir);

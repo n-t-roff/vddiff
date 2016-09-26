@@ -81,7 +81,7 @@ ed_append(char *txt)
 	}
 
 #ifdef HAVE_CURSES_WCH
-	mbstowcs(linebuf + linelen, txt, l + 1);
+	l = mbstowcs(linebuf + linelen, txt, l + 1);
 #else
 	memcpy(linebuf + linelen, txt, l + 1);
 #endif
