@@ -15,11 +15,13 @@ PERFORMANCE OF THIS SOFTWARE.
 */
 
 #include "compat.h"
+#include <limits.h>
 #include <string.h>
 #include <errno.h>
 #include <stdlib.h>
-#include <sys/stat.h>
 #include <sys/types.h>
+#include <sys/stat.h>
+#include <unistd.h>
 #include <ctype.h>
 #include "ui.h"
 #include "exec.h"
@@ -96,16 +98,21 @@ mktmpdirs(void)
 	if (!(d1 = getenv("TMPDIR")))
 		d1 = "/var/tmp";
 
+	if (!(d1 = realpath(d1, NULL))) {
+		printerr(strerror(errno), "realpath \"%s\" failed", d1);
+		return 1;
+	}
+
 	l = strlen(d1);
 	tmp_dir = malloc(l + sizeof(d2) + 2);
 
 	memcpy(tmp_dir, d1, l);
+	free(d1);
 	memcpy(tmp_dir + l, d2, sizeof(d2));
 	l += sizeof d2;
 
 	if (!(d1 = mkdtemp(tmp_dir))) {
-		printerr(strerror(errno),
-		    "mkdtemp %s failed", tmp_dir);
+		printerr(strerror(errno), "mkdtemp \"%s\" failed", tmp_dir);
 		free(tmp_dir);
 		tmp_dir = NULL;
 		return 1;
