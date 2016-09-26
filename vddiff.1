@@ -365,6 +365,11 @@ as a background process (don't block
 .Nm
 while executing
 .Ar string ) .
+.Dq ( Li bg
+is ignored if one of the files to be compared is compressed.
+Since they are decompressed into a temporary directory
+which is removed after starting the diff tool,
+the file may be removed before the tool reads it.)
 .It Li viewtool Ar string
 Configure
 .Ar string
@@ -386,6 +391,11 @@ which is expanded to the filename.
 Start
 .Ar string
 as a background process.
+.Dq ( Li bg
+is ignored if the file to be viewed is compressed.
+Since it is decompressed into a temporary directory
+which is removed after starting the view tool,
+the file may be removed before the tool reads it.)
 .It Li ext Ar extension Ar string
 Configure view tool
 .Ar string

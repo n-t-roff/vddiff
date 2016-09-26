@@ -215,6 +215,7 @@ exec_tool(struct tool *t, char *name, char *rnam, int tree)
 	int o, c;
 	char *s, **a, **av;
 	int status;
+	int bg = t->bg;
 
 	if (!rnam)
 		rnam = name;
@@ -247,25 +248,27 @@ exec_tool(struct tool *t, char *name, char *rnam, int tree)
 	}
 
 	if (tree & 1) {
-		if (*name == '/')
+		if (*name == '/') {
 			*a++ = name;
-		else {
+			bg = 0;
+		} else {
 			pthcat(lpath, llen, name);
 			*a++ = lpath;
 		}
 	}
 
 	if (tree & 2) {
-		if (*rnam == '/')
+		if (*rnam == '/') {
 			*a++ = rnam;
-		else {
+			bg = 0;
+		} else {
 			pthcat(rpath, rlen, rnam);
 			*a++ = rpath;
 		}
 	}
 
 	*a = NULL;
-	status = exec_cmd(av, t->bg, NULL, NULL);
+	status = exec_cmd(av, bg, NULL, NULL);
 
 	if (o)
 		free(*av);

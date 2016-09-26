@@ -217,12 +217,12 @@ check_args(char **argv)
 
 	if (stat(s = *argv++, &stat1) == -1) {
 		printf("stat(\"%s\") failed: %s\n", s, strerror(errno));
-		usage();
+		exit(1);
 	}
 
 	if (!S_ISDIR(stat1.st_mode)) {
 		printf("\"%s\" is not a directory\n", s);
-		usage();
+		exit(1);
 	}
 
 	llen = strlen(s);
@@ -236,7 +236,7 @@ check_args(char **argv)
 
 	if (stat(s = *argv++, &stat1) == -1) {
 		printf("stat(\"%s\") failed: %s\n", s, strerror(errno));
-		usage();
+		exit(1);
 	}
 
 	if (stat1.st_ino == ino) {
@@ -247,7 +247,7 @@ check_args(char **argv)
 
 	if (!S_ISDIR(stat1.st_mode)) {
 		printf("\"%s\" is not a directory\n", s);
-		usage();
+		exit(1);
 	}
 
 	rlen = strlen(s);
