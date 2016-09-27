@@ -891,11 +891,11 @@ action(int ign_ext, int tree)
 		char *lnam, *rnam;
 
 		/* check if mark needs to be unzipped */
-		if ((z1 = unzip(m, m->ltype ? 1 : 2, &t1)))
+		if ((z1 = unpack(m, m->ltype ? 1 : 2, &t1)))
 			m = z1;
 
 		/* check if other file needs to be unchecked */
-		if ((z2 = unzip(f1, m->ltype ? 2 : 1, &t2)))
+		if ((z2 = unpack(f1, m->ltype ? 2 : 1, &t2)))
 			f1 = z2;
 
 		if (m->ltype) {
@@ -936,10 +936,10 @@ action(int ign_ext, int tree)
 		goto ret;
 	}
 
-	if (f1->ltype && (z1 = unzip(f1, 1, &t1)))
+	if (f1->ltype && (z1 = unpack(f1, 1, &t1)))
 		f1 = z1;
 
-	if (f2->rtype && (z2 = unzip(f2, 2, &t2)))
+	if (f2->rtype && (z2 = unpack(f2, 2, &t2)))
 		f2 = z2;
 
 	if ((f1->ltype & S_IFMT) == (f2->rtype & S_IFMT)) {

@@ -34,6 +34,7 @@ static int mktmpdirs(void);
 static enum uz_id check_ext(char *, int *);
 static struct filediff *zcat(char *, struct filediff *, int, int);
 static struct filediff *tar(char *, struct filediff *, int, int);
+static struct filediff *unzip(struct filediff *, int, int);
 static char *zpths(struct filediff *, struct filediff **, int, size_t *,
     int, int);
 
@@ -46,7 +47,8 @@ static struct uz_ext exttab[] = {
 	{ "tar.bz2", UZ_TBZ },
 	{ "tar.gz" , UZ_TGZ },
 	{ "tbz"    , UZ_TBZ },
-	{ "tgz"    , UZ_TGZ }
+	{ "tgz"    , UZ_TGZ },
+	{ "zip"    , UZ_ZIP }
 };
 
 void
@@ -154,7 +156,7 @@ rmtmpdirs(char *s)
 }
 
 struct filediff *
-unzip(struct filediff *f, int tree, char **tmp)
+unpack(struct filediff *f, int tree, char **tmp)
 {
 	enum uz_id id;
 	struct filediff *z;
@@ -185,6 +187,9 @@ unzip(struct filediff *f, int tree, char **tmp)
 		break;
 	case UZ_TAR:
 		z = tar("xf", f, tree, i);
+		break;
+	case UZ_ZIP:
+		z = unzip(f, tree, i);
 		break;
 	default:
 		rmtmpdirs(tmp_dir);
@@ -255,15 +260,27 @@ zcat(char *cmd, struct filediff *f, int tree, int i)
 static struct filediff *
 tar(char *opt, struct filediff *f, int tree, int i)
 {
-	char *s;
-	size_t l;
 	struct filediff *z;
+	static char *av[] = { "tar", NULL, NULL, "-C", NULL, NULL };
 
-	l = 20;
-	s = zpths(f, &z, tree, &l, i, 0);
-	snprintf(s, l, "tar %s %s -C %s", opt, lbuf, rbuf);
-	sh_cmd(s, 0);
-	free(s);
+	zpths(f, &z, tree, NULL, i, 0);
+	av[1] = opt;
+	av[2] = lbuf;
+	av[4] = rbuf;
+	exec_cmd(av, 0, NULL, NULL);
+	return z;
+}
+
+static struct filediff *
+unzip(struct filediff *f, int tree, int i)
+{
+	struct filediff *z;
+	static char *av[] = { "unzip", NULL, "-d", NULL, NULL };
+
+	zpths(f, &z, tree, NULL, i, 0);
+	av[1] = lbuf;
+	av[3] = rbuf;
+	exec_cmd(av, 0, NULL, NULL);
 	return z;
 }
 
@@ -326,10 +343,17 @@ zpths(struct filediff *f, struct filediff **z2, int tree, size_t *l2, int i,
 	}
 
 	pthcat(s, l, f->name);
-	shell_quote(lbuf, s, sizeof lbuf);
-	shell_quote(rbuf, z->name, sizeof rbuf);
-	l = *l2;
-	l = strlen(lbuf) + strlen(rbuf) + l;
-	*l2 = l;
-	return malloc(l);
+
+	if (l2) {
+		shell_quote(lbuf, s, sizeof lbuf);
+		shell_quote(rbuf, z->name, sizeof rbuf);
+		l = *l2;
+		l = strlen(lbuf) + strlen(rbuf) + l;
+		*l2 = l;
+		return malloc(l);
+	} else {
+		memcpy(lbuf, s, strlen(s) + 1);
+		memcpy(rbuf, z->name, strlen(z->name) + 1);
+		return NULL;
+	}
 }

@@ -47,9 +47,9 @@ static int read_rc(void);
 static void usage(void);
 
 static char *usage_txt =
-"Usage: %s [-ubcdfgklmnr] [-t <diff_tool>] [-v <view_tool>] <directory_1>\n"
+"Usage: %s [-ubcdfgklmnrV] [-t <diff_tool>] [-v <view_tool>] <directory_1>\n"
 "           <directory_2>\n";
-static char *getopt_arg = "Bbcdfgklmnrt:uv:";
+static char *getopt_arg = "Bbcdfgklmnrt:uVv:";
 
 int
 main(int argc, char **argv)
@@ -112,6 +112,11 @@ main(int argc, char **argv)
 		case 't':
 			set_tool(&difftool, strdup(optarg), 0);
 			break;
+		case 'V':
+			printf("%s version 1.1+.0 "
+			    "160927 10:26"
+			    "\n", prog);
+			exit(0);
 		case 'v':
 			set_tool(&viewtool, strdup(optarg), 0);
 			break;
