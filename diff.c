@@ -93,13 +93,21 @@ build_diff_db(int tree)
 		pthcat(lpath, llen, name);
 
 		if (xstat(lpath, &stat1) == -1) {
-			if (errno != ENOENT) {
-				printerr(strerror(errno), "stat %s failed",
-				   lpath);
-				continue;
-			}
+			if (errno == ELOOP) {
+				if (lstat(lpath, &stat1) == -1) {
+					printerr(strerror(errno),
+					    "lstat \"%s\" failed", lpath);
+					continue;
+				}
+			} else {
+				if (errno != ENOENT) {
+					printerr(strerror(errno),
+					    "stat \"%s\" failed", lpath);
+					continue;
+				}
 
-			stat1.st_mode = 0;
+				stat1.st_mode = 0;
+			}
 		}
 
 		if (tree & 2) {
@@ -108,16 +116,24 @@ build_diff_db(int tree)
 			goto no_tree2;
 
 		if (xstat(rpath, &stat2) == -1) {
-			if (errno != ENOENT) {
-				printerr(strerror(errno), "stat %s failed",
-				    rpath);
-				continue;
-			}
+			if (errno == ELOOP) {
+				if (lstat(rpath, &stat2) == -1) {
+					printerr(strerror(errno),
+					    "lstat \"%s\" failed", rpath);
+					continue;
+				}
+			} else {
+				if (errno != ENOENT) {
+					printerr(strerror(errno),
+					    "stat \"%s\" failed", rpath);
+					continue;
+				}
 
 no_tree2:
-			if (!stat1.st_mode)
-				continue; /* ignore two dead links */
-			stat2.st_mode = 0;
+				if (!stat1.st_mode)
+					continue; /* ignore two dead links */
+				stat2.st_mode = 0;
+			}
 		}
 
 		if (scan) {
