@@ -234,7 +234,7 @@ next_key:
 			free(fkey_cmd[i]);
 			fkey_cmd[i] = NULL;
 
-			if (*rbuf == '$') {
+			if (*rbuf == '$' && isspace(rbuf[1])) {
 				int c;
 				int j = 0;
 

@@ -149,7 +149,7 @@ set_fkey(int i, char *s)
 	free(fkey_cmd[i]);
 	fkey_cmd[i] = NULL;
 
-	if (*s == '$') {
+	if (*s == '$' && isspace(s[1])) {
 		int c;
 		char *p = s;
 

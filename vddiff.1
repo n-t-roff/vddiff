@@ -285,6 +285,11 @@ function key.
 The work directory is the directory where
 .Nm
 had been started.
+(If
+.Fl B
+or option
+.Dq Li bmode
+is used, the work directory is always the current view directory.)
 Each entered command is saved in a history.
 The keys
 .Aq Cm UP
@@ -349,6 +354,7 @@ Also spaces or tabs are not required (outside quoted strings),
 when every element is on it's own line.
 Everything following a
 .Sq Li #
+(outside quoted strings)
 to the end of the line is a comment.
 .Bl -tag
 .It Li difftool Ar string
