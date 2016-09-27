@@ -4,7 +4,7 @@ MANDIR=	$(PREFIX)/share/man
 INCDIR=	$(PREFIX)/include
 LIBDIR=	$(PREFIX)/lib
 BIN=	vddiff
-OBJ=	main.o pars.o lex.o diff.o ui.o db.o exec.o fs.o ed.o uzp.o
+OBJ=	main.o pars.o lex.o diff.o ui.o db.o exec.o fs.o ed.o uzp.o ver.o
 
 YFLAGS=	-d
 _CFLAGS=$(CFLAGS) $(CPPFLAGS) $(DEFINES) $(INCDIR_CURSES) -I$(INCDIR) \
@@ -24,7 +24,7 @@ install:
 	install -m 644 $(BIN).1 $(MANDIR)/man1/
 
 clean:
-	rm -f $(BIN) $(OBJ) y.tab.h $(BIN).1.html
+	rm -f $(BIN) $(OBJ) y.tab.h $(BIN).1.html $(BIN).1.pdf
 
 distclean: clean
 	rm -f Makefile config.log compat.h
@@ -40,15 +40,28 @@ distclean: clean
 html:
 	make $(BIN).1.html
 
+pdf:
+	make $(BIN).1.pdf
+
 $(BIN).1.html: $(BIN).1
-	tbl $(BIN).1 | eqn | troff -Thtml -mandoc -dToc=/tmp/toc \
+	tbl $(BIN).1 | eqn | troff -Thtml -mandoc -dToc=/tmp/.$(BIN).toc \
+	    2> /tmp/.$(BIN).err | dhtml -t "$(BIN)(1)" > $@
+	sed -n 's/^Toc://p' /tmp/.$(BIN).err > /tmp/toc
+	tbl $(BIN).1 | eqn | troff -Thtml -mandoc -dToc=/tmp/.$(BIN).toc \
+	    2> /tmp/.$(BIN).err | dhtml -t "$(BIN)(1)" > $@
+	sed -n 's/^Toc://p' /tmp/.$(BIN).err > /tmp/toc
+	tbl $(BIN).1 | eqn | troff -Thtml -mandoc -dToc=/tmp/.$(BIN).toc \
 	    2> /tmp/err | dhtml -t "$(BIN)(1)" > $@
-	sed -n 's/^Toc://p' /tmp/err > /tmp/toc
-	tbl $(BIN).1 | eqn | troff -Thtml -mandoc -dToc=/tmp/toc \
-	    2> /tmp/err | dhtml -t "$(BIN)(1)" > $@
-	sed -n 's/^Toc://p' /tmp/err > /tmp/toc
-	tbl $(BIN).1 | eqn | troff -Thtml -mandoc -dToc=/tmp/toc \
-	    2> /tmp/err | dhtml -t "$(BIN)(1)" > $@
+
+$(BIN).1.pdf: $(BIN).1
+	tbl -g $(BIN).1 | eqn | troff -mandoc -dToc=/tmp/.$(BIN).toc \
+	    2> /tmp/.$(BIN).err | dpost | ps2pdf - $@
+	sed -n 's/^Toc://p' /tmp/.$(BIN).err > /tmp/.$(BIN).toc
+	tbl -g $(BIN).1 | eqn | troff -mandoc -dToc=/tmp/.$(BIN).toc \
+	    2> /tmp/.$(BIN).err | dpost | ps2pdf - $@
+	sed -n 's/^Toc://p' /tmp/.$(BIN).err > /tmp/.$(BIN).toc
+	tbl -g $(BIN).1 | eqn | troff -mandoc -dToc=/tmp/.$(BIN).toc \
+	    2> /tmp/.$(BIN).err | dpost | ps2pdf - $@
 
 main.o: pars.o # y.tab.h
 lex.o: pars.o # y.tab.h

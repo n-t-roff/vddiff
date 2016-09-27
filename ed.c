@@ -87,6 +87,9 @@ ed_append(char *txt)
 #endif
 	linelen += l;
 	linepos = linelen;
+
+	if (linelen + 1 > statw)
+		leftpos = linelen + 1 - statw;
 }
 
 static void

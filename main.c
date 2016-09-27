@@ -55,6 +55,7 @@ int
 main(int argc, char **argv)
 {
 	int opt;
+	extern const char version[];
 
 	prog = *argv;
 	setlocale(LC_ALL, "");
@@ -113,9 +114,7 @@ main(int argc, char **argv)
 			set_tool(&difftool, strdup(optarg), 0);
 			break;
 		case 'V':
-			printf("%s version 1.1+.0 "
-			    "160927 10:26"
-			    "\n", prog);
+			printf("%s %s\n", prog, version);
 			exit(0);
 		case 'v':
 			set_tool(&viewtool, strdup(optarg), 0);
