@@ -210,6 +210,8 @@ next_key:
 				case '\n':
 					t = viewtool;
 					*viewtool.tool = NULL;
+					/* set_tool() reused here to process
+					 * embedded "$1" */
 					set_tool(&viewtool,
 					    strdup(fkey_cmd[i]), 0);
 					action(1, 3);
@@ -888,7 +890,12 @@ proc_mevent(void)
 #endif
 
 static void
-action(int ign_ext, int tree)
+action(
+    /* Used by function key starting with "$ ".
+     * Ignore file type and file name extension, just use plain file name.
+     * (Don't enter directories!) */
+    int ign_ext,
+    int tree)
 {
 	struct filediff *f1, *f2, *z1 = NULL, *z2 = NULL;
 	char *t1 = NULL, *t2 = NULL;
@@ -936,7 +943,7 @@ action(int ign_ext, int tree)
 			goto ret;
 		}
 
-		if (S_ISREG(ltyp))
+		if (S_ISREG(ltyp) || ign_ext)
 			tool(lnam, rnam, 3, ign_ext);
 		else if (S_ISDIR(ltyp)) {
 			t1 = t2 = NULL;
@@ -953,31 +960,31 @@ action(int ign_ext, int tree)
 		f2 = z2;
 
 	if ((f1->ltype & S_IFMT) == (f2->rtype & S_IFMT)) {
-		if (S_ISDIR(f1->ltype)) {
-			t1 = t2 = NULL;
-			enter_dir(f1->name, f2->name, 3);
-		} else if (S_ISREG(f1->ltype)) {
+		if (S_ISREG(f1->ltype) || ign_ext) {
 			if (f1->diff == '!')
 				tool(f1->name, f2->name, 3, ign_ext);
 			else
 				tool(f1->name, NULL, 1, ign_ext);
+		} else if (S_ISDIR(f1->ltype)) {
+			t1 = t2 = NULL;
+			enter_dir(f1->name, f2->name, 3);
 		} else
 			goto typerr;
 	} else if (!f1->ltype || tree == 2) {
-		if (S_ISDIR(f2->rtype)) {
+		if (S_ISREG(f2->rtype) || ign_ext)
+			tool(f2->name, NULL, 2, ign_ext);
+		else if (S_ISDIR(f2->rtype)) {
 			t1 = t2 = NULL;
 			enter_dir(f2->name, NULL, 2);
-		} else if (S_ISREG(f2->rtype))
-			tool(f2->name, NULL, 2, ign_ext);
-		else
+		} else
 			goto typerr;
 	} else if (!f2->rtype || tree == 1) {
-		if (S_ISDIR(f1->ltype)) {
+		if (S_ISREG(f1->ltype) || ign_ext)
+			tool(f1->name, NULL, 1, ign_ext);
+		else if (S_ISDIR(f1->ltype)) {
 			t1 = t2 = NULL;
 			enter_dir(f1->name, NULL, 1);
-		} else if (S_ISREG(f1->ltype))
-			tool(f1->name, NULL, 1, ign_ext);
-		else
+		} else
 			goto typerr;
 	} else
 		printerr(NULL, "Different file type");
