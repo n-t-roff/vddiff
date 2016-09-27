@@ -900,6 +900,9 @@ action(
 	struct filediff *f1, *f2, *z1 = NULL, *z2 = NULL;
 	char *t1 = NULL, *t2 = NULL;
 
+	if (!db_num)
+		return;
+
 	f1 = f2 = db_list[top_idx + curs];
 
 	if (mark) {
@@ -1504,7 +1507,12 @@ file_stat(struct filediff *f)
 static void
 set_mark(void)
 {
-	struct filediff *f = db_list[top_idx + curs];
+	struct filediff *f;
+
+	if (!db_num)
+		return;
+
+	f = db_list[top_idx + curs];
 	mode_t mode = f->ltype ? f->ltype : f->rtype;
 
 	if (f->ltype && f->rtype) {
@@ -1554,6 +1562,9 @@ static void
 yank_name(int reverse)
 {
 	struct filediff *f;
+
+	if (!db_num)
+		return;
 
 	f = db_list[top_idx + curs];
 

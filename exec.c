@@ -375,17 +375,21 @@ shell_quote(char *to, char *from, size_t siz)
 void
 open_sh(int tree)
 {
-	struct filediff *f = db_list[top_idx + curs];
+	struct filediff *f = NULL;
 	char *s;
 	struct passwd *pw;
 	char *av[2];
 
-	if ((tree == 3 && f->ltype && f->rtype) ||
-	    (tree == 1 && !f->ltype) ||
-	    (tree == 2 && !f->rtype))
-		return;
+	if (db_num) {
+		f = db_list[top_idx + curs];
 
-	if ((tree & 2) && f->rtype) {
+		if ((tree == 3 && f->ltype && f->rtype) ||
+		    (tree == 1 && !f->ltype) ||
+		    (tree == 2 && !f->rtype))
+			return;
+	}
+
+	if (tree == 2 || ((tree & 2) && db_num && f->rtype)) {
 		rpath[rlen] = 0;
 		s = rpath;
 	} else {
@@ -394,8 +398,7 @@ open_sh(int tree)
 	}
 
 	if (!(pw = getpwuid(getuid()))) {
-		printerr(strerror(errno),
-		    "getpwuid failed");
+		printerr(strerror(errno), "getpwuid failed");
 		return;
 	}
 

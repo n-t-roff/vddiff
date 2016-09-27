@@ -53,8 +53,13 @@ static enum { TREE_RM, TREE_CP } tree_op;
 void
 fs_rename(int tree)
 {
-	struct filediff *f = db_list[top_idx + curs];
+	struct filediff *f;
 	char *s;
+
+	if (!db_num)
+		return;
+
+	f = db_list[top_idx + curs];
 
 	/* "en" is not allowed if both files are present */
 	if ((tree == 3 && f->ltype && f->rtype) ||
@@ -92,10 +97,15 @@ exit:
 void
 fs_chmod(int tree)
 {
-	struct filediff *f = db_list[top_idx + curs];
+	struct filediff *f;
 	char *s;
 	int i, c;
 	mode_t m;
+
+	if (!db_num)
+		return;
+
+	f = db_list[top_idx + curs];
 
 	/* "en" is not allowed if both files are present */
 	if ((tree == 3 && f->ltype && f->rtype) ||
@@ -172,7 +182,12 @@ exit:
 void
 fs_rm(int tree, char *txt)
 {
-	struct filediff *f = db_list[top_idx + curs];
+	struct filediff *f;
+
+	if (!db_num)
+		return;
+
+	f = db_list[top_idx + curs];
 
 	/* "dd" is not allowed if both files are present */
 	if (tree == 3 && f->ltype && f->rtype)
@@ -223,7 +238,12 @@ cancel:
 void
 fs_cp(int to)
 {
-	struct filediff *f = db_list[top_idx + curs];
+	struct filediff *f;
+
+	if (!db_num)
+		return;
+
+	f = db_list[top_idx + curs];
 
 	fs_rm(to, "overwrite");
 
