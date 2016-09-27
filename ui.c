@@ -956,13 +956,13 @@ action(
 		goto ret;
 	}
 
-	if (tree != 2 && f1->ltype && (z1 = unpack(f1, 1, &t1)))
+	if (f1->ltype && (z1 = unpack(f1, 1, &t1)))
 		f1 = z1;
 
-	if (tree != 1 && f2->rtype && (z2 = unpack(f2, 2, &t2)))
+	if (f2->rtype && (z2 = unpack(f2, 2, &t2)))
 		f2 = z2;
 
-	if ((f1->ltype & S_IFMT) == (f2->rtype & S_IFMT)) {
+	if (tree == 3 && (f1->ltype & S_IFMT) == (f2->rtype & S_IFMT)) {
 		if (S_ISREG(f1->ltype) || ign_ext) {
 			if (f1->diff == '!')
 				tool(f1->name, f2->name, 3, ign_ext);
