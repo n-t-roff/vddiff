@@ -501,6 +501,7 @@ next_key:
 			}
 
 			wrefresh(wlist);
+			printerr(NULL, "Press any key to continue");
 			getch();
 			disp_list();
 			break;

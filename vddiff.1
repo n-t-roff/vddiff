@@ -337,10 +337,8 @@ Open shell in left directory tree.
 .It Dq Li sr
 Open shell in right directory tree.
 .It Dq Li ol
-In case of different file type:
 Open left file or directory.
 .It Dq Li or
-In case of different file type:
 Open right file or directory.
 .El
 .Sh CONFIGURATION FILE ~/.vddiffrc
@@ -399,11 +397,21 @@ as a background process (don't block
 .Nm
 while executing
 .Ar string ) .
-.Dq ( Li bg
-is ignored if one of the files to be compared is compressed.
+.Dq Li bg
+is ignored if
+.Ar string
+contains
+.Li $ Ns Ar n .
+Put
+.Sq Li &
+at the end of
+.Ar string
+in this case.
+.Dq Li bg
+is also ignored if one of the files to be compared is compressed.
 Since they are decompressed into a temporary directory
 which is removed after starting the diff tool,
-the file may be removed before the tool reads it.)
+the file may be removed before the tool reads it.
 .It Li viewtool Ar string
 Configure
 .Ar string
@@ -425,8 +433,18 @@ which is expanded to the filename.
 Start
 .Ar string
 as a background process.
-.Dq ( Li bg
-is ignored if the file to be viewed is compressed.
+.Dq Li bg
+is ignored if
+.Ar string
+contains
+.Li $ Ns Ar n .
+Put
+.Sq Li &
+at the end of
+.Ar string
+in this case.
+.Dq Li bg
+is also ignored if the file to be viewed is compressed.
 Since it is decompressed into a temporary directory
 which is removed after starting the view tool,
 the file may be removed before the tool reads it.)

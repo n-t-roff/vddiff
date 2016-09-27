@@ -194,16 +194,14 @@ set_tool(struct tool *tool, char *s, int bg)
 	t[1] = NULL;
 	t[2] = NULL;
 
-	if (bg)
-		return;
-
 	while (*s) {
 		if (*s == '$' && (s[1] == '1' || s[1] == '2')) {
 			*s++ = 0;
-			if (t[1])
-				t[2] = s;
-			else
+
+			if (!t[1])
 				t[1] = s;
+			else if (!t[2])
+				t[2] = s;
 		}
 		s++;
 	}
