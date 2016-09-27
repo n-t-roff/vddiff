@@ -466,6 +466,8 @@ next_key:
 				c = 0;
 				action(0, 1);
 				goto next_key;
+			case 'e':
+				goto next_key;
 			default:
 				;
 			}
@@ -513,6 +515,8 @@ next_key:
 			case 'o':
 				c = 0;
 				action(0, 2);
+				goto next_key;
+			case 'e':
 				goto next_key;
 			default:
 				;
@@ -645,7 +649,8 @@ next_key:
 		case 'o':
 			break;
 		default:
-			printerr(NULL, "Invalid input '%c' (type h for help).",
+			printerr(NULL,
+			    "Invalid input '%c' (type 'h' for help).",
 			    isgraph(c) ? c : '?');
 		}
 	}
@@ -720,6 +725,7 @@ help(void) {
 			help_mevent();
 			break;
 #endif
+		case KEY_LEFT:
 		case 'q':
 			goto exit;
 		case KEY_DOWN:
@@ -740,6 +746,10 @@ help(void) {
 		case KEY_BACKSPACE:
 			help_pg_up();
 			break;
+		default:
+			printerr(NULL,
+			    "Invalid input '%c' ('q' quits help).",
+			    isgraph(c) ? c : '?');
 		}
 	}
 

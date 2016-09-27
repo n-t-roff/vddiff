@@ -33,16 +33,30 @@ It is a simple text terminal directory diff tool using
 for the actual diff operation.
 (If vim is not installed,
 .Dq Li diff Ar file_1 Ar file_2 Li | less
-is used instead.)
+is used instead.
+Other diff tools can be configured as well.)
 A file browser displays the names found in the directories
 given on the command line.
 Only plain files and symbolic links are compared.
-Compressed files are automatically decompressed into
-a temporary directory before the diff tool is started.
 Unless option
 .Fl r
 is used,
 directories are not compared before they are entered.
+.Pp
+Compressed files are automatically decompressed into
+a temporary directory before the diff tool is started.
+These files are detected by their file name extension.
+The file contents are not checked.
+Currently the following file name extensions are
+supported:
+.Li bz2 ,
+.Li gz ,
+.Li tar ,
+.Li tbz ,
+.Li tgz ,
+and
+.Li zip .
+.Pp
 Symbols are printed in two columns before the names
 which have the following meaning:
 .Pp
@@ -169,7 +183,7 @@ Leave directory (one directory up).
 Enter directory or start diff tool.
 Compressed files are unpacked before the diff tool is started
 but compressed directories can only be viewed (the compressed
-files are compared instead).
+archives are compared instead).
 .It Ao Cm PAGE-UP Ac or Aq Cm BACKSPACE
 Scroll one screen up.
 .It Ao Cm PAGE-DOWN Ac or Aq Cm SPACE
