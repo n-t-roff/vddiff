@@ -936,10 +936,10 @@ action(int ign_ext, int tree)
 		goto ret;
 	}
 
-	if (f1->ltype && (z1 = unpack(f1, 1, &t1)))
+	if (tree != 2 && f1->ltype && (z1 = unpack(f1, 1, &t1)))
 		f1 = z1;
 
-	if (f2->rtype && (z2 = unpack(f2, 2, &t2)))
+	if (tree != 1 && f2->rtype && (z2 = unpack(f2, 2, &t2)))
 		f2 = z2;
 
 	if ((f1->ltype & S_IFMT) == (f2->rtype & S_IFMT)) {

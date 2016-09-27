@@ -275,11 +275,11 @@ static struct filediff *
 unzip(struct filediff *f, int tree, int i)
 {
 	struct filediff *z;
-	static char *av[] = { "unzip", NULL, "-d", NULL, NULL };
+	static char *av[] = { "unzip", "-qq", NULL, "-d", NULL, NULL };
 
 	zpths(f, &z, tree, NULL, i, 0);
-	av[1] = lbuf;
-	av[3] = rbuf;
+	av[2] = lbuf;
+	av[4] = rbuf;
 	exec_cmd(av, 0, NULL, NULL);
 	return z;
 }
@@ -337,8 +337,8 @@ zpths(struct filediff *f, struct filediff **z2, int tree, size_t *l2, int i,
 		l = rlen;
 
 		if (!fn) {
-			z->rtype = stat1.st_mode;
 			z->ltype = 0;
+			z->rtype = stat1.st_mode;
 		}
 	}
 
