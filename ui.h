@@ -12,6 +12,7 @@ void build_ui(void);
 void printerr(char *, char *, ...);
 int dialog(char *, char *, char *, ...);
 void disp_list(void);
+void center(unsigned);
 
 extern short color;
 extern short color_leftonly ,

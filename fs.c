@@ -67,7 +67,8 @@ fs_rename(int tree)
 	    (tree == 2 && !f->rtype))
 		return;
 
-	if (ed_dialog("Enter new name (<ESC> to cancel):", f->name, NULL, 0, 0))
+	if (ed_dialog("Enter new name (<ESC> to cancel):", f->name, NULL, 0,
+	    NULL))
 		return;
 
 	if ((tree & 2) && f->rtype) {
@@ -137,7 +138,7 @@ fs_chmod(int tree)
 	s = strdup(lbuf);
 
 	if (ed_dialog("Enter new permissions (<ESC> to cancel):", s, NULL, 0,
-	    0)) {
+	    NULL)) {
 		free(s);
 		return;
 	}
@@ -281,6 +282,8 @@ cancel:
 	lpath[llen] = 0;
 	rpath[rlen] = 0;
 }
+
+/* top_idx and curs must kept unchanged for "//" */
 
 void
 rebuild_db(void)

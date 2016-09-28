@@ -34,6 +34,7 @@ PERFORMANCE OF THIS SOFTWARE.
 #include "exec.h"
 #include "fs.h"
 #include "ed.h"
+#include "ui2.h"
 
 #define COLOR_LEFTONLY  1
 #define COLOR_RIGHTONLY 2
@@ -72,9 +73,8 @@ static void set_mark(void);
 static void clr_mark(void);
 static void disp_mark(void);
 static void yank_name(int);
-static void srch_file(char *);
+static int srch_file(char *);
 static void no_file(void);
-static void center(unsigned);
 
 short color = 1;
 short color_leftonly  = COLOR_CYAN   ,
@@ -97,11 +97,12 @@ static WINDOW *wlist;
 WINDOW *wstat;
 static struct ui_state *ui_stack;
 /* Line scroll enable. Else only full screen is scrolled */
-static short scrollen = 1;
 struct filediff *mark;
-static short wstat_dirty;
 static unsigned srch_idx;
 static char *dlpth, *drpth, *dcwd;
+static struct history sh_cmd_hist;
+static short scrollen = 1;
+static short wstat_dirty;
 
 #ifdef NCURSES_MOUSE_VERSION
 static void proc_mevent(void);
@@ -228,7 +229,7 @@ next_key:
 
 			if (ed_dialog(
 			    "Type text to be saved for function key:",
-			    fkey_cmd[i] ? fkey_cmd[i] : "", NULL, 1, 0))
+			    fkey_cmd[i] ? fkey_cmd[i] : "", NULL, 1, NULL))
 				break;
 
 			free(sh_str[i]);
@@ -414,7 +415,12 @@ next_key:
 		case '!':
 		case 'n':
 			if (c == 'n') {
-				if (*key == 'e') {
+				if (regex) {
+					c = 0;
+					regex_srch(1);
+					break;
+				} else if (*key == 'e') {
+					/* no c=0 here */
 					fs_rename(3);
 					break;
 				} else if (key[1] == 'e') {
@@ -531,6 +537,9 @@ next_key:
 			} else if (edit) {
 				c = 0;
 				clr_edit();
+			} else if (regex) {
+				c = 0;
+				clr_regex();
 			}
 
 			break;
@@ -576,7 +585,8 @@ next_key:
 			c = 0;
 
 			if (!ed_dialog("Type command (<ESC> to cancel):",
-			    NULL /* must be NULL !!! */, NULL, 0, 1)) {
+			    NULL /* must be NULL !!! */, NULL, 0,
+			    &sh_cmd_hist)) {
 				sh_cmd(rbuf, 1);
 			}
 
@@ -595,12 +605,20 @@ next_key:
 				prev_sorting = sorting;
 				sorting = SORTMIXED;
 				rebuild_db();
+				sorting = prev_sorting;
 			}
 
 			srch_idx = 0;
-			ed_dialog("Type first characters of filename:",
-			    "" /* remove existing */, srch_file, 0, 0);
-			sorting = prev_sorting;
+
+			if (regex)
+				clr_regex();
+
+			if (ed_dialog("Type first characters of filename:",
+			    "" /* remove existing */, srch_file, 0, NULL) ||
+			    !*rbuf)
+				regex = 0;
+			else if (regex)
+				start_regex(rbuf);
 			break;
 		case 'u':
 			c = 0;
@@ -651,6 +669,23 @@ next_key:
 			break;
 		case 'o':
 			break;
+		case ':':
+			c = 0;
+
+			if (!ed_dialog("Enter option:",
+			    NULL /* must be NULL !!! */, NULL, 0, &opt_hist)) {
+				sh_cmd(rbuf, 1);
+			}
+
+			break;
+		case 'N':
+			if (regex) {
+				c = 0;
+				regex_srch(-1);
+				break;
+			}
+
+			/* fall through */
 		default:
 			printerr(NULL,
 			    "Invalid input '%c' (type 'h' for help).",
@@ -673,7 +708,8 @@ static char *helptxt[] = {
        "		Scroll one screen down",
        "<HOME>, 1G	Go to first file",
        "<END>, G	Go to last file",
-       "/		Search file",
+       "/		Search file by typing first letters of filename",
+       "//		Search file with regular expression",
        "H		Put cursor to top line",
        "M		Put cursor on middle line",
        "L		Put cursor on bottom line",
@@ -709,7 +745,8 @@ static char *helptxt[] = {
        "sl		Open shell in left directory",
        "sr		Open shell in right directory",
        "ol		Open left file or directory",
-       "or		Open right file or directory" };
+       "or		Open right file or directory",
+       ":		Enter configuration option" };
 
 #define HELP_NUM (sizeof(helptxt) / sizeof(*helptxt))
 
@@ -900,6 +937,9 @@ action(
 {
 	struct filediff *f1, *f2, *z1 = NULL, *z2 = NULL;
 	char *t1 = NULL, *t2 = NULL;
+
+	if (regex)
+		clr_regex();
 
 	if (!db_num)
 		return;
@@ -1374,6 +1414,10 @@ no_diff:
 		if (wstat_dirty)
 			disp_edit();
 		return;
+	} else if (regex) {
+		if (wstat_dirty)
+			disp_regex();
+		return;
 	}
 
 	werase(wstat);
@@ -1595,7 +1639,7 @@ no_file(void)
 		printerr(NULL, "No file");
 }
 
-static void
+static int
 srch_file(char *pattern)
 {
 	unsigned idx;
@@ -1603,7 +1647,17 @@ srch_file(char *pattern)
 
 
 	if (!*pattern || !db_num)
-		return;
+		return 0;
+
+	if (*pattern == '/' && !pattern[1]) {
+		rebuild_db();
+		werase(wstat);
+		mvwprintw(wstat, 0, 0, "Enter %s regular expression:",
+		    magic ? "extended" : "basic");
+		wrefresh(wstat);
+		regex = 1;
+		return EDCB_IGN | EDCB_RM_CB;
+	}
 
 	if (srch_idx >= db_num)
 		srch_idx = db_num - 1;
@@ -1628,9 +1682,11 @@ srch_file(char *pattern)
 			idx--;
 		}
 	}
+
+	return 0;
 }
 
-static void
+void
 center(unsigned idx)
 {
 	if (db_num <= listh || idx <= listh / 2)

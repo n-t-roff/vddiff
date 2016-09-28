@@ -26,30 +26,23 @@ PERFORMANCE OF THIS SOFTWARE.
 #include "ui.h"
 #include "main.h"
 #include "exec.h"
+#include "ed.h"
 
 #define LINESIZ (sizeof rbuf)
 
-struct hist_ent {
-	char *line;
-	struct hist_ent *next, *prev;
-};
-
 static void init_edit(void);
-static int edit_line(void (*)(char *));
+static int edit_line(int (*)(char *), struct history *);
 static void linebuf_delch(void);
 static void linebuf_insch(unsigned);
 static void overful_del(void);
-static void hist_add(void);
-static void hist_up(void);
-static void hist_down(void);
+static void hist_add(struct history *);
+static void hist_up(struct history *);
+static void hist_down(struct history *);
 
 short edit;
 unsigned histsize = 100;
 
 static unsigned linelen, linepos, leftpos;
-static struct hist_ent *history, *hist_ent, *hist_end;
-static short have_hist_ent;
-static unsigned histlen;
 
 #ifdef HAVE_CURSES_WCH
 wchar_t *linebuf;
@@ -182,7 +175,7 @@ free:
 int
 ed_dialog(char *msg,
     /* NULL: leave buffer as-is */
-    char *ini, void (*callback)(char *), int keep_buf, int use_hist)
+    char *ini, int (*callback)(char *), int keep_buf, struct history *hist)
 {
 	if (!edit)
 		init_edit(); /* conditional, else rbuf is cleared! */
@@ -196,7 +189,7 @@ ed_dialog(char *msg,
 
 	disp_edit();
 
-	if (edit_line(callback)) {
+	if (edit_line(callback, hist)) {
 		clr_edit();
 		return 1;
 	}
@@ -208,50 +201,50 @@ ed_dialog(char *msg,
 	if (!keep_buf)
 		clr_edit();
 
-	if (use_hist) {
-		if (have_hist_ent) {
-			have_hist_ent = 0;
-			free(history->line);
-			history->line = strdup(rbuf);
+	if (hist) {
+		if (hist->have_ent) {
+			hist->have_ent = 0;
+			free(hist->top->line);
+			hist->top->line = strdup(rbuf);
 		} else
-			hist_add();
+			hist_add(hist);
 	}
 
 	return 0;
 }
 
 static void
-hist_add(void)
+hist_add(struct history *hist)
 {
 	struct hist_ent *p;
 
 	if (histsize < 2)
 		return;
 
-	if (histlen < histsize)
-		histlen++;
+	if (hist->len < histsize)
+		hist->len++;
 	else {
-		if ((p = hist_end->prev))
+		if ((p = hist->bot->prev))
 			p->next = NULL;
 
-		free(hist_end);
-		hist_end = p;
+		free(hist->bot);
+		hist->bot = p;
 	}
 
 	p = malloc(sizeof(struct hist_ent));
 	p->line = strdup(rbuf);
 	p->prev = NULL;
 
-	if ((p->next = history))
-		history->prev = p;
+	if ((p->next = hist->top))
+		hist->top->prev = p;
 	else
-		hist_end = p;
+		hist->bot = p;
 
-	history = p;
+	hist->top = p;
 }
 
 static int
-edit_line(void (*callback)(char *))
+edit_line(int (*callback)(char *), struct history *hist)
 {
 #ifdef HAVE_CURSES_WCH
 	wint_t c;
@@ -341,6 +334,7 @@ next_key:
 			wrefresh(wstat);
 			break;
 		case KEY_BACKSPACE:
+backspace:
 			if (!linepos)
 				break;
 
@@ -369,12 +363,12 @@ del_char:
 
 			break;
 		case KEY_UP:
-			if (history)
-				hist_up();
+			if (hist->top)
+				hist_up(hist);
 			break;
 		case KEY_DOWN:
-			if (have_hist_ent) /* else there had not been an up */
-				hist_down();
+			if (hist->have_ent) /* else there had not been an up */
+				hist_down(hist);
 			break;
 		default:
 			if (linelen + 1 >= LINESIZ)
@@ -417,10 +411,16 @@ del_char:
 			wrefresh(wstat);
 
 			if (callback) {
+				int i;
 #ifdef HAVE_CURSES_WCH
 				wcstombs(rbuf, linebuf, sizeof rbuf);
 #endif
-				callback(rbuf);
+				i = callback(rbuf);
+
+				if (i & EDCB_RM_CB)
+					callback = NULL;
+				if (i & EDCB_IGN)
+					goto backspace;
 			}
 		}
 	}
@@ -483,41 +483,41 @@ proc_mevent(void)
 #endif
 
 static void
-hist_up(void)
+hist_up(struct history *hist)
 {
-	if (!histsize || (have_hist_ent && !hist_ent->next))
+	if (!histsize || (hist->have_ent && !hist->ent->next))
 		return;
 
 #ifdef HAVE_CURSES_WCH
-	if (!have_hist_ent || !hist_ent->prev)
+	if (!hist->have_ent || !hist->ent->prev)
 		wcstombs(rbuf, linebuf, sizeof rbuf);
 #endif
 
-	if (!have_hist_ent) {
-		have_hist_ent = 1;
-		hist_add();
-		hist_ent = history;
-	} else if (!hist_ent->prev) {
-		free(history->line);
-		history->line = strdup(rbuf);
+	if (!hist->have_ent) {
+		hist->have_ent = 1;
+		hist_add(hist);
+		hist->ent = hist->top;
+	} else if (!hist->ent->prev) {
+		free(hist->top->line);
+		hist->top->line = strdup(rbuf);
 	}
 
-	hist_ent = hist_ent->next;
+	hist->ent = hist->ent->next;
 	*linebuf = 0;
 	linelen = 0;
-	ed_append(hist_ent->line);
+	ed_append(hist->ent->line);
 	disp_edit();
 }
 
 static void
-hist_down(void)
+hist_down(struct history *hist)
 {
-	if (!histsize || !hist_ent->prev)
+	if (!histsize || !hist->ent->prev)
 		return;
 
-	hist_ent = hist_ent->prev;
+	hist->ent = hist->ent->prev;
 	*linebuf = 0;
 	linelen = 0;
-	ed_append(hist_ent->line);
+	ed_append(hist->ent->line);
 	disp_edit();
 }

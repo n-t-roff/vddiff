@@ -14,13 +14,16 @@ LOSS OF USE, DATA OR PROFITS, WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE OR
 OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
 PERFORMANCE OF THIS SOFTWARE.
 */
+
 #include "compat.h"
 #include "exec.h"
 #include "ui.h"
+#include "ui2.h"
 #include "uzp.h"
 #include "db.h"
 #include "main.h"
 #include "ed.h"
+
 void yyerror(const char *);
 int yylex(void);
 void follow(int);
@@ -33,7 +36,7 @@ extern char *yytext;
 }
 %token DIFFTOOL FILES DIRS MIXED FOLLOW MONO NOEQUAL LEFT_COLOR RIGHT_COLOR
 %token DIFF_COLOR DIR_COLOR UNKNOWN_COLOR LINK_COLOR REAL_DIFF RECURSIVE
-%token VIEWTOOL EXT BG FKEY BMODE HISTSIZE SKIPEXT
+%token VIEWTOOL EXT BG FKEY BMODE HISTSIZE SKIPEXT NOIC MAGIC NOWS
 %token <str>     STRING
 %token <integer> INTEGER
 %%
@@ -70,6 +73,9 @@ option:
 	| UNKNOWN_COLOR INTEGER { color_unknown   = $2                    ; }
 	| LINK_COLOR INTEGER    { color_link      = $2                    ; }
 	| HISTSIZE INTEGER      { histsize        = $2                    ; }
+	| NOIC                  { noic  = 1                               ; }
+	| MAGIC                 { magic = 1                               ; }
+	| NOWS                  { nows  = 1                               ; }
 	| BMODE                 { bmode = 1                               ; }
 	;
 %%
