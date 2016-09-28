@@ -419,6 +419,7 @@ del_char:
 
 				if (i & EDCB_RM_CB)
 					callback = NULL;
+
 				if (i & EDCB_IGN)
 					goto backspace;
 			}

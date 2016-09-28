@@ -137,3 +137,49 @@ no_match:
 	printerr(NULL, no_match_msg);
 	return 0;
 }
+
+void
+parsopt(char *buf)
+{
+	char *opt;
+	short not;
+	static char noic_str[]    = "noic\n";
+	static char nomagic_str[] = "nomagic\n";
+	static char nows_str[]    = "nows\n";
+
+	if (!strcmp(buf, "set")) {
+		werase(wlist);
+		wmove(wlist, 0, 0);
+		waddstr(wlist, noic  ? noic_str : noic_str + 2);
+		waddstr(wlist, magic ? nomagic_str + 2 : nomagic_str);
+		waddstr(wlist, nows  ? nows_str : nows_str + 2);
+		anykey();
+		return;
+	}
+
+	if (!strncmp(buf, "no", 2)) {
+		opt = buf + 2;
+		not = 1;
+	} else {
+		opt = buf;
+		not = 0;
+	}
+
+	if (!strcmp(opt, "ic")) {
+		noic = not;
+	} else if (!strcmp(opt, "magic")) {
+		magic = not ? 0 : 1;
+	} else if (!strcmp(opt, "ws")) {
+		nows = not;
+	} else
+		printerr(NULL, "Unknown option \"%s\"", buf);
+}
+
+void
+anykey(void)
+{
+	wrefresh(wlist);
+	printerr(NULL, "Press any key to continue");
+	getch();
+	disp_list();
+}

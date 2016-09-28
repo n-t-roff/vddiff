@@ -193,12 +193,26 @@ Go to first file.
 .It Ao Cm END Ac or Sq Li G
 Go to last file.
 .It Sq Li /
-Search file in list.
+Search file in list by typing the begin of the filename.
 This changes the list sorting order
 by mixing files and directories.
 (Type
 .Sq Li u
 to rebuild the file list in initial sorting order.)
+Searching is normally done case-insensitive.
+Set option
+.Dq Li noic
+to change this.
+.It Dq Li //
+Search with a basic regular expression for a filename.
+This can be configured with options
+.Dq Li noic
+(don't ignore case),
+.Dq Li magic
+(use extended regular expressions), and
+.Dq Li nows
+(don't wrap around when search hits top or bottom
+of the file list).
 .It Sq Li H
 Put cursor to top line.
 .It Sq Li M
@@ -340,6 +354,17 @@ Open shell in right directory tree.
 Open left file or directory.
 .It Dq Li or
 Open right file or directory.
+.It Sq Li \&:
+Enter configuration option.
+Entering
+.Dq Li set
+displays the current setting of the changable options.
+Currently the options
+.Dq Po Li no Pc Ns Li ic ,
+.Dq Po Li no Pc Ns Li magic ,
+and
+.Dq Po Li no Pc Ns Li ws
+are supported.
 .El
 .Sh CONFIGURATION FILE ~/.vddiffrc
 Permanent non-default options can be set in the file
@@ -523,6 +548,24 @@ additinally set option
 To view all files when in this mode key
 .Sq c
 can be used.
+.It Li noic
+Searching for a filename with
+.Sq Li /
+or
+.Dq Li //
+is normally done case-insensitive.
+Case-sensitive search can be configured with this option.
+.It Li magic
+For searching with
+.Dq Li //
+normally basic regular expressions are used.
+Use of extended regular expressions is confgiured
+with this option.
+.It Li nows
+Searching for a filename with
+.Dq Li //
+normally wraps around top and bottom of the file list.
+This behaviour is disabled with this option.
 .It Li filesfirst
 Display directories at the end instead on top.
 .It Li mixed

@@ -22,6 +22,7 @@ extern short color_leftonly ,
              color_unknown  ,
              color_link     ;
 extern unsigned top_idx, curs, statw;
+extern WINDOW *wlist;
 extern WINDOW *wstat;
 extern struct filediff *mark;
 

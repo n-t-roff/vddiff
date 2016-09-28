@@ -93,7 +93,7 @@ char *sh_str[FKEY_NUM];
 char *fkey_cmd[FKEY_NUM];
 
 static unsigned listw, listh, help_top;
-static WINDOW *wlist;
+WINDOW *wlist;
 WINDOW *wstat;
 static struct ui_state *ui_stack;
 /* Line scroll enable. Else only full screen is scrolled */
@@ -506,10 +506,7 @@ next_key:
 				    , sh_str[i]);
 			}
 
-			wrefresh(wlist);
-			printerr(NULL, "Press any key to continue");
-			getch();
-			disp_list();
+			anykey();
 			break;
 		case 'r':
 			switch (*key) {
@@ -603,7 +600,7 @@ next_key:
 
 			if (sorting != SORTMIXED) {
 				prev_sorting = sorting;
-				sorting = SORTMIXED;
+				sorting = SORTSRCH;
 				rebuild_db();
 				sorting = prev_sorting;
 			}
@@ -674,7 +671,7 @@ next_key:
 
 			if (!ed_dialog("Enter option:",
 			    NULL /* must be NULL !!! */, NULL, 0, &opt_hist)) {
-				sh_cmd(rbuf, 1);
+				parsopt(rbuf);
 			}
 
 			break;
@@ -1644,6 +1641,8 @@ srch_file(char *pattern)
 {
 	unsigned idx;
 	int o, oo;
+	size_t l;
+	char *s1, *s2;
 
 
 	if (!*pattern || !db_num)
@@ -1664,12 +1663,26 @@ srch_file(char *pattern)
 
 	idx = srch_idx;
 	o = 0;
+	l = strlen(pattern);
+
+	if (noic)
+		s1 = pattern;
+	else
+		s1 = str_tolower(strdup(pattern));
 
 	while (1) {
 		oo = o;
+		s2 = db_list[idx]->name;
 
-		if (!(o = strncmp(db_list[idx]->name, pattern,
-		    strlen(pattern)))) {
+		if (!noic)
+			s2 = str_tolower(strdup(s2));
+
+		o = strncmp(s2, s1, l);
+
+		if (!noic)
+			free(s2);
+
+		if (!o) {
 			center(srch_idx = idx);
 			break;
 		} else if (o < 0) {
@@ -1682,6 +1695,9 @@ srch_file(char *pattern)
 			idx--;
 		}
 	}
+
+	if (!noic)
+		free(s1);
 
 	return 0;
 }

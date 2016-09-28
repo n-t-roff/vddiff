@@ -6,3 +6,5 @@ void disp_regex(void);
 void clr_regex(void);
 void start_regex(char *);
 int regex_srch(int);
+void parsopt(char *);
+void anykey(void);
