@@ -46,6 +46,7 @@ histsize		{ rc_col += yyleng; return HISTSIZE     ; }
 noic			{ rc_col += yyleng; return NOIC         ; }
 magic			{ rc_col += yyleng; return MAGIC        ; }
 nows			{ rc_col += yyleng; return NOWS         ; }
+scale                   { rc_col += yyleng; return SCALE        ; }
 bmode			{ rc_col += yyleng; return BMODE        ; }
 [0-9]+			{ rc_col += yyleng;
 			  yylval.integer = atoi(yytext);

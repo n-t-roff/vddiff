@@ -64,6 +64,7 @@ static void ui_resize(void);
 static void set_win_dim(void);
 static void statcol(void);
 static void file_stat(struct filediff *);
+static size_t getfilesize(char *, size_t, off_t);
 static void disp_help(void);
 static void help_pg_down(void);
 static void help_pg_up(void);
@@ -1527,9 +1528,9 @@ file_stat(struct filediff *f)
 	x++;
 
 	if (f->ltype && !S_ISDIR(f->ltype))
-		w1 = snprintf(lbuf, sizeof lbuf, "%lld", (long long)f->lsiz);
+		w1 = getfilesize(lbuf, sizeof lbuf, f->lsiz);
 	if (f->rtype && !S_ISDIR(f->rtype))
-		w2 = snprintf(rbuf, sizeof lbuf, "%lld", (long long)f->rsiz);
+		w2 = getfilesize(rbuf, sizeof lbuf, f->rsiz);
 
 	w = w1 > w2 ? w1 : w2;
 
@@ -1544,6 +1545,37 @@ file_stat(struct filediff *f)
 		mvwaddstr(wstat, yl, x, ctime(&f->lmtim));
 	if (f->rtype && !S_ISDIR(f->rtype))
 		mvwaddstr(wstat, 1, x, ctime(&f->rmtim));
+}
+
+static size_t
+getfilesize(char *buf, size_t bufsiz, off_t size)
+{
+	char *unit;
+	float f;
+
+	if (!scale || size < 1024)
+		return snprintf(buf, bufsiz, "%lld", (long long)size);
+	else {
+		f = size / 1024.0;
+		unit = "K";
+
+		if (f >= 1024) {
+			f /= 1024.0;
+			unit = "M";
+		}
+
+		if (f >= 1024) {
+			f /= 1024.0;
+			unit = "G";
+		}
+
+		if (f >= 1024) {
+			f /= 1024.0;
+			unit = "T";
+		}
+	}
+
+	return snprintf(buf, bufsiz, "%.1f%s", f, unit);
 }
 
 static void

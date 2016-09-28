@@ -1,4 +1,4 @@
-extern short noic, magic, nows;
+extern short noic, magic, nows, scale;
 extern short regex;
 extern struct history opt_hist;
 

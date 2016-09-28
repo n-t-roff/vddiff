@@ -36,7 +36,7 @@ extern char *yytext;
 }
 %token DIFFTOOL FILES DIRS MIXED FOLLOW MONO NOEQUAL LEFT_COLOR RIGHT_COLOR
 %token DIFF_COLOR DIR_COLOR UNKNOWN_COLOR LINK_COLOR REAL_DIFF RECURSIVE
-%token VIEWTOOL EXT BG FKEY BMODE HISTSIZE SKIPEXT NOIC MAGIC NOWS
+%token VIEWTOOL EXT BG FKEY BMODE HISTSIZE SKIPEXT NOIC MAGIC NOWS SCALE
 %token <str>     STRING
 %token <integer> INTEGER
 %%
@@ -76,6 +76,7 @@ option:
 	| NOIC                  { noic  = 1                               ; }
 	| MAGIC                 { magic = 1                               ; }
 	| NOWS                  { nows  = 1                               ; }
+	| SCALE                 { scale = 1                               ; }
 	| BMODE                 { bmode = 1                               ; }
 	;
 %%

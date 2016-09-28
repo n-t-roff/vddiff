@@ -26,7 +26,7 @@ PERFORMANCE OF THIS SOFTWARE.
 #include "diff.h"
 #include "db.h"
 
-short noic, magic, nows;
+short noic, magic, nows, scale;
 short regex;
 struct history opt_hist;
 
