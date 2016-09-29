@@ -68,9 +68,10 @@ ui_srch(void)
 	if (regex)
 		clr_regex();
 
-	if (!ed_dialog("Type first characters of filename:",
-	    "" /* remove existing */, srch_file, 0, NULL) ||
-	    !regex) {
+	ed_dialog("Type first characters of filename:",
+	    "" /* remove existing */, srch_file, 0, NULL);
+
+	if (!regex) {
 		free(srchmap);
 		return;
 	}

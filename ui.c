@@ -592,6 +592,24 @@ next_key:
 		case '/':
 			ui_srch();
 			break;
+		case 'S':
+			c = 0;
+
+			if (sorting == SORTMIXED)
+				break;
+
+			sorting = SORTMIXED;
+			rebuild_db();
+			break;
+		case 'D':
+			c = 0;
+
+			if (sorting == DIRSFIRST)
+				break;
+
+			sorting = DIRSFIRST;
+			rebuild_db();
+			break;
 		case 'u':
 			c = 0;
 			rebuild_db();
@@ -682,6 +700,8 @@ static char *helptxt[] = {
        "<END>, G	Go to last file",
        "/		Search file by typing first letters of filename",
        "//		Search file with regular expression",
+       "S		Sort files by name only",
+       "D		Sort files with directories on top",
        "H		Put cursor to top line",
        "M		Put cursor on middle line",
        "L		Put cursor on bottom line",

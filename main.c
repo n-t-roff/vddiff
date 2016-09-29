@@ -43,13 +43,13 @@ FILE *debug;
 #endif
 
 static void check_args(char **);
-static int read_rc(void);
+static int read_rc(const char *);
 static void usage(void);
 
 static char *usage_txt =
-"Usage: %s [-ubcdfgklmnrV] [-t <diff_tool>] [-v <view_tool>] <directory_1>\n"
-"           <directory_2>\n";
-static char *getopt_arg = "Bbcdfgklmnrt:uVv:";
+"Usage: %s [-u] [-bcdfgklmnrV] [-t <diff_tool>] [-v <view_tool>]\n"
+"	<directory_1> <directory_2>\n";
+static char *getopt_arg = "Bbcdfgklmnrt:Vv:";
 
 int
 main(int argc, char **argv)
@@ -70,9 +70,20 @@ main(int argc, char **argv)
 	set_tool(&difftool, strdup(vimdiff), 0);
 	set_tool(&viewtool, strdup("less"), 0);
 
-	if (argc < 2 || argv[1][0] != '-' || argv[1][1] != 'u')
-		if (read_rc())
+	if (argc < 2 || argv[1][0] != '-' || argv[1][1] != 'u') {
+		if (read_rc(NULL))
 			return 1;
+	} else {
+		argc--; argv++;
+
+		if (argc > 1 && argv[1][0] != '-' &&
+		    stat(argv[1], &stat1) == 0 && S_ISREG(stat1.st_mode)) {
+			if (read_rc(argv[1]))
+				return 1;
+
+			argc--; argv++;
+		}
+	}
 
 	while ((opt = getopt(argc, argv, getopt_arg)) != -1) {
 		switch (opt) {
@@ -119,8 +130,6 @@ main(int argc, char **argv)
 		case 'v':
 			set_tool(&viewtool, strdup(optarg), 0);
 			break;
-		case 'u':
-			break;
 		default:
 			usage();
 		}
@@ -166,7 +175,7 @@ main(int argc, char **argv)
 }
 
 static int
-read_rc(void)
+read_rc(const char *upath)
 {
 	static char rc_name[] = "/.vddiffrc";
 	char *s, *rc_path;
@@ -174,14 +183,18 @@ read_rc(void)
 	int rv = 0;
 	extern FILE *yyin;
 
-	if (!(s = getenv("HOME"))) {
-		printf("HOME not set\n");
-		return 1;
-	} else {
-		l = strlen(s);
-		rc_path = malloc(l + sizeof rc_name);
-		memcpy(rc_path, s, l);
-		memcpy(rc_path + l, rc_name, sizeof rc_name);
+	if (upath)
+		rc_path = (char *)upath;
+	else {
+		if (!(s = getenv("HOME"))) {
+			printf("HOME not set\n");
+			return 1;
+		} else {
+			l = strlen(s);
+			rc_path = malloc(l + sizeof rc_name);
+			memcpy(rc_path, s, l);
+			memcpy(rc_path + l, rc_name, sizeof rc_name);
+		}
 	}
 
 	if (stat(rc_path, &stat1) == -1) {
@@ -207,7 +220,9 @@ read_rc(void)
 		    strerror(errno));
 	}
 free:
-	free(rc_path);
+	if (!upath)
+		free(rc_path);
+
 	return rv;
 }
 

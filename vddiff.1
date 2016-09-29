@@ -20,7 +20,8 @@ PERFORMANCE OF THIS SOFTWARE.
 .Nd text terminal directory diff tool
 .Sh SYNOPSYS
 .Nm
-.Op Fl ubcdfgklmnrV
+.Op Fl u
+.Op Fl bcdfgklmnrV
 .Op Fl t Ar diff_tool
 .Ar directory_1
 .Ar directory_2
@@ -45,8 +46,8 @@ directories are not compared before they are entered.
 .Pp
 Compressed files are automatically decompressed into
 a temporary directory before the diff tool is started.
-These files are detected by their file name extension.
-The file contents are not checked.
+These files are detected by their file name extension,
+the file contents are not checked.
 Currently the following file name extensions are
 supported:
 .Li bz2 ,
@@ -152,12 +153,16 @@ instead of
 is used.
 This applies restrictions on the characters used
 in filenames.
-.It Fl u
+.It Fl u Op Ar filename
 Skip reading the initialization file at start-up.
-This has only effect if
+If
 .Fl u
-is the very first option.
-It is ignored elsewise.
+is used, it must be the very first option.
+If an optional
+.Ar filename
+is supplied, this file is read instead of the default
+initialization file
+.Pa ~/.vddiffrc .
 .It Fl V
 Print version and exit.
 .It Fl v Ar view_tool
@@ -215,6 +220,10 @@ which can be accessed with the
 and
 .Aq Cm DOWN
 keys.
+.It Sq Li S
+Sort files by name only (ignoring file type).
+.It Sq Li D
+Sort files with directories on top.
 .It Sq Li H
 Put cursor to top line.
 .It Sq Li M
