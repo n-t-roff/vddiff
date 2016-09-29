@@ -596,7 +596,7 @@ diff_cmp(
 	    *f2 = (struct filediff *)b;
 #endif
 
-	if (sorting == DIRSFIRST || sorting == FILESFIRST) {
+	if (sorting != SORTMIXED) {
 		short f1_dir = IS_F_DIR(1),
 		      f2_dir = IS_F_DIR(2);
 		short dirsort = f1_dir && !f2_dir ? -1 :
@@ -610,10 +610,7 @@ diff_cmp(
 		}
 	}
 
-	if (sorting != SORTSRCH || noic)
-		return strcmp(f1->name, f2->name);
-	else
-		return strcasecmp(f1->name, f2->name);
+	return strcmp(f1->name, f2->name);
 }
 
 void

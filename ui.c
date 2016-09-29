@@ -74,8 +74,6 @@ static void set_mark(void);
 static void clr_mark(void);
 static void disp_mark(void);
 static void yank_name(int);
-static int srch_file(char *);
-static void no_file(void);
 
 short color = 1;
 short color_leftonly  = COLOR_CYAN   ,
@@ -99,7 +97,6 @@ WINDOW *wstat;
 static struct ui_state *ui_stack;
 /* Line scroll enable. Else only full screen is scrolled */
 struct filediff *mark;
-static unsigned srch_idx;
 static char *dlpth, *drpth, *dcwd;
 static struct history sh_cmd_hist;
 static short scrollen = 1;
@@ -189,7 +186,6 @@ static void
 ui_ctrl(void)
 {
 	int key[2] = { 0, 0 }, c = 0, i;
-	enum sorting prev_sorting;
 
 	while (1) {
 next_key:
@@ -594,29 +590,7 @@ next_key:
 		case 'e':
 			break;
 		case '/':
-			if (!db_num) {
-				no_file();
-				break;
-			}
-
-			if (sorting != SORTMIXED) {
-				prev_sorting = sorting;
-				sorting = SORTSRCH;
-				rebuild_db();
-				sorting = prev_sorting;
-			}
-
-			srch_idx = 0;
-
-			if (regex)
-				clr_regex();
-
-			if (ed_dialog("Type first characters of filename:",
-			    "" /* remove existing */, srch_file, 0, NULL) ||
-			    !*rbuf)
-				regex = 0;
-			else if (regex)
-				start_regex(rbuf);
+			ui_srch();
 			break;
 		case 'u':
 			c = 0;
@@ -732,7 +706,7 @@ static char *helptxt[] = {
        "elp		Change mode of left file",
        "erp		Change mode of right file",
        "m		Mark file or directory",
-       "r		Remove edit line or mark",
+       "r		Remove mark, edit line or regex search",
        "y		Copy file path to edit line",
        "Y		Copy file path in reverse order to edit line",
        "$		Enter shell command",
@@ -1659,79 +1633,13 @@ yank_name(int reverse)
 	disp_edit();
 }
 
-static void
+void
 no_file(void)
 {
 	if (real_diff && !bmode)
 		printerr(NULL, "No file (type c to view all files).");
 	else
 		printerr(NULL, "No file");
-}
-
-static int
-srch_file(char *pattern)
-{
-	unsigned idx;
-	int o, oo;
-	size_t l;
-	char *s1, *s2;
-
-
-	if (!*pattern || !db_num)
-		return 0;
-
-	if (*pattern == '/' && !pattern[1]) {
-		rebuild_db();
-		werase(wstat);
-		mvwprintw(wstat, 0, 0, "Enter %s regular expression:",
-		    magic ? "extended" : "basic");
-		wrefresh(wstat);
-		regex = 1;
-		return EDCB_IGN | EDCB_RM_CB;
-	}
-
-	if (srch_idx >= db_num)
-		srch_idx = db_num - 1;
-
-	idx = srch_idx;
-	o = 0;
-	l = strlen(pattern);
-
-	if (noic)
-		s1 = pattern;
-	else
-		s1 = str_tolower(strdup(pattern));
-
-	while (1) {
-		oo = o;
-		s2 = db_list[idx]->name;
-
-		if (!noic)
-			s2 = str_tolower(strdup(s2));
-
-		o = strncmp(s2, s1, l);
-
-		if (!noic)
-			free(s2);
-
-		if (!o) {
-			center(srch_idx = idx);
-			break;
-		} else if (o < 0) {
-			if (oo > 0 || ++idx >= db_num)
-				break;
-		} else if (o > 0) {
-			if (oo < 0 || !idx)
-				break;
-
-			idx--;
-		}
-	}
-
-	if (!noic)
-		free(s1);
-
-	return 0;
 }
 
 void

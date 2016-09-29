@@ -363,11 +363,11 @@ del_char:
 
 			break;
 		case KEY_UP:
-			if (hist->top)
+			if (hist)
 				hist_up(hist);
 			break;
 		case KEY_DOWN:
-			if (hist->have_ent) /* else there had not been an up */
+			if (hist)
 				hist_down(hist);
 			break;
 		default:
@@ -416,6 +416,9 @@ del_char:
 				wcstombs(rbuf, linebuf, sizeof rbuf);
 #endif
 				i = callback(rbuf);
+
+				if (i & EDCB_FAIL)
+					return 1;
 
 				if (i & EDCB_RM_CB)
 					callback = NULL;
@@ -486,7 +489,7 @@ proc_mevent(void)
 static void
 hist_up(struct history *hist)
 {
-	if (!histsize || (hist->have_ent && !hist->ent->next))
+	if (!histsize || !hist->top || (hist->have_ent && !hist->ent->next))
 		return;
 
 #ifdef HAVE_CURSES_WCH
@@ -513,7 +516,7 @@ hist_up(struct history *hist)
 static void
 hist_down(struct history *hist)
 {
-	if (!histsize || !hist->ent->prev)
+	if (!histsize || !hist->have_ent || !hist->ent->prev)
 		return;
 
 	hist->ent = hist->ent->prev;

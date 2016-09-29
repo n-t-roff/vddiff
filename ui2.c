@@ -15,6 +15,7 @@ PERFORMANCE OF THIS SOFTWARE.
 */
 
 #include "compat.h"
+#include <stdlib.h>
 #include <string.h>
 #include <errno.h>
 #include <sys/types.h>
@@ -25,12 +26,124 @@ PERFORMANCE OF THIS SOFTWARE.
 #include "uzp.h"
 #include "diff.h"
 #include "db.h"
+#include "fs.h"
+#include "main.h"
+
+struct str_uint {
+	char *s;
+	unsigned int u;
+};
+
+static int srchcmp(const void *, const void *);
 
 short noic, magic, nows, scale;
 short regex;
 struct history opt_hist;
+struct history regex_hist;
 
+static struct str_uint *srchmap;
 static regex_t re_dat;
+static unsigned srch_idx;
+
+void
+ui_srch(void)
+{
+	unsigned u;
+
+	if (!db_num) {
+		no_file();
+		return;
+	}
+
+	srchmap = malloc(sizeof(struct str_uint) * db_num);
+
+	for (u = 0; u < db_num; u++) {
+		srchmap[u].s = db_list[u]->name;
+		srchmap[u].u = u;
+	}
+
+	qsort(srchmap, db_num, sizeof(struct str_uint), srchcmp);
+	srch_idx = 0;
+
+	if (regex)
+		clr_regex();
+
+	if (!ed_dialog("Type first characters of filename:",
+	    "" /* remove existing */, srch_file, 0, NULL) ||
+	    !regex) {
+		free(srchmap);
+		return;
+	}
+
+	if (ed_dialog("Enter regular expression:",
+	    "" /* remove existing */, NULL, 0, &regex_hist) ||
+	    !*rbuf)
+		regex = 0;
+	else
+		start_regex(rbuf);
+}
+
+static int
+srchcmp(const void *p1, const void *p2)
+{
+	const struct str_uint *m1 = p1;
+	const struct str_uint *m2 = p2;
+
+	if (noic)
+		return strcmp(m1->s, m2->s);
+	else
+		return strcasecmp(m1->s, m2->s);
+}
+
+int
+srch_file(char *pattern)
+{
+	unsigned idx;
+	int o, oo;
+	size_t l;
+	char *s;
+
+
+	if (!*pattern || !db_num)
+		return 0;
+
+	if (*pattern == '/' && !pattern[1]) {
+		regex = 1;
+		return EDCB_FAIL;
+	}
+
+	if (srch_idx >= db_num)
+		srch_idx = db_num - 1;
+
+	idx = srch_idx;
+	o = 0;
+	l = strlen(pattern);
+
+	while (1) {
+		oo = o;
+		s = srchmap[idx].s;
+
+		if (noic)
+			o = strncmp(s, pattern, l);
+		else
+			o = strncasecmp(s, pattern, l);
+
+		if (!o) {
+			center(srchmap[srch_idx = idx].u);
+			break;
+		} else if (o < 0) {
+			if (oo > 0 || ++idx >= db_num)
+				break;
+		} else if (o > 0) {
+			if (oo < 0 || !idx)
+				break;
+
+			idx--;
+		}
+	}
+
+	return 0;
+}
 
 void
 disp_regex(void)

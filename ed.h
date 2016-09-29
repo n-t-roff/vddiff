@@ -1,5 +1,6 @@
 #define EDCB_RM_CB 1 /* remove callback */
 #define EDCB_IGN   2 /* ignore input */
+#define EDCB_FAIL  4 /* return <ESC> value */
 
 struct hist_ent {
 	char *line;

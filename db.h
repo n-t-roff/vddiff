@@ -2,7 +2,7 @@
 # include <avlbst.h>
 #endif
 
-enum sorting { DIRSFIRST, FILESFIRST, SORTMIXED, SORTSRCH };
+enum sorting { DIRSFIRST, FILESFIRST, SORTMIXED };
 
 #ifdef HAVE_LIBAVLBST
 void db_init(void);

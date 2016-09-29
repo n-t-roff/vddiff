@@ -13,6 +13,7 @@ void printerr(char *, char *, ...);
 int dialog(char *, char *, char *, ...);
 void disp_list(void);
 void center(unsigned);
+void no_file(void);
 
 extern short color;
 extern short color_leftonly ,

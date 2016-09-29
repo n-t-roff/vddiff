@@ -100,11 +100,11 @@ Normally directories are displayed on top.
 With this option files are displayed first.
 .It Fl g
 Use
-.Dq Li gvim
+.Nm gvim
 as diff and view tool.
 .It Fl k
 Use
-.Dq Li tkdiff
+.Nm tkdiff
 as diff tool.
 .It Fl l
 Follow symbolic links.
@@ -194,25 +194,27 @@ Go to first file.
 Go to last file.
 .It Sq Li /
 Search file in list by typing the begin of the filename.
-This changes the list sorting order
-by mixing files and directories.
-(Type
-.Sq Li u
-to rebuild the file list in initial sorting order.)
 Searching is normally done case-insensitive.
 Set option
-.Dq Li noic
+.Cm noic
 to change this.
 .It Dq Li //
 Search with a basic regular expression for a filename.
 This can be configured with options
-.Dq Li noic
+.Cm noic
 (don't ignore case),
-.Dq Li magic
+.Cm magic
 (use extended regular expressions), and
-.Dq Li nows
+.Cm nows
 (don't wrap around when search hits top or bottom
 of the file list).
+.Pp
+Previously entered search patterns are saved in a history,
+which can be accessed with the
+.Aq Cm UP
+and
+.Aq Cm DOWN
+keys.
 .It Sq Li H
 Put cursor to top line.
 .It Sq Li M
@@ -248,6 +250,8 @@ Copy from first to second tree.
 .It Dq Li dd
 Delete file or directory, which must be present in one tree only.
 (Does not follow symbolic links.)
+.Nm
+does not warn if a directory to delete is not empty.
 .It Dq Li dl
 Delete file or directory in first tree.
 (Does not follow symbolic links.)
@@ -302,7 +306,7 @@ had been started.
 (If
 .Fl B
 or option
-.Dq Li bmode
+.Cm bmode
 is used, the work directory is always the current view directory.)
 Each entered command is saved in a history.
 The keys
@@ -316,7 +320,7 @@ when entering a sh command using
 .Sq Li $ .
 This string is usually the name of a UNIX tool.
 Regularly used strings can be set using the RC file
-.Dq Li fkey
+.Cm fkey
 command.
 .Pp
 If the string begins with a
@@ -357,14 +361,21 @@ Open right file or directory.
 .It Sq Li \&:
 Enter configuration option.
 Entering
-.Dq Li set
+.Cm set
 displays the current setting of the changable options.
 Currently the options
-.Dq Po Li no Pc Ns Li ic ,
-.Dq Po Li no Pc Ns Li magic ,
+.Po Cm no Pc Ns Cm ic ,
+.Po Cm no Pc Ns Cm magic ,
 and
-.Dq Po Li no Pc Ns Li ws
+.Po Cm no Pc Ns Cm ws
 are supported.
+.Pp
+Previously entered options are saved in a history,
+which can be accessed with the
+.Aq Cm UP
+and
+.Aq Cm DOWN
+keys.
 .El
 .Sh CONFIGURATION FILE ~/.vddiffrc
 Permanent non-default options can be set in the file
@@ -422,7 +433,7 @@ as a background process (don't block
 .Nm
 while executing
 .Ar string ) .
-.Dq Li bg
+.Cm bg
 is ignored if
 .Ar string
 contains
@@ -432,7 +443,7 @@ Put
 at the end of
 .Ar string
 in this case.
-.Dq Li bg
+.Cm bg
 is also ignored if one of the files to be compared is compressed.
 Since they are decompressed into a temporary directory
 which is removed after starting the diff tool,
@@ -458,7 +469,7 @@ which is expanded to the filename.
 Start
 .Ar string
 as a background process.
-.Dq Li bg
+.Cm bg
 is ignored if
 .Ar string
 contains
@@ -468,7 +479,7 @@ Put
 at the end of
 .Ar string
 in this case.
-.Dq Li bg
+.Cm bg
 is also ignored if the file to be viewed is compressed.
 Since it is decompressed into a temporary directory
 which is removed after starting the view tool,
