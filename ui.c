@@ -580,7 +580,7 @@ next_key:
 
 			if (!ed_dialog("Type command (<ESC> to cancel):",
 			    NULL /* must be NULL !!! */, NULL, 0,
-			    &sh_cmd_hist)) {
+			    &sh_cmd_hist) && *rbuf) {
 				sh_cmd(rbuf, 1);
 			}
 
@@ -943,13 +943,15 @@ action(
 		mode_t ltyp = 0, rtyp = 0;
 		char *lnam, *rnam;
 
-		/* check if mark needs to be unzipped */
-		if ((z1 = unpack(m, m->ltype ? 1 : 2, &t1)))
-			m = z1;
+		if (!ign_ext) {
+			/* check if mark needs to be unzipped */
+			if ((z1 = unpack(m, m->ltype ? 1 : 2, &t1)))
+				m = z1;
 
-		/* check if other file needs to be unchecked */
-		if ((z2 = unpack(f1, m->ltype ? 2 : 1, &t2)))
-			f1 = z2;
+			/* check if other file needs to be unchecked */
+			if ((z2 = unpack(f1, m->ltype ? 2 : 1, &t2)))
+				f1 = z2;
+		}
 
 		if (m->ltype) {
 			if (f1->ltype && !f1->rtype) {
@@ -989,24 +991,17 @@ action(
 		goto ret;
 	}
 
-	if (f1->ltype && (z1 = unpack(f1, 1, &t1)))
-		f1 = z1;
+	if (!ign_ext) {
+		if (f1->ltype && (z1 = unpack(f1, 1, &t1)))
+			f1 = z1;
 
-	if (f2->rtype && (z2 = unpack(f2, 2, &t2)))
-		f2 = z2;
+		if (f2->rtype && (z2 = unpack(f2, 2, &t2)))
+			f2 = z2;
+	}
 
-	if (tree == 3 && (f1->ltype & S_IFMT) == (f2->rtype & S_IFMT)) {
-		if (S_ISREG(f1->ltype) || ign_ext) {
-			if (f1->diff == '!')
-				tool(f1->name, f2->name, 3, ign_ext);
-			else
-				tool(f1->name, NULL, 1, ign_ext);
-		} else if (S_ISDIR(f1->ltype)) {
-			t1 = t2 = NULL;
-			enter_dir(f1->name, f2->name, 3);
-		} else
-			goto typerr;
-	} else if (!f1->ltype || tree == 2) {
+	if (!f1->ltype ||
+	    /* Tested here to support "or" */
+	    tree == 2) {
 		if (S_ISREG(f2->rtype) || ign_ext)
 			tool(f2->name, NULL, 2, ign_ext);
 		else if (S_ISDIR(f2->rtype)) {
@@ -1020,6 +1015,19 @@ action(
 		else if (S_ISDIR(f1->ltype)) {
 			t1 = t2 = NULL;
 			enter_dir(f1->name, NULL, 1);
+		} else
+			goto typerr;
+	} else if ((f1->ltype & S_IFMT) == (f2->rtype & S_IFMT)) {
+		if (ign_ext)
+			tool(f1->name, f2->name, 3, 1);
+		else if (S_ISREG(f1->ltype)) {
+			if (f1->diff == '!')
+				tool(f1->name, f2->name, 3, 0);
+			else
+				tool(f1->name, NULL, 1, 0);
+		} else if (S_ISDIR(f1->ltype)) {
+			t1 = t2 = NULL;
+			enter_dir(f1->name, f2->name, 3);
 		} else
 			goto typerr;
 	} else

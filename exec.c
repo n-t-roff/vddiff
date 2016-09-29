@@ -81,7 +81,7 @@ tool(char *name, char *rnam, int tree, int ign_ext)
 
 	if (!tmptool)
 settool:
-		tmptool = tree == 3 ? &difftool : &viewtool;
+		tmptool = tree == 3 && !ign_ext ? &difftool : &viewtool;
 
 	toolp = tmptool->tool;
 
