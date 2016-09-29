@@ -12,7 +12,7 @@ git pull
 It is recommended (but not required) to install
 the speed optimized AVL library
 [libavlbst](https://github.com/n-t-roff/libavlbst)
-*before* `vddiff` can be build and installad with
+*before* `vddiff` can be build and installed with
 ```
 $ ./configure
 $ make
