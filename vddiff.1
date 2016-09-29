@@ -158,11 +158,17 @@ Skip reading the initialization file at start-up.
 If
 .Fl u
 is used, it must be the very first option.
+Other used options need to begin with
+.Sq Fl
+again.
 If an optional
 .Ar filename
 is supplied, this file is read instead of the default
 initialization file
 .Pa ~/.vddiffrc .
+.Ar filename
+needs to be separated with white space from
+.Fl u .
 .It Fl V
 Print version and exit.
 .It Fl v Ar view_tool
