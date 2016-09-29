@@ -163,6 +163,7 @@ sh_cmd(char *cmd, int wait)
 	}
 
 	reset_prog_mode();
+	refresh();
 	disp_list();
 }
 
@@ -322,6 +323,7 @@ exec_cmd(char **av, int bg, char *path, char *msg)
 	}
 
 	reset_prog_mode();
+	refresh();
 
 	if (pid == -1)
 		printerr(strerror(errno), "fork failed");
