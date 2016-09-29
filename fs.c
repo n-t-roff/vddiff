@@ -244,10 +244,6 @@ fs_cp(int to)
 	if (!db_num)
 		return;
 
-	f = db_list[top_idx + curs];
-
-	fs_rm(to, "overwrite");
-
 	if (to == 1) {
 		pth1 = rpath;
 		len1 = rlen;
@@ -260,6 +256,7 @@ fs_cp(int to)
 		len2 = rlen;
 	}
 
+	f = db_list[top_idx + curs];
 	len1 = pthcat(pth1, len1, f->name);
 	len2 = pthcat(pth2, len2, f->name);
 
@@ -268,6 +265,8 @@ fs_cp(int to)
 			printerr(strerror(errno), "lstat %s failed", pth1);
 		goto cancel;
 	}
+
+	fs_rm(to, "overwrite");
 
 	if (S_ISDIR(stat1.st_mode)) {
 		tree_op = TREE_CP;
