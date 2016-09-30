@@ -58,8 +58,13 @@ build_diff_db(int tree)
 	if (!(tree & 1))
 		goto right_tree;
 
-	if (bmode && !getcwd(rpath, sizeof rpath))
-		printerr(strerror(errno), "getcwd failed");
+	if (bmode) {
+		if (!getcwd(rpath, sizeof rpath))
+			printerr(strerror(errno), "getcwd failed");
+
+		printerr(NULL, "Reading directory %s", rpath);
+	} else
+		printerr(NULL, "Reading directory %s", lpath);
 
 	if (!(d = opendir(lpath))) {
 		printerr(strerror(errno), "opendir %s failed", lpath);
@@ -268,6 +273,8 @@ right_tree:
 
 	if (scan && (real_diff || dir_diff))
 		goto dir_scan_end;
+
+	printerr(NULL, "Reading directory %s", rpath);
 
 	if (!(d = opendir(rpath))) {
 		printerr(strerror(errno), "opendir %s failed", rpath);

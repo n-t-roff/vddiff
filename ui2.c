@@ -205,10 +205,8 @@ regex_srch(
 	struct filediff *f;
 
 	/* does not make sense for one line */
-	if (db_num < 2) {
-		clr_regex();
+	if (db_num < 2)
 		return 1;
-	}
 
 	i = j = top_idx + curs;
 
@@ -239,7 +237,6 @@ regex_srch(
 			dir = 1;
 		else if (i == j) {
 			printerr(NULL, no_match_msg);
-			clr_regex();
 			return 1;
 		}
 	}

@@ -209,6 +209,10 @@ Searching is normally done case-insensitive.
 Set option
 .Cm noic
 to change this.
+Search mode is left when a file is selected (with
+.Aq Cm RIGHT
+or
+.Aq Cm ENTER ) .
 .It Dq Li //
 Search with a basic regular expression for a filename.
 This can be configured with options
@@ -219,6 +223,9 @@ This can be configured with options
 .Cm nows
 (don't wrap around when search hits top or bottom
 of the file list).
+Regex search mode is not left until
+.Sq Li r
+is pressed.
 .Pp
 Previously entered search patterns are saved in a history,
 which can be accessed with the

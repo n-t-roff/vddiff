@@ -159,8 +159,6 @@ build_ui(void)
 		scrollok(wlist, TRUE);
 	}
 
-	printerr(NULL, "Reading directories...");
-
 	/* Not in main since build_diff_db() uses printerr() */
 	if (recursive && !bmode) {
 		scan = 1;
@@ -929,9 +927,6 @@ action(
 {
 	struct filediff *f1, *f2, *z1 = NULL, *z2 = NULL;
 	char *t1 = NULL, *t2 = NULL;
-
-	if (regex)
-		clr_regex();
 
 	if (!db_num)
 		return;
