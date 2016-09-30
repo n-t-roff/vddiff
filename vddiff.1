@@ -363,6 +363,13 @@ To embed it,
 .Dq Li $1
 can be used, as in
 .Dq Li "$ nroff $1 | less" .
+.Pp
+If no diff tool which supports merging is available,
+files can be merged manually by defining two function keys
+for editing the left and right side file with
+.Dq Li "$ vi $1"
+and
+.Dq Li "$ vi $2" .
 .It Sq Li l
 List strings which had been defined for a function key.
 .It Sq Li u
@@ -377,6 +384,20 @@ Open shell in left directory tree.
 Open shell in right directory tree.
 .It Dq Li ol
 Open left file or directory.
+Plain files are opened with
+.Xr less 1
+by default.
+If no diff tool which supports merging is available,
+files can be merged manually opening them with
+.Dq Li ol
+or
+.Dq Li or
+and then pressing
+.Sq Li v
+in
+.Li less
+which opens
+.Li vi .
 .It Dq Li or
 Open right file or directory.
 .It Sq Li \&:

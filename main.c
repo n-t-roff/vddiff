@@ -129,7 +129,16 @@ main(int argc, char **argv)
 			set_tool(&difftool, strdup(optarg), 0);
 			break;
 		case 'V':
-			printf("%s %s\n", prog, version);
+			printf("%s %s\n\tusing "
+#ifdef HAVE_CURSES_WCH
+			    "wide char curses and "
+#endif
+#ifdef HAVE_LIBAVLBST
+			    "libavlbst"
+#else
+			    "tsearch"
+#endif
+			    "\n", prog, version);
 			exit(0);
 		case 'v':
 			set_tool(&viewtool, strdup(optarg), 0);

@@ -1,7 +1,7 @@
-For information about `vddiff` please visit the
+For information on `vddiff` please visit the
 [project web page](http://n-t-roff.github.io/vddiff).
 
-The source code is cloned to your local file system with
+The source code is fetched with
 ```
 git clone https://github.com/n-t-roff/vddiff.git
 ```
