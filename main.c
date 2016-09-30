@@ -38,6 +38,7 @@ char lpath[PATHSIZ], rpath[PATHSIZ], lbuf[BUF_SIZE], rbuf[BUF_SIZE];
 struct stat stat1, stat2;
 short recursive, scan;
 short bmode;
+short nosingle;
 #ifdef TRACE
 FILE *debug;
 #endif
@@ -47,9 +48,9 @@ static int read_rc(const char *);
 static void usage(void);
 
 static char *usage_txt =
-"Usage: %s [-u] [-bcdfgklmnrV] [-t <diff_tool>] [-v <view_tool>]\n"
+"Usage: %s [-u] [-bcdfgklmnorV] [-t <diff_tool>] [-v <view_tool>]\n"
 "	<directory_1> <directory_2>\n";
-static char *getopt_arg = "Bbcdfgklmnrt:Vv:";
+static char *getopt_arg = "Bbcdfgklmnort:Vv:";
 
 int
 main(int argc, char **argv)
@@ -117,6 +118,9 @@ main(int argc, char **argv)
 			break;
 		case 'n':
 			noequal = 1;
+			break;
+		case 'o':
+			nosingle = 1;
 			break;
 		case 'r':
 			recursive = 1;

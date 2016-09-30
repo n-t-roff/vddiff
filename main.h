@@ -10,6 +10,7 @@ extern char *pwd, *rpwd, *arg[];
 extern char lpath[PATHSIZ], rpath[PATHSIZ], lbuf[BUF_SIZE], rbuf[BUF_SIZE];
 extern short recursive, scan;
 extern short bmode;
+extern short nosingle;
 #ifdef TRACE
 extern FILE *debug;
 #endif

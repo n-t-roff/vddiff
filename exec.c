@@ -58,7 +58,7 @@ tool(char *name, char *rnam, int tree, int ign_ext)
 		goto settool;
 
 	while (l) {
-		*--cmd = tolower(name[--l]);
+		*--cmd = tolower((int)name[--l]);
 
 		if (!skipped && *cmd == '.' &&
 		    !str_db_srch(&skipext_db, cmd + 1

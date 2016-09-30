@@ -232,7 +232,7 @@ next_key:
 			free(fkey_cmd[i]);
 			fkey_cmd[i] = NULL;
 
-			if (*rbuf == '$' && isspace(rbuf[1])) {
+			if (*rbuf == '$' && isspace((int)rbuf[1])) {
 				int c;
 				int j = 0;
 
@@ -441,6 +441,14 @@ next_key:
 		case 'c':
 			c = 0;
 			real_diff = real_diff ? 0 : 1;
+			diff_db_sort();
+			top_idx = 0;
+			curs    = 0;
+			disp_list();
+			break;
+		case '&':
+			c = 0;
+			nosingle = nosingle ? 0 : 1;
 			diff_db_sort();
 			top_idx = 0;
 			curs    = 0;
@@ -708,6 +716,7 @@ static char *helptxt[] = {
        "z-		Put selected line to bottom of screen",
        "!, n		Toggle display of equal files",
        "c		Toggle showing only directories and really different files",
+       "&		Toggle display of files which are on one side only",
        "F		Toggle following symbolic links",
        "p		Show current relative work directory",
        "a		Show command line directory arguments",

@@ -21,7 +21,7 @@ PERFORMANCE OF THIS SOFTWARE.
 .Sh SYNOPSYS
 .Nm
 .Op Fl u
-.Op Fl bcdfgklmnrV
+.Op Fl bcdfgklmnorV
 .Op Fl t Ar diff_tool
 .Ar directory_1
 .Ar directory_2
@@ -116,6 +116,8 @@ Normally directories are displayed on top.
 This is disabled with this option.
 .It Fl n
 This option suppresses the display of equal files.
+.It Fl o
+Hide files which are on one side only.
 .It Fl r
 Recursively scan directories to detect differences in subdirectories.
 This allows to mark directories which contain differences.
@@ -255,6 +257,8 @@ Toggle display of equal files.
 Toggle display of all files or
 only directories which exist in both trees
 and really different files.
+.It Sq Li &
+Toggle display of files which are on one side only.
 .It Sq Li F
 Toggle following symbolic links.
 .It Sq Li p

@@ -530,7 +530,9 @@ diff_db_sort(void)
 	      (f->ltype & S_IFMT) != (f->rtype & S_IFMT)) && \
 	     (!real_diff || \
 	      f->diff == '!' || (S_ISDIR(f->ltype) && S_ISDIR(f->rtype) && \
-	      is_diff_dir(f->name))))) \
+	      is_diff_dir(f->name))) && \
+	     (!nosingle || \
+	      (f->ltype && f->rtype)))) \
 	{ \
 		db_list[db_idx++] = f; \
 	} \

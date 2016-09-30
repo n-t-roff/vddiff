@@ -215,7 +215,7 @@ check_ext(char *name, int *pos)
 	*--s = 0;
 
 	while (l) {
-		*--s = tolower(name[--l]);
+		*--s = tolower((int)name[--l]);
 
 		if (!skipped && *s == '.' &&
 		    !str_db_srch(&skipext_db, s + 1
