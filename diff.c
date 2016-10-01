@@ -39,8 +39,11 @@ static struct filediff *alloc_diff(char *);
 static void add_diff_dir(void);
 static char *read_link(char *, off_t);
 
+short followlinks;
+
 static int (*xstat)(const char *, struct stat *) = lstat;
 static struct filediff *diff;
+static off_t lsiz1, lsiz2;
 
 /* 1: Proc left dir
  * 2: Proc right dir
@@ -97,6 +100,12 @@ build_diff_db(int tree)
 		    );
 		pthcat(lpath, llen, name);
 
+		if (followlinks && !scan && lstat(lpath, &stat1) != -1 &&
+		    S_ISLNK(stat1.st_mode))
+			lsiz1 = stat1.st_size;
+		else
+			lsiz1 = -1;
+
 		if (xstat(lpath, &stat1) == -1) {
 			if (errno == ELOOP) {
 				if (lstat(lpath, &stat1) == -1) {
@@ -119,6 +128,12 @@ build_diff_db(int tree)
 			pthcat(rpath, rlen, name);
 		} else
 			goto no_tree2;
+
+		if (followlinks && !scan && lstat(rpath, &stat2) != -1 &&
+		    S_ISLNK(stat2.st_mode))
+			lsiz2 = stat2.st_size;
+		else
+			lsiz2 = -1;
 
 		if (xstat(rpath, &stat2) == -1) {
 			if (errno == ELOOP) {
@@ -203,7 +218,10 @@ free_a:
 			diff->lmtim = stat1.st_mtim.tv_sec;
 
 			if (S_ISLNK(stat1.st_mode))
-				diff->llink = read_link(lpath, stat1.st_size);
+				lsiz1 = stat1.st_size;
+
+			if (lsiz1 >= 0)
+				diff->llink = read_link(lpath, lsiz1);
 		}
 
 		if ((diff->rtype = stat2.st_mode)) {
@@ -213,7 +231,10 @@ free_a:
 			diff->rmtim = stat2.st_mtim.tv_sec;
 
 			if (S_ISLNK(stat2.st_mode))
-				diff->rlink = read_link(rpath, stat2.st_size);
+				lsiz2 = stat2.st_size;
+
+			if (lsiz2 >= 0)
+				diff->rlink = read_link(rpath, lsiz2);
 		}
 
 		if ((diff->ltype & S_IFMT) != (diff->rtype & S_IFMT)) {
@@ -312,6 +333,12 @@ right_tree:
 
 		pthcat(rpath, rlen, name);
 
+		if (followlinks && !scan && lstat(rpath, &stat2) != -1 &&
+		    S_ISLNK(stat2.st_mode))
+			lsiz2 = stat2.st_size;
+		else
+			lsiz2 = -1;
+
 		if (xstat(rpath, &stat2) == -1) {
 			if (errno != ENOENT) {
 				printerr(strerror(errno), "lstat %s failed",
@@ -329,7 +356,10 @@ right_tree:
 		diff->rmtim = stat2.st_mtim.tv_sec;
 
 		if (S_ISLNK(stat2.st_mode))
-			diff->rlink = read_link(rpath, stat2.st_size);
+			lsiz2 = stat2.st_size;
+
+		if (lsiz2 >= 0)
+			diff->rlink = read_link(rpath, lsiz2);
 
 		diff_db_add(diff);
 	}
@@ -552,12 +582,10 @@ alloc_diff(char *name)
 void
 follow(int f)
 {
-	static int pf;
-
 	if (f < 0)
-		f = pf ? 0 : 1;
+		f = followlinks ? 0 : 1;
 
-	pf = f;
+	followlinks = f;
 	xstat = f ? stat : lstat;
 }
 

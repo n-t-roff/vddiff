@@ -547,13 +547,13 @@ next_key:
 			if (*key != '<')
 				break;
 			c = 0;
-			fs_cp(1);
+			fs_cp(1, 0);
 			break;
 		case '>':
 			if (*key != '>')
 				break;
 			c = 0;
-			fs_cp(2);
+			fs_cp(2, 0);
 			break;
 		case KEY_HOME:
 			curs_first();
@@ -633,6 +633,17 @@ next_key:
 
 			break;
 		case 'F':
+			switch (*key) {
+			case '<':
+				c = 0;
+				fs_cp(1, 1);
+				goto next_key;
+			case '>':
+				c = 0;
+				fs_cp(2, 1);
+				goto next_key;
+			}
+
 			c = 0;
 			follow(-1); /* toggle */
 			rebuild_db();
@@ -722,7 +733,9 @@ static char *helptxt[] = {
        "a		Show command line directory arguments",
        "f		Show full path",
        "<<		Copy from second to first tree",
+       "<F		Copy to left side following links",
        ">>		Copy from first to second tree",
+       ">F		Copy to right side following links",
        "dd		Delete file or directory",
        "dl		Delete file or directory in first tree",
        "dr		Delete file or directory in second tree",
@@ -1392,6 +1405,9 @@ no_diff:
 			color_id = COLOR_UNKNOWN;
 	}
 
+	if (followlinks && !S_ISLNK(mode))
+		link = f->llink ? f->llink : f->rlink;
+
 	if (color) {
 		wattron(wlist, A_BOLD);
 		if (color_id)
@@ -1403,8 +1419,11 @@ no_diff:
 		mvwprintw(wlist, y, 0, "%c %c %s", diff, type, f->name);
 	wattrset(wlist, A_NORMAL);
 	if (link) {
-		waddstr(wlist, " -> ");
+		waddstr(wlist, followlinks ? " (@ " : " -> ");
 		waddstr(wlist, link);
+
+		if (followlinks)
+			waddstr(wlist, ")");
 	}
 
 	if (!info)
@@ -1432,8 +1451,15 @@ no_diff:
 	} else if (diff == ' ' && type == '!') {
 		statcol();
 		mvwaddstr(wstat, 0, 2, type_name(f->ltype));
+
+		if (f->llink)
+			wprintw(wstat, " -> %s", f->llink);
+
 		mvwaddstr(wstat, 1, 2, type_name(f->rtype));
-	} else if (type == '/' || type == ' ' || type == '*') {
+
+		if (f->rlink)
+			wprintw(wstat, " -> %s", f->rlink);
+	} else {
 		statcol();
 		file_stat(f);
 	}
@@ -1467,90 +1493,119 @@ type_name(mode_t m)
 static void
 file_stat(struct filediff *f)
 {
-	int x = 2, w, w1, w2, yl;
+	int x = 2, w, w1, w2, yl, lx1, lx2;
 	struct passwd *pw;
 	struct group *gr;
+	mode_t ltyp, rtyp;
+	char *s1, *s2;
 
 	x  = bmode ? 0 : 2;
 	yl = 0;
+	ltyp = f->ltype;
+	rtyp = f->rtype;
 
 	if (bmode) {
 		/* TODO: Right align */
 		mvwaddstr(wstat, 1, 0, rpath);
 	}
 
-	if (f->ltype)
-		mvwprintw(wstat, yl, x, "%04o", f->ltype & 07777);
-	if (f->rtype)
-		mvwprintw(wstat, 1, x, "%04o", f->rtype & 07777);
+	if (S_ISLNK(ltyp)) {
+		mvwprintw(wstat, yl, x, "-> %s", f->llink);
+		ltyp = 0;
+	}
+
+	if (S_ISLNK(rtyp)) {
+		mvwprintw(wstat, 1, x, "-> %s", f->rlink);
+		rtyp = 0;
+	}
+
+	if (ltyp)
+		mvwprintw(wstat, yl, x, "%04o", ltyp & 07777);
+	if (rtyp)
+		mvwprintw(wstat, 1, x, "%04o", rtyp & 07777);
 	x += 5;
 
-	if (f->ltype) {
+	if (ltyp) {
 		if ((pw = getpwuid(f->luid)))
 			memcpy(lbuf, pw->pw_name, strlen(pw->pw_name) + 1);
 		else
 			snprintf(lbuf, sizeof lbuf, "%u", f->luid);
 	}
 
-	if (f->rtype) {
+	if (rtyp) {
 		if ((pw = getpwuid(f->ruid)))
 			memcpy(rbuf, pw->pw_name, strlen(pw->pw_name) + 1);
 		else
 			snprintf(rbuf, sizeof rbuf, "%u", f->ruid);
 	}
 
-	if (f->ltype)
+	if (ltyp)
 		mvwaddstr(wstat, yl, x, lbuf);
-	if (f->rtype)
+	if (rtyp)
 		mvwaddstr(wstat, 1, x, rbuf);
 
-	w1 = f->ltype ? strlen(lbuf) : 0;
-	w2 = f->rtype ? strlen(rbuf) : 0;
+	w1 = ltyp ? strlen(lbuf) : 0;
+	w2 = rtyp ? strlen(rbuf) : 0;
 	x += w1 > w2 ? w1 : w2;
 	x++;
 
-	if (f->ltype) {
+	if (ltyp) {
 		if ((gr = getgrgid(f->lgid)))
 			memcpy(lbuf, gr->gr_name, strlen(gr->gr_name) + 1);
 		else
 			snprintf(lbuf, sizeof lbuf, "%u", f->lgid);
 	}
 
-	if (f->rtype) {
+	if (rtyp) {
 		if ((gr = getgrgid(f->rgid)))
 			memcpy(rbuf, gr->gr_name, strlen(gr->gr_name) + 1);
 		else
 			snprintf(rbuf, sizeof rbuf, "%u", f->rgid);
 	}
 
-	if (f->ltype)
+	if (ltyp)
 		mvwaddstr(wstat, yl, x, lbuf);
-	if (f->rtype)
+	if (rtyp)
 		mvwaddstr(wstat, 1, x, rbuf);
 
-	w1 = f->ltype ? strlen(lbuf) : 0;
-	w2 = f->rtype ? strlen(rbuf) : 0;
+	w1 = ltyp ? strlen(lbuf) : 0;
+	w2 = rtyp ? strlen(rbuf) : 0;
+	lx1 = x + w1;
+	lx2 = x + w2;
 	x += w1 > w2 ? w1 : w2;
 	x++;
 
-	if (f->ltype && !S_ISDIR(f->ltype))
+	if (ltyp && !S_ISDIR(ltyp))
 		w1 = getfilesize(lbuf, sizeof lbuf, f->lsiz);
-	if (f->rtype && !S_ISDIR(f->rtype))
+	if (rtyp && !S_ISDIR(rtyp))
 		w2 = getfilesize(rbuf, sizeof lbuf, f->rsiz);
 
 	w = w1 > w2 ? w1 : w2;
 
-	if (f->ltype && !S_ISDIR(f->ltype))
+	if (ltyp && !S_ISDIR(ltyp))
 		mvwaddstr(wstat, yl, x + w - w1, lbuf);
-	if (f->rtype && !S_ISDIR(f->rtype))
+	if (rtyp && !S_ISDIR(rtyp))
 		mvwaddstr(wstat, 1, x + w - w2, rbuf);
 
 	x += w + 1;
 
-	if (f->ltype && !S_ISDIR(f->ltype))
-		mvwaddstr(wstat, yl, x, ctime(&f->lmtim));
-	if (f->rtype && !S_ISDIR(f->rtype))
-		mvwaddstr(wstat, 1, x, ctime(&f->rmtim));
+	if (ltyp && !S_ISDIR(ltyp)) {
+		s1 = ctime(&f->lmtim);
+		mvwaddstr(wstat, yl, x, s1);
+		lx1 = x + strlen(s1);
+	}
+
+	if (rtyp && !S_ISDIR(rtyp)) {
+		s2 = ctime(&f->rmtim);
+		mvwaddstr(wstat, 1, x, s2);
+		lx2 = x + strlen(s2);
+	}
+
+	if (ltyp && f->llink)
+		mvwprintw(wstat, yl, lx1, " -> %s", f->llink);
+
+	if (rtyp && f->rlink)
+		mvwprintw(wstat, 1, lx2, " -> %s", f->rlink);
 }
 
 static size_t

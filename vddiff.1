@@ -13,7 +13,7 @@ LOSS OF USE, DATA OR PROFITS, WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE OR
 OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
 PERFORMANCE OF THIS SOFTWARE.
 ..
-.Dd September 29, 2016
+.Dd October 1, 2016
 .Dt VDDIFF 1
 .Sh NAME
 .Nm vddiff
@@ -269,10 +269,16 @@ Show command line directory arguments.
 Show full path.
 .It Dq Li <<
 Copy from second to first tree.
-(Does not follow symbolic links.)
+(Does never follow symbolic links.)
+.It Dq Li <F
+Copy from second to first tree,
+symbolic links are always followed.
 .It Dq Li >>
 Copy from first to second tree.
-(Does not follow symbolic links.)
+(Does never follow symbolic links.)
+.It Dq Li >F
+Copy from first to second tree,
+symbolic links are always followed.
 .It Dq Li dd
 Delete file or directory, which must be present in one tree only.
 (Does not follow symbolic links.)

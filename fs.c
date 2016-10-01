@@ -39,10 +39,10 @@ struct str_list {
 	struct str_list *next;
 };
 
-static void proc_dir(void);
+static void proc_dir(int);
 static void rm_file(void);
 static void cp_file(void);
-static int creatdir(void);
+static int creatdir(int);
 static void cp_link(void);
 static void cp_reg(void);
 
@@ -221,7 +221,7 @@ fs_rm(int tree, char *txt)
 
 	if (S_ISDIR(stat1.st_mode)) {
 		tree_op = TREE_RM;
-		proc_dir();
+		proc_dir(0);
 	} else
 		rm_file();
 
@@ -237,7 +237,7 @@ cancel:
 }
 
 void
-fs_cp(int to)
+fs_cp(int to, int follow)
 {
 	struct filediff *f;
 
@@ -260,9 +260,10 @@ fs_cp(int to)
 	len1 = pthcat(pth1, len1, f->name);
 	len2 = pthcat(pth2, len2, f->name);
 
-	if (lstat(pth1, &stat1) == -1) {
+	if (( follow &&  stat(pth1, &stat1) == -1) ||
+	    (!follow && lstat(pth1, &stat1) == -1)) {
 		if (errno != ENOENT)
-			printerr(strerror(errno), "lstat %s failed", pth1);
+			printerr(strerror(errno), "stat %s failed", pth1);
 		goto cancel;
 	}
 
@@ -270,7 +271,7 @@ fs_cp(int to)
 
 	if (S_ISDIR(stat1.st_mode)) {
 		tree_op = TREE_CP;
-		proc_dir();
+		proc_dir(follow);
 	} else
 		cp_file();
 
@@ -296,7 +297,7 @@ rebuild_db(void)
 }
 
 static void
-proc_dir(void)
+proc_dir(int follow)
 {
 	DIR *d;
 	struct dirent *ent;
@@ -304,7 +305,7 @@ proc_dir(void)
 	struct str_list *dirs = NULL;
 
 	if (tree_op == TREE_CP) {
-		if (creatdir())
+		if (creatdir(follow))
 			return;
 	}
 
@@ -332,10 +333,11 @@ proc_dir(void)
 
 		pthcat(pth1, len1, name);
 
-		if (lstat(pth1, &stat1) == -1) {
+		if (( follow &&  stat(pth1, &stat1) == -1) ||
+		    (!follow && lstat(pth1, &stat1) == -1)) {
 			if (errno != ENOENT) {
 				printerr(strerror(errno),
-				    "lstat %s failed", pth1);
+				    "stat %s failed", pth1);
 				goto closedir;
 			}
 			continue; /* deleted after readdir */
@@ -373,7 +375,7 @@ closedir:
 			len2 = pthcat(pth2, len2, dirs->s);
 		}
 
-		proc_dir();
+		proc_dir(follow);
 		pth1[len1 = l1] = 0;
 
 		if (tree_op == TREE_CP)
@@ -411,12 +413,13 @@ cp_file(void)
 }
 
 static int
-creatdir(void)
+creatdir(int follow)
 {
-	if (lstat(pth1, &stat1) == -1) {
+	if (( follow &&  stat(pth1, &stat1) == -1) ||
+	    (!follow && lstat(pth1, &stat1) == -1)) {
 		if (errno != ENOENT) {
 			printerr(strerror(errno),
-			    "lstat %s failed", pth1);
+			    "stat %s failed", pth1);
 		}
 		return -1;
 	}

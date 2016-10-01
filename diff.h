@@ -9,6 +9,8 @@ struct filediff {
 	char    diff;
 };
 
+extern short followlinks;
+
 int build_diff_db(int);
 void scan_subdir(char *, char *, int);
 void follow(int);
