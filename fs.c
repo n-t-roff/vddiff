@@ -240,9 +240,34 @@ void
 fs_cp(int to, int follow)
 {
 	struct filediff *f;
+	struct stat st;
 
 	if (!db_num)
 		return;
+
+	if (to == 1) {
+		pth1 = rpath;
+		len1 = rlen;
+	} else {
+		pth1 = lpath;
+		len1 = llen;
+	}
+
+	f = db_list[top_idx + curs];
+	pthcat(pth1, len1, f->name);
+
+	if (( follow &&  stat(pth1, &st) == -1) ||
+	    (!follow && lstat(pth1, &st) == -1)) {
+		if (errno != ENOENT)
+			printerr(strerror(errno), "stat %s failed", pth1);
+		goto cancel;
+	}
+
+	/* After stat src to avoid removing dest if there is a problem
+	 * with src */
+	fs_rm(to, "overwrite");
+
+	/* fs_rm() did change pths and stat1 */
 
 	if (to == 1) {
 		pth1 = rpath;
@@ -256,18 +281,9 @@ fs_cp(int to, int follow)
 		len2 = rlen;
 	}
 
-	f = db_list[top_idx + curs];
 	len1 = pthcat(pth1, len1, f->name);
 	len2 = pthcat(pth2, len2, f->name);
-
-	if (( follow &&  stat(pth1, &stat1) == -1) ||
-	    (!follow && lstat(pth1, &stat1) == -1)) {
-		if (errno != ENOENT)
-			printerr(strerror(errno), "stat %s failed", pth1);
-		goto cancel;
-	}
-
-	fs_rm(to, "overwrite");
+	stat1 = st;
 
 	if (S_ISDIR(stat1.st_mode)) {
 		tree_op = TREE_CP;
