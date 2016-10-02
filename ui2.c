@@ -38,8 +38,6 @@ static int srchcmp(const void *, const void *);
 
 short noic, magic, nows, scale;
 short regex;
-struct history opt_hist;
-struct history regex_hist;
 
 static struct str_uint *srchmap;
 static regex_t re_dat;
@@ -48,6 +46,7 @@ static unsigned srch_idx;
 void
 ui_srch(void)
 {
+	static struct history regex_hist;
 	unsigned u;
 
 	if (!db_num) {

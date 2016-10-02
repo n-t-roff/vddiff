@@ -13,7 +13,7 @@ LOSS OF USE, DATA OR PROFITS, WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE OR
 OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
 PERFORMANCE OF THIS SOFTWARE.
 ..
-.Dd October 1, 2016
+.Dd October 2, 2016
 .Dt VDDIFF 1
 .Sh NAME
 .Nm vddiff
@@ -292,16 +292,44 @@ Delete file or directory in second tree.
 (Does not follow symbolic links.)
 .It Dq Li en
 Rename file, which must be present in one tree only.
+Does not check if a file with the new name does already exist.
 .It Dq Li eln
 Rename file in first tree.
 .It Dq Li ern
 Rename file in second tree.
 .It Dq Li ep
 Change permissions of file, which must be present in one tree only.
+The command is ignred for symbolic links.
 .It Dq Li elp
 Change permissions of file in first tree.
 .It Dq Li erp
 Change permissions of file in second tree.
+.It Dq Li eu
+Change owner of file, which must be present in one tree only.
+The command is ignred for symbolic links.
+Previously entered user names are saved in a history,
+which can be accessed with the
+.Aq Cm UP
+and
+.Aq Cm DOWN
+keys.
+.It Dq Li elu
+Change owner of file in first tree.
+.It Dq Li eru
+Change owner of file in second tree.
+.It Dq Li eg
+Change group of file, which must be present in one tree only.
+The command is ignred for symbolic links.
+Previously entered group names are saved in a history,
+which can be accessed with the
+.Aq Cm UP
+and
+.Aq Cm DOWN
+keys.
+.It Dq Li elg
+Change group of file in first tree.
+.It Dq Li erg
+Change group of file in second tree.
 .It Sq Li m
 Mark file or directory.
 This can be used to compare files or directories

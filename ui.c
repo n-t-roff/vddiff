@@ -183,6 +183,7 @@ build_ui(void)
 static void
 ui_ctrl(void)
 {
+	static struct history opt_hist;
 	int key[2] = { 0, 0 }, c = 0, i;
 
 	while (1) {
@@ -617,8 +618,42 @@ next_key:
 			rebuild_db();
 			break;
 		case 'u':
+			if (*key == 'e') {
+				/* no c=0 here */
+				fs_chown(3, 0);
+				break;
+			} else if (key[1] == 'e') {
+				if (*key == 'l') {
+					c = 0;
+					fs_chown(1, 0);
+					break;
+				} else if (*key == 'r') {
+					c = 0;
+					fs_chown(2, 0);
+					break;
+				}
+			}
+
 			c = 0;
 			rebuild_db();
+			break;
+		case 'g':
+			if (*key == 'e') {
+				/* no c=0 here */
+				fs_chown(3, 1);
+				break;
+			} else if (key[1] == 'e') {
+				if (*key == 'l') {
+					c = 0;
+					fs_chown(1, 1);
+					break;
+				} else if (*key == 'r') {
+					c = 0;
+					fs_chown(2, 1);
+					break;
+				}
+			}
+
 			break;
 		case 's':
 			open_sh(3);
@@ -745,6 +780,12 @@ static char *helptxt[] = {
        "ep		Change file mode",
        "elp		Change mode of left file",
        "erp		Change mode of right file",
+       "eu		Change file owner",
+       "elu		Change owner of left file",
+       "eru		Change owner or right file",
+       "eg		Change file group",
+       "elg		Change group of left file",
+       "erg		Change group or right file",
        "m		Mark file or directory",
        "r		Remove mark, edit line or regex search",
        "y		Copy file path to edit line",

@@ -18,6 +18,8 @@ PERFORMANCE OF THIS SOFTWARE.
 #include <string.h>
 #include <errno.h>
 #include <sys/types.h>
+#include <grp.h>
+#include <pwd.h>
 #include <sys/stat.h>
 #include <dirent.h>
 #include <fcntl.h>
@@ -171,6 +173,89 @@ fs_chmod(int tree)
 
 	if (chmod(pth1, m) == -1) {
 		printerr(strerror(errno), "chmod %s failed");
+		goto exit;
+	}
+
+	rebuild_db();
+exit:
+	lpath[llen] = 0;
+	rpath[rlen] = 0;
+}
+
+void
+fs_chown(int tree, int op)
+{
+	struct filediff *f;
+	static struct history owner_hist, group_hist;
+	int i;
+	mode_t m;
+	struct passwd *pw;
+	struct group *gr;
+	uid_t uid;
+	gid_t gid;
+
+	if (!db_num)
+		return;
+
+	f = db_list[top_idx + curs];
+
+	/* "en" is not allowed if both files are present */
+	if ((tree == 3 && f->ltype && f->rtype) ||
+	    (tree == 1 && !f->ltype) ||
+	    (tree == 2 && !f->rtype))
+		return;
+
+	if (edit)
+		return;
+
+	if ((tree & 2) && f->rtype) {
+		if (S_ISLNK(f->rtype))
+			return;
+
+		pth1 = rpath;
+		len1 = rlen;
+		m = f->rtype;
+	} else {
+		if (S_ISLNK(f->ltype))
+			return;
+
+		pth1 = lpath;
+		len1 = llen;
+		m = f->ltype;
+	}
+
+	pthcat(pth1, len1, f->name);
+
+	if (ed_dialog(op ?
+	    "Enter new group (<ESC> to cancel):" :
+	    "Enter new owner (<ESC> to cancel):", "", NULL, 0,
+	    op ? &group_hist : &owner_hist)) {
+		return;
+	}
+
+	if (op) {
+		if ((gr = getgrnam(rbuf)))
+			gid = gr->gr_gid;
+		else if (!(gid = atoi(rbuf))) {
+			printerr("", "Invalid group name \"%s\"", rbuf);
+			return;
+		}
+
+		i = chown(pth1, -1, gid);
+	} else {
+		if ((pw = getpwnam(rbuf)))
+			uid = pw->pw_uid;
+		else if (!(uid = atoi(rbuf))) {
+			printerr("", "Invalid user name \"%s\"", rbuf);
+			return;
+		}
+
+		i = chown(pth1, uid, -1);
+	}
+
+	if (i == -1) {
+		printerr(strerror(errno), "chown \"%s\", \"%s\" failed",
+		    pth1, rbuf);
 		goto exit;
 	}
 

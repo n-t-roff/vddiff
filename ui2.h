@@ -1,6 +1,5 @@
 extern short noic, magic, nows, scale;
 extern short regex;
-extern struct history opt_hist;
 
 void ui_srch(void);
 int srch_file(char *);
