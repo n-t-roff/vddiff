@@ -379,7 +379,7 @@ The keys
 and
 .Aq Cm DOWN
 fetch other history entries.
-.It Ao Cm F1 Ac \(en Aq Cm F12
+.It Oo Ar n Oc Ns Ao Cm F1 Ac \(en Aq Cm F12
 Define string which can be inserted later with this function key
 when entering a sh command using
 .Sq Li $ .
@@ -402,6 +402,12 @@ To embed it,
 .Dq Li $1
 can be used, as in
 .Dq Li "$ nroff $1 | less" .
+If
+.Ar n
+as a number between 2 and 9 (inclusive) is given,
+the command is applied to
+.Ar n
+files starting from the current selection.
 .Pp
 If no diff tool which supports merging is available,
 files can be merged manually by defining two function keys

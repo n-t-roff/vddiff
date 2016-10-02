@@ -58,7 +58,6 @@ static void push_state(void);
 static void pop_state(void);
 static void enter_dir(char *, char *, int);
 static void help(void);
-static void action(int, int);
 static char *type_name(mode_t);
 static void ui_resize(void);
 static void set_win_dim(void);
@@ -197,75 +196,8 @@ next_key:
 
 		c = getch();
 
-		for (i = 0; i < FKEY_NUM; i++) {
-			if (c != KEY_F(i + 1))
-				continue;
-
-			if (fkey_cmd[i]) {
-				struct tool t;
-
-				switch (dialog("[ENTER] execute, [e] edit"
-				    " [other key] cancel", NULL,
-				    "Really execute %s?", fkey_cmd[i])) {
-				case 'e':
-					break;
-				case '\n':
-					t = viewtool;
-					*viewtool.tool = NULL;
-					/* set_tool() reused here to process
-					 * embedded "$1" */
-					set_tool(&viewtool,
-					    strdup(fkey_cmd[i]), 0);
-					action(1, 3);
-					free(*viewtool.tool);
-					viewtool = t;
-					/* action() did likely create or
-					 * delete files */
-					rebuild_db();
-					/* fall through */
-				default:
-					goto next_key;
-				}
-			}
-
-			if (ed_dialog(
-			    "Type text to be saved for function key:",
-			    fkey_cmd[i] ? fkey_cmd[i] : "", NULL, 1, NULL))
-				break;
-
-			free(sh_str[i]);
-			sh_str[i] = NULL;
-			free(fkey_cmd[i]);
-			fkey_cmd[i] = NULL;
-
-			if (*rbuf == '$' && isspace((int)rbuf[1])) {
-				int c;
-				int j = 0;
-
-				while ((c = rbuf[++j]) && isspace(c));
-
-				if (!c)
-					goto next_key; /* empty input */
-
-				fkey_cmd[i] = strdup(rbuf + j);
-				clr_edit();
-				printerr(NULL, "$ %s saved for F%d",
-				    fkey_cmd[i], i + 1);
-			} else {
-#ifdef HAVE_CURSES_WCH
-				sh_str[i] = linebuf;
-				linebuf = NULL; /* clr_edit(): free(linebuf) */
-				clr_edit();
-				printerr(NULL, "%ls"
-#else
-				sh_str[i] = strdup(rbuf);
-				clr_edit();
-				printerr(NULL, "%s"
-#endif
-				    " saved for F%d", sh_str[i], i + 1);
-			}
+		if (test_fkey(c, num))
 			goto next_key;
-		}
 
 		for (i = '2'; i <= '9'; i++)
 			if (c == i) {
@@ -802,7 +734,9 @@ static char *helptxt[] = {
        "y		Copy file path to edit line",
        "Y		Copy file path in reverse order to edit line",
        "$		Enter shell command",
-       "<F1> - <F12>	Define string to be used in shell command",
+       "[<n>]<F1> - <F12>",
+       "		Define string to be used in (or as) shell command",
+       "		or execute shell command",
        "l		List function key strings",
        "u		Update file list",
        "s		Open shell",
@@ -991,7 +925,7 @@ proc_mevent(void)
 }
 #endif
 
-static void
+void
 action(
     /* Used by function key starting with "$ ".
      * Ignore file type and file name extension, just use plain file name.

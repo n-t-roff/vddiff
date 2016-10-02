@@ -20,6 +20,7 @@ PERFORMANCE OF THIS SOFTWARE.
 #include <errno.h>
 #include <sys/types.h>
 #include <regex.h>
+#include <ctype.h>
 #include "ed.h"
 #include "ui.h"
 #include "ui2.h"
@@ -28,6 +29,7 @@ PERFORMANCE OF THIS SOFTWARE.
 #include "db.h"
 #include "fs.h"
 #include "main.h"
+#include "exec.h"
 
 struct str_uint {
 	char *s;
@@ -42,6 +44,96 @@ short regex;
 static struct str_uint *srchmap;
 static regex_t re_dat;
 static unsigned srch_idx;
+
+int
+test_fkey(int c, unsigned short num)
+{
+	int i;
+
+	for (i = 0; i < FKEY_NUM; i++) {
+		if (c != KEY_F(i + 1))
+			continue;
+
+		if (fkey_cmd[i]) {
+			struct tool t;
+			unsigned ti;
+			static char *keys =
+			    "[ENTER] execute, [e] edit"
+			    " [other key] cancel";
+
+			switch (num > 1 ? dialog(keys, NULL,
+			    "Really execute %s for %d files?",
+			    fkey_cmd[i], num) : dialog(keys, NULL,
+			    "Really execute %s?", fkey_cmd[i])) {
+			case 'e':
+				break;
+			case '\n':
+				t = viewtool;
+				*viewtool.tool = NULL;
+				/* set_tool() reused here to process
+				 * embedded "$1" */
+				set_tool(&viewtool,
+				    strdup(fkey_cmd[i]), 0);
+				ti = top_idx;
+
+				while (num--) {
+					action(1, 3);
+					top_idx++; /* kludge */
+				}
+
+				top_idx = ti;
+				free(*viewtool.tool);
+				viewtool = t;
+				/* action() did likely create or
+				 * delete files */
+				rebuild_db();
+				/* fall through */
+			default:
+				return 1;
+			}
+		}
+
+		if (ed_dialog(
+		    "Type text to be saved for function key:",
+		    fkey_cmd[i] ? fkey_cmd[i] : "", NULL, 1, NULL))
+			break;
+
+		free(sh_str[i]);
+		sh_str[i] = NULL;
+		free(fkey_cmd[i]);
+		fkey_cmd[i] = NULL;
+
+		if (*rbuf == '$' && isspace((int)rbuf[1])) {
+			int c;
+			int j = 0;
+
+			while ((c = rbuf[++j]) && isspace(c));
+
+			if (!c)
+				return 1; /* empty input */
+
+			fkey_cmd[i] = strdup(rbuf + j);
+			clr_edit();
+			printerr(NULL, "$ %s saved for F%d",
+			    fkey_cmd[i], i + 1);
+		} else {
+#ifdef HAVE_CURSES_WCH
+			sh_str[i] = linebuf;
+			linebuf = NULL; /* clr_edit(): free(linebuf) */
+			clr_edit();
+			printerr(NULL, "%ls"
+#else
+			sh_str[i] = strdup(rbuf);
+			clr_edit();
+			printerr(NULL, "%s"
+#endif
+			    " saved for F%d", sh_str[i], i + 1);
+		}
+		return 1;
+	}
+
+	return 0;
+}
 
 void
 ui_srch(void)
