@@ -279,15 +279,20 @@ Copy from first to second tree.
 .It Dq Li >F
 Copy from first to second tree,
 symbolic links are always followed.
-.It Dq Li dd
+.It Oo Ar n Oc Ns Dq Li dd
 Delete file or directory, which must be present in one tree only.
 (Does not follow symbolic links.)
 .Nm
 does not warn if a directory to delete is not empty.
-.It Dq Li dl
+If
+.Ar n
+as a number between 2 and 9 (inclusive) is given,
+.Ar n
+files starting from the current selection are deleted.
+.It Oo Ar n Oc Ns Dq Li dl
 Delete file or directory in first tree.
 (Does not follow symbolic links.)
-.It Dq Li dr
+.It Oo Ar n Oc Ns Dq Li dr
 Delete file or directory in second tree.
 (Does not follow symbolic links.)
 .It Dq Li en

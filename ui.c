@@ -185,11 +185,16 @@ ui_ctrl(void)
 {
 	static struct history opt_hist;
 	int key[2] = { 0, 0 }, c = 0, i;
+	unsigned short num;
 
 	while (1) {
 next_key:
 		key[1] = *key;
 		*key = c;
+
+		if (!c)
+			num = 1;
+
 		c = getch();
 
 		for (i = 0; i < FKEY_NUM; i++) {
@@ -261,6 +266,12 @@ next_key:
 			}
 			goto next_key;
 		}
+
+		for (i = '2'; i <= '9'; i++)
+			if (c == i) {
+				num = i - '0';
+				goto next_key;
+			}
 
 		switch (c) {
 #ifdef NCURSES_MOUSE_VERSION
@@ -462,13 +473,13 @@ next_key:
 			if (*key != 'd')
 				break;
 			c = 0;
-			fs_rm(3, NULL); /* allowed for single sided only */
+			fs_rm(3, NULL, num); /* allowed for single sided only */
 			break;
 		case 'l':
 			switch (*key) {
 			case 'd':
 				c = 0;
-				fs_rm(1, NULL);
+				fs_rm(1, NULL, num);
 				goto next_key;
 			case 's':
 				c = 0;
@@ -516,7 +527,7 @@ next_key:
 			switch (*key) {
 			case 'd':
 				c = 0;
-				fs_rm(2, NULL);
+				fs_rm(2, NULL, num);
 				goto next_key;
 			case 's':
 				c = 0;
@@ -771,9 +782,9 @@ static char *helptxt[] = {
        "<F		Copy to left side following links",
        ">>		Copy from first to second tree",
        ">F		Copy to right side following links",
-       "dd		Delete file or directory",
-       "dl		Delete file or directory in first tree",
-       "dr		Delete file or directory in second tree",
+       "[<n>]dd		Delete file or directory",
+       "[<n>]dl		Delete file or directory in first tree",
+       "[<n>]dr		Delete file or directory in second tree",
        "en		Rename file",
        "eln		Rename left file",
        "ern		Rename right file",

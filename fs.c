@@ -136,7 +136,7 @@ fs_chmod(int tree)
 	}
 
 	pthcat(pth1, len1, f->name);
-	snprintf(lbuf, sizeof lbuf, "%04o", m & 07777);
+	snprintf(lbuf, sizeof lbuf, "%04o", (unsigned)m & 07777);
 	s = strdup(lbuf);
 
 	if (ed_dialog("Enter new permissions (<ESC> to cancel):", s, NULL, 0,
@@ -266,49 +266,64 @@ exit:
 }
 
 void
-fs_rm(int tree, char *txt)
+fs_rm(int tree, char *txt, int num)
 {
 	struct filediff *f;
+	unsigned short u, m;
 
 	if (!db_num)
 		return;
 
-	f = db_list[top_idx + curs];
+	m = num > 1;
 
-	/* "dd" is not allowed if both files are present */
-	if (tree == 3 && f->ltype && f->rtype)
-		return;
-	if (!f->ltype)
-		tree &= ~1;
-	if (!f->rtype)
-		tree &= ~2;
-	if (tree & 1) {
-		pth1 = lpath;
-		len1 = llen;
-	} else if (tree & 2) {
-		pth1 = rpath;
-		len1 = rlen;
-	} else
+	if (m && dialog("[y] yes, [other key] no", NULL,
+	    "Really %s %d files?", txt ? txt : "delete", num) != 'y')
 		return;
 
-	len1 = pthcat(pth1, len1, f->name);
+	u = top_idx + curs;
 
-	if (lstat(pth1, &stat1) == -1) {
-		if (errno != ENOENT)
-			printerr(strerror(errno), "lstat %s failed", pth1);
-		goto cancel;
+	while (num-- && u < db_num) {
+		f = db_list[u++];
+
+		/* "dd" is not allowed if both files are present */
+		if (tree == 3 && f->ltype && f->rtype)
+			continue;
+
+		if (!f->ltype)
+			tree &= ~1;
+
+		if (!f->rtype)
+			tree &= ~2;
+
+		if (tree & 1) {
+			pth1 = lpath;
+			len1 = llen;
+		} else if (tree & 2) {
+			pth1 = rpath;
+			len1 = rlen;
+		} else
+			continue;
+
+		len1 = pthcat(pth1, len1, f->name);
+
+		if (lstat(pth1, &stat1) == -1) {
+			if (errno != ENOENT)
+				printerr(strerror(errno), "lstat %s failed",
+				    pth1);
+			continue;
+		}
+
+		if (!m && dialog("[y] yes, [other key] no", NULL,
+		    "Really %s %s%s?", txt ? txt : "delete",
+		    S_ISDIR(stat1.st_mode) ? "directory " : "", pth1) != 'y')
+			goto cancel;
+
+		if (S_ISDIR(stat1.st_mode)) {
+			tree_op = TREE_RM;
+			proc_dir(0);
+		} else
+			rm_file();
 	}
-
-	if (dialog("[y] yes, [other key] no", NULL,
-	    "Really %s %s%s?", txt ? txt : "delete",
-	    S_ISDIR(stat1.st_mode) ? "directory " : "", pth1) != 'y')
-		goto cancel;
-
-	if (S_ISDIR(stat1.st_mode)) {
-		tree_op = TREE_RM;
-		proc_dir(0);
-	} else
-		rm_file();
 
 	if (txt)
 		goto cancel; /* rebuild is done by others */
@@ -326,6 +341,7 @@ fs_cp(int to, int follow)
 {
 	struct filediff *f;
 	struct stat st;
+	int num = 1;
 
 	if (!db_num)
 		return;
@@ -350,7 +366,7 @@ fs_cp(int to, int follow)
 
 	/* After stat src to avoid removing dest if there is a problem
 	 * with src */
-	fs_rm(to, "overwrite");
+	fs_rm(to, "overwrite", num);
 
 	/* fs_rm() did change pths and stat1 */
 

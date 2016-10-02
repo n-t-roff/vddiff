@@ -9,10 +9,13 @@ and kept in sync with
 ```
 git pull
 ```
-It is recommended (but not required) to install
+It is suggested (but not required) to install
 the speed optimized AVL library
-[libavlbst](https://github.com/n-t-roff/libavlbst)
-*before* `vddiff` can be build and installed with
+[libavlbst](https://github.com/n-t-roff/libavlbst).
+On NetBSD it is recommended to install the `ncurses`
+package.
+
+`vddiff` is build and installed with
 ```
 $ ./configure
 $ make
