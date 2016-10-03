@@ -79,7 +79,7 @@ Second column: File type
 .It So Li ! Sc Ta "Different file type"
 .El
 .Sh OPTIONS
-.Bl -tag
+.Bl -tag -width 12n
 .It Fl B
 Debug option.
 (If
@@ -181,7 +181,7 @@ To include it into the string the symbolic name
 can be embedded which is expanded to the filename.
 .El
 .Sh INTERACTIVE COMMANDS
-.Bl -tag
+.Bl -tag -width 12n
 .It Sq Li q
 Quit.
 .It So Li h Sc or Sq Li \&?
@@ -267,16 +267,26 @@ Show current relative work directory.
 Show command line directory arguments.
 .It Sq Li f
 Show full path.
-.It Dq Li <<
+.It Oo Ar n Oc Ns Dq Li <<
 Copy from second to first tree.
 (Does never follow symbolic links.)
-.It Dq Li <F
-Copy from second to first tree,
-symbolic links are always followed.
-.It Dq Li >>
+If
+.Ar n
+as a number between 2 and 9 (inclusive) is given,
+.Ar n
+files starting from the current selection are copied.
+.It Oo Ar n Oc Ns Dq Li >>
 Copy from first to second tree.
 (Does never follow symbolic links.)
-.It Dq Li >F
+.It Oo Ar n Oc Ns Dq Li <F
+Copy from second to first tree,
+symbolic links are always followed.
+If
+.Ar n
+as a number between 2 and 9 (inclusive) is given,
+.Ar n
+files starting from the current selection are copied.
+.It Oo Ar n Oc Ns Dq Li >F
 Copy from first to second tree,
 symbolic links are always followed.
 .It Oo Ar n Oc Ns Dq Li dd
@@ -477,7 +487,7 @@ Everything following a
 .Sq Li #
 (outside quoted strings)
 to the end of the line is a comment.
-.Bl -tag
+.Bl -tag -width 12n
 .It Li difftool Ar string
 Configure
 .Ar string

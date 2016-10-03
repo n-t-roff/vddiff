@@ -188,7 +188,6 @@ fs_chown(int tree, int op)
 	struct filediff *f;
 	static struct history owner_hist, group_hist;
 	int i;
-	mode_t m;
 	struct passwd *pw;
 	struct group *gr;
 	uid_t uid;
@@ -214,14 +213,12 @@ fs_chown(int tree, int op)
 
 		pth1 = rpath;
 		len1 = rlen;
-		m = f->rtype;
 	} else {
 		if (S_ISLNK(f->ltype))
 			return;
 
 		pth1 = lpath;
 		len1 = llen;
-		m = f->ltype;
 	}
 
 	pthcat(pth1, len1, f->name);
@@ -337,67 +334,71 @@ cancel:
 }
 
 void
-fs_cp(int to, int follow)
+fs_cp(int to, int follow, int num)
 {
 	struct filediff *f;
 	struct stat st;
-	int num = 1;
+	unsigned short ti = top_idx;
 
 	if (!db_num)
 		return;
 
-	if (to == 1) {
-		pth1 = rpath;
-		len1 = rlen;
-	} else {
-		pth1 = lpath;
-		len1 = llen;
+	if (num > 1 && dialog("[y] yes, [other key] no", NULL,
+	    "Really copy %d files?", num) != 'y')
+		return;
+
+	for (; num-- && top_idx + curs < db_num; top_idx++) {
+		if (to == 1) {
+			pth1 = rpath;
+			len1 = rlen;
+		} else {
+			pth1 = lpath;
+			len1 = llen;
+		}
+
+		f = db_list[top_idx + curs];
+		pthcat(pth1, len1, f->name);
+
+		if (( follow &&  stat(pth1, &st) == -1) ||
+		    (!follow && lstat(pth1, &st) == -1)) {
+			if (errno != ENOENT)
+				printerr(strerror(errno), "stat %s failed",
+				    pth1);
+			continue;
+		}
+
+		/* After stat src to avoid removing dest if there is a problem
+		 * with src */
+		fs_rm(to, "overwrite", 1);
+
+		/* fs_rm() did change pths and stat1 */
+
+		if (to == 1) {
+			pth1 = rpath;
+			len1 = rlen;
+			pth2 = lpath;
+			len2 = llen;
+		} else {
+			pth1 = lpath;
+			len1 = llen;
+			pth2 = rpath;
+			len2 = rlen;
+		}
+
+		len1 = pthcat(pth1, len1, f->name);
+		len2 = pthcat(pth2, len2, f->name);
+		stat1 = st;
+
+		if (S_ISDIR(stat1.st_mode)) {
+			tree_op = TREE_CP;
+			proc_dir(follow);
+		} else
+			cp_file();
 	}
 
-	f = db_list[top_idx + curs];
-	pthcat(pth1, len1, f->name);
-
-	if (( follow &&  stat(pth1, &st) == -1) ||
-	    (!follow && lstat(pth1, &st) == -1)) {
-		if (errno != ENOENT)
-			printerr(strerror(errno), "stat %s failed", pth1);
-		goto cancel;
-	}
-
-	/* After stat src to avoid removing dest if there is a problem
-	 * with src */
-	fs_rm(to, "overwrite", num);
-
-	/* fs_rm() did change pths and stat1 */
-
-	if (to == 1) {
-		pth1 = rpath;
-		len1 = rlen;
-		pth2 = lpath;
-		len2 = llen;
-	} else {
-		pth1 = lpath;
-		len1 = llen;
-		pth2 = rpath;
-		len2 = rlen;
-	}
-
-	len1 = pthcat(pth1, len1, f->name);
-	len2 = pthcat(pth2, len2, f->name);
-	stat1 = st;
-
-	if (S_ISDIR(stat1.st_mode)) {
-		tree_op = TREE_CP;
-		proc_dir(follow);
-	} else
-		cp_file();
-
+	top_idx = ti;
 	rebuild_db();
 	return;
-
-cancel:
-	lpath[llen] = 0;
-	rpath[rlen] = 0;
 }
 
 /* top_idx and curs must kept unchanged for "//" */

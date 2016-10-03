@@ -504,14 +504,14 @@ next_key:
 				break;
 
 			c = 0;
-			fs_cp(1, 0);
+			fs_cp(1, 0, num);
 			break;
 		case '>':
 			if (*key != '>')
 				break;
 
 			c = 0;
-			fs_cp(2, 0);
+			fs_cp(2, 0, num);
 			break;
 		case KEY_HOME:
 			c = 0;
@@ -631,11 +631,11 @@ next_key:
 			switch (*key) {
 			case '<':
 				c = 0;
-				fs_cp(1, 1);
+				fs_cp(1, 1, num);
 				goto next_key;
 			case '>':
 				c = 0;
-				fs_cp(2, 1);
+				fs_cp(2, 1, num);
 				goto next_key;
 			}
 
@@ -731,10 +731,10 @@ static char *helptxt[] = {
        "p		Show current relative work directory",
        "a		Show command line directory arguments",
        "f		Show full path",
-       "<<		Copy from second to first tree",
-       "<F		Copy to left side following links",
-       ">>		Copy from first to second tree",
-       ">F		Copy to right side following links",
+       "[<n>]<<		Copy from second to first tree",
+       "[<n>]>>		Copy from first to second tree",
+       "[<n>]<F		Copy to left side following links",
+       "[<n>]>F		Copy to right side following links",
        "[<n>]dd		Delete file or directory",
        "[<n>]dl		Delete file or directory in first tree",
        "[<n>]dr		Delete file or directory in second tree",
