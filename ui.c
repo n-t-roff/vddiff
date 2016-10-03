@@ -196,8 +196,10 @@ next_key:
 
 		c = getch();
 
-		if (test_fkey(c, num))
+		if (test_fkey(c, num)) {
+			c = 0;
 			goto next_key;
+		}
 
 		for (i = '2'; i <= '9'; i++)
 			if (c == i) {
@@ -222,8 +224,9 @@ next_key:
 		case KEY_UP:
 		case 'k':
 		case '-':
+			c = 0;
+
 			if (*key == 'z') {
-				c = 0;
 				if (!top_idx)
 					break;
 				else if (top_idx >= listh - 1 - curs) {
@@ -238,10 +241,11 @@ next_key:
 				break;
 			}
 
-			c = 0;
 			curs_up();
 			break;
 		case KEY_LEFT:
+			c = 0;
+
 			if (bmode)
 				enter_dir("..", NULL, 1);
 			else
@@ -250,8 +254,9 @@ next_key:
 			break;
 		case KEY_RIGHT:
 		case '\n':
+			c = 0;
+
 			if (*key == 'z') {
-				c = 0;
 				if (!curs)
 					break;
 
@@ -275,6 +280,7 @@ next_key:
 			break;
 		case KEY_PPAGE:
 		case KEY_BACKSPACE:
+			c = 0;
 			page_up();
 			break;
 		case 'h':
@@ -284,6 +290,7 @@ next_key:
 			break;
 		case 'p':
 			if (*key == 'e') {
+				c = 0;
 				fs_chmod(3);
 				break;
 			} else if (key[1] == 'e') {
@@ -317,6 +324,8 @@ next_key:
 
 				break;
 			}
+
+			/* fall through */
 		case 'f':
 			if (!bmode) {
 				c = 0;
@@ -329,6 +338,8 @@ next_key:
 				wrefresh(wstat);
 				break;
 			}
+
+			/* fall through */
 		case 'a':
 			c = 0;
 
@@ -359,7 +370,7 @@ next_key:
 					regex_srch(1);
 					break;
 				} else if (*key == 'e') {
-					/* no c=0 here */
+					c = 0;
 					fs_rename(3);
 					break;
 				} else if (key[1] == 'e') {
@@ -404,6 +415,7 @@ next_key:
 		case 'd':
 			if (*key != 'd')
 				break;
+
 			c = 0;
 			fs_rm(3, NULL, num); /* allowed for single sided only */
 			break;
@@ -490,16 +502,19 @@ next_key:
 		case '<':
 			if (*key != '<')
 				break;
+
 			c = 0;
 			fs_cp(1, 0);
 			break;
 		case '>':
 			if (*key != '>')
 				break;
+
 			c = 0;
 			fs_cp(2, 0);
 			break;
 		case KEY_HOME:
+			c = 0;
 			curs_first();
 			break;
 		case 'G':
@@ -540,6 +555,7 @@ next_key:
 		case 'e':
 			break;
 		case '/':
+			c = 0;
 			ui_srch();
 			break;
 		case 'S':
@@ -562,7 +578,7 @@ next_key:
 			break;
 		case 'u':
 			if (*key == 'e') {
-				/* no c=0 here */
+				c = 0;
 				fs_chown(3, 0);
 				break;
 			} else if (key[1] == 'e') {
@@ -582,7 +598,7 @@ next_key:
 			break;
 		case 'g':
 			if (*key == 'e') {
-				/* no c=0 here */
+				c = 0;
 				fs_chown(3, 1);
 				break;
 			} else if (key[1] == 'e') {
@@ -599,6 +615,7 @@ next_key:
 
 			break;
 		case 's':
+			c = 0;
 			open_sh(3);
 			break;
 		case 'z':
@@ -628,6 +645,7 @@ next_key:
 			break;
 		case 'H':
 			c = 0;
+
 			if (!curs)
 				break;
 
@@ -636,6 +654,7 @@ next_key:
 			break;
 		case 'M':
 			c = 0;
+
 			if (db_num < top_idx + listh)
 				curs = (db_num - top_idx) / 2;
 			else
@@ -645,6 +664,7 @@ next_key:
 			break;
 		case 'L':
 			c = 0;
+
 			if (db_num < top_idx + listh)
 				curs = db_num - top_idx - 1;
 			else
@@ -675,6 +695,7 @@ next_key:
 			printerr(NULL,
 			    "Invalid input '%c' (type 'h' for help).",
 			    isgraph(c) ? c : '?');
+			c = 0;
 		}
 	}
 }
