@@ -41,8 +41,8 @@ struct str_list {
 	struct str_list *next;
 };
 
-static void proc_dir(int);
-static void rm_file(void);
+static int proc_dir(int);
+static int rm_file(void);
 static void cp_file(void);
 static int creatdir(int);
 static void cp_link(void);
@@ -414,25 +414,24 @@ rebuild_db(void)
 	disp_list();
 }
 
-static void
+static int
 proc_dir(int follow)
 {
 	DIR *d;
 	struct dirent *ent;
 	char *name;
 	struct str_list *dirs = NULL;
+	short err = 0;
 
-	if (tree_op == TREE_CP) {
-		if (creatdir(follow))
-			return;
-	}
+	if (tree_op == TREE_CP && creatdir(follow))
+		return err;
 
 	if (!(d = opendir(pth1))) {
 		printerr(strerror(errno), "opendir %s failed", pth1);
-		return;
+		return err;
 	}
 
-	while (1) {
+	while (!err) {
 		errno = 0;
 		if (!(ent = readdir(d))) {
 			if (!errno)
@@ -441,7 +440,7 @@ proc_dir(int follow)
 			pth1[len1] = 0;
 			printerr(strerror(errno), "readdir %s failed", pth1);
 			closedir(d);
-			return;
+			return err;
 		}
 
 		name = ent->d_name;
@@ -467,7 +466,7 @@ proc_dir(int follow)
 			se->next = dirs ? dirs : NULL;
 			dirs = se;
 		} else if (tree_op == TREE_RM)
-			rm_file();
+			err |= rm_file();
 		else {
 			pthcat(pth2, len2, name);
 			cp_file();
@@ -485,19 +484,22 @@ closedir:
 		size_t l1, l2 = 0 /* silence warning */;
 		struct str_list *p;
 
-		l1 = len1;
-		len1 = pthcat(pth1, len1, dirs->s);
+		if (!err) {
+			l1 = len1;
+			len1 = pthcat(pth1, len1, dirs->s);
 
-		if (tree_op == TREE_CP) {
-			l2 = len2;
-			len2 = pthcat(pth2, len2, dirs->s);
+			if (tree_op == TREE_CP) {
+				l2 = len2;
+				len2 = pthcat(pth2, len2, dirs->s);
+			}
+
+			err |= proc_dir(follow);
+
+			pth1[len1 = l1] = 0;
+
+			if (tree_op == TREE_CP)
+				pth2[len2 = l2] = 0;
 		}
-
-		proc_dir(follow);
-		pth1[len1 = l1] = 0;
-
-		if (tree_op == TREE_CP)
-			pth2[len2 = l2] = 0;
 
 		free(dirs->s);
 		p = dirs;
@@ -505,19 +507,25 @@ closedir:
 		free(p);
 	}
 
-	if (tree_op == TREE_RM) {
-		if (rmdir(pth1) == -1)
-			printerr(strerror(errno),
-			    "unlink %s failed", pth1);
-	}
+	if (!err && tree_op == TREE_RM && rmdir(pth1) == -1 &&
+		dialog("[ENTER] continue, [ESC] cancel",
+		    "\n", "rmdir \"%s\" failed: %s", pth1,
+		    strerror(errno)) == '')
+			err = 1;
+
+	return err;
 }
 
-static void
+static int
 rm_file(void)
 {
-	if (unlink(pth1) == -1)
-		printerr(strerror(errno),
-		    "unlink %s failed", pth1);
+	if (unlink(pth1) == -1 &&
+		dialog("[ENTER] continue, [ESC] cancel",
+		    "\n", "unlink \"%s\" failed: %s", pth1,
+		    strerror(errno)) == '')
+		return 1;
+
+	return 0;
 }
 
 static void
