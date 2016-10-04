@@ -18,4 +18,4 @@ void exec_sighdl(void);
 void sh_cmd(char *, int);
 size_t shell_quote(char *, char *, size_t);
 void open_sh(int);
-int exec_cmd(char **, int, char *, char *);
+int exec_cmd(char **, int, char *, char *, bool);

@@ -151,7 +151,7 @@ rmtmpdirs(char *s)
 	static char *av[] = { "rm", "-rf", NULL, NULL };
 
 	av[2] = s;
-	exec_cmd(av, 0, NULL, NULL);
+	exec_cmd(av, 0, NULL, NULL, FALSE);
 	free(s); /* either tmp_dir or a DB entry */
 }
 
@@ -295,7 +295,7 @@ tar(char *opt, struct filediff *f, int tree, int i)
 	av[1] = opt;
 	av[2] = lbuf;
 	av[4] = rbuf;
-	exec_cmd(av, 0, NULL, NULL);
+	exec_cmd(av, 0, NULL, NULL, FALSE);
 	return z;
 }
 
@@ -308,7 +308,7 @@ unzip(struct filediff *f, int tree, int i)
 	zpths(f, &z, tree, NULL, i, 0);
 	av[2] = lbuf;
 	av[4] = rbuf;
-	exec_cmd(av, 0, NULL, NULL);
+	exec_cmd(av, 0, NULL, NULL, FALSE);
 	return z;
 }
 

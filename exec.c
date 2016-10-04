@@ -267,7 +267,7 @@ exec_tool(struct tool *t, char *name, char *rnam, int tree)
 	}
 
 	*a = NULL;
-	status = exec_cmd(av, bg, NULL, NULL);
+	status = exec_cmd(av, bg, NULL, NULL, TRUE);
 
 	if (o)
 		free(*av);
@@ -282,7 +282,7 @@ exec_tool(struct tool *t, char *name, char *rnam, int tree)
 }
 
 int
-exec_cmd(char **av, int bg, char *path, char *msg)
+exec_cmd(char **av, int bg, char *path, char *msg, bool tty)
 {
 	pid_t pid;
 	int status = 0;
@@ -290,7 +290,9 @@ exec_cmd(char **av, int bg, char *path, char *msg)
 	erase();
 	refresh();
 	def_prog_mode();
-	endwin();
+
+	if (tty)
+		endwin();
 
 	switch ((pid = fork())) {
 	case -1:
@@ -404,7 +406,8 @@ open_sh(int tree)
 
 	*av = pw->pw_shell;
 	av[1] = NULL;
-	exec_cmd(av, 0, s, "\nType \"exit\" or '^D' to return to vddiff.\n");
+	exec_cmd(av, 0, s, "\nType \"exit\" or '^D' to return to vddiff.\n",
+	    TRUE);
 }
 
 void
