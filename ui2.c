@@ -19,6 +19,8 @@ PERFORMANCE OF THIS SOFTWARE.
 #include <string.h>
 #include <errno.h>
 #include <sys/types.h>
+#include <sys/stat.h>
+#include <unistd.h>
 #include <regex.h>
 #include <ctype.h>
 #include "ed.h"
@@ -377,10 +379,113 @@ parsopt(char *buf)
 }
 
 void
+bindiff(void)
+{
+	struct filediff *f, *z1 = NULL, *z2 = NULL;
+	char *t1 = NULL, *t2 = NULL;
+	struct filediff *m = mark;
+	mode_t ltyp = 0, rtyp = 0;
+	char *lnam, *rnam, *olnam, *ornam;
+	off_t lsiz, rsiz;
+	int val = -1;
+
+	if (!db_num || !mark)
+		return;
+
+	f = db_list[top_idx + curs];
+	olnam = m->name;
+	ornam = f->name;
+
+	/* check if mark needs to be unzipped */
+	if ((z1 = unpack(m, m->ltype ? 1 : 2, &t1, 0)))
+		m = z1;
+
+	/* check if other file needs to be unchecked */
+	if ((z2 = unpack(f, m->ltype ? 2 : 1, &t2, 0)))
+		f = z2;
+
+	if (m->ltype) {
+		lnam = m->name;
+		ltyp = m->ltype;
+		lsiz = m->lsiz;
+		rnam = f->name;
+
+		if (f->rtype) {
+			rtyp = f->rtype;
+			rsiz = f->rsiz;
+		} else {
+			rtyp = f->ltype;
+			rsiz = f->lsiz;
+		}
+
+	} else if (m->rtype) {
+		lnam = f->name;
+
+		if (f->ltype) {
+			ltyp = f->ltype;
+			lsiz = f->lsiz;
+		} else {
+			ltyp = f->rtype;
+			lsiz = f->rsiz;
+		}
+
+		rnam = m->name;
+		rtyp = m->rtype;
+		rsiz = m->rsiz;
+	}
+
+	if (!S_ISREG(ltyp) || !S_ISREG(rtyp)) {
+		printerr(NULL,
+		    "Binary diff can only be used for regular files");
+		goto ret;
+	}
+
+	if (*lnam != '/') {
+		pthcat(lpath, llen, lnam);
+		lnam = lpath;
+	}
+
+	if (*rnam != '/') {
+		pthcat(rpath, rlen, rnam);
+		rnam = rpath;
+	}
+
+	val = cmp_file(lnam, lsiz, rnam, rsiz);
+
+ret:
+	if (z1)
+		free_zdir(z1, t1);
+
+	if (z2)
+		free_zdir(z2, t2);
+
+	switch (val) {
+	case 0:
+		printerr(NULL, "No diff between %s and %s", olnam, ornam);
+		break;
+	case 1:
+		printerr(NULL, "Files %s and %s differ", olnam, ornam);
+		break;
+	default:
+		;
+	}
+}
+
+void
 anykey(void)
 {
 	wrefresh(wlist);
 	printerr(NULL, "Press any key to continue");
 	getch();
 	disp_list();
+}
+
+void
+free_zdir(struct filediff *z, char *t)
+{
+	free(z->name);
+	free(z);
+
+	if (t)
+		rmtmpdirs(t);
 }

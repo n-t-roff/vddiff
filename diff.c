@@ -34,7 +34,6 @@ struct str_list {
 	struct str_list *next;
 };
 
-static int cmp_file(void);
 static struct filediff *alloc_diff(char *);
 static void add_diff_dir(void);
 static char *read_link(char *, off_t);
@@ -172,7 +171,8 @@ no_tree2:
 
 			if (S_ISREG(stat1.st_mode) &&
 			    S_ISREG(stat2.st_mode)) {
-				if (cmp_file() == 1)
+				if (cmp_file(lpath, stat1.st_size, rpath,
+				    stat2.st_size) == 1)
 					dir_diff = 1;
 				continue;
 			}
@@ -250,7 +250,8 @@ free_a:
 
 		} else if (S_ISREG(stat1.st_mode)) {
 
-			switch (cmp_file()) {
+			switch (cmp_file(lpath, stat1.st_size, rpath,
+			    stat2.st_size)) {
 			case 1:
 				diff->diff = '!';
 				/* fall through */
@@ -505,42 +506,44 @@ read_link(char *path, off_t size)
 	return link;
 }
 
-/* -1  Error, don't make DB entry
+/* Input: stat1, stat2, lpath, rpath
+ * Output:
+ * -1  Error, don't make DB entry
  *  0  No diff
  *  1  Diff */
 
-static int
-cmp_file(void)
+int
+cmp_file(char *lpth, off_t lsiz, char *rpth, off_t rsiz)
 {
 	int rv = 0, f1, f2;
 	ssize_t l1, l2;
 
-	if (stat1.st_size != stat2.st_size)
+	if (lsiz != rsiz)
 		return 1;
 
-	if (!stat1.st_size)
+	if (!lsiz)
 		return 0;
 
-	if ((f1 = open(lpath, O_RDONLY)) == -1) {
-		printerr(strerror(errno), "open %s failed", lpath);
+	if ((f1 = open(lpth, O_RDONLY)) == -1) {
+		printerr(strerror(errno), "open %s failed", lpth);
 		return -1;
 	}
 
-	if ((f2 = open(rpath, O_RDONLY)) == -1) {
-		printerr(strerror(errno), "open %s failed", rpath);
+	if ((f2 = open(rpth, O_RDONLY)) == -1) {
+		printerr(strerror(errno), "open %s failed", rpth);
 		rv = -1;
 		goto close_f1;
 	}
 
 	while (1) {
 		if ((l1 = read(f1, lbuf, sizeof lbuf)) == -1) {
-			printerr(strerror(errno), "read %s failed", lpath);
+			printerr(strerror(errno), "read %s failed", lpth);
 			rv = -1;
 			break;
 		}
 
 		if ((l2 = read(f2, rbuf, sizeof rbuf)) == -1) {
-			printerr(strerror(errno), "read %s failed", rpath);
+			printerr(strerror(errno), "read %s failed", rpth);
 			rv = -1;
 			break;
 		}

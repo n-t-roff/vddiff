@@ -252,7 +252,6 @@ next_key:
 				pop_state();
 
 			break;
-		case KEY_RIGHT:
 		case '\n':
 			c = 0;
 
@@ -266,12 +265,20 @@ next_key:
 				break;
 			}
 
+			/* fall through */
+		case KEY_RIGHT:
+			c = 0;
+
 			if (!db_num) {
 				no_file();
 				break;
 			}
 
 			action(0, 3);
+			break;
+		case 'b':
+			c = 0;
+			bindiff();
 			break;
 		case KEY_NPAGE:
 		case ' ':
@@ -362,30 +369,27 @@ next_key:
 			mvwaddstr(wstat, 1, 2, arg[1]);
 			wrefresh(wstat);
 			break;
-		case '!':
 		case 'n':
-			if (c == 'n') {
-				if (regex) {
-					c = 0;
-					regex_srch(1);
+			c = 0;
+
+			if (regex) {
+				regex_srch(1);
+				break;
+			} else if (*key == 'e') {
+				fs_rename(3);
+				break;
+			} else if (key[1] == 'e') {
+				if (*key == 'l') {
+					fs_rename(1);
 					break;
-				} else if (*key == 'e') {
-					c = 0;
-					fs_rename(3);
+				} else if (*key == 'r') {
+					fs_rename(2);
 					break;
-				} else if (key[1] == 'e') {
-					if (*key == 'l') {
-						c = 0;
-						fs_rename(1);
-						break;
-					} else if (*key == 'r') {
-						c = 0;
-						fs_rename(2);
-						break;
-					}
 				}
 			}
 
+			/* fall through */
+		case '!':
 			c = 0;
 			noequal = noequal ? 0 : 1;
 			diff_db_sort();
@@ -752,6 +756,7 @@ static char *helptxt[] = {
        "erg		Change group or right file",
        "m		Mark file or directory",
        "r		Remove mark, edit line or regex search",
+       "b		Binary diff to marked file",
        "y		Copy file path to edit line",
        "Y		Copy file path in reverse order to edit line",
        "$		Enter shell command",
@@ -969,11 +974,11 @@ action(
 
 		if (!ign_ext) {
 			/* check if mark needs to be unzipped */
-			if ((z1 = unpack(m, m->ltype ? 1 : 2, &t1)))
+			if ((z1 = unpack(m, m->ltype ? 1 : 2, &t1, 1)))
 				m = z1;
 
 			/* check if other file needs to be unchecked */
-			if ((z2 = unpack(f1, m->ltype ? 2 : 1, &t2)))
+			if ((z2 = unpack(f1, m->ltype ? 2 : 1, &t2, 1)))
 				f1 = z2;
 		}
 
@@ -1016,10 +1021,10 @@ action(
 	}
 
 	if (!ign_ext) {
-		if (f1->ltype && (z1 = unpack(f1, 1, &t1)))
+		if (f1->ltype && (z1 = unpack(f1, 1, &t1, 1)))
 			f1 = z1;
 
-		if (f2->rtype && (z2 = unpack(f2, 2, &t2)))
+		if (f2->rtype && (z2 = unpack(f2, 2, &t2, 1)))
 			f2 = z2;
 	}
 
@@ -1058,21 +1063,11 @@ action(
 		printerr(NULL, "Different file type");
 
 ret:
-	if (z1) {
-		free(z1->name);
-		free(z1);
+	if (z1)
+		free_zdir(z1, t1);
 
-		if (t1)
-			rmtmpdirs(t1);
-	}
-
-	if (z2) {
-		free(z2->name);
-		free(z2);
-
-		if (t2)
-			rmtmpdirs(t2);
-	}
+	if (z2)
+		free_zdir(z2, t2);
 
 	return;
 

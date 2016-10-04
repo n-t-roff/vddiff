@@ -9,4 +9,6 @@ void clr_regex(void);
 void start_regex(char *);
 int regex_srch(int);
 void parsopt(char *);
+void bindiff(void);
 void anykey(void);
+void free_zdir(struct filediff *, char *);

@@ -156,18 +156,31 @@ rmtmpdirs(char *s)
 }
 
 struct filediff *
-unpack(struct filediff *f, int tree, char **tmp)
+unpack(struct filediff *f, int tree, char **tmp, int type)
 {
 	enum uz_id id;
 	struct filediff *z;
 	int i;
 
 	if ((tree == 1 && !S_ISREG(f->ltype)) ||
-	    (tree == 2 && !S_ISREG(f->rtype)))
+	    (tree == 2 && !S_ISREG(bmode ? f->ltype : f->rtype)))
 		return NULL;
 
 	if ((id = check_ext(f->name, &i)) == UZ_NONE)
 		return NULL;
+
+	switch (id) {
+	case UZ_TGZ:
+	case UZ_TBZ:
+	case UZ_TAR:
+	case UZ_ZIP:
+		if (!type)
+			return NULL;
+
+		/* fall through */
+	default:
+		;
+	}
 
 	if (mktmpdirs())
 		return NULL;
@@ -248,12 +261,25 @@ zcat(char *cmd, struct filediff *f, int tree, int i)
 	char *s;
 	size_t l;
 	struct filediff *z;
+	struct stat st;
 
 	l = 20;
 	s = zpths(f, &z, tree, &l, i, 1);
 	snprintf(s, l, "%s %s > %s", cmd, lbuf, rbuf);
 	sh_cmd(s, 0);
 	free(s);
+
+	if (lstat(rbuf, &st) == -1) {
+		if (errno == ENOENT)
+			printerr("", "Unpacked file \"%s\" not found", rbuf);
+		else
+			printerr(strerror(errno), "lstat \"%s\" failed",
+			    rbuf);
+	} else if (tree == 1 || bmode)
+		z->lsiz = st.st_size;
+	else
+		z->rsiz = st.st_size;
+
 	return z;
 }
 
@@ -315,31 +341,24 @@ zpths(struct filediff *f, struct filediff **z2, int tree, size_t *l2, int i,
 	s[l + i] = 0;
 	z->name = s;
 
-	/* stat is done on the extracted file or directory and hence needs
-	 * to be a lstat */
-	if (!fn && lstat(s, &stat1) == -1) {
-		if (errno != ENOENT)
-			printerr(strerror(errno), "stat \"%s\" failed", s);
-		else
-			printerr("", "\"%s\" does not exist", s);
-	}
-
-	if (tree == 1) {
+	if (tree == 1 ||
+	    /* In case of bmode separate unpacked files in directories "l"
+	     * and "r", but use lpath/ltype */
+	    bmode) {
 		s = lpath;
 		l = llen;
 
-		if (!fn) {
-			z->ltype = stat1.st_mode;
-			z->rtype = 0;
-		}
+		if (!fn)
+			z->ltype = S_IFDIR | S_IRWXU;
+
+		z->rtype = 0;
 	} else {
 		s = rpath;
 		l = rlen;
+		z->ltype = 0;
 
-		if (!fn) {
-			z->ltype = 0;
-			z->rtype = stat1.st_mode;
-		}
+		if (!fn)
+			z->rtype = S_IFDIR | S_IRWXU;
 	}
 
 	pthcat(s, l, f->name);
