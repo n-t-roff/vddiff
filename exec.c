@@ -54,7 +54,7 @@ tool(char *name, char *rnam, int tree, int ign_ext)
 	cmd = lbuf + sizeof lbuf;
 	*--cmd = 0;
 
-	if (ign_ext)
+	if (tree == 3 || ign_ext)
 		goto settool;
 
 	while (l) {

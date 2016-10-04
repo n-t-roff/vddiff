@@ -258,7 +258,7 @@ check_ext(char *name, int *pos)
 static struct filediff *
 zcat(char *cmd, struct filediff *f, int tree, int i)
 {
-	char *s;
+	char *s, *s2;
 	size_t l;
 	struct filediff *z;
 	struct stat st;
@@ -266,20 +266,22 @@ zcat(char *cmd, struct filediff *f, int tree, int i)
 	l = 20;
 	s = zpths(f, &z, tree, &l, i, 1);
 	snprintf(s, l, "%s %s > %s", cmd, lbuf, rbuf);
+	s2 = strdup(rbuf); /* altered by sh_cmd() */
 	sh_cmd(s, 0);
 	free(s);
 
-	if (lstat(rbuf, &st) == -1) {
+	if (lstat(s2, &st) == -1) {
 		if (errno == ENOENT)
-			printerr("", "Unpacked file \"%s\" not found", rbuf);
+			printerr("", "Unpacked file \"%s\" not found", s2);
 		else
 			printerr(strerror(errno), "lstat \"%s\" failed",
-			    rbuf);
+			    s2);
 	} else if (tree == 1 || bmode)
 		z->lsiz = st.st_size;
 	else
 		z->rsiz = st.st_size;
 
+	free(s2);
 	return z;
 }
 

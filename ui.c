@@ -961,6 +961,9 @@ action(
 {
 	struct filediff *f1, *f2, *z1 = NULL, *z2 = NULL;
 	char *t1 = NULL, *t2 = NULL;
+	char *err = NULL;
+	static char *typerr = "Not a directory or regular file";
+	static char *typdif = "Different file type";
 
 	if (!db_num)
 		return;
@@ -982,31 +985,24 @@ action(
 				f1 = z2;
 		}
 
-		if (m->ltype) {
-			if (f1->ltype && !f1->rtype) {
-				printerr(NULL, "Both files in same directory");
-				goto ret;
-			}
-
+		if (m->ltype && f1->rtype) {
 			lnam = m->name;
 			ltyp = m->ltype;
 			rnam = f1->name;
 			rtyp = f1->rtype;
 
-		} else if (m->rtype) {
-			if (f1->rtype && !f1->ltype) {
-				printerr(NULL, "Both files in same directory");
-				goto ret;
-			}
-
-			rnam = m->name;
-			rtyp = m->rtype;
+		} else if (f1->ltype && m->rtype) {
 			lnam = f1->name;
 			ltyp = f1->ltype;
+			rnam = m->name;
+			rtyp = m->rtype;
+		} else {
+			err = "Both files are in same directory";
+			goto ret;
 		}
 
 		if ((ltyp & S_IFMT) != (rtyp & S_IFMT)) {
-			printerr(NULL, "Different file type");
+			err = typdif;
 			goto ret;
 		}
 
@@ -1036,16 +1032,20 @@ action(
 		else if (S_ISDIR(f2->rtype)) {
 			t1 = t2 = NULL;
 			enter_dir(f2->name, NULL, 2);
-		} else
-			goto typerr;
+		} else {
+			err = typerr;
+			goto ret;
+		}
 	} else if (!f2->rtype || tree == 1) {
 		if (S_ISREG(f1->ltype) || ign_ext)
 			tool(f1->name, NULL, 1, ign_ext);
 		else if (S_ISDIR(f1->ltype)) {
 			t1 = t2 = NULL;
 			enter_dir(f1->name, NULL, 1);
-		} else
-			goto typerr;
+		} else {
+			err = typerr;
+			goto ret;
+		}
 	} else if ((f1->ltype & S_IFMT) == (f2->rtype & S_IFMT)) {
 		if (ign_ext)
 			tool(f1->name, f2->name, 3, 1);
@@ -1057,10 +1057,12 @@ action(
 		} else if (S_ISDIR(f1->ltype)) {
 			t1 = t2 = NULL;
 			enter_dir(f1->name, f2->name, 3);
-		} else
-			goto typerr;
+		} else {
+			err = typerr;
+			goto ret;
+		}
 	} else
-		printerr(NULL, "Different file type");
+		err = typdif;
 
 ret:
 	if (z1)
@@ -1069,11 +1071,8 @@ ret:
 	if (z2)
 		free_zdir(z2, t2);
 
-	return;
-
-typerr:
-	printerr(NULL, "Not a directory or regular file");
-	goto ret; /* Oops, did use assembler too many years */
+	if (err)
+		printerr(NULL, err);
 }
 
 static void
@@ -1652,10 +1651,12 @@ set_mark(void)
 	f = db_list[top_idx + curs];
 	mode_t mode = f->ltype ? f->ltype : f->rtype;
 
+	/*
 	if (f->ltype && f->rtype) {
 		printerr(NULL, "Both files present");
 		return;
 	}
+	*/
 
 	if (!S_ISDIR(mode) && !(S_ISREG(mode))) {
 		printerr(NULL, "Not a directory or regular file");
