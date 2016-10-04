@@ -94,7 +94,9 @@ fs_rename(int tree)
 exit:
 	free(s);
 	lpath[llen] = 0;
-	rpath[rlen] = 0;
+
+	if (!bmode)
+		rpath[rlen] = 0;
 }
 
 void
@@ -179,7 +181,9 @@ fs_chmod(int tree)
 	rebuild_db();
 exit:
 	lpath[llen] = 0;
-	rpath[rlen] = 0;
+
+	if (!bmode)
+		rpath[rlen] = 0;
 }
 
 void
@@ -259,7 +263,9 @@ fs_chown(int tree, int op)
 	rebuild_db();
 exit:
 	lpath[llen] = 0;
-	rpath[rlen] = 0;
+
+	if (!bmode)
+		rpath[rlen] = 0;
 }
 
 void
@@ -330,7 +336,9 @@ fs_rm(int tree, char *txt, int num)
 
 cancel:
 	lpath[llen] = 0;
-	rpath[rlen] = 0;
+
+	if (!bmode)
+		rpath[rlen] = 0;
 }
 
 void
@@ -407,7 +415,10 @@ void
 rebuild_db(void)
 {
 	lpath[llen] = 0;
-	rpath[rlen] = 0;
+
+	if (!bmode)
+		rpath[rlen] = 0;
+
 	mark = NULL; /* pointer is freed in next line */
 	diff_db_free();
 	build_diff_db(bmode ? 1 : 3);

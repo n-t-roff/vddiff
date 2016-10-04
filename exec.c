@@ -98,8 +98,11 @@ settool:
 	l = l0 + (llen + ln + rlen + rn) * 2 + 3 + l1 + l2;
 	cmd = malloc(l);
 	memcpy(cmd, *toolp, l0);
+
 	lpath[llen] = 0; /* in add_path() used without len */
-	rpath[rlen] = 0;
+
+	if (!bmode)
+		rpath[rlen] = 0;
 
 	if (!l1 || tree != 3) {
 		if (tree & 1)
@@ -391,7 +394,9 @@ open_sh(int tree)
 			return;
 	}
 
-	if (tree == 2 || ((tree & 2) && db_num && f->rtype)) {
+	if (bmode)
+		s = rpath;
+	else if (tree == 2 || ((tree & 2) && db_num && f->rtype)) {
 		rpath[rlen] = 0;
 		s = rpath;
 	} else {
