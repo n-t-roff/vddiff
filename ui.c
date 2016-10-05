@@ -98,8 +98,6 @@ static struct ui_state *ui_stack;
 struct filediff *mark;
 static char *dlpth, *drpth, *dcwd;
 static struct history sh_cmd_hist;
-static short scrollen = 1;
-static short wstat_dirty;
 
 #ifdef NCURSES_MOUSE_VERSION
 static void proc_mevent(void);
@@ -111,6 +109,10 @@ static void help_mevent(void);
 
 static MEVENT mevent;
 #endif
+
+static bool scrollen = TRUE;
+static bool wstat_dirty;
+static bool global_mark;
 
 void
 build_ui(void)
@@ -985,7 +987,14 @@ action(
 				f1 = z2;
 		}
 
-		if (m->ltype && f1->rtype) {
+		if (bmode) {
+			/* Take all files from left side. */
+			lnam = m->name;
+			ltyp = m->ltype;
+			rnam = f1->name;
+			rtyp = f1->ltype;
+
+		} else if (m->ltype && f1->rtype) {
 			lnam = m->name;
 			ltyp = m->ltype;
 			rnam = f1->name;
@@ -1001,16 +1010,29 @@ action(
 			goto ret;
 		}
 
-		if ((ltyp & S_IFMT) != (rtyp & S_IFMT)) {
+		if (!bmode && (ltyp & S_IFMT) != (rtyp & S_IFMT)) {
 			err = typdif;
 			goto ret;
 		}
 
-		if (S_ISREG(ltyp) || ign_ext)
+		if (S_ISREG(rtyp) || ign_ext)
 			tool(lnam, rnam, 3, ign_ext);
-		else if (S_ISDIR(ltyp)) {
-			t1 = t2 = NULL;
-			enter_dir(lnam, rnam, 3);
+
+		else if (S_ISDIR(rtyp)) {
+			t2 = NULL;
+
+			if (bmode) {
+				enter_dir(rnam, NULL, 1);
+
+				if (z1) {
+					t1 = strdup(lnam);
+					/* remove "/[lr]" */
+					t1[strlen(t1) - 2] = 0;
+				}
+			} else {
+				t1 = NULL;
+				enter_dir(lnam, rnam, 3);
+			}
 		}
 
 		goto ret;
@@ -1887,7 +1909,7 @@ printerr(char *s2, char *s1, ...)
 {
 	va_list ap;
 
-	wstat_dirty = 1;
+	wstat_dirty = TRUE;
 	werase(wstat);
 	wmove(wstat, s2 ? 0 : 1, 0);
 	va_start(ap, s1);
@@ -1909,7 +1931,7 @@ dialog(char *quest, char *answ, char *fmt, ...)
 	int c, c2;
 	char *s;
 
-	wstat_dirty = 1;
+	wstat_dirty = TRUE;
 	werase(wstat);
 	wmove(wstat, 0, 0);
 	va_start(ap, fmt);

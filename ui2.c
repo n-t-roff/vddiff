@@ -461,10 +461,10 @@ ret:
 
 	switch (val) {
 	case 0:
-		printerr(NULL, "No diff between %s and %s", olnam, ornam);
+		printerr(NULL, "Equal: %s and %s", olnam, ornam);
 		break;
 	case 1:
-		printerr(NULL, "Files %s and %s differ", olnam, ornam);
+		printerr(NULL, "Different: %s and %s", olnam, ornam);
 		break;
 	default:
 		;

@@ -250,7 +250,7 @@ exec_tool(struct tool *t, char *name, char *rnam, int tree)
 	}
 
 	if (tree & 1) {
-		if (*name == '/') {
+		if (bmode || *name == '/') {
 			*a++ = name;
 			bg = 0;
 		} else {
@@ -260,7 +260,7 @@ exec_tool(struct tool *t, char *name, char *rnam, int tree)
 	}
 
 	if (tree & 2) {
-		if (*rnam == '/') {
+		if (bmode || *rnam == '/') {
 			*a++ = rnam;
 			bg = 0;
 		} else {
