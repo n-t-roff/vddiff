@@ -440,14 +440,16 @@ bindiff(void)
 		goto ret;
 	}
 
-	if (*lnam != '/') {
-		pthcat(lpath, llen, lnam);
-		lnam = lpath;
-	}
+	if (!bmode) {
+		if (*lnam != '/') {
+			pthcat(lpath, llen, lnam);
+			lnam = lpath;
+		}
 
-	if (*rnam != '/') {
-		pthcat(rpath, rlen, rnam);
-		rnam = rpath;
+		if (*rnam != '/') {
+			pthcat(rpath, rlen, rnam);
+			rnam = rpath;
+		}
 	}
 
 	val = cmp_file(lnam, lsiz, rnam, rsiz);
