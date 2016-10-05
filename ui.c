@@ -204,6 +204,7 @@ next_key:
 			goto next_key;
 		}
 
+		/* case '1' see below */
 		for (i = '2'; i <= '9'; i++)
 			if (c == i) {
 				num = i - '0';
@@ -216,6 +217,8 @@ next_key:
 			proc_mevent();
 			break;
 #endif
+		case '1':
+			break;
 		case 'q':
 			return;
 		case KEY_DOWN:
