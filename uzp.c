@@ -161,12 +161,16 @@ unpack(struct filediff *f, int tree, char **tmp, int type)
 	enum uz_id id;
 	struct filediff *z;
 	int i;
+	char *s;
 
 	if ((tree == 1 && !S_ISREG(f->ltype)) ||
 	    (tree == 2 && !S_ISREG(bmode ? f->ltype : f->rtype)))
 		return NULL;
 
-	if ((id = check_ext(f->name, &i)) == UZ_NONE)
+	s = f->name ? f->name : bmode ? gl_mark : tree == 1 ? mark_lnam :
+	    mark_rnam;
+
+	if ((id = check_ext(s, &i)) == UZ_NONE)
 		return NULL;
 
 	switch (id) {
@@ -316,12 +320,15 @@ static char *
 zpths(struct filediff *f, struct filediff **z2, int tree, size_t *l2, int i,
     int fn)
 {
-	char *s;
+	char *s, *s2;
 	size_t l;
 	struct filediff *z;
 
 	if (!fn)
 		i = 0;
+
+	s2 = f->name ? f->name : bmode ? gl_mark : tree == 1 ? mark_lnam :
+	    mark_rnam;
 
 	z = malloc(sizeof(struct filediff));
 	*z2 = z;
@@ -337,7 +344,7 @@ zpths(struct filediff *f, struct filediff **z2, int tree, size_t *l2, int i,
 
 	if (fn) {
 		s[l++] = '/';
-		memcpy(s + l, f->name, i);
+		memcpy(s + l, s2, i);
 	}
 
 	s[l + i] = 0;
@@ -363,7 +370,7 @@ zpths(struct filediff *f, struct filediff **z2, int tree, size_t *l2, int i,
 			z->rtype = S_IFDIR | S_IRWXU;
 	}
 
-	pthcat(s, l, f->name);
+	pthcat(s, l, s2);
 
 	if (l2) {
 		shell_quote(lbuf, s, sizeof lbuf);

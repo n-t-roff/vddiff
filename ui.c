@@ -54,7 +54,7 @@ static void curs_down(void);
 static void curs_up(void);
 static void disp_curs(int);
 static void disp_line(unsigned, unsigned, int);
-static void push_state(void);
+static void push_state(bool, bool);
 static void pop_state(void);
 static void enter_dir(char *, char *, int);
 static void help(void);
@@ -71,6 +71,7 @@ static void help_down(void);
 static void help_up(void);
 static void set_mark(void);
 static void clr_mark(void);
+static void mark_global(void);
 static void disp_mark(void);
 static void yank_name(int);
 
@@ -96,6 +97,7 @@ WINDOW *wstat;
 static struct ui_state *ui_stack;
 /* Line scroll enable. Else only full screen is scrolled */
 struct filediff *mark;
+char *gl_mark, *mark_lnam, *mark_rnam;
 static char *dlpth, *drpth, *dcwd;
 static struct history sh_cmd_hist;
 
@@ -112,7 +114,6 @@ static MEVENT mevent;
 
 static bool scrollen = TRUE;
 static bool wstat_dirty;
-static bool global_mark;
 
 void
 build_ui(void)
@@ -989,48 +990,55 @@ action(
 
 		if (bmode) {
 			/* Take all files from left side. */
-			lnam = m->name;
+			lnam = m->name ? m->name : gl_mark;
 			ltyp = m->ltype;
 			rnam = f1->name;
 			rtyp = f1->ltype;
 
-		} else if (m->ltype && f1->rtype) {
-			lnam = m->name;
+		} else if (m->ltype && f1->rtype && (tree & 2)) {
+			lnam = m->name ? m->name : mark_lnam;
 			ltyp = m->ltype;
 			rnam = f1->name;
 			rtyp = f1->rtype;
 
-		} else if (f1->ltype && m->rtype) {
+		} else if (f1->ltype && m->rtype && (tree & 1)) {
 			lnam = f1->name;
 			ltyp = f1->ltype;
-			rnam = m->name;
+			rnam = m->name ? m->name : mark_rnam;
 			rtyp = m->rtype;
 		} else {
 			err = "Both files are in same directory";
 			goto ret;
 		}
 
-		if (!bmode && (ltyp & S_IFMT) != (rtyp & S_IFMT)) {
+		if ((ltyp & S_IFMT) != (rtyp & S_IFMT) &&
+		    !S_ISDIR(ltyp) && !S_ISDIR(rtyp)) {
 			err = typdif;
 			goto ret;
 		}
 
-		if (S_ISREG(rtyp) || ign_ext)
+		if (ign_ext || (S_ISREG(ltyp) && S_ISREG(rtyp)))
 			tool(lnam, rnam, 3, ign_ext);
 
-		else if (S_ISDIR(rtyp)) {
-			t2 = NULL;
-
+		else if (S_ISDIR(ltyp) || S_ISDIR(rtyp)) {
 			if (bmode) {
+				t2 = NULL;
 				enter_dir(rnam, NULL, 1);
 
-				if (z1) {
+				if (S_ISDIR(ltyp) && z1) {
 					t1 = strdup(lnam);
 					/* remove "/[lr]" */
 					t1[strlen(t1) - 2] = 0;
 				}
-			} else {
+			} else if (!S_ISDIR(ltyp)) {
+				t2 = NULL;
+				enter_dir(rnam, NULL, 2);
+
+			} else if (!S_ISDIR(rtyp)) {
 				t1 = NULL;
+				enter_dir(lnam, NULL, 1);
+			} else {
+				t1 = t2 = NULL;
 				enter_dir(lnam, rnam, 3);
 			}
 		}
@@ -1670,6 +1678,9 @@ set_mark(void)
 	if (!db_num)
 		return;
 
+	if (mark)
+		clr_mark();
+
 	f = db_list[top_idx + curs];
 	mode_t mode = f->ltype ? f->ltype : f->rtype;
 
@@ -1694,7 +1705,7 @@ disp_mark(void)
 {
 	werase(wstat);
 	wattrset(wstat, A_REVERSE);
-	mvwaddstr(wstat, 1, 0, mark->name);
+	mvwaddstr(wstat, 1, 0, gl_mark ? gl_mark : mark->name);
 	wattrset(wstat, A_NORMAL);
 	wrefresh(wstat);
 }
@@ -1702,9 +1713,62 @@ disp_mark(void)
 static void
 clr_mark(void)
 {
+	if (gl_mark) {
+		free(gl_mark);
+		free(mark_lnam);
+		free(mark_rnam);
+		free(mark);
+		gl_mark = NULL;
+	}
+
 	mark = NULL;
 	werase(wstat);
 	wrefresh(wstat);
+}
+
+static void
+mark_global(void)
+{
+	struct filediff *m;
+
+	m = malloc(sizeof(struct filediff));
+	*m = *mark;
+	mark = m;
+
+	if (bmode) {
+		pthcat(lpath, llen, m->name);
+
+		if (!(gl_mark = realpath(lpath, NULL))) {
+			printerr(strerror(errno), "realpath \"%s\" failed",
+			    lpath);
+			free(m);
+			mark = NULL;
+			return;
+		}
+
+		lpath[llen] = 0;
+		mark_lnam = NULL;
+		mark_rnam = NULL;
+	} else {
+		if (m->ltype) {
+			pthcat(lpath, llen, m->name);
+			gl_mark = strdup(PWD);
+			mark_lnam = strdup(lpath);
+			lpath[llen] = 0;
+		}
+
+		if (m->rtype) {
+			pthcat(rpath, rlen, m->name);
+
+			if (!m->ltype)
+				gl_mark = strdup(RPWD);
+
+			mark_rnam = strdup(rpath);
+			rpath[rlen] = 0;
+		}
+	}
+
+	m->name = NULL;
 }
 
 #define YANK(x) \
@@ -1769,15 +1833,31 @@ center(unsigned idx)
 }
 
 static void
-push_state(void)
+push_state(bool lsave, bool rsave)
 {
 	struct ui_state *st = malloc(sizeof(struct ui_state));
 	diff_db_store(st);
 	st->llen    = llen;
 	st->rlen    = rlen;
+
+	if (!lsave)
+		st->lpth = NULL;
+	else {
+		st->lpth = strdup(lpath);
+		*lpath = 0;
+		llen = 0;
+	}
+
+	if (!rsave)
+		st->rpth = NULL;
+	else {
+		st->rpth = strdup(rpath);
+		*rpath = 0;
+		rlen = 0;
+	}
+
 	st->top_idx = top_idx;  top_idx = 0;
 	st->curs    = curs;     curs    = 0;
-	st->mark    = mark;     mark    = NULL;
 	st->next    = ui_stack;
 	ui_stack    = st;
 }
@@ -1792,12 +1872,24 @@ pop_state(void)
 		return;
 	}
 
-	ui_stack = st->next;
 	llen     = st->llen;
 	rlen     = st->rlen;
+
+	if (st->lpth) {
+		memcpy(lpath, st->lpth, llen);
+		lpath[llen] = 0;
+		free(st->lpth);
+	}
+
+	if (st->rpth) {
+		memcpy(rpath, st->rpth, rlen);
+		rpath[rlen] = 0;
+		free(st->rpth);
+	}
+
 	top_idx  = st->top_idx;
 	curs     = st->curs;
-	mark     = st->mark;
+	ui_stack = st->next;
 	lpath[llen] = 0; /* For 'p' (pwd) */
 	diff_db_restore(st);
 	free(st);
@@ -1807,8 +1899,12 @@ pop_state(void)
 static void
 enter_dir(char *name, char *rnam, int tree)
 {
-	if (!bmode && *name != '/') {
-		push_state();
+	if (!bmode && (rnam || *name != '/')) {
+		if (mark && !gl_mark)
+			mark_global();
+
+		push_state(name && *name == '/',
+		           rnam && *rnam == '/');
 		scan_subdir(name, rnam, tree);
 	} else {
 		unsigned *uv;
@@ -1820,9 +1916,7 @@ enter_dir(char *name, char *rnam, int tree)
 		if (bmode < 0 && *name == '/')
 			bmode--;
 		else if (!bmode) {
-			push_state();
-			dlpth = strdup(lpath);
-			drpth = strdup(rpath);
+			push_state(1, 1);
 			bmode--;
 			*lpath = '.';
 			lpath[1] = 0;
@@ -1833,6 +1927,9 @@ enter_dir(char *name, char *rnam, int tree)
 
 			dcwd = strdup(rpath);
 		}
+
+		if (mark && !gl_mark)
+			mark_global();
 
 		db_set_curs(rpath, top_idx, curs);
 		n = NULL; /* flag */
@@ -1861,8 +1958,6 @@ enter_dir(char *name, char *rnam, int tree)
 
 		if (n && bmode == -1) {
 			bmode = 0;
-			memcpy(lpath, dlpth, strlen(dlpth) + 1);
-			memcpy(rpath, drpth, strlen(drpth) + 1);
 
 			if (chdir(dcwd) == -1)
 				printerr(strerror(errno),
@@ -1884,7 +1979,7 @@ enter_dir(char *name, char *rnam, int tree)
 
 			top_idx = 0;
 			curs = 0;
-			mark = NULL;
+
 			diff_db_free();
 			scan_subdir(NULL, NULL, 1);
 		}

@@ -1,10 +1,10 @@
 struct ui_state {
+	char *lpth, *rpth;
 	size_t llen, rlen;
 	void *bst;
 	unsigned num;
 	struct filediff **list;
 	unsigned top_idx, curs;
-	struct filediff *mark;
 	struct ui_state *next;
 };
 
@@ -27,6 +27,7 @@ extern unsigned top_idx, curs, statw;
 extern WINDOW *wlist;
 extern WINDOW *wstat;
 extern struct filediff *mark;
+extern char *gl_mark, *mark_lnam, *mark_rnam;
 
 #define FKEY_NUM 12
 #ifdef HAVE_CURSES_WCH

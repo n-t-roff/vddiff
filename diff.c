@@ -404,6 +404,9 @@ dir_scan_end:
 void
 scan_subdir(char *name, char *rnam, int tree)
 {
+	if (!rnam)
+		rnam = name;
+
 	if (tree & 1) {
 		if (name)
 			llen = pthcat(lpath, llen, name);
@@ -412,7 +415,7 @@ scan_subdir(char *name, char *rnam, int tree)
 	}
 
 	if (tree & 2)
-		rlen = pthcat(rpath, rlen, rnam ? rnam : name);
+		rlen = pthcat(rpath, rlen, rnam);
 
 	build_diff_db(tree);
 }
