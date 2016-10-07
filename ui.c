@@ -55,8 +55,8 @@ static void curs_up(void);
 static void disp_curs(int);
 static void disp_line(unsigned, unsigned, int);
 static void push_state(bool, bool);
-static void pop_state(void);
-static void enter_dir(char *, char *, int);
+static void pop_state(short);
+static void enter_dir(char *, char *);
 static void help(void);
 static char *type_name(mode_t);
 static void ui_resize(void);
@@ -98,7 +98,6 @@ static struct ui_state *ui_stack;
 /* Line scroll enable. Else only full screen is scrolled */
 struct filediff *mark;
 char *gl_mark, *mark_lnam, *mark_rnam;
-static char *dlpth, *drpth, *dcwd;
 static struct history sh_cmd_hist;
 
 #ifdef NCURSES_MOUSE_VERSION
@@ -171,6 +170,11 @@ build_ui(void)
 	build_diff_db(bmode ? 1 : 3);
 	disp_list();
 	ui_ctrl();
+
+	/* remove tmp_dirs */
+	while (ui_stack)
+		pop_state(0);
+
 	/* before diff_db_free() since uz_exit() calls exec_cmd() which
 	 * calls disp_list() which needs diff_db */
 	uz_exit();
@@ -253,34 +257,35 @@ next_key:
 			c = 0;
 
 			if (bmode)
-				enter_dir("..", NULL, 1);
+				enter_dir("..", NULL);
 			else
-				pop_state();
+				pop_state(1);
 
 			break;
 		case '\n':
-			c = 0;
-
 			if (*key == 'z') {
-				if (!curs)
+				if (!curs) {
+					c = 0;
 					break;
+				}
 
 				top_idx += curs;
 				curs = 0;
 				disp_list();
+				c = 0;
 				break;
 			}
 
 			/* fall through */
 		case KEY_RIGHT:
-			c = 0;
-
 			if (!db_num) {
 				no_file();
+				c = 0;
 				break;
 			}
 
-			action(0, 3);
+			action(0, 3, c == '\n' ? 1 : 0);
+			c = 0;
 			break;
 		case 'b':
 			c = 0;
@@ -441,7 +446,7 @@ next_key:
 				goto next_key;
 			case 'o':
 				c = 0;
-				action(0, 1);
+				action(0, 1, 0);
 				goto next_key;
 			case 'e':
 				goto next_key;
@@ -489,7 +494,7 @@ next_key:
 				goto next_key;
 			case 'o':
 				c = 0;
-				action(0, 2);
+				action(0, 2, 0);
 				goto next_key;
 			case 'e':
 				goto next_key;
@@ -946,7 +951,7 @@ proc_mevent(void)
 		wrefresh(wstat);
 
 		if (mevent.bstate & BUTTON1_DOUBLE_CLICKED)
-			action(0, 3);
+			action(0, 3, 0);
 # if NCURSES_MOUSE_VERSION >= 2
 	} else if (mevent.bstate & BUTTON4_PRESSED) {
 		scroll_up(3);
@@ -962,8 +967,11 @@ action(
     /* Used by function key starting with "$ ".
      * Ignore file type and file name extension, just use plain file name.
      * (Don't enter directories!) */
-    int ign_ext,
-    int tree)
+    short ign_ext,
+    short tree,
+    /* 0: <RIGHT> or double click
+     * 1: <ENTER> */
+    unsigned short act)
 {
 	struct filediff *f1, *f2, *z1 = NULL, *z2 = NULL;
 	char *t1 = NULL, *t2 = NULL;
@@ -976,7 +984,7 @@ action(
 
 	f1 = f2 = db_list[top_idx + curs];
 
-	if (mark) {
+	if (mark && act) {
 		struct filediff *m = mark;
 		mode_t ltyp = 0, rtyp = 0;
 		char *lnam, *rnam;
@@ -1026,7 +1034,7 @@ action(
 		else if (S_ISDIR(ltyp) || S_ISDIR(rtyp)) {
 			if (bmode) {
 				t2 = NULL;
-				enter_dir(rnam, NULL, 1);
+				enter_dir(rnam, NULL);
 
 				if (S_ISDIR(ltyp) && z1) {
 					t1 = strdup(lnam);
@@ -1035,14 +1043,17 @@ action(
 				}
 			} else if (!S_ISDIR(ltyp)) {
 				t2 = NULL;
-				enter_dir(rnam, NULL, 2);
+				enter_dir(NULL, rnam);
 
 			} else if (!S_ISDIR(rtyp)) {
 				t1 = NULL;
-				enter_dir(lnam, NULL, 1);
+				enter_dir(lnam, NULL);
 			} else {
+				/* If t<n> == NULL tmpdir is not removed.
+				 * It must not be removed before it is left
+				 * with "cd .." later. */
 				t1 = t2 = NULL;
-				enter_dir(lnam, rnam, 3);
+				enter_dir(lnam, rnam);
 			}
 		}
 
@@ -1064,7 +1075,7 @@ action(
 			tool(f2->name, NULL, 2, ign_ext);
 		else if (S_ISDIR(f2->rtype)) {
 			t1 = t2 = NULL;
-			enter_dir(f2->name, NULL, 2);
+			enter_dir(NULL, f2->name);
 		} else {
 			err = typerr;
 			goto ret;
@@ -1074,7 +1085,7 @@ action(
 			tool(f1->name, NULL, 1, ign_ext);
 		else if (S_ISDIR(f1->ltype)) {
 			t1 = t2 = NULL;
-			enter_dir(f1->name, NULL, 1);
+			enter_dir(f1->name, NULL);
 		} else {
 			err = typerr;
 			goto ret;
@@ -1089,7 +1100,7 @@ action(
 				tool(f1->name, NULL, 1, 0);
 		} else if (S_ISDIR(f1->ltype)) {
 			t1 = t2 = NULL;
-			enter_dir(f1->name, f2->name, 3);
+			enter_dir(f1->name, f2->name);
 		} else {
 			err = typerr;
 			goto ret;
@@ -1744,8 +1755,7 @@ mark_global(void)
 		if (!(gl_mark = realpath(lpath, NULL))) {
 			printerr(strerror(errno), "realpath \"%s\" failed",
 			    lpath);
-			free(m);
-			mark = NULL;
+			clr_mark();
 			return;
 		}
 
@@ -1753,9 +1763,20 @@ mark_global(void)
 		mark_lnam = NULL;
 		mark_rnam = NULL;
 	} else {
+		if (!*lpath)
+			m->ltype = 0; /* tmp dir left */
+
+		if (!*rpath)
+			m->rtype = 0;
+
+		if (!m->ltype && !m->rtype) {
+			clr_mark();
+			return;
+		}
+
 		if (m->ltype) {
 			pthcat(lpath, llen, m->name);
-			gl_mark = strdup(PWD);
+			gl_mark = strdup(lpath);
 			mark_lnam = strdup(lpath);
 			lpath[llen] = 0;
 		}
@@ -1764,7 +1785,7 @@ mark_global(void)
 			pthcat(rpath, rlen, m->name);
 
 			if (!m->ltype)
-				gl_mark = strdup(RPWD);
+				gl_mark = strdup(rpath);
 
 			mark_rnam = strdup(rpath);
 			rpath[rlen] = 0;
@@ -1840,8 +1861,8 @@ push_state(bool lsave, bool rsave)
 {
 	struct ui_state *st = malloc(sizeof(struct ui_state));
 	diff_db_store(st);
-	st->llen    = llen;
-	st->rlen    = rlen;
+	st->llen = llen;
+	st->rlen = rlen;
 
 	if (!lsave)
 		st->lpth = NULL;
@@ -1866,26 +1887,70 @@ push_state(bool lsave, bool rsave)
 }
 
 static void
-pop_state(void)
+pop_state(
+    /* 1: Normal mode
+     * 0: Cleanup mode */
+    short mode)
 {
 	struct ui_state *st = ui_stack;
+	char *s;
 
 	if (!st) {
 		printerr(NULL, "At top directory");
 		return;
 	}
 
-	llen     = st->llen;
-	rlen     = st->rlen;
+	if (st->lpth) {
+		lpath[llen - 2] = 0;
+		s = strdup(lpath);
+		rmtmpdirs(s);
+		*lpath = 0;
+
+		if (mode && gl_mark && mark_lnam && lstat(mark_lnam, &stat1)
+		    == -1) {
+			free(mark_lnam);
+			mark_lnam = NULL;
+		}
+	}
+
+	if (st->rpth) {
+		rpath[rlen - 2] = 0;
+		s = strdup(rpath);
+		rmtmpdirs(s);
+		*rpath = 0;
+
+		if (mode && gl_mark && mark_rnam && lstat(mark_rnam, &stat1)
+		    == -1) {
+			free(mark_rnam);
+			mark_rnam = NULL;
+		}
+	}
+
+	if (mark) {
+		if (mode) {
+			if (!gl_mark)
+				mark_global();
+			else if (!mark_lnam && !mark_rnam)
+				clr_mark();
+		} else
+			clr_mark();
+	}
+
+	llen = st->llen;
+	rlen = st->rlen;
 
 	if (st->lpth) {
-		memcpy(lpath, st->lpth, llen);
+		if (mode)
+			memcpy(lpath, st->lpth, llen);
+
 		lpath[llen] = 0;
 		free(st->lpth);
 	}
 
 	if (st->rpth) {
-		memcpy(rpath, st->rpth, rlen);
+		if (mode)
+			memcpy(rpath, st->rpth, rlen);
+
 		rpath[rlen] = 0;
 		free(st->rpth);
 	}
@@ -1896,19 +1961,22 @@ pop_state(void)
 	lpath[llen] = 0; /* For 'p' (pwd) */
 	diff_db_restore(st);
 	free(st);
-	disp_list();
+
+	if (mode)
+		disp_list();
 }
 
 static void
-enter_dir(char *name, char *rnam, int tree)
+enter_dir(char *name, char *rnam)
 {
-	if (!bmode && (rnam || *name != '/')) {
-		if (mark && !gl_mark)
-			mark_global();
+	if (mark && !gl_mark)
+		mark_global();
 
+	if (!bmode) {
 		push_state(name && *name == '/',
 		           rnam && *rnam == '/');
-		scan_subdir(name, rnam, tree);
+		scan_subdir(name, rnam,
+		    (name ? 1 : 0) | (rnam ? 2 : 0));
 	} else {
 		unsigned *uv;
 #ifdef HAVE_LIBAVLBST
@@ -1916,24 +1984,6 @@ enter_dir(char *name, char *rnam, int tree)
 #else
 		struct ptr_db_ent *n;
 #endif
-		if (bmode < 0 && *name == '/')
-			bmode--;
-		else if (!bmode) {
-			push_state(1, 1);
-			bmode--;
-			*lpath = '.';
-			lpath[1] = 0;
-			llen = 1;
-
-			if (!getcwd(rpath, sizeof rpath))
-				printerr(strerror(errno), "getcwd failed");
-
-			dcwd = strdup(rpath);
-		}
-
-		if (mark && !gl_mark)
-			mark_global();
-
 		db_set_curs(rpath, top_idx, curs);
 		n = NULL; /* flag */
 
@@ -1959,33 +2009,20 @@ enter_dir(char *name, char *rnam, int tree)
 		} else
 			n = NULL;
 
-		if (n && bmode == -1) {
-			bmode = 0;
+		if (n && bmode < 0)
+			bmode++;
 
-			if (chdir(dcwd) == -1)
-				printerr(strerror(errno),
-				    "chdir \"%s\" failed", dcwd);
-
-			free(dlpth);
-			free(drpth);
-			free(dcwd);
-			pop_state();
-		} else {
-			if (n && bmode < 0)
-				bmode++;
-
-			if (chdir(name) == -1) {
-				printerr(strerror(errno),
-				    "chdir \"%s\" failed", name);
-				return;
-			}
-
-			top_idx = 0;
-			curs = 0;
-
-			diff_db_free();
-			scan_subdir(NULL, NULL, 1);
+		if (chdir(name) == -1) {
+			printerr(strerror(errno),
+			    "chdir \"%s\" failed", name);
+			return;
 		}
+
+		top_idx = 0;
+		curs = 0;
+
+		diff_db_free();
+		scan_subdir(NULL, NULL, 1);
 
 		if (n) {
 			rnam[strlen(rnam) - 2] = 0; /* remove "/[lr]" */

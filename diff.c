@@ -605,7 +605,8 @@ pthcat(char *p, size_t l, char *n)
 		return l;
 	}
 
-	if (p[l-1] != '/')
+	/* For archives push_state() sets l = 0 */
+	if (l && p[l-1] != '/')
 		p[l++] = '/';
 
 	memcpy(p + l, n, ln + 1);

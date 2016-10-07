@@ -14,7 +14,7 @@ int dialog(char *, char *, char *, ...);
 void disp_list(void);
 void center(unsigned);
 void no_file(void);
-void action(int, int);
+void action(short, short, unsigned short);
 
 extern short color;
 extern short color_leftonly ,

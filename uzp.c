@@ -321,7 +321,7 @@ zpths(struct filediff *f, struct filediff **z2, int tree, size_t *l2, int i,
     int fn)
 {
 	char *s, *s2;
-	size_t l;
+	size_t l, l3;
 	struct filediff *z;
 
 	if (!fn)
@@ -337,14 +337,19 @@ zpths(struct filediff *f, struct filediff **z2, int tree, size_t *l2, int i,
 	s = malloc(l + 3 + i);
 	memcpy(s, tmp_dir, l);
 
-	if (!fn) /* else needed in ui.c */
+	if (!fn) {
 		free(tmp_dir);
+		tmp_dir = NULL;
+	}
 
 	s[l++] = tree == 1 ? 'l' : 'r';
 
 	if (fn) {
 		s[l++] = '/';
-		memcpy(s + l, s2, i);
+		l3 = strlen(s2);
+
+		while (l3 && s2[l3 - 1] != '/') l3--;
+		memcpy(s + l, s2 + l3, i - l3);
 	}
 
 	s[l + i] = 0;
@@ -370,7 +375,10 @@ zpths(struct filediff *f, struct filediff **z2, int tree, size_t *l2, int i,
 			z->rtype = S_IFDIR | S_IRWXU;
 	}
 
-	pthcat(s, l, s2);
+	if (*s2 == '/')
+		s = s2;
+	else
+		pthcat(s, l, s2);
 
 	if (l2) {
 		shell_quote(lbuf, s, sizeof lbuf);

@@ -129,9 +129,9 @@ main(int argc, char **argv)
 			set_tool(&difftool, strdup(optarg), 0);
 			break;
 		case 'V':
-			printf("%s %s\n\tusing "
+			printf("%s %s\n\tCompile option(s): "
 #ifdef HAVE_CURSES_WCH
-			    "wide char curses and "
+			    "wide char curses, "
 #endif
 #ifdef HAVE_LIBAVLBST
 			    "libavlbst"
