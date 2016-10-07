@@ -323,12 +323,17 @@ Rename file, which must be present in one tree only.
 Rename file in first tree.
 .It Dq Li ern
 Rename file in second tree.
-.It Dq Li ep
+.It Oo Ar n Oc Ns Dq Li ep
 Change permissions of file, which must be present in one tree only.
-The command is ignred for symbolic links.
-.It Dq Li elp
+The command is ignored for symbolic links.
+If decimal digit
+.Ar n
+is given, the mode of
+.Ar n
+files starting from the current selection is set.
+.It Oo Ar n Oc Ns Dq Li elp
 Change permissions of file in first tree.
-.It Dq Li erp
+.It Oo Ar n Oc Ns Dq Li erp
 Change permissions of file in second tree.
 .It Dq Li eu
 Change owner of file, which must be present in one tree only.

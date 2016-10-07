@@ -47,6 +47,7 @@ static void cp_file(void);
 static int creatdir(int);
 static void cp_link(void);
 static void cp_reg(void);
+static int ask_for_perms(mode_t *);
 
 static char *pth1, *pth2;
 static size_t len1, len2;
@@ -120,82 +121,64 @@ exit:
 }
 
 void
-fs_chmod(int tree)
+fs_chmod(int tree, int num)
 {
 	struct filediff *f;
-	char *s;
-	int i, c;
 	mode_t m;
+	unsigned short u;
+	bool have_mode = FALSE;
 
 	if (!db_num)
 		return;
 
-	f = db_list[top_idx + curs];
-
-	/* "en" is not allowed if both files are present */
-	if ((tree == 3 && f->ltype && f->rtype) ||
-	    (tree == 1 && !f->ltype) ||
-	    (tree == 2 && !f->rtype))
+	if (num > 1 && dialog("[y] yes, [other key] no", NULL,
+	    "Change mode of %d files?", num) != 'y')
 		return;
 
-	if (edit)
-		return;
+	u = top_idx + curs;
 
-	if ((tree & 2) && f->rtype) {
-		if (S_ISLNK(f->rtype))
-			return;
+	while (num-- && u < db_num) {
+		f = db_list[u++];
 
-		pth1 = rpath;
-		len1 = rlen;
-		m = f->rtype;
-	} else {
-		if (S_ISLNK(f->ltype))
-			return;
+		/* "en" is not allowed if both files are present */
+		if ((tree == 3 && f->ltype && f->rtype) ||
+		    (tree == 1 && !f->ltype) ||
+		    (tree == 2 && !f->rtype))
+			continue;
 
-		pth1 = lpath;
-		len1 = llen;
-		m = f->ltype;
-	}
+		if ((tree & 2) && f->rtype) {
+			if (S_ISLNK(f->rtype))
+				continue;
 
-	pthcat(pth1, len1, f->name);
-	snprintf(lbuf, sizeof lbuf, "%04o", (unsigned)m & 07777);
-	s = strdup(lbuf);
+			pth1 = rpath;
+			len1 = rlen;
 
-	if (ed_dialog("Enter new permissions (<ESC> to cancel):", s, NULL, 0,
-	    NULL)) {
-		free(s);
-		return;
-	}
+			if (!have_mode)
+				m = f->rtype;
+		} else {
+			if (S_ISLNK(f->ltype))
+				continue;
 
-	free(s);
+			pth1 = lpath;
+			len1 = llen;
 
-	for (m = 0, i = 0; ; i++) {
-		if (!(c = rbuf[i])) {
-			if (!i) {
-				printerr(NULL, "No input");
+			if (!have_mode)
+				m = f->ltype;
+		}
+
+		if (!have_mode) {
+			if (ask_for_perms(&m))
 				return;
-			}
 
-			break;
+			have_mode = TRUE;
 		}
 
-		if (c < '0' || c > '7') {
-			printerr(NULL, "Digit '%s' out of range", c);
-			return;
+		pthcat(pth1, len1, f->name);
+
+		if (chmod(pth1, m) == -1) {
+			printerr(strerror(errno), "chmod %s failed");
+			goto exit;
 		}
-
-		if (i > 3) {
-			printerr(NULL, "Input has more than 4 digits");
-			return;
-		}
-
-		m <<= 3;
-		m |= c - '0';
-	}
-
-	if (chmod(pth1, m) == -1) {
-		printerr(strerror(errno), "chmod %s failed");
-		goto exit;
 	}
 
 	rebuild_db();
@@ -204,6 +187,53 @@ exit:
 
 	if (!bmode)
 		rpath[rlen] = 0;
+}
+
+static int
+ask_for_perms(mode_t *mode)
+{
+	mode_t m;
+	char *s;
+	int i, c;
+
+	snprintf(lbuf, sizeof lbuf, "%04o",
+	    (unsigned)*mode & 07777);
+	s = strdup(lbuf);
+
+	if (ed_dialog("Enter new permissions (<ESC> to cancel):", s, NULL, 0,
+	    NULL)) {
+		free(s);
+		return 1;
+	}
+
+	free(s);
+
+	for (m = 0, i = 0; ; i++) {
+		if (!(c = rbuf[i])) {
+			if (!i) {
+				printerr(NULL, "No input");
+				return 1;
+			}
+
+			break;
+		}
+
+		if (c < '0' || c > '7') {
+			printerr(NULL, "Digit '%s' out of range", c);
+			return 1;
+		}
+
+		if (i > 3) {
+			printerr(NULL, "Input has more than 4 digits");
+			return 1;
+		}
+
+		m <<= 3;
+		m |= c - '0';
+	}
+
+	*mode = m;
+	return 0;
 }
 
 void
@@ -226,9 +256,6 @@ fs_chown(int tree, int op)
 	if ((tree == 3 && f->ltype && f->rtype) ||
 	    (tree == 1 && !f->ltype) ||
 	    (tree == 2 && !f->rtype))
-		return;
-
-	if (edit)
 		return;
 
 	if ((tree & 2) && f->rtype) {
@@ -341,6 +368,9 @@ fs_rm(int tree, char *txt, int num)
 		    S_ISDIR(stat1.st_mode) ? "directory " : "", pth1) != 'y')
 			goto cancel;
 
+		printerr(NULL, "Deleting %s%s", S_ISDIR(stat1.st_mode) ?
+		    "directory " : "", pth1);
+
 		if (S_ISDIR(stat1.st_mode)) {
 			tree_op = TREE_RM;
 			proc_dir(0);
@@ -416,6 +446,9 @@ fs_cp(int to, int follow, int num)
 		len1 = pthcat(pth1, len1, f->name);
 		len2 = pthcat(pth2, len2, f->name);
 		stat1 = st;
+
+		printerr(NULL, "Copy %s%s -> %s", S_ISDIR(stat1.st_mode) ?
+		    "directory " : "", pth1, pth2);
 
 		if (S_ISDIR(stat1.st_mode)) {
 			tree_op = TREE_CP;

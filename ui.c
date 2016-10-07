@@ -309,16 +309,16 @@ next_key:
 		case 'p':
 			if (*key == 'e') {
 				c = 0;
-				fs_chmod(3);
+				fs_chmod(3, num);
 				break;
 			} else if (key[1] == 'e') {
 				if (*key == 'l') {
 					c = 0;
-					fs_chmod(1);
+					fs_chmod(1, num);
 					break;
 				} else if (*key == 'r') {
 					c = 0;
-					fs_chmod(2);
+					fs_chmod(2, num);
 					break;
 				}
 			}
@@ -756,9 +756,9 @@ static char *helptxt[] = {
        "en		Rename file",
        "eln		Rename left file",
        "ern		Rename right file",
-       "ep		Change file mode",
-       "elp		Change mode of left file",
-       "erp		Change mode of right file",
+       "[<n>]ep		Change file mode",
+       "[<n>]elp	Change mode of left file",
+       "[<n>]erp	Change mode of right file",
        "eu		Change file owner",
        "elu		Change owner of left file",
        "eru		Change owner or right file",
