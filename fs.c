@@ -57,6 +57,7 @@ fs_rename(int tree)
 {
 	struct filediff *f;
 	char *s;
+	size_t l;
 
 	if (!db_num)
 		return;
@@ -81,8 +82,27 @@ fs_rename(int tree)
 		len1 = llen;
 	}
 
-	pthcat(pth1, len1, rbuf);
+	l = len1;
+	len1 = pthcat(pth1, len1, rbuf);
 	s = strdup(pth1);
+
+	if (lstat(pth1, &stat1) == -1) {
+		if (errno != ENOENT)
+			printerr(strerror(errno), "lstat \"%s\" failed", pth1);
+	} else {
+		if (dialog("[y] yes, [other key] no", NULL,
+		    "Delete existing %s %s?", S_ISDIR(stat1.st_mode) ?
+		    "directory" : "file", pth1) != 'y')
+			goto exit;
+
+		if (S_ISDIR(stat1.st_mode)) {
+			tree_op = TREE_RM;
+			proc_dir(0);
+		} else
+			rm_file();
+	}
+
+	len1 = l;
 	pthcat(pth1, len1, f->name);
 
 	if (rename(pth1, s) == -1) {
