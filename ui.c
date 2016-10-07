@@ -1748,6 +1748,8 @@ mark_global(void)
 	m = malloc(sizeof(struct filediff));
 	*m = *mark;
 	mark = m;
+	mark_lnam = NULL;
+	mark_rnam = NULL;
 
 	if (bmode) {
 		pthcat(lpath, llen, m->name);
@@ -1760,8 +1762,6 @@ mark_global(void)
 		}
 
 		lpath[llen] = 0;
-		mark_lnam = NULL;
-		mark_rnam = NULL;
 	} else {
 		if (!*lpath)
 			m->ltype = 0; /* tmp dir left */
@@ -1901,37 +1901,35 @@ pop_state(
 	}
 
 	if (st->lpth) {
-		lpath[llen - 2] = 0;
+		llen -= 2;
+		lpath[llen] = 0;
+
+		if (mode && gl_mark && mark_lnam &&
+		    !strncmp(lpath, mark_lnam, llen))
+			clr_mark();
+
 		s = strdup(lpath);
 		rmtmpdirs(s);
 		*lpath = 0;
-
-		if (mode && gl_mark && mark_lnam && lstat(mark_lnam, &stat1)
-		    == -1) {
-			free(mark_lnam);
-			mark_lnam = NULL;
-		}
 	}
 
 	if (st->rpth) {
-		rpath[rlen - 2] = 0;
+		rlen -= 2;
+		rpath[rlen] = 0;
+
+		if (mode && gl_mark && mark_rnam &&
+		    !strncmp(rpath, mark_rnam, rlen))
+			clr_mark();
+
 		s = strdup(rpath);
 		rmtmpdirs(s);
 		*rpath = 0;
-
-		if (mode && gl_mark && mark_rnam && lstat(mark_rnam, &stat1)
-		    == -1) {
-			free(mark_rnam);
-			mark_rnam = NULL;
-		}
 	}
 
 	if (mark) {
 		if (mode) {
 			if (!gl_mark)
 				mark_global();
-			else if (!mark_lnam && !mark_rnam)
-				clr_mark();
 		} else
 			clr_mark();
 	}

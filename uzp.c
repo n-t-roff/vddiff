@@ -344,7 +344,9 @@ zpths(struct filediff *f, struct filediff **z2, int tree, size_t *l2, int i,
 
 	s[l++] = tree == 1 ? 'l' : 'r';
 
-	if (fn) {
+	if (!fn) {
+		l3 = 0;
+	} else {
 		s[l++] = '/';
 		l3 = strlen(s2);
 
@@ -352,7 +354,7 @@ zpths(struct filediff *f, struct filediff **z2, int tree, size_t *l2, int i,
 		memcpy(s + l, s2 + l3, i - l3);
 	}
 
-	s[l + i] = 0;
+	s[l + i - l3] = 0;
 	z->name = s;
 
 	if (tree == 1 ||
