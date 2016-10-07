@@ -54,9 +54,9 @@ static void curs_down(void);
 static void curs_up(void);
 static void disp_curs(int);
 static void disp_line(unsigned, unsigned, int);
-static void push_state(bool, bool);
+static void push_state(bool, bool, bool, bool);
 static void pop_state(short);
-static void enter_dir(char *, char *);
+static void enter_dir(char *, char *, bool, bool);
 static void help(void);
 static char *type_name(mode_t);
 static void ui_resize(void);
@@ -257,7 +257,7 @@ next_key:
 			c = 0;
 
 			if (bmode)
-				enter_dir("..", NULL);
+				enter_dir("..", NULL, FALSE, FALSE);
 			else
 				pop_state(1);
 
@@ -1034,7 +1034,7 @@ action(
 		else if (S_ISDIR(ltyp) || S_ISDIR(rtyp)) {
 			if (bmode) {
 				t2 = NULL;
-				enter_dir(rnam, NULL);
+				enter_dir(rnam, NULL, FALSE, FALSE);
 
 				if (S_ISDIR(ltyp) && z1) {
 					t1 = strdup(lnam);
@@ -1043,17 +1043,18 @@ action(
 				}
 			} else if (!S_ISDIR(ltyp)) {
 				t2 = NULL;
-				enter_dir(NULL, rnam);
+				enter_dir(NULL, rnam, FALSE, z2 ? TRUE : FALSE);
 
 			} else if (!S_ISDIR(rtyp)) {
 				t1 = NULL;
-				enter_dir(lnam, NULL);
+				enter_dir(lnam, NULL, z1 ? TRUE : FALSE, FALSE);
 			} else {
 				/* If t<n> == NULL tmpdir is not removed.
 				 * It must not be removed before it is left
 				 * with "cd .." later. */
 				t1 = t2 = NULL;
-				enter_dir(lnam, rnam);
+				enter_dir(lnam, rnam, z1 ? TRUE : FALSE,
+				    z2 ? TRUE : FALSE);
 			}
 		}
 
@@ -1075,7 +1076,7 @@ action(
 			tool(f2->name, NULL, 2, ign_ext);
 		else if (S_ISDIR(f2->rtype)) {
 			t1 = t2 = NULL;
-			enter_dir(NULL, f2->name);
+			enter_dir(NULL, f2->name, FALSE, z2 ? TRUE : FALSE);
 		} else {
 			err = typerr;
 			goto ret;
@@ -1085,7 +1086,7 @@ action(
 			tool(f1->name, NULL, 1, ign_ext);
 		else if (S_ISDIR(f1->ltype)) {
 			t1 = t2 = NULL;
-			enter_dir(f1->name, NULL);
+			enter_dir(f1->name, NULL, z1 ? TRUE : FALSE, FALSE);
 		} else {
 			err = typerr;
 			goto ret;
@@ -1100,7 +1101,8 @@ action(
 				tool(f1->name, NULL, 1, 0);
 		} else if (S_ISDIR(f1->ltype)) {
 			t1 = t2 = NULL;
-			enter_dir(f1->name, f2->name);
+			enter_dir(f1->name, f2->name, z1 ? TRUE : FALSE,
+				    z2 ? TRUE : FALSE);
 		} else {
 			err = typerr;
 			goto ret;
@@ -1857,7 +1859,7 @@ center(unsigned idx)
 }
 
 static void
-push_state(bool lsave, bool rsave)
+push_state(bool lsave, bool rsave, bool lzip, bool rzip)
 {
 	struct ui_state *st = malloc(sizeof(struct ui_state));
 	diff_db_store(st);
@@ -1883,6 +1885,7 @@ push_state(bool lsave, bool rsave)
 	st->top_idx = top_idx;  top_idx = 0;
 	st->curs    = curs;     curs    = 0;
 	st->next    = ui_stack;
+	st->del     = (lzip ? 1 : 0) | (rzip ? 2 : 0);
 	ui_stack    = st;
 }
 
@@ -1900,7 +1903,7 @@ pop_state(
 		return;
 	}
 
-	if (st->lpth) {
+	if (st->lpth && (st->del & 1)) {
 		llen -= 2;
 		lpath[llen] = 0;
 
@@ -1913,7 +1916,7 @@ pop_state(
 		*lpath = 0;
 	}
 
-	if (st->rpth) {
+	if (st->rpth && (st->del & 2)) {
 		rlen -= 2;
 		rpath[rlen] = 0;
 
@@ -1965,14 +1968,14 @@ pop_state(
 }
 
 static void
-enter_dir(char *name, char *rnam)
+enter_dir(char *name, char *rnam, bool lzip, bool rzip)
 {
 	if (mark && !gl_mark)
 		mark_global();
 
 	if (!bmode) {
 		push_state(name && *name == '/',
-		           rnam && *rnam == '/');
+		           rnam && *rnam == '/', lzip, rzip);
 		scan_subdir(name, rnam,
 		    (name ? 1 : 0) | (rnam ? 2 : 0));
 	} else {

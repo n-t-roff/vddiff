@@ -6,6 +6,7 @@ struct ui_state {
 	struct filediff **list;
 	unsigned top_idx, curs;
 	struct ui_state *next;
+	short del;
 };
 
 void build_ui(void);
