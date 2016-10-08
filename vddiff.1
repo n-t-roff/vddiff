@@ -13,7 +13,7 @@ LOSS OF USE, DATA OR PROFITS, WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE OR
 OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
 PERFORMANCE OF THIS SOFTWARE.
 ..
-.Dd October 7, 2016
+.Dd October 8, 2016
 .Dt VDDIFF 1
 .Sh NAME
 .Nm vddiff
@@ -335,7 +335,7 @@ files starting from the current selection is set.
 Change permissions of file in first tree.
 .It Oo Ar n Oc Ns Dq Li erp
 Change permissions of file in second tree.
-.It Dq Li eu
+.It Oo Ar n Oc Ns Dq Li eu
 Change owner of file, which must be present in one tree only.
 The command is ignred for symbolic links.
 Previously entered user names are saved in a history,
@@ -344,11 +344,16 @@ which can be accessed with the
 and
 .Aq Cm DOWN
 keys.
-.It Dq Li elu
+If decimal digit
+.Ar n
+is given, the owner of
+.Ar n
+files starting from the current selection is set.
+.It Oo Ar n Oc Ns Dq Li elu
 Change owner of file in first tree.
-.It Dq Li eru
+.It Oo Ar n Oc Ns Dq Li eru
 Change owner of file in second tree.
-.It Dq Li eg
+.It Oo Ar n Oc Ns Dq Li eg
 Change group of file, which must be present in one tree only.
 The command is ignred for symbolic links.
 Previously entered group names are saved in a history,
@@ -357,9 +362,14 @@ which can be accessed with the
 and
 .Aq Cm DOWN
 keys.
-.It Dq Li elg
+If decimal digit
+.Ar n
+is given, the group of
+.Ar n
+files starting from the current selection is set.
+.It Oo Ar n Oc Ns Dq Li elg
 Change group of file in first tree.
-.It Dq Li erg
+.It Oo Ar n Oc Ns Dq Li erg
 Change group of file in second tree.
 .It Sq Li m
 Mark file or directory.

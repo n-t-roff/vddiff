@@ -237,7 +237,7 @@ ask_for_perms(mode_t *mode)
 }
 
 void
-fs_chown(int tree, int op)
+fs_chown(int tree, int op, int num)
 {
 	struct filediff *f;
 	static struct history owner_hist, group_hist;
@@ -246,65 +246,77 @@ fs_chown(int tree, int op)
 	struct group *gr;
 	uid_t uid;
 	gid_t gid;
+	unsigned short u;
+	bool have_owner = FALSE;
 
 	if (!db_num)
 		return;
 
-	f = db_list[top_idx + curs];
-
-	/* "en" is not allowed if both files are present */
-	if ((tree == 3 && f->ltype && f->rtype) ||
-	    (tree == 1 && !f->ltype) ||
-	    (tree == 2 && !f->rtype))
+	if (num > 1 && dialog("[y] yes, [other key] no", NULL,
+	    "Change %s of %d files?", op ? "group" : "owner", num) != 'y')
 		return;
 
-	if ((tree & 2) && f->rtype) {
-		if (S_ISLNK(f->rtype))
-			return;
+	u = top_idx + curs;
 
-		pth1 = rpath;
-		len1 = rlen;
-	} else {
-		if (S_ISLNK(f->ltype))
-			return;
+	while (num-- && u < db_num) {
+		f = db_list[u++];
 
-		pth1 = lpath;
-		len1 = llen;
-	}
+		/* "en" is not allowed if both files are present */
+		if ((tree == 3 && f->ltype && f->rtype) ||
+		    (tree == 1 && !f->ltype) ||
+		    (tree == 2 && !f->rtype))
+			continue;
 
-	pthcat(pth1, len1, f->name);
+		if ((tree & 2) && f->rtype) {
+			if (S_ISLNK(f->rtype))
+				continue;
 
-	if (ed_dialog(op ?
-	    "Enter new group (<ESC> to cancel):" :
-	    "Enter new owner (<ESC> to cancel):", "", NULL, 0,
-	    op ? &group_hist : &owner_hist)) {
-		return;
-	}
+			pth1 = rpath;
+			len1 = rlen;
+		} else {
+			if (S_ISLNK(f->ltype))
+				continue;
 
-	if (op) {
-		if ((gr = getgrnam(rbuf)))
-			gid = gr->gr_gid;
-		else if (!(gid = atoi(rbuf))) {
-			printerr("", "Invalid group name \"%s\"", rbuf);
+			pth1 = lpath;
+			len1 = llen;
+		}
+
+		pthcat(pth1, len1, f->name);
+
+		if (!have_owner && ed_dialog(op ?
+		    "Enter new group (<ESC> to cancel):" :
+		    "Enter new owner (<ESC> to cancel):", "", NULL, 0,
+		    op ? &group_hist : &owner_hist)) {
 			return;
 		}
 
-		i = chown(pth1, -1, gid);
-	} else {
-		if ((pw = getpwnam(rbuf)))
-			uid = pw->pw_uid;
-		else if (!(uid = atoi(rbuf))) {
-			printerr("", "Invalid user name \"%s\"", rbuf);
-			return;
+		have_owner = TRUE;
+
+		if (op) {
+			if ((gr = getgrnam(rbuf)))
+				gid = gr->gr_gid;
+			else if (!(gid = atoi(rbuf))) {
+				printerr("", "Invalid group name \"%s\"", rbuf);
+				return;
+			}
+
+			i = chown(pth1, -1, gid);
+		} else {
+			if ((pw = getpwnam(rbuf)))
+				uid = pw->pw_uid;
+			else if (!(uid = atoi(rbuf))) {
+				printerr("", "Invalid user name \"%s\"", rbuf);
+				return;
+			}
+
+			i = chown(pth1, uid, -1);
 		}
 
-		i = chown(pth1, uid, -1);
-	}
-
-	if (i == -1) {
-		printerr(strerror(errno), "chown \"%s\", \"%s\" failed",
-		    pth1, rbuf);
-		goto exit;
+		if (i == -1) {
+			printerr(strerror(errno), "chown \"%s\", \"%s\" failed",
+			    pth1, rbuf);
+			goto exit;
+		}
 	}
 
 	rebuild_db();

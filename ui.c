@@ -594,16 +594,16 @@ next_key:
 		case 'u':
 			if (*key == 'e') {
 				c = 0;
-				fs_chown(3, 0);
+				fs_chown(3, 0, num);
 				break;
 			} else if (key[1] == 'e') {
 				if (*key == 'l') {
 					c = 0;
-					fs_chown(1, 0);
+					fs_chown(1, 0, num);
 					break;
 				} else if (*key == 'r') {
 					c = 0;
-					fs_chown(2, 0);
+					fs_chown(2, 0, num);
 					break;
 				}
 			}
@@ -614,16 +614,16 @@ next_key:
 		case 'g':
 			if (*key == 'e') {
 				c = 0;
-				fs_chown(3, 1);
+				fs_chown(3, 1, num);
 				break;
 			} else if (key[1] == 'e') {
 				if (*key == 'l') {
 					c = 0;
-					fs_chown(1, 1);
+					fs_chown(1, 1, num);
 					break;
 				} else if (*key == 'r') {
 					c = 0;
-					fs_chown(2, 1);
+					fs_chown(2, 1, num);
 					break;
 				}
 			}
@@ -716,6 +716,8 @@ next_key:
 }
 
 static char *helptxt[] = {
+       "Type 'q' to quit help, scroll with <DOWN>, <UP>, <PAGE-DOWN>, and <PAGE-UP>.",
+       "",
        "q		Quit",
        "h, ?		Display help",
        "<UP>, k, -	Move cursor up",
@@ -759,12 +761,12 @@ static char *helptxt[] = {
        "[<n>]ep		Change file mode",
        "[<n>]elp	Change mode of left file",
        "[<n>]erp	Change mode of right file",
-       "eu		Change file owner",
-       "elu		Change owner of left file",
-       "eru		Change owner or right file",
-       "eg		Change file group",
-       "elg		Change group of left file",
-       "erg		Change group or right file",
+       "[<n>]eu		Change file owner",
+       "[<n>]elu	Change owner of left file",
+       "[<n>]eru	Change owner or right file",
+       "[<n>]eg		Change file group",
+       "[<n>]elg	Change group of left file",
+       "[<n>]erg	Change group or right file",
        "m		Mark file or directory",
        "r		Remove mark, edit line or regex search",
        "b		Binary diff to marked file",
