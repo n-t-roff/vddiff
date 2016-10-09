@@ -67,8 +67,8 @@ static size_t getfilesize(char *, size_t, off_t);
 static void disp_help(void);
 static void help_pg_down(void);
 static void help_pg_up(void);
-static void help_down(void);
-static void help_up(void);
+static void help_down(short);
+static void help_up(unsigned short);
 static void set_mark(void);
 static void clr_mark(void);
 static void disp_mark(void);
@@ -798,12 +798,12 @@ help(void) {
 		case KEY_DOWN:
 		case 'j':
 		case '+':
-			help_down();
+			help_down(3);
 			break;
 		case KEY_UP:
 		case 'k':
 		case '-':
-			help_up();
+			help_up(3);
 			break;
 		case KEY_NPAGE:
 		case ' ':
@@ -832,9 +832,9 @@ help_mevent(void)
 		return;
 
 	if (mevent.bstate & BUTTON4_PRESSED)
-		help_up();
+		help_up(3);
 	else if (mevent.bstate & BUTTON5_PRESSED)
-		help_down();
+		help_down(3);
 }
 #endif
 
@@ -881,29 +881,39 @@ help_pg_up(void)
 }
 
 static void
-help_down(void)
+help_down(short n)
 {
+	int i;
+
 	if (!scrollen) {
 		help_pg_down();
 		return;
 	}
 
-	if (help_top + listh >= HELP_NUM) {
+	if ((i = HELP_NUM - listh - help_top) < n)
+		n = i;
+
+	if (i <= 0) {
 		printerr(NULL, "At bottom");
 		return; /* last line on display */
 	}
 
-	wscrl(wlist, 1);
-	help_top++;
-	mvwaddstr(wlist, listh - 1, 0, helptxt[help_top + listh - 1]);
+	wscrl(wlist, n);
+	help_top += n;
+
+	for (i = n; i > 0; i--)
+		mvwaddstr(wlist, listh - i, 0, helptxt[help_top + listh - i]);
+
 	werase(wstat);
 	wrefresh(wstat);
 	wrefresh(wlist);
 }
 
 static void
-help_up(void)
+help_up(unsigned short n)
 {
+	int i;
+
 	if (!scrollen) {
 		help_pg_up();
 		return;
@@ -914,9 +924,15 @@ help_up(void)
 		return;
 	}
 
-	wscrl(wlist, -1);
-	help_top--;
-	mvwaddstr(wlist, 0, 0, helptxt[help_top]);
+	if (n > help_top)
+		n = help_top;
+
+	wscrl(wlist, -n);
+	help_top -= n;
+
+	for (i = 0; i < n; i++)
+		mvwaddstr(wlist, i, 0, helptxt[help_top + i]);
+
 	werase(wstat);
 	wrefresh(wstat);
 	wrefresh(wlist);
