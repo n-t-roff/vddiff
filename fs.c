@@ -31,6 +31,7 @@ PERFORMANCE OF THIS SOFTWARE.
 #include "main.h"
 #include "diff.h"
 #include "ui.h"
+#include "ui2.h"
 #include "uzp.h"
 #include "db.h"
 #include "fs.h"
@@ -111,7 +112,7 @@ fs_rename(int tree)
 		goto exit;
 	}
 
-	rebuild_db();
+	rebuild_db(0);
 exit:
 	free(s);
 	lpath[llen] = 0;
@@ -181,7 +182,7 @@ fs_chmod(int tree, int num)
 		}
 	}
 
-	rebuild_db();
+	rebuild_db(0);
 exit:
 	lpath[llen] = 0;
 
@@ -319,7 +320,7 @@ fs_chown(int tree, int op, int num)
 		}
 	}
 
-	rebuild_db();
+	rebuild_db(0);
 exit:
 	lpath[llen] = 0;
 
@@ -393,7 +394,7 @@ fs_rm(int tree, char *txt, int num)
 	if (txt)
 		goto cancel; /* rebuild is done by others */
 
-	rebuild_db();
+	rebuild_db(0);
 	return;
 
 cancel:
@@ -470,24 +471,40 @@ fs_cp(int to, int follow, int num)
 	}
 
 	top_idx = ti;
-	rebuild_db();
+	rebuild_db(0);
 	return;
 }
 
 /* top_idx and curs must kept unchanged for "//" */
 
 void
-rebuild_db(void)
+rebuild_db(
+    /* 0: keep top_idx and curs unchanged
+     * 1: keep selected name unchanged */
+    short mode)
 {
+	char *name;
+
 	lpath[llen] = 0;
 
 	if (!bmode)
 		rpath[rlen] = 0;
 
-	mark = NULL; /* pointer is freed in next line */
+	if (mode)
+		name = saveselname();
+
+	/* pointer is freed in next line */
+	if (mark && !gl_mark)
+		mark_global();
+
 	diff_db_free();
 	build_diff_db(bmode ? 1 : 3);
-	disp_list();
+
+	if (mode && name) {
+		center(findlistname(name));
+		free(name);
+	} else
+		disp_list();
 }
 
 static int

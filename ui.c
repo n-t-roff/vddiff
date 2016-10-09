@@ -71,7 +71,6 @@ static void help_down(void);
 static void help_up(void);
 static void set_mark(void);
 static void clr_mark(void);
-static void mark_global(void);
 static void disp_mark(void);
 static void yank_name(int);
 
@@ -403,26 +402,17 @@ next_key:
 		case '!':
 			c = 0;
 			noequal = noequal ? 0 : 1;
-			diff_db_sort();
-			top_idx = 0;
-			curs    = 0;
-			disp_list();
+			re_sort_list();
 			break;
 		case 'c':
 			c = 0;
 			real_diff = real_diff ? 0 : 1;
-			diff_db_sort();
-			top_idx = 0;
-			curs    = 0;
-			disp_list();
+			re_sort_list();
 			break;
 		case '&':
 			c = 0;
 			nosingle = nosingle ? 0 : 1;
-			diff_db_sort();
-			top_idx = 0;
-			curs    = 0;
-			disp_list();
+			re_sort_list();
 			break;
 		case KEY_RESIZE:
 			ui_resize();
@@ -565,7 +555,7 @@ next_key:
 			}
 
 			/* sh_cmd() did likely create or delete files */
-			rebuild_db();
+			rebuild_db(0);
 			break;
 		case 'e':
 			break;
@@ -580,7 +570,7 @@ next_key:
 				break;
 
 			sorting = SORTMIXED;
-			rebuild_db();
+			rebuild_db(1);
 			break;
 		case 'D':
 			c = 0;
@@ -589,7 +579,7 @@ next_key:
 				break;
 
 			sorting = DIRSFIRST;
-			rebuild_db();
+			rebuild_db(1);
 			break;
 		case 'u':
 			if (*key == 'e') {
@@ -609,7 +599,7 @@ next_key:
 			}
 
 			c = 0;
-			rebuild_db();
+			rebuild_db(0);
 			break;
 		case 'g':
 			if (*key == 'e') {
@@ -656,7 +646,7 @@ next_key:
 
 			c = 0;
 			follow(-1); /* toggle */
-			rebuild_db();
+			rebuild_db(1);
 			break;
 		case 'H':
 			c = 0;
@@ -1744,7 +1734,7 @@ clr_mark(void)
 	wrefresh(wstat);
 }
 
-static void
+void
 mark_global(void)
 {
 	struct filediff *m;

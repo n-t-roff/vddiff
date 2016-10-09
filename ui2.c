@@ -88,7 +88,7 @@ test_fkey(int c, unsigned short num)
 				viewtool = t;
 				/* action() did likely create or
 				 * delete files */
-				rebuild_db();
+				rebuild_db(0);
 				/* fall through */
 			default:
 				return 1;
@@ -470,6 +470,46 @@ ret:
 		break;
 	default:
 		;
+	}
+}
+
+char *
+saveselname(void)
+{
+	if (!db_num)
+		return NULL;
+
+	return strdup(((struct filediff *)(db_list[top_idx + curs]))->name);
+}
+
+unsigned
+findlistname(char *name)
+{
+	unsigned u;
+
+	for (u = 0; u < db_num; u++)
+		if (!strcmp(name,
+		    ((struct filediff *)(db_list[u]))->name))
+			return u;
+
+	return 0;
+}
+
+void
+re_sort_list(void)
+{
+	char *name;
+
+	name = saveselname();
+	diff_db_sort();
+
+	if (name) {
+		center(findlistname(name));
+		free(name);
+	} else {
+		top_idx = 0;
+		curs    = 0;
+		disp_list();
 	}
 }
 

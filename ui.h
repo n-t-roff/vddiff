@@ -16,6 +16,7 @@ void disp_list(void);
 void center(unsigned);
 void no_file(void);
 void action(short, short, unsigned short);
+void mark_global(void);
 
 extern short color;
 extern short color_leftonly ,

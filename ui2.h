@@ -10,5 +10,8 @@ void start_regex(char *);
 int regex_srch(int);
 void parsopt(char *);
 void bindiff(void);
+char *saveselname(void);
+unsigned findlistname(char *);
+void re_sort_list(void);
 void anykey(void);
 void free_zdir(struct filediff *, char *);
