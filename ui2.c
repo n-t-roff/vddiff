@@ -79,7 +79,7 @@ test_fkey(int c, unsigned short num)
 				ti = top_idx;
 
 				while (num--) {
-					action(1, 3, 0);
+					action(1, 3, 0, FALSE);
 					top_idx++; /* kludge */
 				}
 

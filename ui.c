@@ -191,6 +191,7 @@ ui_ctrl(void)
 	static struct history opt_hist;
 	int key[2] = { 0, 0 }, c = 0, i;
 	unsigned short num;
+	struct filediff *f;
 
 	while (1) {
 next_key:
@@ -289,7 +290,7 @@ next_key:
 				break;
 			}
 
-			action(0, 3, c == '\n' ? 1 : 0);
+			action(0, 3, c == '\n' ? 1 : 0, FALSE);
 			c = 0;
 			break;
 		case 'b':
@@ -430,6 +431,34 @@ next_key:
 			c = 0;
 			fs_rm(3, NULL, num); /* allowed for single sided only */
 			break;
+		case 'v':
+			if (!db_num)
+				break;
+
+			f = db_list[top_idx + curs];
+
+			if (S_ISREG(f->ltype) && S_ISREG(f->rtype)) {
+				if (f->diff != '!') {
+					c = 0;
+					action(0, 1, 0, TRUE);
+				}
+
+				break;
+			}
+
+			if (S_ISREG(f->ltype)) {
+				c = 0;
+				action(0, 1, 0, TRUE);
+				break;
+			}
+
+			if (S_ISREG(f->rtype)) {
+				c = 0;
+				action(0, 2, 0, TRUE);
+				break;
+			}
+
+			break;
 		case 'l':
 			switch (*key) {
 			case 'd':
@@ -440,9 +469,13 @@ next_key:
 				c = 0;
 				open_sh(1);
 				goto next_key;
+			case 'v':
+				c = 0;
+				action(0, 1, 0, TRUE);
+				goto next_key;
 			case 'o':
 				c = 0;
-				action(0, 1, 0);
+				action(0, 1, 0, FALSE);
 				goto next_key;
 			case 'e':
 				goto next_key;
@@ -488,9 +521,13 @@ next_key:
 				c = 0;
 				open_sh(2);
 				goto next_key;
+			case 'v':
+				c = 0;
+				action(0, 2, 0, TRUE);
+				goto next_key;
 			case 'o':
 				c = 0;
-				action(0, 2, 0);
+				action(0, 2, 0, FALSE);
 				goto next_key;
 			case 'e':
 				goto next_key;
@@ -684,6 +721,32 @@ next_key:
 			disp_list();
 			break;
 		case 'o':
+			if (!db_num)
+				break;
+
+			f = db_list[top_idx + curs];
+
+			if (S_ISREG(f->ltype) && S_ISREG(f->rtype)) {
+				if (f->diff != '!') {
+					c = 0;
+					action(0, 1, 0, FALSE);
+				}
+
+				break;
+			}
+
+			if (S_ISREG(f->ltype)) {
+				c = 0;
+				action(0, 1, 0, FALSE);
+				break;
+			}
+
+			if (S_ISREG(f->rtype)) {
+				c = 0;
+				action(0, 2, 0, FALSE);
+				break;
+			}
+
 			break;
 		case ':':
 			c = 0;
@@ -782,8 +845,12 @@ static char *helptxt[] = {
        "s		Open shell",
        "sl		Open shell in left directory",
        "sr		Open shell in right directory",
+       "o		Open file (instead of diff tool)",
        "ol		Open left file or directory",
        "or		Open right file or directory",
+       "v		View raw file contents",
+       "vl		View raw left file contents",
+       "vr		View raw right file contents",
        ":		Enter configuration option" };
 
 #define HELP_NUM (sizeof(helptxt) / sizeof(*helptxt))
@@ -974,7 +1041,7 @@ proc_mevent(void)
 		wrefresh(wstat);
 
 		if (mevent.bstate & BUTTON1_DOUBLE_CLICKED)
-			action(0, 3, 0);
+			action(0, 3, 0, FALSE);
 # if NCURSES_MOUSE_VERSION >= 2
 	} else if (mevent.bstate & BUTTON4_PRESSED) {
 		scroll_up(3);
@@ -994,7 +1061,10 @@ action(
     short tree,
     /* 0: <RIGHT> or double click
      * 1: <ENTER> */
-    unsigned short act)
+    unsigned short act,
+    /* Used by 'v', "vl" and "vr":
+     * Unzip file but then view raw file using standard view tool. */
+    bool raw)
 {
 	struct filediff *f1, *f2, *z1 = NULL, *z2 = NULL;
 	char *t1 = NULL, *t2 = NULL;
@@ -1052,7 +1122,7 @@ action(
 		}
 
 		if (ign_ext || (S_ISREG(ltyp) && S_ISREG(rtyp)))
-			tool(lnam, rnam, 3, ign_ext);
+			tool(lnam, rnam, 3, ign_ext || raw);
 
 		else if (S_ISDIR(ltyp) || S_ISDIR(rtyp)) {
 			if (bmode) {
@@ -1096,7 +1166,7 @@ action(
 	    /* Tested here to support "or" */
 	    tree == 2) {
 		if (S_ISREG(f2->rtype) || ign_ext)
-			tool(f2->name, NULL, 2, ign_ext);
+			tool(f2->name, NULL, 2, ign_ext || raw);
 		else if (S_ISDIR(f2->rtype)) {
 			t1 = t2 = NULL;
 			enter_dir(NULL, f2->name, FALSE, z2 ? TRUE : FALSE);
@@ -1106,7 +1176,7 @@ action(
 		}
 	} else if (!f2->rtype || tree == 1) {
 		if (S_ISREG(f1->ltype) || ign_ext)
-			tool(f1->name, NULL, 1, ign_ext);
+			tool(f1->name, NULL, 1, ign_ext || raw);
 		else if (S_ISDIR(f1->ltype)) {
 			t1 = t2 = NULL;
 			enter_dir(f1->name, NULL, z1 ? TRUE : FALSE, FALSE);
@@ -1115,7 +1185,7 @@ action(
 			goto ret;
 		}
 	} else if ((f1->ltype & S_IFMT) == (f2->rtype & S_IFMT)) {
-		if (ign_ext)
+		if (ign_ext || raw)
 			tool(f1->name, f2->name, 3, 1);
 		else if (S_ISREG(f1->ltype)) {
 			if (f1->diff == '!')
