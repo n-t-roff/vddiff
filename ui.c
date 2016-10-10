@@ -223,6 +223,12 @@ next_key:
 		case '1':
 			break;
 		case 'q':
+			if (dialog("[y] yes, [other key] no", NULL,
+			    "Quit vddiff?") != 'y')
+				break;
+
+			/* fall through */
+		case 'Q':
 			return;
 		case KEY_DOWN:
 		case 'j':
@@ -688,6 +694,10 @@ next_key:
 			}
 
 			break;
+		case CTRL('L'):
+			endwin();
+			refresh();
+			break;
 		case 'N':
 			if (regex) {
 				c = 0;
@@ -708,8 +718,9 @@ next_key:
 static char *helptxt[] = {
        "Type 'q' to quit help, scroll with <DOWN>, <UP>, <PAGE-DOWN>, and <PAGE-UP>.",
        "",
-       "q		Quit",
+       "Q		Quit vddiff",
        "h, ?		Display help",
+       "^L		Refresh display",
        "<UP>, k, -	Move cursor up",
        "<DOWN>, j, +	Move cursor down",
        "<LEFT>		Leave directory (one directory up)",
@@ -812,6 +823,10 @@ help(void) {
 		case KEY_PPAGE:
 		case KEY_BACKSPACE:
 			help_pg_up();
+			break;
+		case CTRL('L'):
+			endwin();
+			refresh();
 			break;
 		default:
 			printerr(NULL,
@@ -1366,10 +1381,12 @@ static void
 disp_curs(int a)
 {
 	if (a)
-		wattron(wlist, A_REVERSE);
+		wstandout(wlist);
+
 	disp_line(curs, top_idx + curs, a);
+
 	if (a)
-		wattroff(wlist, A_REVERSE);
+		wstandend(wlist);
 }
 
 void
@@ -1526,10 +1543,10 @@ statcol(void)
 	if (bmode)
 		return;
 
-	wattron(wstat, A_REVERSE);
+	wstandout(wstat);
 	mvwaddch(wstat, 0, 0, '<');
 	mvwaddch(wstat, 1, 0, '>');
-	wattroff(wstat, A_REVERSE);
+	wstandend(wstat);
 }
 
 static char *

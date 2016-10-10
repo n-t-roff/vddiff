@@ -14,15 +14,15 @@ OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
 PERFORMANCE OF THIS SOFTWARE.
 */
 
+#include <string.h>
+#include <ctype.h>
+#include <stdlib.h>
 #include "compat.h"
 
 #ifdef HAVE_CURSES_WCH
 # include <wctype.h>
 #endif
 
-#include <string.h>
-#include <ctype.h>
-#include <stdlib.h>
 #include "ui.h"
 #include "main.h"
 #include "exec.h"

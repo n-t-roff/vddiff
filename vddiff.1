@@ -13,7 +13,7 @@ LOSS OF USE, DATA OR PROFITS, WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE OR
 OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
 PERFORMANCE OF THIS SOFTWARE.
 ..
-.Dd October 8, 2016
+.Dd October 10, 2016
 .Dt VDDIFF 1
 .Sh NAME
 .Nm vddiff
@@ -113,7 +113,7 @@ Use
 as diff tool.
 .It Fl l
 Follow symbolic links.
-(Note that the integrated file copy and delete operations
+(Note that the integrated file copy, rename, and delete operations
 never follow symbolic links.)
 .It Fl m
 Normally directories are displayed on top.
@@ -148,17 +148,6 @@ to the second file.
 Note that the shell may require quoting as in
 .Pp
 .Dl -t \(dqdiff \(rs$1 \(rs$2 | vim -R -\(dq
-.Pp
-Also note the quoting of the filenames itself.
-When the symbolic names
-.Li $ Ns Ar n
-are used,
-.Xr system 3
-instead of
-.Xr execvp 3
-is used.
-This applies restrictions on the characters used
-in filenames.
 .It Fl u Op Ar filename
 Skip reading the initialization file at start-up.
 If
@@ -186,10 +175,24 @@ can be embedded which is expanded to the filename.
 .El
 .Sh INTERACTIVE COMMANDS
 .Bl -tag -width 12n
-.It Sq Li q
-Quit.
+.It Sq Li Q
+Quit
+.Nm .
 .It So Li h Sc or Sq Li \&?
 Display help.
+Help mode is left with
+.Sq Li q .
+Keys
+.Aq Cm DOWN ,
+.Aq Cm UP ,
+.Aq Cm PAGE-DOWN ,
+and
+.Aq Cm PAGE-UP
+are used for scrolling in help mode.
+.It Aq Cm CTRL-l
+Refresh display.
+This may be necessary after another application
+had output text into the curses controlled display.
 .It Ao Cm UP Ac , So Li k Sc or Sq Li -
 Move cursor line up.
 .It Ao Cm DOWN Ac , So Li j Sc or Sq Li +
@@ -202,7 +205,7 @@ Compressed files and directories
 are unpacked before the view or diff tool is started.
 .Pp
 If a file is marked (with
-.Sq Li m )
+.Sq Li m ) ,
 only
 .Ao Cm RIGHT Ac and double click
 can be used to normally view files or enter directories.
@@ -325,7 +328,8 @@ Rename file in first tree.
 Rename file in second tree.
 .It Oo Ar n Oc Ns Dq Li ep
 Change permissions of file, which must be present in one tree only.
-The command is ignored for symbolic links.
+If following symbolic links is not enabled
+the command is ignored for symbolic links.
 If decimal digit
 .Ar n
 is given, the mode of
@@ -337,7 +341,8 @@ Change permissions of file in first tree.
 Change permissions of file in second tree.
 .It Oo Ar n Oc Ns Dq Li eu
 Change owner of file, which must be present in one tree only.
-The command is ignred for symbolic links.
+If following symbolic links is not enabled
+the command is ignored for symbolic links.
 Previously entered user names are saved in a history,
 which can be accessed with the
 .Aq Cm UP
@@ -355,7 +360,8 @@ Change owner of file in first tree.
 Change owner of file in second tree.
 .It Oo Ar n Oc Ns Dq Li eg
 Change group of file, which must be present in one tree only.
-The command is ignred for symbolic links.
+If following symbolic links is not enabled
+the command is ignored for symbolic links.
 Previously entered group names are saved in a history,
 which can be accessed with the
 .Aq Cm UP
@@ -436,7 +442,9 @@ and
 fetch other history entries.
 .It Oo Ar n Oc Ns Ao Cm F1 Ac \(en Aq Cm F12
 Define string which can be inserted later with this function key
-when entering a sh command using
+when entering a
+.Xr sh
+command using
 .Sq Li $ .
 This string is usually the name of a UNIX tool.
 Regularly used strings can be set using the RC file
@@ -455,6 +463,8 @@ key should be redefined.
 The filename is appended to the saved string.
 To embed it,
 .Dq Li $1
+and
+.Dq Li $2
 can be used, as in
 .Dq Li "$ nroff $1 | less" .
 If
@@ -473,9 +483,9 @@ and
 .It Sq Li l
 List strings which had been defined for a function key.
 .It Sq Li u
-Rebuild file list.
+Update file list.
 .It Sq Li s
-Open shell.
+Open shell in current directory.
 The shell to open is read from the users entry in
 .Pa /etc/passwd .
 .It Dq Li sl
@@ -553,15 +563,6 @@ can be embedded into
 .Ar string
 (in any order).
 These symbols are expanded to the respective filename.
-Since in this case the command is executed by
-.Xr sh 1
-instead of
-.Xr execvp 3 ,
-there are restrictions to the allowed characters
-in filenames.
-E.g. put
-.Li $ Ns Ar n
-in single quotes to allow filenames with spaces.
 .Pp
 Other possible diff tools are
 .Xr colordiff 1 ,
@@ -625,7 +626,7 @@ in this case.
 is also ignored if the file to be viewed is compressed.
 Since it is decompressed into a temporary directory
 which is removed after starting the view tool,
-the file may be removed before the tool reads it.)
+the file may be removed before the tool reads it.
 .It Li ext Ar extension Ar string
 Configure view tool
 .Ar string
@@ -684,7 +685,7 @@ when pressing the function key.
 Disable colors.
 .It Li followlinks
 Follow symbolic links.
-(Note that the integrated file copy and delete operations
+(Note that the integrated file copy, rename, and delete operations
 never follow symbolic links.)
 .It Li noequal
 Display differences only, hide equal files.
@@ -696,7 +697,7 @@ Recursively scan file tree to detect and mark
 directories which contain differences.
 This increases the start time.
 To show only directories with differences
-additinally set option
+additionally set option
 .Li real_diff .
 To view all files when in this mode key
 .Sq c
@@ -712,7 +713,7 @@ Case-sensitive search can be configured with this option.
 For searching with
 .Dq Li //
 normally basic regular expressions are used.
-Use of extended regular expressions is confgiured
+Use of extended regular expressions is configured
 with this option.
 .It Li nows
 Searching for a filename with
@@ -742,7 +743,7 @@ Default is 2 (green).
 Set color for unknown file types.
 Default is 4 (blue).
 .It Li histsize Ar integer
-Set shell command history size (command number) to
+Set history size to
 .Ar integer .
 Default is 100.
 A size less than 2 disables the history

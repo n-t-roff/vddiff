@@ -14,7 +14,6 @@ OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
 PERFORMANCE OF THIS SOFTWARE.
 */
 
-#include "compat.h"
 #include <limits.h>
 #include <string.h>
 #include <errno.h>
@@ -23,6 +22,7 @@ PERFORMANCE OF THIS SOFTWARE.
 #include <sys/stat.h>
 #include <unistd.h>
 #include <ctype.h>
+#include "compat.h"
 #include "ui.h"
 #include "exec.h"
 #include "diff.h"
