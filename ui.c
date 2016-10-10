@@ -36,12 +36,13 @@ PERFORMANCE OF THIS SOFTWARE.
 #include "ed.h"
 #include "ui2.h"
 
-#define COLOR_LEFTONLY  1
-#define COLOR_RIGHTONLY 2
-#define COLOR_DIFF      3
-#define COLOR_DIR       4
-#define COLOR_UNKNOWN   5
-#define COLOR_LINK      6
+#define PAIR_LEFTONLY  1
+#define PAIR_RIGHTONLY 2
+#define PAIR_DIFF      3
+#define PAIR_DIR       4
+#define PAIR_UNKNOWN   5
+#define PAIR_LINK      6
+#define PAIR_CURSOR    7
 
 static void ui_ctrl(void);
 static void page_down(void);
@@ -123,12 +124,13 @@ build_ui(void)
 
 	if (color) {
 		start_color();
-		init_pair(COLOR_LEFTONLY , color_leftonly , COLOR_BLACK);
-		init_pair(COLOR_RIGHTONLY, color_rightonly, COLOR_BLACK);
-		init_pair(COLOR_DIFF     , color_diff     , COLOR_BLACK);
-		init_pair(COLOR_DIR      , color_dir      , COLOR_BLACK);
-		init_pair(COLOR_UNKNOWN  , color_unknown  , COLOR_BLACK);
-		init_pair(COLOR_LINK     , color_link     , COLOR_BLACK);
+		init_pair(PAIR_LEFTONLY , color_leftonly , COLOR_BLACK);
+		init_pair(PAIR_RIGHTONLY, color_rightonly, COLOR_BLACK);
+		init_pair(PAIR_DIFF     , color_diff     , COLOR_BLACK);
+		init_pair(PAIR_DIR      , color_dir      , COLOR_BLACK);
+		init_pair(PAIR_UNKNOWN  , color_unknown  , COLOR_BLACK);
+		init_pair(PAIR_LINK     , color_link     , COLOR_BLACK);
+		init_pair(PAIR_CURSOR   , COLOR_BLACK    , COLOR_WHITE);
 	}
 
 	cbreak();
@@ -1450,13 +1452,14 @@ scroll_down(unsigned num)
 static void
 disp_curs(int a)
 {
-	if (a)
-		wstandout(wlist);
+	if (a) {
+		if (color)
+			wattron(wlist, COLOR_PAIR(PAIR_CURSOR));
+		else
+			wstandout(wlist);
+	}
 
 	disp_line(curs, top_idx + curs, a);
-
-	if (a)
-		wstandend(wlist);
 }
 
 void
@@ -1491,7 +1494,9 @@ exit:
 }
 
 static void
-disp_line(unsigned y, unsigned i, int info)
+disp_line(unsigned y, unsigned i,
+    /* 1: Is cursor line */
+    int info)
 {
 	int diff, type;
 	mode_t mode;
@@ -1504,22 +1509,22 @@ disp_line(unsigned y, unsigned i, int info)
 	} else if (!f->ltype) {
 		diff     = '>';
 		mode     = f->rtype;
-		color_id = COLOR_RIGHTONLY;
+		color_id = PAIR_RIGHTONLY;
 	} else if (!f->rtype) {
 		diff     = '<';
 		mode     = f->ltype;
-		color_id = COLOR_LEFTONLY;
+		color_id = PAIR_LEFTONLY;
 	} else if ((f->ltype & S_IFMT) != (f->rtype & S_IFMT)) {
 		diff = ' ';
 		mode = 0;
 		type = '!';
-		color_id = COLOR_DIFF;
+		color_id = PAIR_DIFF;
 	} else {
 no_diff:
 		diff = f->diff;
 		mode = f->ltype;
 		if (diff == '!')
-			color_id = COLOR_DIFF;
+			color_id = PAIR_DIFF;
 	}
 
 	if (S_ISREG(mode)) {
@@ -1530,7 +1535,7 @@ no_diff:
 	} else if (S_ISDIR(mode)) {
 		type = '/';
 		if (!color_id) {
-			color_id = COLOR_DIR;
+			color_id = PAIR_DIR;
 
 			if (is_diff_dir(f->name))
 				diff = '!';
@@ -1538,28 +1543,31 @@ no_diff:
 	} else if (S_ISLNK(mode)) {
 		type = '@';
 		if (!color_id)
-			color_id = COLOR_LINK;
+			color_id = PAIR_LINK;
 		if (diff != '!')
 			link = f->llink ? f->llink : f->rlink;
 	} else if (mode) {
 		type = '?';
 		if (!color_id)
-			color_id = COLOR_UNKNOWN;
+			color_id = PAIR_UNKNOWN;
 	}
 
 	if (followlinks && !S_ISLNK(mode))
 		link = f->llink ? f->llink : f->rlink;
 
-	if (color) {
+	if (color && !info) {
 		wattron(wlist, A_BOLD);
 		if (color_id)
 			wattron(wlist, COLOR_PAIR(color_id));
 	}
+
 	if (bmode)
 		mvwprintw(wlist, y, 0, "%c %s", type, f->name);
 	else
 		mvwprintw(wlist, y, 0, "%c %c %s", diff, type, f->name);
-	wattrset(wlist, A_NORMAL);
+
+	wstandend(wlist);
+
 	if (link) {
 		waddstr(wlist, followlinks ? " (@ " : " -> ");
 		waddstr(wlist, link);
@@ -1613,7 +1621,11 @@ statcol(void)
 	if (bmode)
 		return;
 
-	wstandout(wstat);
+	if (color)
+		wattron(wstat, COLOR_PAIR(PAIR_CURSOR));
+	else
+		wstandout(wstat);
+
 	mvwaddch(wstat, 0, 0, '<');
 	mvwaddch(wstat, 1, 0, '>');
 	wstandend(wstat);
