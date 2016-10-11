@@ -172,10 +172,10 @@ add_path(char *cmd, size_t l0, char *path, char *name)
 }
 
 void
-set_tool(struct tool *tool, char *s, int bg)
+set_tool(struct tool *_tool, char *s, int bg)
 {
-	char **t = tool->tool;
-	tool->bg = bg;
+	char **t = _tool->tool;
+	_tool->bg = bg;
 	free(*t);
 	*t = s;
 	t[1] = NULL;

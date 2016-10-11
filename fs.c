@@ -433,7 +433,7 @@ cancel:
 }
 
 void
-fs_cp(int to, int follow, int num)
+fs_cp(int to, int folw, int num)
 {
 	struct filediff *f;
 	struct stat st;
@@ -458,8 +458,8 @@ fs_cp(int to, int follow, int num)
 		f = db_list[top_idx + curs];
 		pthcat(pth1, len1, f->name);
 
-		if (( follow &&  stat(pth1, &st) == -1) ||
-		    (!follow && lstat(pth1, &st) == -1)) {
+		if (( folw &&  stat(pth1, &st) == -1) ||
+		    (!folw && lstat(pth1, &st) == -1)) {
 			if (errno != ENOENT)
 				printerr(strerror(errno), "stat %s failed",
 				    pth1);
@@ -493,7 +493,7 @@ fs_cp(int to, int follow, int num)
 
 		if (S_ISDIR(stat1.st_mode)) {
 			tree_op = TREE_CP;
-			proc_dir(follow);
+			proc_dir(folw);
 		} else
 			cp_file();
 	}
@@ -536,7 +536,7 @@ rebuild_db(
 }
 
 static int
-proc_dir(int follow)
+proc_dir(int folw)
 {
 	DIR *d;
 	struct dirent *ent;
@@ -544,7 +544,7 @@ proc_dir(int follow)
 	struct str_list *dirs = NULL;
 	short err = 0;
 
-	if (tree_op == TREE_CP && creatdir(follow))
+	if (tree_op == TREE_CP && creatdir(folw))
 		return err;
 
 	if (!(d = opendir(pth1))) {
@@ -571,8 +571,8 @@ proc_dir(int follow)
 
 		pthcat(pth1, len1, name);
 
-		if (( follow &&  stat(pth1, &stat1) == -1) ||
-		    (!follow && lstat(pth1, &stat1) == -1)) {
+		if (( folw &&  stat(pth1, &stat1) == -1) ||
+		    (!folw && lstat(pth1, &stat1) == -1)) {
 			if (errno != ENOENT) {
 				printerr(strerror(errno),
 				    "stat %s failed", pth1);
@@ -614,7 +614,7 @@ closedir:
 				len2 = pthcat(pth2, len2, dirs->s);
 			}
 
-			err |= proc_dir(follow);
+			err |= proc_dir(folw);
 
 			pth1[len1 = l1] = 0;
 
@@ -660,10 +660,10 @@ cp_file(void)
 }
 
 static int
-creatdir(int follow)
+creatdir(int folw)
 {
-	if (( follow &&  stat(pth1, &stat1) == -1) ||
-	    (!follow && lstat(pth1, &stat1) == -1)) {
+	if (( folw &&  stat(pth1, &stat1) == -1) ||
+	    (!folw && lstat(pth1, &stat1) == -1)) {
 		if (errno != ENOENT) {
 			printerr(strerror(errno),
 			    "stat %s failed", pth1);

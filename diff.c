@@ -497,16 +497,16 @@ is_diff_dir(char *name)
 static char *
 read_link(char *path, off_t size)
 {
-	char *link = malloc(size + 1);
+	char *l = malloc(size + 1);
 
-	if ((size = readlink(path, link, size)) == -1) {
+	if ((size = readlink(path, l, size)) == -1) {
 		printerr(strerror(errno), "readlink %s failed", lpath);
-		free(link);
+		free(l);
 		return NULL;
 	}
 
-	link[size] = 0;
-	return link;
+	l[size] = 0;
+	return l;
 }
 
 /* Input: stat1, stat2, lpath, rpath

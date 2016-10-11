@@ -791,9 +791,15 @@ next_key:
 
 			/* fall through */
 		default:
-			printerr(NULL,
-			    "Invalid input '%c' (type 'h' for help).",
-			    isgraph(c) ? c : '?');
+			if (isgraph(c))
+				printerr(NULL,
+				    "Invalid input '%c' (type 'h' for help).",
+				    c);
+			else
+				printerr(NULL,
+				    "Invalid character code 0x%x"
+				    " (type 'h' for help).", c);
+
 			c = 0;
 		}
 	}
@@ -920,9 +926,13 @@ help(void) {
 			refresh();
 			break;
 		default:
-			printerr(NULL,
-			    "Invalid input '%c' ('q' quits help).",
-			    isgraph(c) ? c : '?');
+			if (isgraph(c))
+				printerr(NULL,
+				    "Invalid input '%c' ('q' quits help).", c);
+			else
+				printerr(NULL,
+				    "Invalid character code 0x%x"
+				    " ('q' quits help).", c);
 		}
 	}
 
@@ -1088,7 +1098,7 @@ action(
     unsigned short act,
     /* Used by 'v', "vl" and "vr":
      * Unzip file but then view raw file using standard view tool. */
-    bool raw)
+    bool raw_cont)
 {
 	struct filediff *f1, *f2, *z1 = NULL, *z2 = NULL;
 	char *t1 = NULL, *t2 = NULL;
@@ -1146,7 +1156,7 @@ action(
 		}
 
 		if (ign_ext || (S_ISREG(ltyp) && S_ISREG(rtyp)))
-			tool(lnam, rnam, 3, ign_ext || raw);
+			tool(lnam, rnam, 3, ign_ext || raw_cont);
 
 		else if (S_ISDIR(ltyp) || S_ISDIR(rtyp)) {
 			if (bmode) {
@@ -1190,7 +1200,7 @@ action(
 	    /* Tested here to support "or" */
 	    tree == 2) {
 		if (S_ISREG(f2->rtype) || ign_ext)
-			tool(f2->name, NULL, 2, ign_ext || raw);
+			tool(f2->name, NULL, 2, ign_ext || raw_cont);
 		else if (S_ISDIR(f2->rtype)) {
 			t1 = t2 = NULL;
 			enter_dir(NULL, f2->name, FALSE, z2 ? TRUE : FALSE);
@@ -1200,7 +1210,7 @@ action(
 		}
 	} else if (!f2->rtype || tree == 1) {
 		if (S_ISREG(f1->ltype) || ign_ext)
-			tool(f1->name, NULL, 1, ign_ext || raw);
+			tool(f1->name, NULL, 1, ign_ext || raw_cont);
 		else if (S_ISDIR(f1->ltype)) {
 			t1 = t2 = NULL;
 			enter_dir(f1->name, NULL, z1 ? TRUE : FALSE, FALSE);
@@ -1209,7 +1219,7 @@ action(
 			goto ret;
 		}
 	} else if ((f1->ltype & S_IFMT) == (f2->rtype & S_IFMT)) {
-		if (ign_ext || raw)
+		if (ign_ext || raw_cont)
 			tool(f1->name, f2->name, 3, 1);
 		else if (S_ISREG(f1->ltype)) {
 			if (f1->diff == '!')
@@ -1523,7 +1533,7 @@ disp_line(unsigned y, unsigned i,
 	int diff, type;
 	mode_t mode;
 	struct filediff *f = db_list[i];
-	char *link = NULL;
+	char *lnk = NULL;
 	short color_id = 0;
 
 	if (bmode) {
@@ -1567,7 +1577,7 @@ no_diff:
 		if (!color_id)
 			color_id = PAIR_LINK;
 		if (diff != '!')
-			link = f->llink ? f->llink : f->rlink;
+			lnk = f->llink ? f->llink : f->rlink;
 	} else if (mode) {
 		type = '?';
 		if (!color_id)
@@ -1575,7 +1585,7 @@ no_diff:
 	}
 
 	if (followlinks && !S_ISLNK(mode))
-		link = f->llink ? f->llink : f->rlink;
+		lnk = f->llink ? f->llink : f->rlink;
 
 	if (color && !info) {
 		wattron(wlist, A_BOLD);
@@ -1590,9 +1600,9 @@ no_diff:
 
 	wstandend(wlist);
 
-	if (link) {
+	if (lnk) {
 		waddstr(wlist, followlinks ? " (@ " : " -> ");
-		waddstr(wlist, link);
+		waddstr(wlist, lnk);
 
 		if (followlinks)
 			waddstr(wlist, ")");

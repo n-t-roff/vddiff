@@ -297,7 +297,7 @@ uz_cmp(const void *a, const void *b)
  **********/
 
 void
-db_def_ext(char *ext, char *tool, int bg)
+db_def_ext(char *ext, char *_tool, int bg)
 {
 	struct tool *t;
 #ifdef HAVE_LIBAVLBST
@@ -319,11 +319,11 @@ db_def_ext(char *ext, char *tool, int bg)
 #endif
 		free(ext);
 		free(*t->tool);
-		*t->tool = tool;
+		*t->tool = _tool;
 	} else {
 		t = malloc(sizeof(struct tool));
 		*t->tool = NULL; /* set_tool makes a free() */
-		set_tool(t, tool, bg);
+		set_tool(t, _tool, bg);
 #ifdef HAVE_LIBAVLBST
 		avl_add(ext_db, (union bst_val)(void *)ext,
 		    (union bst_val)(void *)t);
