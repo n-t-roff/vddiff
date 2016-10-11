@@ -596,10 +596,13 @@ next_key:
 			if (!ed_dialog("Type command (<ESC> to cancel):",
 			    NULL /* must be NULL !!! */, NULL, 0,
 			    &sh_cmd_hist) && *rbuf) {
-				sh_cmd(rbuf, 1);
+				char *s = rbuf;
+
+				exec_cmd(&s, -1, NULL, NULL, TRUE,
+				    TRUE);
 			}
 
-			/* sh_cmd() did likely create or delete files */
+			/* exec_cmd() did likely create or delete files */
 			rebuild_db(0);
 			break;
 		case 'e':
@@ -1827,9 +1830,14 @@ static void
 disp_mark(void)
 {
 	werase(wstat);
-	wattrset(wstat, A_REVERSE);
+
+	if (color)
+		wattron(wstat, COLOR_PAIR(PAIR_CURSOR));
+	else
+		wstandout(wstat);
+
 	mvwaddstr(wstat, 1, 0, gl_mark ? gl_mark : mark->name);
-	wattrset(wstat, A_NORMAL);
+	wstandend(wstat);
 	wrefresh(wstat);
 }
 

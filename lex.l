@@ -48,6 +48,8 @@ magic			{ rc_col += yyleng; return MAGIC        ; }
 nows			{ rc_col += yyleng; return NOWS         ; }
 scale                   { rc_col += yyleng; return SCALE        ; }
 bmode			{ rc_col += yyleng; return BMODE        ; }
+shell			{ rc_col += yyleng; return SHELL        ; }
+sh			{ rc_col += yyleng; return SH           ; }
 [0-9]+			{ rc_col += yyleng;
 			  yylval.integer = atoi(yytext);
 			  return INTEGER; }

@@ -40,6 +40,8 @@ static void sig_child(int);
 
 struct tool difftool;
 struct tool viewtool;
+char *ishell;
+char *nishell;
 
 void
 tool(char *name, char *rnam, int tree, int ign_ext)
@@ -146,28 +148,8 @@ settool:
 	}
 
 	cmd[l0] = 0;
-	sh_cmd(cmd, 0);
+	exec_cmd(&cmd, 0, NULL, NULL, TRUE, TRUE);
 	free(cmd);
-}
-
-void
-sh_cmd(char *cmd, int wait)
-{
-	erase();
-	refresh();
-	def_prog_mode();
-	endwin();
-	system(cmd);
-
-	if (wait) {
-		char s[] = "Type <ENTER> to continue ";
-		write(STDOUT_FILENO, s, sizeof s);
-		fgetc(stdin);
-	}
-
-	reset_prog_mode();
-	refresh();
-	disp_list();
 }
 
 static size_t
@@ -270,7 +252,7 @@ exec_tool(struct tool *t, char *name, char *rnam, int tree)
 	}
 
 	*a = NULL;
-	status = exec_cmd(av, bg, NULL, NULL, TRUE);
+	status = exec_cmd(av, bg, NULL, NULL, TRUE, FALSE);
 
 	if (o)
 		free(*av);
@@ -285,10 +267,13 @@ exec_tool(struct tool *t, char *name, char *rnam, int tree)
 }
 
 int
-exec_cmd(char **av, int bg, char *path, char *msg, bool tty)
+exec_cmd(char **av,
+    /* 1: Background, 0: waitpid(), -1: Wait for <ENTER> */
+    int bg, char *path, char *msg, bool tty, bool sh)
 {
 	pid_t pid;
 	int status = 0;
+	char prompt[] = "Type <ENTER> to continue ";
 
 	erase();
 	refresh();
@@ -310,21 +295,35 @@ exec_cmd(char **av, int bg, char *path, char *msg, bool tty)
 		if (msg)
 			puts(msg);
 
-		if (execvp(*av, av) == -1) {
+		if (sh) {
+			char *shell = nishell ? nishell : "sh";
+
+			if (execlp(shell, shell, "-c", *av, NULL) == -1) {
+				/* only seen when vddiff exits later */
+				printf("exec %s -c \"%s\" failed: %s\n",
+				    shell, *av, strerror(errno));
+				exit(77);
+			}
+		} else if (execvp(*av, av) == -1) {
 			/* only seen when vddiff exits later */
 			printf("exec \"%s\" failed: %s\n", *av,
 			    strerror(errno));
-			exit(77);
 		}
 
-		/* not reached */
-		break;
+		write(STDOUT_FILENO, prompt, sizeof prompt);
+		fgetc(stdin);
+		exit(77);
 	default:
-		if (bg)
+		if (bg == 1)
 			break;
 
 		/* did always return "interrupted sys call" on OI */
 		waitpid(pid, &status, 0);
+
+		if (bg == -1) {
+			write(STDOUT_FILENO, prompt, sizeof prompt);
+			fgetc(stdin);
+		}
 	}
 
 	reset_prog_mode();
@@ -404,15 +403,20 @@ open_sh(int tree)
 		s = lpath;
 	}
 
-	if (!(pw = getpwuid(getuid()))) {
-		printerr(strerror(errno), "getpwuid failed");
-		return;
+	if (ishell)
+		*av = ishell;
+	else {
+		if (!(pw = getpwuid(getuid()))) {
+			printerr(strerror(errno), "getpwuid failed");
+			return;
+		}
+
+		*av = pw->pw_shell;
 	}
 
-	*av = pw->pw_shell;
 	av[1] = NULL;
 	exec_cmd(av, 0, s, "\nType \"exit\" or '^D' to return to vddiff.\n",
-	    TRUE);
+	    TRUE, FALSE);
 }
 
 void

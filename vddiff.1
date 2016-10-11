@@ -414,9 +414,7 @@ command.
 .It Sq Li Y
 Copy file paths to edit line in reverse order.
 .It Sq Li $
-Enter
-.Xr sh 1
-command.
+Enter shell command.
 If paths had been copied to the edit line before using the
 .Sq Li y
 or
@@ -440,6 +438,11 @@ The keys
 and
 .Aq Cm DOWN
 fetch other history entries.
+The shell to be used (default
+.Dq Li sh )
+can be configured with the
+.Sy sh
+option.
 .It Oo Ar n Oc Ns Ao Cm F1 Ac \(en Aq Cm F12
 Define string which can be inserted later with this function key
 when entering a
@@ -486,7 +489,9 @@ List strings which had been defined for a function key.
 Update file list.
 .It Sq Li s
 Open shell in current directory.
-The shell to open is read from the users entry in
+The shell to open can be set with the
+.Sy shell
+option, else it is read from the users entry in
 .Pa /etc/passwd .
 .It Dq Li sl
 Open shell in left directory tree.
@@ -767,6 +772,38 @@ it behaves like a simple single directory view
 file browser.
 By use of marks files can be compared in bmode,
 but comparing directories is not possible.
+.It Li shell Ar string
+Set shell for the
+.Sq Li s ,
+.Dq Li sl
+and
+.Dq Li sr
+command.
+Default is the users login shell.
+.Ar string
+may be a full path or just the shell name.
+In the latter case
+.Li $PATH
+is searched to determine the full path.
+.It Li sh Ar string
+Set shell for the
+.Sq Li $
+and function key commands,
+.Li .gz
+and
+.Xr .bz2
+uncompressing
+and any use of the symbolic filenames
+.Dq Li $1
+and
+.Dq Li $2 .
+Default is
+.Dq Li sh .
+.Ar string
+may be a full path or just the shell name.
+In the latter case
+.Li $PATH
+is searched to determine the full path.
 .El
 .Sh FILES
 .Bl -tag -width ~/.vddiffrc -compact
