@@ -370,7 +370,7 @@ ext_cmp(const void *a, const void *b)
  ***********/
 
 void
-db_set_curs(char *path, unsigned top_idx, unsigned curs)
+db_set_curs(char *path, unsigned _top_idx, unsigned _curs)
 {
 	unsigned *uv;
 
@@ -405,8 +405,8 @@ db_set_curs(char *path, unsigned top_idx, unsigned curs)
 	uv = (unsigned *)&cp2->uv;
 #endif
 
-	*uv++ = top_idx;
-	*uv   = curs;
+	*uv++ = _top_idx;
+	*uv   = _curs;
 }
 
 unsigned *

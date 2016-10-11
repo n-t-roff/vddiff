@@ -411,19 +411,19 @@ del_char:
 			wrefresh(wstat);
 
 			if (callback) {
-				int i;
+				int i2;
 #ifdef HAVE_CURSES_WCH
 				wcstombs(rbuf, linebuf, sizeof rbuf);
 #endif
-				i = callback(rbuf);
+				i2 = callback(rbuf);
 
-				if (i & EDCB_FAIL)
+				if (i2 & EDCB_FAIL)
 					return 1;
 
-				if (i & EDCB_RM_CB)
+				if (i2 & EDCB_RM_CB)
 					callback = NULL;
 
-				if (i & EDCB_IGN)
+				if (i2 & EDCB_IGN)
 					goto backspace;
 			}
 		}

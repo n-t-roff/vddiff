@@ -23,11 +23,11 @@ PERFORMANCE OF THIS SOFTWARE.
 #include "db.h"
 #include "main.h"
 #include "ed.h"
+#include "lex.h"
 
 void yyerror(const char *);
 int yylex(void);
 void follow(int);
-extern unsigned rc_nline, rc_col;
 extern char *yytext;
 %}
 %union {

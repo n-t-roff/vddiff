@@ -106,12 +106,12 @@ test_fkey(int c, unsigned short num)
 		fkey_cmd[i] = NULL;
 
 		if (*rbuf == '$' && isspace((int)rbuf[1])) {
-			int c;
+			int c2;
 			int j = 0;
 
-			while ((c = rbuf[++j]) && isspace(c));
+			while ((c2 = rbuf[++j]) && isspace(c2));
 
-			if (!c)
+			if (!c2)
 				return 1; /* empty input */
 
 			fkey_cmd[i] = strdup(rbuf + j);

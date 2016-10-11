@@ -16,6 +16,7 @@ PERFORMANCE OF THIS SOFTWARE.
 */
 #include <string.h>
 #include "y.tab.h"
+#include "lex.h"
 unsigned rc_nline = 1;
 unsigned rc_col = 1;
 %}

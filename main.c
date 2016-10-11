@@ -29,10 +29,12 @@ PERFORMANCE OF THIS SOFTWARE.
 #include "uzp.h"
 #include "db.h"
 #include "diff.h"
+#include "ver.h"
 
 int yyparse(void);
 
-char *prog, *pwd, *rpwd, *arg[2];
+static char *prog;
+char *pwd, *rpwd, *arg[2];
 size_t llen, rlen;
 char lpath[PATHSIZ], rpath[PATHSIZ], lbuf[BUF_SIZE], rbuf[BUF_SIZE];
 struct stat stat1, stat2;
@@ -56,7 +58,6 @@ int
 main(int argc, char **argv)
 {
 	int opt;
-	extern const char version[];
 
 	prog = *argv;
 	setlocale(LC_ALL, "");
@@ -191,23 +192,26 @@ static int
 read_rc(const char *upath)
 {
 	static char rc_name[] = "/.vddiffrc";
-	char *s, *rc_path;
+	char *s, *m;
+	const char *rc_path;
 	size_t l;
 	int rv = 0;
 	extern FILE *yyin;
 
 	if (upath)
-		rc_path = (char *)upath;
+		rc_path = upath;
 	else {
 		if (!(s = getenv("HOME"))) {
 			printf("HOME not set\n");
 			return 1;
 		} else {
 			l = strlen(s);
-			rc_path = malloc(l + sizeof rc_name);
-			memcpy(rc_path, s, l);
-			memcpy(rc_path + l, rc_name, sizeof rc_name);
+			m = malloc(l + sizeof rc_name);
+			memcpy(m, s, l);
+			memcpy(m + l, rc_name, sizeof rc_name);
 		}
+
+		rc_path = m;
 	}
 
 	if (stat(rc_path, &stat1) == -1) {
@@ -234,7 +238,7 @@ read_rc(const char *upath)
 	}
 free:
 	if (!upath)
-		free(rc_path);
+		free(m);
 
 	return rv;
 }

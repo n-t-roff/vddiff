@@ -23,7 +23,7 @@ extern short edit;
 extern unsigned histsize;
 
 #ifdef HAVE_CURSES_WCH
-wchar_t *linebuf;
+extern wchar_t *linebuf;
 #else
-char *linebuf;
+extern char *linebuf;
 #endif
