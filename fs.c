@@ -55,6 +55,34 @@ static size_t len1, len2;
 static enum { TREE_RM, TREE_CP } tree_op;
 
 void
+fs_mkdir(short tree)
+{
+	if (ed_dialog("Enter name of directory to create (<ESC> to cancel):",
+	    "", NULL, 0, NULL))
+		return;
+
+	if (tree & 1) {
+		pth1 = lpath;
+		len1 = llen;
+	} else {
+		pth1 = rpath;
+		len1 = rlen;
+	}
+
+	pthcat(pth1, len1, rbuf);
+
+	if (mkdir(pth1, 0777) == -1) {
+		printerr(strerror(errno), "mkdir \"%s\" failed", pth1);
+		goto exit;
+	}
+
+	rebuild_db(0);
+
+exit:
+	pth1[len1] = 0;
+}
+
+void
 fs_rename(int tree)
 {
 	struct filediff *f;

@@ -19,4 +19,4 @@ void set_tool(struct tool *, char *, int);
 void exec_sighdl(void);
 size_t shell_quote(char *, char *, size_t);
 void open_sh(int);
-int exec_cmd(char **, int, char *, char *, bool, bool);
+int exec_cmd(char **, unsigned, char *, char *, bool, bool);

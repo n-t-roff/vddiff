@@ -30,6 +30,7 @@ PERFORMANCE OF THIS SOFTWARE.
 #include "uzp.h"
 #include "db.h"
 #include "diff.h"
+#include "fs.h"
 
 const char *const vimdiff  = "vim -dR";
 const char *const diffless = "diff $1 $2 | less";
@@ -252,7 +253,7 @@ exec_tool(struct tool *t, char *name, char *rnam, int tree)
 	}
 
 	*a = NULL;
-	status = exec_cmd(av, bg, NULL, NULL, TRUE, FALSE);
+	status = exec_cmd(av, bg ? 1 : 0, NULL, NULL, TRUE, FALSE);
 
 	if (o)
 		free(*av);
@@ -268,8 +269,8 @@ exec_tool(struct tool *t, char *name, char *rnam, int tree)
 
 int
 exec_cmd(char **av,
-    /* 1: Background, 0: waitpid(), -1: Wait for <ENTER> */
-    int bg, char *path, char *msg, bool tty, bool sh)
+    /* 1: Background, 2: Wait for <ENTER>, 4: Skip disp_list() */
+    unsigned flags, char *path, char *msg, bool tty, bool sh)
 {
 	pid_t pid;
 	int status = 0;
@@ -314,13 +315,13 @@ exec_cmd(char **av,
 		fgetc(stdin);
 		exit(77);
 	default:
-		if (bg == 1)
+		if (flags & 1)
 			break;
 
 		/* did always return "interrupted sys call" on OI */
 		waitpid(pid, &status, 0);
 
-		if (bg == -1) {
+		if (flags & 2) {
 			write(STDOUT_FILENO, prompt, sizeof prompt);
 			fgetc(stdin);
 		}
@@ -332,7 +333,9 @@ exec_cmd(char **av,
 	if (pid == -1)
 		printerr(strerror(errno), "fork failed");
 
-	disp_list();
+	if (!(flags & 4))
+		disp_list();
+
 	return status;
 }
 
@@ -415,8 +418,11 @@ open_sh(int tree)
 	}
 
 	av[1] = NULL;
-	exec_cmd(av, 0, s, "\nType \"exit\" or '^D' to return to vddiff.\n",
+	exec_cmd(av, 4, s, "\nType \"exit\" or '^D' to return to vddiff.\n",
 	    TRUE, FALSE);
+
+	/* exec_cmd() did likely create or delete files */
+	rebuild_db(0);
 }
 
 void

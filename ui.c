@@ -426,6 +426,14 @@ next_key:
 		case KEY_RESIZE:
 			ui_resize();
 			break;
+		case 'P':
+			if (bmode) {
+				c = 0;
+				fs_mkdir(1);
+				break;
+			}
+
+			break;
 		case 'd':
 			if (*key != 'd')
 				break;
@@ -481,6 +489,10 @@ next_key:
 				goto next_key;
 			case 'e':
 				goto next_key;
+			case 'P':
+				c = 0;
+				fs_mkdir(1);
+				goto next_key;
 			default:
 				;
 			}
@@ -532,6 +544,10 @@ next_key:
 				action(0, 2, 0, FALSE);
 				goto next_key;
 			case 'e':
+				goto next_key;
+			case 'P':
+				c = 0;
+				fs_mkdir(2);
 				goto next_key;
 			default:
 				;
@@ -598,7 +614,7 @@ next_key:
 			    &sh_cmd_hist) && *rbuf) {
 				char *s = rbuf;
 
-				exec_cmd(&s, -1, NULL, NULL, TRUE,
+				exec_cmd(&s, 6, NULL, NULL, TRUE,
 				    TRUE);
 			}
 
@@ -836,6 +852,9 @@ static char *helptxt[] = {
        "[<n>]eg		Change file group",
        "[<n>]elg	Change group of left file",
        "[<n>]erg	Change group or right file",
+       "P		Create directory (bmode only)",
+       "Pl		Create directory in left tree",
+       "Pr		Create directory in right tree",
        "m		Mark file or directory",
        "r		Remove mark, edit line or regex search",
        "b		Binary diff to marked file",
