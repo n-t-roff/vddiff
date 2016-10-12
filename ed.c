@@ -334,6 +334,7 @@ next_key:
 			wrefresh(wstat);
 			break;
 		case KEY_BACKSPACE:
+		case CERASE:
 backspace:
 			if (!linepos)
 				break;

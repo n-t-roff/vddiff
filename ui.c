@@ -306,6 +306,7 @@ next_key:
 			break;
 		case KEY_PPAGE:
 		case KEY_BACKSPACE:
+		case CERASE:
 			c = 0;
 			page_up();
 			break;
@@ -919,6 +920,7 @@ help(void) {
 			break;
 		case KEY_PPAGE:
 		case KEY_BACKSPACE:
+		case CERASE:
 			help_pg_up();
 			break;
 		case CTRL('L'):
@@ -1601,11 +1603,8 @@ no_diff:
 	wstandend(wlist);
 
 	if (lnk) {
-		waddstr(wlist, followlinks ? " (@ " : " -> ");
+		waddstr(wlist, " -> ");
 		waddstr(wlist, lnk);
-
-		if (followlinks)
-			waddstr(wlist, ")");
 	}
 
 	if (!info)
@@ -1982,10 +1981,15 @@ yank_name(int reverse)
 void
 no_file(void)
 {
-	if (real_diff && !bmode)
-		printerr(NULL, "No file (type c to view all files).");
+	if ((real_diff || noequal || nosingle) && !bmode)
+		printerr(NULL,
+		    "No file in list (type %s%s%s to disable filters).",
+		    !real_diff ? "" : "'c'",
+		    !noequal ? "" : !real_diff ? "'!'" : " or '!'",
+		    !nosingle ? "" :
+		    !(real_diff || noequal) ? "'&'" : " or '&'");
 	else
-		printerr(NULL, "No file");
+		printerr(NULL, "Directory is empty.");
 }
 
 void

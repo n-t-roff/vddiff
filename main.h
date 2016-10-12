@@ -6,6 +6,9 @@
 #ifndef CTRL
 # define CTRL(c) ((c) & 037)
 #endif
+#ifndef CERASE
+# define CERASE 0177
+#endif
 
 extern struct stat stat1, stat2;
 extern size_t llen, rlen;
