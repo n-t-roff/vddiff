@@ -53,6 +53,7 @@ static int ask_for_perms(mode_t *);
 static char *pth1, *pth2;
 static size_t len1, len2;
 static enum { TREE_RM, TREE_CP } tree_op;
+static bool ign_rm_errs;
 
 void
 fs_mkdir(short tree)
@@ -422,6 +423,7 @@ fs_rm(int tree, char *txt, int num)
 	if (txt)
 		goto cancel; /* rebuild is done by others */
 
+	ign_rm_errs = FALSE;
 	rebuild_db(0);
 	return;
 
@@ -628,11 +630,18 @@ closedir:
 		free(p);
 	}
 
-	if (!err && tree_op == TREE_RM && rmdir(pth1) == -1 &&
-		dialog("[ENTER] continue, [ESC] cancel",
-		    "\n", "rmdir \"%s\" failed: %s", pth1,
-		    strerror(errno)) == '')
+	if (!err && tree_op == TREE_RM && rmdir(pth1) == -1 && !ign_rm_errs)
+		switch (dialog(
+		    "[ENTER] continue, [ESC] cancel, [i] ignore errors",
+		    "\ni", "rmdir \"%s\" failed: %s", pth1,
+		    strerror(errno))) {
+		case '':
 			err = 1;
+			break;
+		case 'i':
+			ign_rm_errs = TRUE;
+			break;
+		}
 
 	return err;
 }
@@ -640,11 +649,17 @@ closedir:
 static int
 rm_file(void)
 {
-	if (unlink(pth1) == -1 &&
-		dialog("[ENTER] continue, [ESC] cancel",
-		    "\n", "unlink \"%s\" failed: %s", pth1,
-		    strerror(errno)) == '')
-		return 1;
+	if (unlink(pth1) == -1 && !ign_rm_errs)
+		switch (dialog(
+		    "[ENTER] continue, [ESC] cancel, [i] ignore errors",
+		    "\ni", "unlink \"%s\" failed: %s", pth1,
+		    strerror(errno))) {
+		case '':
+			return 1;
+		case 'i':
+			ign_rm_errs = TRUE;
+			break;
+		}
 
 	return 0;
 }

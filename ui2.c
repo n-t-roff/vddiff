@@ -64,9 +64,9 @@ test_fkey(int c, unsigned short num)
 			    " [other key] cancel";
 
 			switch (num > 1 ? dialog(keys, NULL,
-			    "Really execute %s for %d files?",
+			    "Really execute \"%s\" for %d files?",
 			    fkey_cmd[i], num) : dialog(keys, NULL,
-			    "Really execute %s?", fkey_cmd[i])) {
+			    "Really execute \"%s\"?", fkey_cmd[i])) {
 			case 'e':
 				break;
 			case '\n':
