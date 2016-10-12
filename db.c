@@ -239,8 +239,8 @@ name_cmp(
 	char *s1 = a.p,
 	     *s2 = b.p;
 #else
-	char *s1 = (char *)a,
-	     *s2 = (char *)b;
+	const char *s1 = a,
+	           *s2 = b;
 #endif
 
 	return strcmp(s1, s2);
@@ -563,7 +563,7 @@ mk_list(const void *n, const VISIT which, const int depth)
 	switch (which) {
 	case postorder:
 	case leaf:
-		f = *(struct filediff **)n;
+		f = *(struct filediff * const *)n;
 		PROC_DIFF_NODE();
 		break;
 	default:
@@ -589,13 +589,13 @@ diff_cmp(
 #endif
     )
 {
-	struct filediff
+	const struct filediff
 #ifdef HAVE_LIBAVLBST
 	    *f1 = a.p,
 	    *f2 = b.p;
 #else
-	    *f1 = (struct filediff *)a,
-	    *f2 = (struct filediff *)b;
+	    *f1 = a,
+	    *f2 = b;
 #endif
 
 	if (sorting != SORTMIXED) {
