@@ -21,6 +21,7 @@ void set_fkey(int, char *);
 
 extern short edit;
 extern unsigned histsize;
+extern unsigned linelen;
 
 #ifdef HAVE_CURSES_WCH
 extern wchar_t *linebuf;

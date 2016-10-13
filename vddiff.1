@@ -13,7 +13,7 @@ LOSS OF USE, DATA OR PROFITS, WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE OR
 OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
 PERFORMANCE OF THIS SOFTWARE.
 ..
-.Dd October 11, 2016
+.Dd October 13, 2016
 .Dt VDDIFF 1
 .Sh NAME
 .Nm vddiff
@@ -467,7 +467,7 @@ If the string begins with a
 followed by at least one space
 .Pq Sq Li " "
 it is treated as shell command itself, which is
-applied to a selected file.
+applied to a selected file(s).
 If that function key is pressed later, a dialog opens
 to ask if the command should be executed or the function
 key should be redefined.
@@ -484,6 +484,12 @@ as a number between 2 and 9 (inclusive) is given,
 the command is applied to
 .Ar n
 files starting from the current selection.
+.Pp
+To save a command for a function key which does not take
+the selected filename as argument, add a space followed
+by an octothorpe
+.Pq Dq Li " #"
+at the end of the string.
 .Pp
 If no diff tool which supports merging is available,
 files can be merged manually by defining two function keys
@@ -702,6 +708,12 @@ enclosed in double quotes in this case),
 it defines a shell command to be executed
 for the selected file
 when pressing the function key.
+.Pp
+To save a command for a function key which does not take
+the selected filename as argument, add a space followed
+by an octothorpe
+.Pq Dq Li " #"
+at the end of the string.
 .It Li mono
 Disable colors.
 .It Li followlinks
@@ -801,10 +813,10 @@ and function key commands,
 and
 .Xr .bz2
 uncompressing
-and any use of the symbolic filenames
-.Dq Li $1
+and any use of the shell special characters
+.Li | , & , \&; , < , > , \&( , \&) , \(ga , \(rs , \(dq , \(aq , \&[ , # ,
 and
-.Dq Li $2 .
+.Li ~ .
 Default is
 .Dq Li sh .
 .Ar string

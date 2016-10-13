@@ -38,6 +38,7 @@ const char *const diffless = "diff $1 $2 | less";
 static size_t add_path(char *, size_t, char *, char *);
 static void exec_tool(struct tool *, char *, char *, int);
 static void sig_child(int);
+static int shell_char(int);
 
 struct tool difftool;
 struct tool viewtool;
@@ -47,13 +48,13 @@ char *nishell;
 void
 tool(char *name, char *rnam, int tree, int ign_ext)
 {
-	size_t ln, rn, l0, l1, l2, l;
-	char **toolp, *cmd;
+	size_t l;
+	char *cmd;
 	struct tool *tmptool = NULL;
 	short skipped = 0;
 	int c;
 
-	l = ln = strlen(name);
+	l = strlen(name);
 	cmd = lbuf + sizeof lbuf;
 	*--cmd = 0;
 
@@ -86,33 +87,45 @@ tool(char *name, char *rnam, int tree, int ign_ext)
 settool:
 		tmptool = tree == 3 && !ign_ext ? &difftool : &viewtool;
 
-	toolp = tmptool->tool;
-
-	if (!toolp[1]) {
+	if (!tmptool->sh) {
 		exec_tool(tmptool, name, rnam, tree);
 		return;
 	}
 
-	rn = rnam ? strlen(rnam) : ln;
+	cmd = exec_mk_cmd(tmptool, name, rnam, tree);
+	exec_cmd(&cmd, 0, NULL, NULL, TRUE, TRUE);
+	free(cmd);
+}
+
+char *
+exec_mk_cmd(struct tool *tmptool, char *name, char *rnam, int tree)
+{
+	size_t ln, rn, l0, l1, l2, l;
+	char **toolp, *cmd;
+
+	if (!rnam)
+		rnam = name;
+
+	ln = strlen(name);
+	rn = strlen(rnam);
+	toolp = tmptool->tool;
 	l0 = strlen(*toolp);
 	l1 = toolp[1] ? strlen(toolp[1]) : 0;
 	l2 = toolp[2] ? strlen(toolp[2]) : 0;
-
 	l = l0 + (llen + ln + rlen + rn) * 2 + 3 + l1 + l2;
 	cmd = malloc(l);
 	memcpy(cmd, *toolp, l0);
-
 	lpath[llen] = 0; /* in add_path() used without len */
 
 	if (!bmode)
 		rpath[rlen] = 0;
 
-	if (!l1 || tree != 3) {
+	if (tmptool->noarg) {
+	} else if (!l1 || tree != 3) {
 		if (tree & 1)
 			l0 = add_path(cmd, l0, lpath, name);
 		if (tree & 2)
-			l0 = add_path(cmd, l0, rpath,
-			    rnam ? rnam : name);
+			l0 = add_path(cmd, l0, rpath, rnam);
 
 		if (l1 && tree != 3) {
 			memcpy(cmd + l0, toolp[1] + 1, --l1);
@@ -124,8 +137,7 @@ settool:
 			l0 = add_path(cmd, l0, lpath, name);
 			break;
 		case '2':
-			l0 = add_path(cmd, l0, rpath,
-			    rnam ? rnam : name);
+			l0 = add_path(cmd, l0, rpath, rnam);
 			break;
 		}
 
@@ -138,8 +150,7 @@ settool:
 				l0 = add_path(cmd, l0, lpath, name);
 				break;
 			case '2':
-				l0 = add_path(cmd, l0, rpath,
-				    rnam ? rnam : name);
+				l0 = add_path(cmd, l0, rpath, rnam);
 				break;
 			}
 
@@ -149,8 +160,7 @@ settool:
 	}
 
 	cmd[l0] = 0;
-	exec_cmd(&cmd, 0, NULL, NULL, TRUE, TRUE);
-	free(cmd);
+	return cmd;
 }
 
 static size_t
@@ -174,24 +184,61 @@ add_path(char *cmd, size_t l0, char *path, char *name)
 void
 set_tool(struct tool *_tool, char *s, int bg)
 {
-	char **t = _tool->tool;
+	char **t;
+	char *b;
+	int c;
+	bool sh = FALSE;
+
+	t = _tool->tool;
 	_tool->bg = bg;
 	free(*t);
-	*t = s;
+	*t = b = s;
 	t[1] = NULL;
 	t[2] = NULL;
 
-	while (*s) {
-		if (*s == '$' && (s[1] == '1' || s[1] == '2')) {
-			*s++ = 0;
+	while ((c = *s)) {
+		if (c == '$') {
+			if (s[1] == '1' || s[1] == '2') {
+				*s++ = 0;
+				sh = TRUE;
 
-			if (!t[1])
-				t[1] = s;
-			else if (!t[2])
-				t[2] = s;
-		}
+				if (!t[1])
+					t[1] = s;
+				else if (!t[2])
+					t[2] = s;
+			} else
+				sh = TRUE;
+		} else if (!sh && shell_char(c))
+			sh = TRUE;
+
 		s++;
 	}
+
+	while (--s >= b && isblank((int)*s))
+		*s = 0;
+
+	if (*s == '#' && (s == b || isblank((int)s[-1]))) {
+		_tool->noarg = TRUE;
+
+		while (--s >= b && isblank((int)*s))
+			*s = 0;
+	}
+
+	_tool->sh = sh;
+}
+
+static int
+shell_char(int c)
+{
+	static const char s[] = "|&;<>()`\\\"'[#~";
+	int sc;
+	const char *p;
+
+	for (p = s; (sc = *p++); )
+		if (c == sc)
+			return 1;
+
+	return 0;
 }
 
 static void

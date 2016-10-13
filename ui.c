@@ -2216,11 +2216,15 @@ dialog(char *quest, char *answ, char *fmt, ...)
 	char *s;
 
 	wstat_dirty = TRUE;
-	werase(wstat);
-	wmove(wstat, 0, 0);
-	va_start(ap, fmt);
-	vwprintw(wstat, fmt, ap);
-	va_end(ap);
+
+	if (fmt) {
+		werase(wstat);
+		wmove(wstat, 0, 0);
+		va_start(ap, fmt);
+		vwprintw(wstat, fmt, ap);
+		va_end(ap);
+	}
+
 	mvwaddstr(wstat, 1, 0, quest);
 	wrefresh(wstat);
 	do {

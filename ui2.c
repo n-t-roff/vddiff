@@ -63,19 +63,28 @@ test_fkey(int c, unsigned short num)
 			    "[ENTER] execute, [e] edit"
 			    " [other key] cancel";
 
-			switch (num > 1 ? dialog(keys, NULL,
-			    "Really execute \"%s\" for %d files?",
-			    fkey_cmd[i], num) : dialog(keys, NULL,
-			    "Really execute \"%s\"?", fkey_cmd[i])) {
+			t = viewtool;
+			*viewtool.tool = NULL;
+			/* set_tool() reused here to process
+			 * embedded "$1" */
+			set_tool(&viewtool,
+			    strdup(fkey_cmd[i]), 0);
+
+			werase(wstat);
+			mvwprintw(wstat, 0, 0, "Really execute \"%s\"",
+			    fkey_cmd[i]);
+
+			if (num > 1)
+				wprintw(wstat, " for %d files", num);
+
+			waddstr(wstat, "?");
+
+			switch (dialog(keys, NULL, NULL)) {
 			case 'e':
-				break;
+				free(*viewtool.tool);
+				viewtool = t;
+				goto edit_fkey;
 			case '\n':
-				t = viewtool;
-				*viewtool.tool = NULL;
-				/* set_tool() reused here to process
-				 * embedded "$1" */
-				set_tool(&viewtool,
-				    strdup(fkey_cmd[i]), 0);
 				ti = top_idx;
 
 				while (num--) {
@@ -84,20 +93,28 @@ test_fkey(int c, unsigned short num)
 				}
 
 				top_idx = ti;
-				free(*viewtool.tool);
-				viewtool = t;
 				/* action() did likely create or
 				 * delete files */
 				rebuild_db(0);
 				/* fall through */
-			default:
-				return 1;
 			}
+
+			free(*viewtool.tool);
+			viewtool = t;
+			return 1;
+		}
+
+edit_fkey:
+		linelen = 0; /* Remove existing text */
+
+		if (fkey_cmd[i]) {
+			ed_append("$ ");
+			ed_append(fkey_cmd[i]);
 		}
 
 		if (ed_dialog(
 		    "Type text to be saved for function key:",
-		    fkey_cmd[i] ? fkey_cmd[i] : "", NULL, 1, NULL))
+		    NULL, NULL, 1, NULL))
 			break;
 
 		free(sh_str[i]);

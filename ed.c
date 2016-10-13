@@ -42,7 +42,8 @@ static void hist_down(struct history *);
 short edit;
 unsigned histsize = 100;
 
-static unsigned linelen, linepos, leftpos;
+unsigned linelen;
+static unsigned linepos, leftpos;
 
 #ifdef HAVE_CURSES_WCH
 wchar_t *linebuf;
@@ -88,6 +89,9 @@ ed_append(char *txt)
 static void
 init_edit(void)
 {
+	if (edit)
+		clr_edit();
+
 	edit = 1;
 #ifdef HAVE_CURSES_WCH
 	linebuf = malloc(LINESIZ * sizeof(*linebuf));
