@@ -121,7 +121,7 @@ fs_rename(int tree)
 		if (errno != ENOENT)
 			printerr(strerror(errno), "lstat \"%s\" failed", pth1);
 	} else {
-		if (dialog("[y] yes, [other key] no", NULL,
+		if (dialog(y_n_txt, NULL,
 		    "Delete existing %s %s?", S_ISDIR(stat1.st_mode) ?
 		    "directory" : "file", pth1) != 'y')
 			goto exit;
@@ -161,7 +161,7 @@ fs_chmod(int tree, int num)
 	if (!db_num)
 		return;
 
-	if (num > 1 && dialog("[y] yes, [other key] no", NULL,
+	if (num > 1 && dialog(y_n_txt, NULL,
 	    "Change mode of %d files?", num) != 'y')
 		return;
 
@@ -282,7 +282,7 @@ fs_chown(int tree, int op, int num)
 	if (!db_num)
 		return;
 
-	if (num > 1 && dialog("[y] yes, [other key] no", NULL,
+	if (num > 1 && dialog(y_n_txt, NULL,
 	    "Change %s of %d files?", op ? "group" : "owner", num) != 'y')
 		return;
 
@@ -368,7 +368,7 @@ fs_rm(int tree, char *txt, int num)
 
 	m = num > 1;
 
-	if (m && dialog("[y] yes, [other key] no", NULL,
+	if (m && dialog(y_n_txt, NULL,
 	    "Really %s %d files?", txt ? txt : "delete", num) != 'y')
 		return;
 
@@ -405,7 +405,7 @@ fs_rm(int tree, char *txt, int num)
 			continue;
 		}
 
-		if (!m && dialog("[y] yes, [other key] no", NULL,
+		if (!m && dialog(y_n_txt, NULL,
 		    "Really %s %s%s?", txt ? txt : "delete",
 		    S_ISDIR(stat1.st_mode) ? "directory " : "", pth1) != 'y')
 			goto cancel;
@@ -444,7 +444,7 @@ fs_cp(int to, int folw, int num)
 	if (!db_num)
 		return;
 
-	if (num > 1 && dialog("[y] yes, [other key] no", NULL,
+	if (num > 1 && dialog(y_n_txt, NULL,
 	    "Really copy %d files?", num) != 'y')
 		return;
 
@@ -632,7 +632,7 @@ closedir:
 
 	if (!err && tree_op == TREE_RM && rmdir(pth1) == -1 && !ign_rm_errs)
 		switch (dialog(
-		    "[ENTER] continue, [ESC] cancel, [i] ignore errors",
+		    "<ENTER> continue, <ESC> cancel, 'i' ignore errors",
 		    "\ni", "rmdir \"%s\" failed: %s", pth1,
 		    strerror(errno))) {
 		case '':
@@ -651,7 +651,7 @@ rm_file(void)
 {
 	if (unlink(pth1) == -1 && !ign_rm_errs)
 		switch (dialog(
-		    "[ENTER] continue, [ESC] cancel, [i] ignore errors",
+		    "<ENTER> continue, <ESC> cancel, 'i' ignore errors",
 		    "\ni", "unlink \"%s\" failed: %s", pth1,
 		    strerror(errno))) {
 		case '':

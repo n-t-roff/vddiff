@@ -226,7 +226,7 @@ next_key:
 		case '1':
 			break;
 		case 'q':
-			if (dialog("[y] yes, [other key] no", NULL,
+			if (dialog(y_n_txt, NULL,
 			    "Quit vddiff?") != 'y')
 				break;
 
@@ -2210,7 +2210,7 @@ printerr(char *s2, char *s1, ...)
 }
 
 int
-dialog(char *quest, char *answ, char *fmt, ...)
+dialog(const char *quest, char *answ, char *fmt, ...)
 {
 	va_list ap;
 	int c, c2;

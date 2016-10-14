@@ -33,6 +33,7 @@ PERFORMANCE OF THIS SOFTWARE.
 #include "main.h"
 #include "exec.h"
 
+const char y_n_txt[] = "'y' yes, <other key> no";
 struct str_uint {
 	char *s;
 	unsigned int u;
@@ -60,8 +61,8 @@ test_fkey(int c, unsigned short num)
 			struct tool t;
 			unsigned ti;
 			static char *keys =
-			    "[ENTER] execute, [e] edit"
-			    " [other key] cancel";
+			    "<ENTER> execute, 'e' edit"
+			    " <other key> cancel";
 
 			t = viewtool;
 			*viewtool.tool = NULL;

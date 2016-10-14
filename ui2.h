@@ -1,5 +1,6 @@
 extern short noic, magic, nows, scale;
 extern short regex;
+extern const char y_n_txt[];
 
 int test_fkey(int, unsigned short);
 void ui_srch(void);

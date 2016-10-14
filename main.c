@@ -70,7 +70,7 @@ main(int argc, char **argv)
 	uz_init();
 
 	set_tool(&difftool, strdup(vimdiff), 0);
-	set_tool(&viewtool, strdup("less"), 0);
+	set_tool(&viewtool, strdup("less --"), 0);
 
 	if (argc < 2 || argv[1][0] != '-' || argv[1][1] != 'u') {
 		if (read_rc(NULL))

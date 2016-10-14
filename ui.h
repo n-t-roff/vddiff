@@ -11,7 +11,7 @@ struct ui_state {
 
 void build_ui(void);
 void printerr(char *, char *, ...);
-int dialog(char *, char *, char *, ...);
+int dialog(const char *, char *, char *, ...);
 void disp_list(void);
 void center(unsigned);
 void no_file(void);

@@ -32,8 +32,8 @@ PERFORMANCE OF THIS SOFTWARE.
 #include "diff.h"
 #include "fs.h"
 
-const char *const vimdiff  = "vim -dR";
-const char *const diffless = "diff $1 $2 | less";
+const char *const vimdiff  = "vim -dR --";
+const char *const diffless = "diff -- $1 $2 | less";
 
 static size_t add_path(char *, size_t, char *, char *);
 static void exec_tool(struct tool *, char *, char *, int);
@@ -168,7 +168,7 @@ add_path(char *cmd, size_t l0, char *path, char *name)
 {
 	size_t l;
 
-	if (*name != '/') {
+	if (!bmode && *name != '/') {
 		l = shell_quote(lbuf, path, sizeof lbuf);
 		memcpy(cmd + l0, lbuf, l);
 		l0 += l;
