@@ -105,6 +105,7 @@ static MEVENT mevent;
 
 static bool scrollen = TRUE;
 static bool wstat_dirty;
+static bool dir_change;
 
 void
 build_ui(void)
@@ -1602,7 +1603,8 @@ no_diff:
 	if (!info)
 		return;
 
-	if (mark) {
+	if (dir_change) {
+	} else if (mark) {
 		if (wstat_dirty)
 			disp_mark();
 		return;
@@ -1634,12 +1636,13 @@ no_diff:
 	}
 
 	filt_stat();
+	dir_change = FALSE;
 }
 
 static void
 statcol(void)
 {
-	if (bmode)
+	if (dir_change || bmode)
 		return;
 
 	if (color)
@@ -1679,9 +1682,14 @@ file_stat(struct filediff *f)
 	ltyp = f->ltype;
 	rtyp = f->rtype;
 
-	if (bmode) {
+	if (bmode)
 		/* TODO: Right align */
 		mvwaddstr(wstat, 1, 0, rpath);
+	else if (dir_change) {
+		lpath[llen] = 0;
+		rpath[rlen] = 0;
+		mvwaddstr(wstat, 1, 0, *pwd ? PWD : RPWD);
+		return;
 	}
 
 	if (S_ISLNK(ltyp)) {
@@ -2103,13 +2111,17 @@ pop_state(
 	diff_db_restore(st);
 	free(st);
 
-	if (mode)
+	if (mode) {
+		dir_change = TRUE;
 		disp_list();
+	}
 }
 
 static void
 enter_dir(char *name, char *rnam, bool lzip, bool rzip)
 {
+	dir_change = TRUE;
+
 	if (mark && !gl_mark)
 		mark_global();
 
