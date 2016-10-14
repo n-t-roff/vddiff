@@ -543,7 +543,11 @@ filt_stat(void)
 
 	x = COLS - 1;
 
-	wstandout(wstat);
+	if (color)
+		wattron(wstat, COLOR_PAIR(PAIR_CURSOR));
+	else
+		wstandout(wstat);
+
 	if (followlinks) mvwaddch(wstat, 0, x--, 'F');
 	if (nosingle   ) mvwaddch(wstat, 0, x--, '&');
 	if (noequal    ) mvwaddch(wstat, 0, x--, '!');

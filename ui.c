@@ -36,14 +36,6 @@ PERFORMANCE OF THIS SOFTWARE.
 #include "ed.h"
 #include "ui2.h"
 
-#define PAIR_LEFTONLY  1
-#define PAIR_RIGHTONLY 2
-#define PAIR_DIFF      3
-#define PAIR_DIR       4
-#define PAIR_UNKNOWN   5
-#define PAIR_LINK      6
-#define PAIR_CURSOR    7
-
 static void ui_ctrl(void);
 static void page_down(void);
 static void page_up(void);
