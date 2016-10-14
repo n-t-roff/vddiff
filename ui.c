@@ -1625,11 +1625,7 @@ no_diff:
 	}
 
 	werase(wstat);
-	if (diff == '!' && type == '@') {
-		statcol();
-		mvwaddstr(wstat, 0, 2, f->llink);
-		mvwaddstr(wstat, 1, 2, f->rlink);
-	} else if (diff == ' ' && type == '!') {
+	if (type == '!') {
 		statcol();
 		mvwaddstr(wstat, 0, 2, type_name(f->ltype));
 
@@ -1644,6 +1640,8 @@ no_diff:
 		statcol();
 		file_stat(f);
 	}
+
+	filt_stat();
 }
 
 static void
@@ -1858,6 +1856,7 @@ static void
 disp_mark(void)
 {
 	werase(wstat);
+	filt_stat();
 
 	if (color)
 		wattron(wstat, COLOR_PAIR(PAIR_CURSOR));
@@ -1882,6 +1881,7 @@ clr_mark(void)
 
 	mark = NULL;
 	werase(wstat);
+	filt_stat();
 	wrefresh(wstat);
 }
 
@@ -2205,6 +2205,7 @@ printerr(char *s2, char *s1, ...)
 		getch();
 		werase(wstat);
 	}
+	filt_stat();
 	wrefresh(wstat);
 }
 

@@ -259,8 +259,9 @@ void
 disp_regex(void)
 {
 	werase(wstat);
+	filt_stat();
 	mvwaddstr(wstat, 1, 0,
-"[n] search forward, [N] search backward, [r] cancel search");
+"'n' search forward, 'N' search backward, 'r' cancel search");
 	wrefresh(wstat);
 }
 
@@ -272,6 +273,7 @@ clr_regex(void)
 	regex = 0;
 	regfree(&re_dat);
 	werase(wstat);
+	filt_stat();
 	wrefresh(wstat);
 }
 
@@ -528,6 +530,25 @@ re_sort_list(void)
 		curs    = 0;
 		disp_list();
 	}
+}
+
+void
+filt_stat(void)
+{
+	unsigned x;
+
+	if (!(real_diff || noequal || nosingle || followlinks))
+		return;
+
+	x = COLS - 1;
+
+	wstandout(wstat);
+	if (followlinks) mvwaddch(wstat, 0, x--, 'F');
+	if (nosingle   ) mvwaddch(wstat, 0, x--, '&');
+	if (noequal    ) mvwaddch(wstat, 0, x--, '!');
+	if (real_diff  ) mvwaddch(wstat, 0, x--, 'c');
+	wstandend(wstat);
+	mvwaddch(wstat, 0, x--, ' ');
 }
 
 void
