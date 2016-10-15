@@ -538,9 +538,6 @@ filt_stat(void)
 {
 	unsigned x;
 
-	if (!(real_diff || noequal || nosingle || followlinks))
-		return;
-
 	x = COLS - 1;
 
 	if (color)
@@ -548,10 +545,17 @@ filt_stat(void)
 	else
 		wstandout(wstat);
 
-	if (followlinks) mvwaddch(wstat, 0, x--, 'F');
-	if (nosingle   ) mvwaddch(wstat, 0, x--, '&');
-	if (noequal    ) mvwaddch(wstat, 0, x--, '!');
-	if (real_diff  ) mvwaddch(wstat, 0, x--, 'c');
+	if (wait_after_exec)
+		mvwaddch(wstat, 0, x--, 'W');
+	if (followlinks)
+		mvwaddch(wstat, 0, x--, 'F');
+	if (nosingle)
+		mvwaddch(wstat, 0, x--, '&');
+	if (noequal)
+		mvwaddch(wstat, 0, x--, '!');
+	if (real_diff)
+		mvwaddch(wstat, 0, x--, 'c');
+
 	wstandend(wstat);
 	mvwaddch(wstat, 0, x--, ' ');
 }

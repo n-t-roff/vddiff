@@ -608,8 +608,8 @@ next_key:
 			    &sh_cmd_hist) && *rbuf) {
 				char *s = rbuf;
 
-				exec_cmd(&s, 6, NULL, NULL, TRUE,
-				    TRUE);
+				exec_cmd(&s, TOOL_WAIT | TOOL_NOLIST, NULL,
+				    NULL, TRUE, TRUE);
 			}
 
 			/* exec_cmd() did likely create or delete files */
@@ -776,6 +776,11 @@ next_key:
 			endwin();
 			refresh();
 			break;
+		case 'W':
+			wait_after_exec = wait_after_exec ? FALSE : TRUE;
+			filt_stat();
+			wrefresh(wstat);
+			break;
 		case 'N':
 			if (regex) {
 				c = 0;
@@ -875,7 +880,8 @@ static char *helptxt[] = {
        "v		View raw file contents",
        "vl		View raw left file contents",
        "vr		View raw right file contents",
-       ":		Enter configuration option" };
+       ":		Enter configuration option",
+       "W		Toggle wait for <ENTER> after running external tool" };
 
 #define HELP_NUM (sizeof(helptxt) / sizeof(*helptxt))
 

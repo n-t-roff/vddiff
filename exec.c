@@ -44,6 +44,7 @@ struct tool difftool;
 struct tool viewtool;
 char *ishell;
 char *nishell;
+bool wait_after_exec;
 
 void
 tool(char *name, char *rnam, int tree, int ign_ext)
@@ -248,7 +249,6 @@ exec_tool(struct tool *t, char *name, char *rnam, int tree)
 	int o, c;
 	char *s, **a, **av;
 	int status;
-	bool bg = t->flags & TOOL_BG ? 1 : 0;
 
 	if (!rnam)
 		rnam = name;
@@ -283,7 +283,7 @@ exec_tool(struct tool *t, char *name, char *rnam, int tree)
 	if (tree & 1) {
 		if (bmode || *name == '/') {
 			*a++ = name;
-			bg = 0;
+			t->flags &= ~TOOL_BG;
 		} else {
 			pthcat(lpath, llen, name);
 			*a++ = lpath;
@@ -293,7 +293,7 @@ exec_tool(struct tool *t, char *name, char *rnam, int tree)
 	if (tree & 2) {
 		if (bmode || *rnam == '/') {
 			*a++ = rnam;
-			bg = 0;
+			t->flags &= ~TOOL_BG;
 		} else {
 			pthcat(rpath, rlen, rnam);
 			*a++ = rpath;
@@ -301,7 +301,7 @@ exec_tool(struct tool *t, char *name, char *rnam, int tree)
 	}
 
 	*a = NULL;
-	status = exec_cmd(av, bg ? 1 : 0, NULL, NULL, TRUE, FALSE);
+	status = exec_cmd(av, t->flags, NULL, NULL, TRUE, FALSE);
 
 	if (o)
 		free(*av);
@@ -318,7 +318,7 @@ exec_tool(struct tool *t, char *name, char *rnam, int tree)
 int
 exec_cmd(char **av,
     /* 1: Background, 2: Wait for <ENTER>, 4: Skip disp_list() */
-    unsigned flags, char *path, char *msg, bool tty, bool sh)
+    tool_flags_t flags, char *path, char *msg, bool tty, bool sh)
 {
 	pid_t pid;
 	int status = 0;
@@ -363,13 +363,13 @@ exec_cmd(char **av,
 		fgetc(stdin);
 		exit(77);
 	default:
-		if (flags & 1)
+		if (!wait_after_exec && (flags & TOOL_BG))
 			break;
 
 		/* did always return "interrupted sys call" on OI */
 		waitpid(pid, &status, 0);
 
-		if (flags & 2) {
+		if (wait_after_exec || (flags & TOOL_WAIT)) {
 			write(STDOUT_FILENO, prompt, sizeof prompt);
 			fgetc(stdin);
 		}
@@ -381,7 +381,7 @@ exec_cmd(char **av,
 	if (pid == -1)
 		printerr(strerror(errno), "fork failed");
 
-	if (!(flags & 4))
+	if (!(flags & TOOL_NOLIST))
 		disp_list();
 
 	return status;
@@ -466,7 +466,7 @@ open_sh(int tree)
 	}
 
 	av[1] = NULL;
-	exec_cmd(av, 4, s, "\nType \"exit\" or '^D' to return to vddiff.\n",
+	exec_cmd(av, TOOL_NOLIST, s, "\nType \"exit\" or '^D' to return to vddiff.\n",
 	    TRUE, FALSE);
 
 	/* exec_cmd() did likely create or delete files */
