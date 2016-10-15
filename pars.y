@@ -49,11 +49,11 @@ option_list:
 	;
 option:
 	  DIFFTOOL STRING       { set_tool(&difftool, $2, 0)              ; }
-	| DIFFTOOL BG STRING    { set_tool(&difftool, $3, 1)              ; }
+	| DIFFTOOL BG STRING    { set_tool(&difftool, $3, TOOL_BG)        ; }
 	| VIEWTOOL STRING       { set_tool(&viewtool, $2, 0)              ; }
-	| VIEWTOOL BG STRING    { set_tool(&viewtool, $3, 1)              ; }
+	| VIEWTOOL BG STRING    { set_tool(&viewtool, $3, TOOL_BG)        ; }
 	| EXT STRING STRING     { db_def_ext($2, $3, 0)                   ; }
-	| EXT STRING BG STRING  { db_def_ext($2, $4, 1)                   ; }
+	| EXT STRING BG STRING  { db_def_ext($2, $4, TOOL_BG)             ; }
 	| SKIPEXT STRING        { str_db_add(&skipext_db, str_tolower($2)
 #ifdef HAVE_LIBAVLBST
 	                              , 0, NULL

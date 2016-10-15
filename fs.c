@@ -33,6 +33,7 @@ PERFORMANCE OF THIS SOFTWARE.
 #include "ui.h"
 #include "ui2.h"
 #include "uzp.h"
+#include "exec.h"
 #include "db.h"
 #include "fs.h"
 #include "ed.h"

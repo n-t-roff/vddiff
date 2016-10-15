@@ -28,10 +28,10 @@ PERFORMANCE OF THIS SOFTWARE.
 #include "ui2.h"
 #include "uzp.h"
 #include "diff.h"
-#include "db.h"
 #include "fs.h"
 #include "main.h"
 #include "exec.h"
+#include "db.h"
 
 const char y_n_txt[] = "'y' yes, <other key> no";
 struct str_uint {

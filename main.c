@@ -109,7 +109,7 @@ main(int argc, char **argv)
 			set_tool(&viewtool, strdup("gvim -R"), 0);
 			break;
 		case 'k':
-			set_tool(&difftool, strdup("tkdiff"), 1);
+			set_tool(&difftool, strdup("tkdiff"), TOOL_BG);
 			break;
 		case 'l':
 			follow(1);

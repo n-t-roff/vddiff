@@ -87,7 +87,7 @@ tool(char *name, char *rnam, int tree, int ign_ext)
 settool:
 		tmptool = tree == 3 && !ign_ext ? &difftool : &viewtool;
 
-	if (!tmptool->sh) {
+	if (!(tmptool->flags & TOOL_SHELL)) {
 		exec_tool(tmptool, name, rnam, tree);
 		return;
 	}
@@ -120,7 +120,7 @@ exec_mk_cmd(struct tool *tmptool, char *name, char *rnam, int tree)
 	if (!bmode)
 		rpath[rlen] = 0;
 
-	if (tmptool->noarg) {
+	if (tmptool->flags & TOOL_NOARG) {
 	} else if (!l1 || tree != 3) {
 		if (tree & 1)
 			l0 = add_path(cmd, l0, lpath, name);
@@ -182,7 +182,7 @@ add_path(char *cmd, size_t l0, char *path, char *name)
 }
 
 void
-set_tool(struct tool *_tool, char *s, int bg)
+set_tool(struct tool *_tool, char *s, tool_flags_t flags)
 {
 	char **t;
 	char *b;
@@ -190,7 +190,7 @@ set_tool(struct tool *_tool, char *s, int bg)
 	bool sh = FALSE;
 
 	t = _tool->tool;
-	_tool->bg = bg;
+	_tool->flags = flags;
 	free(*t);
 	*t = b = s;
 	t[1] = NULL;
@@ -218,13 +218,14 @@ set_tool(struct tool *_tool, char *s, int bg)
 		*s = 0;
 
 	if (*s == '#' && (s == b || isblank((int)s[-1]))) {
-		_tool->noarg = TRUE;
+		_tool->flags |= TOOL_NOARG;
 
 		while (--s >= b && isblank((int)*s))
 			*s = 0;
 	}
 
-	_tool->sh = sh;
+	if (sh)
+		_tool->flags |= TOOL_SHELL;
 }
 
 static int
@@ -247,7 +248,7 @@ exec_tool(struct tool *t, char *name, char *rnam, int tree)
 	int o, c;
 	char *s, **a, **av;
 	int status;
-	int bg = t->bg;
+	bool bg = t->flags & TOOL_BG ? 1 : 0;
 
 	if (!rnam)
 		rnam = name;

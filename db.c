@@ -26,8 +26,8 @@ PERFORMANCE OF THIS SOFTWARE.
 #include "ui.h"
 #include "ui2.h"
 #include "uzp.h"
-#include "db.h"
 #include "exec.h"
+#include "db.h"
 
 #ifdef HAVE_LIBAVLBST
 static void *db_new(int (*)(union bst_val, union bst_val));
@@ -297,7 +297,7 @@ uz_cmp(const void *a, const void *b)
  **********/
 
 void
-db_def_ext(char *ext, char *_tool, int bg)
+db_def_ext(char *ext, char *_tool, tool_flags_t flags)
 {
 	struct tool *t;
 #ifdef HAVE_LIBAVLBST
@@ -323,7 +323,7 @@ db_def_ext(char *ext, char *_tool, int bg)
 	} else {
 		t = malloc(sizeof(struct tool));
 		*t->tool = NULL; /* set_tool makes a free() */
-		set_tool(t, _tool, bg);
+		set_tool(t, _tool, flags);
 #ifdef HAVE_LIBAVLBST
 		avl_add(ext_db, (union bst_val)(void *)ext,
 		    (union bst_val)(void *)t);
