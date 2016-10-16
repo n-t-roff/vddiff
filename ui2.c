@@ -52,6 +52,7 @@ int
 test_fkey(int c, unsigned short num)
 {
 	int i;
+	int ek;
 
 	for (i = 0; i < FKEY_NUM; i++) {
 		if (c != KEY_F(i + 1))
@@ -68,8 +69,8 @@ test_fkey(int c, unsigned short num)
 			*viewtool.tool = NULL;
 			/* set_tool() reused here to process
 			 * embedded "$1" */
-			set_tool(&viewtool,
-			    strdup(fkey_cmd[i]), 0);
+			set_tool(&viewtool, strdup(fkey_cmd[i]),
+			    fkey_flags[i] & 1 ? TOOL_WAIT : 0);
 
 			werase(wstat);
 			mvwprintw(wstat, 0, 0, "Really execute \"%s\"",
@@ -109,7 +110,11 @@ edit_fkey:
 		linelen = 0; /* Remove existing text */
 
 		if (fkey_cmd[i]) {
-			ed_append("$ ");
+			if (fkey_flags[i] & 1)
+				ed_append("! ");
+			else
+				ed_append("$ ");
+
 			ed_append(fkey_cmd[i]);
 		}
 
@@ -123,7 +128,8 @@ edit_fkey:
 		free(fkey_cmd[i]);
 		fkey_cmd[i] = NULL;
 
-		if (*rbuf == '$' && isspace((int)rbuf[1])) {
+		if (((ek = *rbuf) == '$' || ek == '!') &&
+		    isspace((int)rbuf[1])) {
 			int c2;
 			int j = 0;
 
@@ -133,9 +139,10 @@ edit_fkey:
 				return 1; /* empty input */
 
 			fkey_cmd[i] = strdup(rbuf + j);
+			fkey_flags[i] = ek == '!' ? 1 : 0; /* 1: wait */
 			clr_edit();
-			printerr(NULL, "$ %s saved for F%d",
-			    fkey_cmd[i], i + 1);
+			printerr(NULL, "%c %s saved for F%d",
+			    fkey_flags[i] & 1 ? '!' : '$', fkey_cmd[i], i + 1);
 		} else {
 #ifdef HAVE_CURSES_WCH
 			sh_str[i] = linebuf;

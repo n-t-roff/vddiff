@@ -13,7 +13,7 @@ LOSS OF USE, DATA OR PROFITS, WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE OR
 OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
 PERFORMANCE OF THIS SOFTWARE.
 ..
-.Dd October 13, 2016
+.Dd October 16, 2016
 .Dt VDDIFF 1
 .Sh NAME
 .Nm vddiff
@@ -485,6 +485,14 @@ the command is applied to
 .Ar n
 files starting from the current selection.
 .Pp
+If the string starts with
+.Sq Li \&!
+instead of
+.Sq Li $ ,
+.Aq Cm ENTER
+must be pressed after running the command.
+This allows to check the command's output.
+.Pp
 To save a command for a function key which does not take
 the selected filename as argument, add a space followed
 by an octothorpe
@@ -691,6 +699,16 @@ enclosed in double quotes in this case),
 it defines a shell command to be executed
 for the selected file
 when pressing the function key.
+.Pp
+If
+.Ar string
+starts with
+.Sq Li \&!
+instead of
+.Sq Li $ ,
+.Aq Cm ENTER
+must be pressed after running the command.
+This allows to check the command's output.
 .Pp
 To save a command for a function key which does not take
 the selected filename as argument, add a space followed

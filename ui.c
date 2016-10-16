@@ -82,6 +82,7 @@ wchar_t *sh_str[FKEY_NUM];
 char *sh_str[FKEY_NUM];
 #endif
 char *fkey_cmd[FKEY_NUM];
+unsigned fkey_flags[FKEY_NUM];
 
 static unsigned listw, listh, help_top;
 WINDOW *wlist;
@@ -502,7 +503,8 @@ next_key:
 
 				if (fkey_cmd[i]) {
 					mvwprintw(wlist, i, 5,
-					    "\"$ %s\"", fkey_cmd[i]);
+					    "\"%c %s\"", fkey_flags[i] & 1 ?
+					    '!' : '$', fkey_cmd[i]);
 					continue;
 				}
 

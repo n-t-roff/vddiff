@@ -136,6 +136,7 @@ disp_edit(void)
 void
 set_fkey(int i, char *s)
 {
+	int ek;
 #ifdef HAVE_CURSES_WCH
 	size_t l;
 #endif
@@ -152,7 +153,7 @@ set_fkey(int i, char *s)
 	free(fkey_cmd[i]);
 	fkey_cmd[i] = NULL;
 
-	if (*s == '$' && isspace((int)s[1])) {
+	if (((ek = *s) == '$' || ek == '!') && isspace((int)s[1])) {
 		int c;
 		char *p = s;
 
@@ -162,6 +163,7 @@ set_fkey(int i, char *s)
 			goto free; /* empty input */
 
 		fkey_cmd[i] = strdup(p);
+		fkey_flags[i] = ek == '!' ? 1 : 0; /* 1: wait */
 
 free:
 		free(s);
