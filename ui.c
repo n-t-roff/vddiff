@@ -612,7 +612,7 @@ next_key:
 				char *s = rbuf;
 
 				exec_cmd(&s, TOOL_WAIT | TOOL_NOLIST |
-				    TOOL_TTY, NULL, NULL);
+				    TOOL_TTY | TOOL_SHELL, NULL, NULL);
 			}
 
 			/* exec_cmd() did likely create or delete files */
