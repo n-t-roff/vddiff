@@ -196,7 +196,8 @@ next_key:
 		if (!c)
 			num = 1;
 
-		c = getch();
+		if ((c = getch()) == ERR)
+			goto next_key;
 
 		if (test_fkey(c, num)) {
 			c = 0;
@@ -608,8 +609,8 @@ next_key:
 			    &sh_cmd_hist) && *rbuf) {
 				char *s = rbuf;
 
-				exec_cmd(&s, TOOL_WAIT | TOOL_NOLIST, NULL,
-				    NULL, TRUE, TRUE);
+				exec_cmd(&s, TOOL_WAIT | TOOL_NOLIST |
+				    TOOL_TTY, NULL, NULL);
 			}
 
 			/* exec_cmd() did likely create or delete files */

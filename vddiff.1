@@ -607,17 +607,7 @@ as a background process (don't block
 while executing
 .Ar string ) .
 .Cm bg
-is ignored if
-.Ar string
-contains
-.Li $ Ns Ar n .
-Put
-.Sq Li &
-at the end of
-.Ar string
-in this case.
-.Cm bg
-is also ignored if one of the files to be compared is compressed.
+is ignored if one of the files to be compared is compressed.
 Since they are decompressed into a temporary directory
 which is removed after starting the diff tool,
 the file may be removed before the tool reads it.
@@ -643,17 +633,7 @@ Start
 .Ar string
 as a background process.
 .Cm bg
-is ignored if
-.Ar string
-contains
-.Li $ Ns Ar n .
-Put
-.Sq Li &
-at the end of
-.Ar string
-in this case.
-.Cm bg
-is also ignored if the file to be viewed is compressed.
+is ignored if the file to be viewed is compressed.
 Since it is decompressed into a temporary directory
 which is removed after starting the view tool,
 the file may be removed before the tool reads it.

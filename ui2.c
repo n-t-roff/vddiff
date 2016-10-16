@@ -61,7 +61,7 @@ test_fkey(int c, unsigned short num)
 			struct tool t;
 			unsigned ti;
 			static char *keys =
-			    "<ENTER> execute, 'e' edit"
+			    "<ENTER> execute, 'e' edit,"
 			    " <other key> cancel";
 
 			t = viewtool;

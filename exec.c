@@ -88,14 +88,12 @@ tool(char *name, char *rnam, int tree, int ign_ext)
 settool:
 		tmptool = tree == 3 && !ign_ext ? &difftool : &viewtool;
 
-	if (!(tmptool->flags & TOOL_SHELL)) {
+	if (tmptool->flags & TOOL_SHELL) {
+		cmd = exec_mk_cmd(tmptool, name, rnam, tree);
+		exec_cmd(&cmd, tmptool->flags | TOOL_TTY, NULL, NULL);
+		free(cmd);
+	} else
 		exec_tool(tmptool, name, rnam, tree);
-		return;
-	}
-
-	cmd = exec_mk_cmd(tmptool, name, rnam, tree);
-	exec_cmd(&cmd, 0, NULL, NULL, TRUE, TRUE);
-	free(cmd);
 }
 
 char *
@@ -249,6 +247,7 @@ exec_tool(struct tool *t, char *name, char *rnam, int tree)
 	int o, c;
 	char *s, **a, **av;
 	int status;
+	int zipped = 0;
 
 	if (!rnam)
 		rnam = name;
@@ -281,9 +280,8 @@ exec_tool(struct tool *t, char *name, char *rnam, int tree)
 	}
 
 	if (tree & 1) {
-		if (bmode || *name == '/') {
+		if ((zipped = *name == '/') || bmode) {
 			*a++ = name;
-			t->flags &= ~TOOL_BG;
 		} else {
 			pthcat(lpath, llen, name);
 			*a++ = lpath;
@@ -291,17 +289,20 @@ exec_tool(struct tool *t, char *name, char *rnam, int tree)
 	}
 
 	if (tree & 2) {
-		if (bmode || *rnam == '/') {
+		if ((zipped |= *rnam == '/') || bmode) {
 			*a++ = rnam;
-			t->flags &= ~TOOL_BG;
 		} else {
 			pthcat(rpath, rlen, rnam);
 			*a++ = rpath;
 		}
 	}
 
+
+	if (zipped)
+		t->flags &= ~TOOL_BG;
+
 	*a = NULL;
-	status = exec_cmd(av, t->flags, NULL, NULL, TRUE, FALSE);
+	status = exec_cmd(av, t->flags | TOOL_TTY, NULL, NULL);
 
 	if (o)
 		free(*av);
@@ -318,7 +319,7 @@ exec_tool(struct tool *t, char *name, char *rnam, int tree)
 int
 exec_cmd(char **av,
     /* 1: Background, 2: Wait for <ENTER>, 4: Skip disp_list() */
-    tool_flags_t flags, char *path, char *msg, bool tty, bool sh)
+    tool_flags_t flags, char *path, char *msg)
 {
 	pid_t pid;
 	int status = 0;
@@ -328,7 +329,7 @@ exec_cmd(char **av,
 	refresh();
 	def_prog_mode();
 
-	if (tty)
+	if (flags & TOOL_TTY)
 		endwin();
 
 	switch ((pid = fork())) {
@@ -344,14 +345,13 @@ exec_cmd(char **av,
 		if (msg)
 			puts(msg);
 
-		if (sh) {
+		if (flags & TOOL_SHELL) {
 			char *shell = nishell ? nishell : "sh";
 
 			if (execlp(shell, shell, "-c", *av, NULL) == -1) {
 				/* only seen when vddiff exits later */
 				printf("exec %s -c \"%s\" failed: %s\n",
 				    shell, *av, strerror(errno));
-				exit(77);
 			}
 		} else if (execvp(*av, av) == -1) {
 			/* only seen when vddiff exits later */
@@ -466,8 +466,8 @@ open_sh(int tree)
 	}
 
 	av[1] = NULL;
-	exec_cmd(av, TOOL_NOLIST, s, "\nType \"exit\" or '^D' to return to vddiff.\n",
-	    TRUE, FALSE);
+	exec_cmd(av, TOOL_NOLIST | TOOL_TTY, s,
+	    "\nType \"exit\" or '^D' to return to vddiff.\n");
 
 	/* exec_cmd() did likely create or delete files */
 	rebuild_db(0);
