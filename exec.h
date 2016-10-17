@@ -8,7 +8,8 @@
 typedef unsigned tool_flags_t;
 
 struct tool {
-	char *tool[3];
+	char *tool;
+	struct strlst *args;
 #ifndef HAVE_LIBAVLBST
 	char *ext;
 #endif
@@ -26,6 +27,7 @@ extern bool wait_after_exec;
 
 void tool(char *, char *, int, int);
 char *exec_mk_cmd(struct tool *, char *, char *, int);
+void free_tool(struct tool *);
 void set_tool(struct tool *, char *, tool_flags_t);
 void exec_sighdl(void);
 size_t shell_quote(char *, char *, size_t);

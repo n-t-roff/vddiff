@@ -36,6 +36,7 @@ const char *const vimdiff  = "vim -dR --";
 const char *const diffless = "diff -- $1 $2 | less";
 
 static size_t add_path(char *, size_t, char *, char *);
+static struct strlst *addarg(char *);
 static void exec_tool(struct tool *, char *, char *, int);
 static void sig_child(int);
 static int shell_char(int);
@@ -96,69 +97,67 @@ settool:
 		exec_tool(tmptool, name, rnam, tree);
 }
 
+#define GRWCMD \
+	do { \
+		if (csiz - clen < PATHSIZ) { \
+			csiz *= 2; \
+			cmd = realloc(cmd, csiz); \
+		} \
+	} while (0)
+
 char *
 exec_mk_cmd(struct tool *tmptool, char *name, char *rnam, int tree)
 {
-	size_t ln, rn, l0, l1, l2, l;
-	char **toolp, *cmd;
+	size_t csiz, clen, l;
+	char *cmd, *s;
+	struct strlst *args;
 
 	if (!rnam)
 		rnam = name;
 
-	ln = strlen(name);
-	rn = strlen(rnam);
-	toolp = tmptool->tool;
-	l0 = strlen(*toolp);
-	l1 = toolp[1] ? strlen(toolp[1]) : 0;
-	l2 = toolp[2] ? strlen(toolp[2]) : 0;
-	l = l0 + (llen + ln + rlen + rn) * 2 + 3 + l1 + l2;
-	cmd = malloc(l);
-	memcpy(cmd, *toolp, l0);
+	csiz = 2 * PATHSIZ;
+	cmd = malloc(csiz);
+	clen = strlen(s = tmptool->tool);
+	memcpy(cmd, s, clen);
 	lpath[llen] = 0; /* in add_path() used without len */
 
 	if (!bmode)
 		rpath[rlen] = 0;
 
 	if (tmptool->flags & TOOL_NOARG) {
-	} else if (!l1 || tree != 3) {
-		if (tree & 1)
-			l0 = add_path(cmd, l0, lpath, name);
-		if (tree & 2)
-			l0 = add_path(cmd, l0, rpath, rnam);
+	} else if ((args = tmptool->args)) {
+		do {
+			s = args->str;
+			GRWCMD;
 
-		if (l1 && tree != 3) {
-			memcpy(cmd + l0, toolp[1] + 1, --l1);
-			l0 += l1;
-		}
-	} else {
-		switch (*toolp[1]) {
-		case '1':
-			l0 = add_path(cmd, l0, lpath, name);
-			break;
-		case '2':
-			l0 = add_path(cmd, l0, rpath, rnam);
-			break;
-		}
-
-		memcpy(cmd + l0, toolp[1] + 1, --l1);
-		l0 += l1;
-
-		if (l2) {
-			switch (*toolp[2]) {
+			switch (*s) {
 			case '1':
-				l0 = add_path(cmd, l0, lpath, name);
+				clen = add_path(cmd, clen, lpath, name);
 				break;
 			case '2':
-				l0 = add_path(cmd, l0, rpath, rnam);
+				clen = add_path(cmd, clen, rpath, rnam);
 				break;
 			}
 
-			memcpy(cmd + l0, toolp[2] + 1, --l2);
-			l0 += l2;
+			if ((l = strlen(s) - 1)) {
+				GRWCMD;
+				memcpy(cmd + clen, s + 1, l);
+				clen += l;
+			}
+		} while ((args = args->next));
+	} else {
+		if (tree & 1) {
+			GRWCMD;
+			clen = add_path(cmd, clen, lpath, name);
+		}
+
+		if (tree & 2) {
+			GRWCMD;
+			clen = add_path(cmd, clen, rpath, rnam);
 		}
 	}
 
-	cmd[l0] = 0;
+	cmd[clen] = 0;
 	return cmd;
 }
 
@@ -181,32 +180,43 @@ add_path(char *cmd, size_t l0, char *path, char *name)
 }
 
 void
+free_tool(struct tool *t)
+{
+	struct strlst *p1, *p2;
+
+	free(t->tool);
+	p1 = t->args;
+
+	while (p1) {
+		p2 = p1->next;
+		free(p1);
+		p1 = p2;
+	}
+}
+
+void
 set_tool(struct tool *_tool, char *s, tool_flags_t flags)
 {
-	char **t;
 	char *b;
 	int c;
+	struct strlst **next, *args;
 	bool sh = FALSE;
 
-	t = _tool->tool;
+	free_tool(_tool);
+	_tool->tool = b = s;
 	_tool->flags = flags;
-	free(*t);
-	*t = b = s;
-	t[1] = NULL;
-	t[2] = NULL;
+	next = &_tool->args;
 
 	while ((c = *s)) {
 		if (c == '$') {
+			sh = TRUE;
+
 			if (s[1] == '1' || s[1] == '2') {
 				*s++ = 0;
-				sh = TRUE;
-
-				if (!t[1])
-					t[1] = s;
-				else if (!t[2])
-					t[2] = s;
-			} else
-				sh = TRUE;
+				args = addarg(s);
+				*next = args;
+				next = &args->next;
+			}
 		} else if (!sh && shell_char(c))
 			sh = TRUE;
 
@@ -225,6 +235,17 @@ set_tool(struct tool *_tool, char *s, tool_flags_t flags)
 
 	if (sh)
 		_tool->flags |= TOOL_SHELL;
+}
+
+static struct strlst *
+addarg(char *s)
+{
+	struct strlst *p;
+
+	p = malloc(sizeof(struct strlst));
+	p->str = s;
+	p->next = NULL;
+	return p;
 }
 
 static int
@@ -252,7 +273,7 @@ exec_tool(struct tool *t, char *name, char *rnam, int tree)
 	if (!rnam)
 		rnam = name;
 
-	s = *t->tool;
+	s = t->tool;
 	o = 0;
 	while (1) {
 		while ((c = *s++) && !isblank(c));
@@ -265,9 +286,9 @@ exec_tool(struct tool *t, char *name, char *rnam, int tree)
 	a = av = malloc((1 + o + (tree == 3 ? 2 : 1) + 1) * sizeof(*av));
 
 	if (!o) {
-		*a++ = *t->tool;
+		*a++ = t->tool;
 	} else {
-		*a++ = s = strdup(*t->tool);
+		*a++ = s = strdup(t->tool);
 
 		while (1) {
 			while ((c = *s++) && !isblank(c));
@@ -310,7 +331,7 @@ exec_tool(struct tool *t, char *name, char *rnam, int tree)
 	free(av);
 
 	if (WIFEXITED(status) && WEXITSTATUS(status) == 77 &&
-	    !strcmp(*t->tool, vimdiff)) {
+	    !strcmp(t->tool, vimdiff)) {
 		set_tool(&difftool, strdup(diffless), 0);
 		tool(name, rnam, tree, 0);
 	}

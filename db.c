@@ -300,29 +300,24 @@ void
 db_def_ext(char *ext, char *_tool, tool_flags_t flags)
 {
 	struct tool *t;
-#ifdef HAVE_LIBAVLBST
-	struct bst_node *n;
-#else
+#ifndef HAVE_LIBAVLBST
 	struct tool key;
-	void *vp;
 #endif
 
 	str_tolower(ext);
 #ifdef HAVE_LIBAVLBST
-	if (!bst_srch(ext_db, (union bst_val)(void *)ext, &n)) {
-		t = n->data.p;
+	if (!bst_srch(ext_db, (union bst_val)(void *)ext, NULL)) {
 #else
 	key.ext = ext;
 
-	if ((vp = tfind(&key, &ext_db, ext_cmp))) {
-		t = *(struct tool **)vp;
+	if (tfind(&key, &ext_db, ext_cmp)) {
 #endif
-		free(ext);
-		free(*t->tool);
-		*t->tool = _tool;
+		printf("Error: Tool for extension \"%s\" set twice\n", ext);
+		exit(1);
 	} else {
 		t = malloc(sizeof(struct tool));
-		*t->tool = NULL; /* set_tool makes a free() */
+		t->tool = NULL; /* set_tool makes a free() */
+		t->args = NULL;
 		set_tool(t, _tool, flags);
 #ifdef HAVE_LIBAVLBST
 		avl_add(ext_db, (union bst_val)(void *)ext,

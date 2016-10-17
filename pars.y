@@ -16,12 +16,12 @@ PERFORMANCE OF THIS SOFTWARE.
 */
 
 #include "compat.h"
+#include "main.h"
 #include "exec.h"
 #include "ui.h"
 #include "ui2.h"
 #include "uzp.h"
 #include "db.h"
-#include "main.h"
 #include "ed.h"
 #include "lex.h"
 

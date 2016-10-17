@@ -66,7 +66,8 @@ test_fkey(int c, unsigned short num)
 			    " <other key> cancel";
 
 			t = viewtool;
-			*viewtool.tool = NULL;
+			viewtool.tool = NULL;
+			viewtool.args = NULL;
 			/* set_tool() reused here to process
 			 * embedded "$1" */
 			set_tool(&viewtool, strdup(fkey_cmd[i]),
@@ -83,7 +84,7 @@ test_fkey(int c, unsigned short num)
 
 			switch (dialog(keys, NULL, NULL)) {
 			case 'e':
-				free(*viewtool.tool);
+				free_tool(&viewtool);
 				viewtool = t;
 				goto edit_fkey;
 			case '\n':
@@ -101,7 +102,7 @@ test_fkey(int c, unsigned short num)
 				/* fall through */
 			}
 
-			free(*viewtool.tool);
+			free_tool(&viewtool);
 			viewtool = t;
 			return 1;
 		}

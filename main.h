@@ -10,6 +10,11 @@
 # define CERASE 0177
 #endif
 
+struct strlst {
+	char *str;
+	struct strlst *next;
+};
+
 extern struct stat stat1, stat2;
 extern size_t llen, rlen;
 extern char *pwd, *rpwd, *arg[];
