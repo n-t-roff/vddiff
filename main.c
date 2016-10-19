@@ -254,7 +254,6 @@ static void
 check_args(char **argv)
 {
 	char *s;
-	ino_t ino;
 
 	arg[0] = *argv;
 
@@ -274,21 +273,21 @@ check_args(char **argv)
 	if (bmode)
 		return;
 
-	ino = stat1.st_ino;
 	arg[1] = *argv;
 
-	if (stat(s = *argv++, &stat1) == -1) {
+	if (stat(s = *argv++, &stat2) == -1) {
 		printf("stat(\"%s\") failed: %s\n", s, strerror(errno));
 		exit(1);
 	}
 
-	if (stat1.st_ino == ino) {
+	if (stat1.st_ino == stat2.st_ino &&
+	    stat1.st_dev == stat2.st_dev) {
 		printf("\"%s\" and \"%s\" are the same directory\n",
 		    lpath, s);
 		exit(0);
 	}
 
-	if (!S_ISDIR(stat1.st_mode)) {
+	if (!S_ISDIR(stat2.st_mode)) {
 		printf("\"%s\" is not a directory\n", s);
 		exit(1);
 	}

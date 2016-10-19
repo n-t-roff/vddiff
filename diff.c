@@ -268,7 +268,8 @@ free_a:
 			diff_db_add(diff);
 			continue;
 
-		} else if (stat1.st_ino == stat2.st_ino) {
+		} else if (stat1.st_ino == stat2.st_ino &&
+		           stat1.st_dev == stat2.st_dev) {
 
 			diff->diff = '=';
 			diff_db_add(diff);
