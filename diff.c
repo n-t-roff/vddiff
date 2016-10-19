@@ -66,7 +66,7 @@ build_diff_db(int tree)
 			printerr(strerror(errno), "getcwd failed");
 
 		printerr(NULL, "Reading directory %s", rpath);
-	} else
+	} else if (!qdiff)
 		printerr(NULL, "Reading directory %s", lpath);
 
 	if (!(d = opendir(lpath))) {
@@ -152,11 +152,19 @@ build_diff_db(int tree)
 no_tree2:
 				if (!stat1.st_mode)
 					continue; /* ignore two dead links */
+
+				if (qdiff) {
+					lpath[llen] = 0;
+					printf("Only in %s: %s\n", lpath,
+					    name);
+					continue;
+				}
+
 				stat2.st_mode = 0;
 			}
 		}
 
-		if (scan) {
+		if (scan || qdiff) {
 			if (S_ISDIR(stat1.st_mode) &&
 			    S_ISDIR(stat2.st_mode)) {
 				struct str_list *se =
@@ -167,14 +175,20 @@ no_tree2:
 				continue;
 			}
 
-			if (!*pwd || dir_diff)
+			if (!qdiff && (!*pwd || dir_diff))
 				continue;
 
 			if (S_ISREG(stat1.st_mode) &&
 			    S_ISREG(stat2.st_mode)) {
 				if (cmp_file(lpath, stat1.st_size, rpath,
-				    stat2.st_size) == 1)
-					dir_diff = 1;
+				    stat2.st_size) == 1) {
+					if (qdiff)
+						printf(
+						    "Files %s and %s differ\n",
+						    lpath, rpath);
+					else
+						dir_diff = 1;
+				}
 				continue;
 			}
 
@@ -188,8 +202,15 @@ no_tree2:
 				if (!(b = read_link(rpath, stat2.st_size)))
 					goto free_a;
 
-				if (strcmp(a, b))
-					dir_diff = 1;
+				if (strcmp(a, b)) {
+					if (qdiff)
+						printf(
+						    "Symbolic links "
+						    "%s and %s differ\n",
+						    lpath, rpath);
+					else
+						dir_diff = 1;
+				}
 
 				free(b);
 
@@ -203,7 +224,11 @@ free_a:
 
 			if (!stat1.st_mode || !stat2.st_mode ||
 			     stat1.st_mode !=  stat2.st_mode) {
-				dir_diff = 1;
+				if (qdiff)
+					printf("Different file type: "
+					    "%s and %s\n", lpath, rpath);
+				else
+					dir_diff = 1;
 				continue;
 			}
 
@@ -297,7 +322,8 @@ right_tree:
 	if (scan && (real_diff || dir_diff))
 		goto dir_scan_end;
 
-	printerr(NULL, "Reading directory %s", rpath);
+	if (!qdiff)
+		printerr(NULL, "Reading directory %s", rpath);
 
 	if (!(d = opendir(rpath))) {
 		printerr(strerror(errno), "opendir %s failed", rpath);
@@ -328,7 +354,11 @@ right_tree:
 		    ))
 			continue;
 
-		if (scan) {
+		if (qdiff) {
+			rpath[rlen] = 0;
+			printf("Only in %s: %s\n", rpath, name);
+			continue;
+		} else if (scan) {
 			dir_diff = 1;
 			break;
 		}

@@ -122,6 +122,11 @@ This is disabled with this option.
 This option suppresses the display of equal files.
 .It Fl o
 Hide files which are on one side only.
+.It Fl q
+Debug option:
+Print differing files and exit (similar to
+.Dq Li diff \-q ,
+but output is unsorted).
 .It Fl r
 Recursively scan directories to detect differences in subdirectories.
 This allows to mark directories which contain differences.
@@ -147,7 +152,7 @@ refers to the first and
 to the second file.
 Note that the shell may require quoting as in
 .Pp
-.Dl -t \(dqdiff \(rs$1 \(rs$2 | vim -R -\(dq
+.Dl \-t \(dqdiff \(rs$1 \(rs$2 | vim \-R \-\(dq
 .It Fl u Op Ar filename
 Skip reading the initialization file at start-up.
 If
@@ -193,7 +198,7 @@ are used for scrolling in help mode.
 Refresh display.
 This may be necessary after another application
 had output text into the curses controlled display.
-.It Ao Cm UP Ac , So Li k Sc or Sq Li -
+.It Ao Cm UP Ac , So Li k Sc or Sq Li \-
 Move cursor line up.
 .It Ao Cm DOWN Ac , So Li j Sc or Sq Li +
 Move cursor line down.
@@ -659,7 +664,7 @@ in double quotes
 .Pq Sq \(dq
 as in
 .Pp
-.Dl ext \(dq1\(dq \(dqtbl $1 | neqn | nroff -mandoc | less\(dq
+.Dl ext \(dq1\(dq \(dqtbl $1 | neqn | nroff \-mandoc | less\(dq
 .Pp
 because the parser expects a string (and not a number)
 after the keyword

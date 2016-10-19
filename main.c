@@ -50,9 +50,11 @@ static int read_rc(const char *);
 static void usage(void);
 
 static char *usage_txt =
-"Usage: %s [-u] [-bcdfgklmnorV] [-t <diff_tool>] [-v <view_tool>]\n"
+"Usage: %s [-u] [-bcdfgklmnoqrV] [-t <diff_tool>] [-v <view_tool>]\n"
 "	<directory_1> <directory_2>\n";
-static char *getopt_arg = "Bbcdfgklmnort:Vv:";
+static char *getopt_arg = "Bbcdfgklmnoqrt:Vv:";
+
+bool qdiff;
 
 int
 main(int argc, char **argv)
@@ -91,6 +93,7 @@ main(int argc, char **argv)
 		switch (opt) {
 		case 'B':
 			bmode = 1;
+			qdiff = FALSE;
 			break;
 		case 'b':
 			color = 0;
@@ -122,6 +125,10 @@ main(int argc, char **argv)
 			break;
 		case 'o':
 			nosingle = 1;
+			break;
+		case 'q':
+			qdiff = TRUE;
+			bmode = 0;
 			break;
 		case 'r':
 			recursive = 1;

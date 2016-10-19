@@ -450,7 +450,7 @@ free_names(void)
 #else
 	char *s;
 
-	while (name_db != NULL) {
+	while (name_db) {
 		s = *(char **)name_db;
 		tdelete(s, &name_db, name_cmp);
 		free(s);

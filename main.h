@@ -25,3 +25,4 @@ extern short nosingle;
 #ifdef TRACE
 extern FILE *debug;
 #endif
+extern bool qdiff;

@@ -111,6 +111,9 @@ static bool dir_change;
 void
 build_ui(void)
 {
+	if (qdiff)
+		goto do_diff;
+
 	initscr();
 
 	if (color && !has_colors())
@@ -155,14 +158,22 @@ build_ui(void)
 		scrollok(wlist, TRUE);
 	}
 
+do_diff:
 	/* Not in main since build_diff_db() uses printerr() */
 	if (recursive && !bmode) {
 		scan = 1;
 		build_diff_db(3);
 		scan = 0;
+
+		if (qdiff)
+			return;
 	}
 
 	build_diff_db(bmode ? 1 : 3);
+
+	if (qdiff)
+		return;
+
 	disp_list();
 	ui_ctrl();
 
@@ -2205,6 +2216,18 @@ void
 printerr(char *s2, char *s1, ...)
 {
 	va_list ap;
+
+	if (qdiff) {
+		va_start(ap, s1);
+		vfprintf(stderr, s1, ap);
+		va_end(ap);
+
+		if (s2)
+			fprintf(stderr, ": %s", s2);
+
+		fputc('\n', stderr);
+		return;
+	}
 
 	wstat_dirty = TRUE;
 	werase(wstat);
