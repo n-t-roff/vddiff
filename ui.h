@@ -8,13 +8,13 @@
 
 struct ui_state {
 	char *lpth, *rpth;
+	char *lzip, *rzip;
 	size_t llen, rlen;
 	void *bst;
 	unsigned num;
 	struct filediff **list;
 	unsigned top_idx, curs;
 	struct ui_state *next;
-	short del;
 };
 
 void build_ui(void);

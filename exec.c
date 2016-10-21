@@ -338,9 +338,7 @@ exec_tool(struct tool *t, char *name, char *rnam, int tree)
 }
 
 int
-exec_cmd(char **av,
-    /* 1: Background, 2: Wait for <ENTER>, 4: Skip disp_list() */
-    tool_flags_t flags, char *path, char *msg)
+exec_cmd(char **av, tool_flags_t flags, char *path, char *msg)
 {
 	pid_t pid;
 	int status = 0;

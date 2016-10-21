@@ -47,7 +47,7 @@ static void curs_down(void);
 static void curs_up(void);
 static void disp_curs(int);
 static void disp_line(unsigned, unsigned, int);
-static void push_state(bool, bool, bool, bool);
+static void push_state(char *, char *, bool, bool);
 static void pop_state(short);
 static void enter_dir(char *, char *, bool, bool);
 static void help(void);
@@ -177,12 +177,11 @@ do_diff:
 	disp_list();
 	ui_ctrl();
 
-	/* remove tmp_dirs */
+	/* if !bmode: remove tmp_dirs */
 	while (ui_stack)
 		pop_state(0);
 
-	/* before diff_db_free() since uz_exit() calls exec_cmd() which
-	 * calls disp_list() which needs diff_db */
+	/* if bmode: remove tmp_dirs */
 	uz_exit();
 	diff_db_free();
 	delwin(wstat);
@@ -1178,6 +1177,8 @@ action(
 				t2 = NULL;
 				enter_dir(rnam, NULL, FALSE, FALSE);
 
+				/* In bmode the unpacked dir is in z2.
+				 * Hence z1 is useless and can be removed. */
 				if (S_ISDIR(ltyp) && z1) {
 					t1 = strdup(lnam);
 					/* remove "/[lr]" */
@@ -2027,14 +2028,16 @@ center(unsigned idx)
 }
 
 static void
-push_state(bool lsave, bool rsave, bool lzip, bool rzip)
+push_state(char *name, char *rnam, bool lzip, bool rzip)
 {
 	struct ui_state *st = malloc(sizeof(struct ui_state));
 	diff_db_store(st);
 	st->llen = llen;
 	st->rlen = rlen;
 
-	if (!lsave)
+	/* If an absolute path is given, save the current path for the
+	 * time when this absolute path is left later */
+	if (!(name && *name == '/'))
 		st->lpth = NULL;
 	else {
 		st->lpth = strdup(lpath);
@@ -2042,7 +2045,7 @@ push_state(bool lsave, bool rsave, bool lzip, bool rzip)
 		llen = 0;
 	}
 
-	if (!rsave)
+	if (!(rnam && *rnam == '/'))
 		st->rpth = NULL;
 	else {
 		st->rpth = strdup(rpath);
@@ -2050,10 +2053,11 @@ push_state(bool lsave, bool rsave, bool lzip, bool rzip)
 		rlen = 0;
 	}
 
+	st->lzip = lzip ? strdup(name) : NULL;
+	st->rzip = rzip ? strdup(rnam) : NULL;
 	st->top_idx = top_idx;  top_idx = 0;
 	st->curs    = curs;     curs    = 0;
 	st->next    = ui_stack;
-	st->del     = (lzip ? 1 : 0) | (rzip ? 2 : 0);
 	ui_stack    = st;
 }
 
@@ -2064,37 +2068,28 @@ pop_state(
     short mode)
 {
 	struct ui_state *st = ui_stack;
-	char *s;
 
 	if (!st) {
 		printerr(NULL, "At top directory");
 		return;
 	}
 
-	if (st->lpth && (st->del & 1)) {
-		llen -= 2;
-		lpath[llen] = 0;
-
-		if (mode && gl_mark && mark_lnam &&
-		    !strncmp(lpath, mark_lnam, llen))
+	if (st->lzip) {
+		if (mode && ((gl_mark && mark_lnam &&
+		    !strncmp(lpath, mark_lnam, llen)) || mark))
 			clr_mark();
 
-		s = strdup(lpath);
-		rmtmpdirs(s);
-		*lpath = 0;
+		st->lzip[strlen(st->lzip) - 2] = 0;
+		rmtmpdirs(st->lzip);
 	}
 
-	if (st->rpth && (st->del & 2)) {
-		rlen -= 2;
-		rpath[rlen] = 0;
-
-		if (mode && gl_mark && mark_rnam &&
-		    !strncmp(rpath, mark_rnam, rlen))
+	if (st->rzip) {
+		if (mode && ((gl_mark && mark_rnam &&
+		    !strncmp(rpath, mark_rnam, rlen)) || mark))
 			clr_mark();
 
-		s = strdup(rpath);
-		rmtmpdirs(s);
-		*rpath = 0;
+		st->rzip[strlen(st->rzip) - 2] = 0;
+		rmtmpdirs(st->rzip);
 	}
 
 	if (mark) {
@@ -2146,8 +2141,7 @@ enter_dir(char *name, char *rnam, bool lzip, bool rzip)
 		mark_global();
 
 	if (!bmode) {
-		push_state(name && *name == '/',
-		           rnam && *rnam == '/', lzip, rzip);
+		push_state(name, rnam, lzip, rzip);
 		scan_subdir(name, rnam,
 		    (name ? 1 : 0) | (rnam ? 2 : 0));
 	} else {

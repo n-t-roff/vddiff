@@ -1,14 +1,17 @@
 For information on `vddiff` please visit the
 [project web page](http://n-t-roff.github.io/vddiff).
 
-The source code is fetched with
+The source code is downloaded with
 ```
 git clone https://github.com/n-t-roff/vddiff.git
 ```
-and kept in sync with
+and can be updated with
 ```
 git pull
 ```
+(Latest changes are notified in the
+[change log](https://github.com/n-t-roff/vddiff/commits/master).)
+
 It is suggested (but not required) to install
 the speed optimized AVL library
 [libavlbst](https://github.com/n-t-roff/libavlbst).
