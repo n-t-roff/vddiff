@@ -43,6 +43,7 @@ static int srchcmp(const void *, const void *);
 
 short noic, magic, nows, scale;
 short regex;
+unsigned short subtree = 3;
 
 static struct str_uint *srchmap;
 static regex_t re_dat;

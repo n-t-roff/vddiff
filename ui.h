@@ -14,6 +14,7 @@ struct ui_state {
 	unsigned num;
 	struct filediff **list;
 	unsigned top_idx, curs;
+	unsigned short tree;
 	struct ui_state *next;
 };
 

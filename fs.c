@@ -529,7 +529,7 @@ rebuild_db(
 		mark_global();
 
 	diff_db_free();
-	build_diff_db(bmode ? 1 : 3);
+	build_diff_db(bmode ? 1 : subtree);
 
 	if (mode && name) {
 		center(findlistname(name));

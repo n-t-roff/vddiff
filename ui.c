@@ -2057,6 +2057,7 @@ push_state(char *name, char *rnam, bool lzip, bool rzip)
 	st->rzip = rzip ? strdup(rnam) : NULL;
 	st->top_idx = top_idx;  top_idx = 0;
 	st->curs    = curs;     curs    = 0;
+	st->tree    = subtree;
 	st->next    = ui_stack;
 	ui_stack    = st;
 }
@@ -2121,6 +2122,7 @@ pop_state(
 
 	top_idx  = st->top_idx;
 	curs     = st->curs;
+	subtree  = st->tree;
 	ui_stack = st->next;
 	lpath[llen] = 0; /* For 'p' (pwd) */
 	diff_db_restore(st);
@@ -2142,8 +2144,8 @@ enter_dir(char *name, char *rnam, bool lzip, bool rzip)
 
 	if (!bmode) {
 		push_state(name, rnam, lzip, rzip);
-		scan_subdir(name, rnam,
-		    (name ? 1 : 0) | (rnam ? 2 : 0));
+		subtree = (name ? 1 : 0) | (rnam ? 2 : 0);
+		scan_subdir(name, rnam, subtree);
 	} else {
 		unsigned *uv;
 #ifdef HAVE_LIBAVLBST
