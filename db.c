@@ -644,6 +644,7 @@ diff_db_free(void)
 #endif
 	free(db_list);
 	db_list = NULL;
+	db_num = 0;
 }
 
 /* In the libavlbst case the nodes are not really deleted, just the memory

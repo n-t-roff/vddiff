@@ -151,7 +151,7 @@ rmtmpdirs(char *s)
 	static char *av[] = { "rm", "-rf", NULL, NULL };
 
 	av[2] = s;
-	exec_cmd(av, TOOL_NOLIST, NULL, NULL);
+	exec_cmd(av, 0, NULL, NULL);
 	free(s); /* either tmp_dir or a DB entry */
 }
 

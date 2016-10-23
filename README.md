@@ -9,8 +9,8 @@ and can be updated with
 ```
 git pull
 ```
-(Latest changes are notified in the
-[change log](https://github.com/n-t-roff/vddiff/commits/master).)
+(latest changes are notified in the
+[change log](https://github.com/n-t-roff/vddiff/commits/master)).
 
 It is suggested (but not required) to install
 the speed optimized AVL library
