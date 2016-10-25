@@ -691,7 +691,7 @@ next_key:
 
 			break;
 		case 's':
-			c = 0;
+			/* Don't clear c here! Else sl and sr won't work! */
 			open_sh(3);
 			break;
 		case 'z':
