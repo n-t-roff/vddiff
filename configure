@@ -318,7 +318,6 @@ EOT
 	check_ncursesw && return
 	check_ncurses && return
 	DEFS=$DEFS0
-	# If mouse support is not required, NetBSD curses works perfectly.
 	check_curses && return
 }
 check_curses_wch () {

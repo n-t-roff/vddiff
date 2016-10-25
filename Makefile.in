@@ -9,14 +9,15 @@ OBJ=	main.o pars.o lex.o diff.o ui.o db.o exec.o fs.o ed.o uzp.o ver.o \
 
 YFLAGS=	-d
 _CFLAGS=$(CFLAGS) $(CPPFLAGS) $(DEFINES) $(INCDIR_CURSES) -I$(INCDIR) \
-	$(__CDBG) $(__SAN) -Wall -Wextra \
+	$(__CDBG) $(__SAN) \
 	#-DTRACE='"/tmp/.vddiff.trace.txt"'
 _LDFLAGS=$(LDFLAGS) $(__SAN) -L${LIBDIR} -Wl,-rpath,${LIBDIR} \
+	$(RPATH_CURSES) \
 	-s
 LDADD=	$(LIB_AVLBST) $(LIBDIR_CURSES) $(LIB_CURSES)
 
 $(BIN):	$(OBJ)
-	$(CC) $(_CFLAGS) $(_LDFLAGS) $(RPATH_CURSES) -o $@ $(OBJ) $(LDADD)
+	$(CC) $(_CFLAGS) $(_LDFLAGS) -o $@ $(OBJ) $(LDADD)
 
 install:
 	[ -d $(BINDIR) ] || mkdir -p $(BINDIR)
@@ -25,7 +26,8 @@ install:
 	install -m 644 $(BIN).1 $(MANDIR)/man1/
 
 clean:
-	rm -f $(BIN) $(OBJ) y.tab.h $(BIN).1.html $(BIN).1.pdf
+	rm -f $(BIN) $(OBJ) y.tab.? $(BIN).1.html $(BIN).1.pdf \
+	    /tmp/.$(BIN).err /tmp/.$(BIN).toc *.gc??
 
 distclean: clean
 	rm -f Makefile config.log compat.h
@@ -47,10 +49,10 @@ pdf:
 $(BIN).1.html: $(BIN).1
 	tbl $(BIN).1 | eqn | troff -Thtml -mandoc -dToc=/tmp/.$(BIN).toc \
 	    2> /tmp/.$(BIN).err | dhtml -t "$(BIN)(1)" > $@
-	sed -n 's/^Toc://p' /tmp/.$(BIN).err > /tmp/toc
+	sed -n 's/^Toc://p' /tmp/.$(BIN).err > /tmp/.$(BIN).toc
 	tbl $(BIN).1 | eqn | troff -Thtml -mandoc -dToc=/tmp/.$(BIN).toc \
 	    2> /tmp/.$(BIN).err | dhtml -t "$(BIN)(1)" > $@
-	sed -n 's/^Toc://p' /tmp/.$(BIN).err > /tmp/toc
+	sed -n 's/^Toc://p' /tmp/.$(BIN).err > /tmp/.$(BIN).toc
 	tbl $(BIN).1 | eqn | troff -Thtml -mandoc -dToc=/tmp/.$(BIN).toc \
 	    2> /tmp/err | dhtml -t "$(BIN)(1)" > $@
 

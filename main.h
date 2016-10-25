@@ -1,8 +1,8 @@
 #define PATHSIZ  (1024*16)
 #define BUF_SIZE PATHSIZ
 
-#define PWD  (*pwd  == '/' ? pwd  + 1 : pwd )
-#define RPWD (*rpwd == '/' ? rpwd + 1 : rpwd)
+#define PWD  ((pwd  != lpath && *pwd  == '/') ? pwd  + 1 : pwd )
+#define RPWD ((rpwd != rpath && *rpwd == '/') ? rpwd + 1 : rpwd)
 #ifndef CTRL
 # define CTRL(c) ((c) & 037)
 #endif

@@ -2043,6 +2043,7 @@ push_state(char *name, char *rnam, bool lzip, bool rzip)
 		st->lpth = strdup(lpath);
 		*lpath = 0;
 		llen = 0;
+		pwd = lpath;
 	}
 
 	if (!(rnam && *rnam == '/'))
@@ -2051,6 +2052,7 @@ push_state(char *name, char *rnam, bool lzip, bool rzip)
 		st->rpth = strdup(rpath);
 		*rpath = 0;
 		rlen = 0;
+		rpwd = rpath;
 	}
 
 	st->lzip = lzip ? strdup(name) : NULL;

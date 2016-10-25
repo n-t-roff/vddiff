@@ -63,9 +63,19 @@ main(int argc, char **argv)
 
 	prog = *argv;
 	setlocale(LC_ALL, "");
+
 #ifdef TRACE
-	debug = fopen(TRACE, "w");
+	if (!(debug = fopen(TRACE, "w"))) {
+		printf("fopen \"" TRACE "\" failed: %s\n", strerror(errno));
+		return 1;
+	}
+
+	if (setvbuf(debug, NULL, _IONBF, 0)) {
+		printf("setvbuf \"" TRACE "\" failed: %s\n", strerror(errno));
+		return 1;
+	}
 #endif
+
 #ifdef HAVE_LIBAVLBST
 	db_init();
 #endif
