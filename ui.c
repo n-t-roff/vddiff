@@ -128,6 +128,7 @@ build_ui(void)
 		init_pair(PAIR_UNKNOWN  , color_unknown  , COLOR_BLACK);
 		init_pair(PAIR_LINK     , color_link     , COLOR_BLACK);
 		init_pair(PAIR_CURSOR   , COLOR_BLACK    , COLOR_WHITE);
+		init_pair(PAIR_ERROR    , COLOR_WHITE    , COLOR_RED  );
 	}
 
 	cbreak();
@@ -1573,6 +1574,8 @@ no_diff:
 		mode = f->ltype;
 		if (diff == '!')
 			color_id = PAIR_DIFF;
+		else if (diff == '-')
+			color_id = PAIR_ERROR;
 	}
 
 	if (S_ISREG(mode)) {

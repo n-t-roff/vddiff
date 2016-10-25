@@ -39,11 +39,13 @@ static struct filediff *alloc_diff(char *);
 static void add_diff_dir(void);
 static char *read_link(char *, off_t);
 
-short followlinks;
-
 static int (*xstat)(const char *, struct stat *) = lstat;
 static struct filediff *diff;
 static off_t lsiz1, lsiz2;
+
+short followlinks;
+
+static bool ign_diff_errs;
 
 /* 1: Proc left dir
  * 2: Proc right dir
@@ -70,7 +72,12 @@ build_diff_db(int tree)
 		printerr(NULL, "Reading directory %s", lpath);
 
 	if (!(d = opendir(lpath))) {
-		printerr(strerror(errno), "opendir %s failed", lpath);
+		if (!ign_diff_errs && dialog(
+		    "'i' ignore errors, <other key> continue",
+		    NULL, "opendir \"%s\" failed: %s", lpath,
+		    strerror(errno)) == 'i')
+			ign_diff_errs = TRUE;
+
 		retval = -1;
 		goto dir_scan_end;
 	}
@@ -82,7 +89,8 @@ build_diff_db(int tree)
 				break;
 
 			lpath[llen] = 0;
-			printerr(strerror(errno), "readdir %s failed", lpath);
+			printerr(strerror(errno), "readdir \"%s\" failed",
+			    lpath);
 			closedir(d);
 			retval = -1;
 			goto dir_scan_end;
@@ -283,10 +291,14 @@ free_a:
 
 			switch (cmp_file(lpath, stat1.st_size, rpath,
 			    stat2.st_size)) {
+			case -1:
+				diff->diff = '-';
+				goto db_add_file;
 			case 1:
 				diff->diff = '!';
 				/* fall through */
 			case 0:
+db_add_file:
 				diff_db_add(diff);
 				continue;
 			}
@@ -331,7 +343,12 @@ right_tree:
 		printerr(NULL, "Reading directory %s", rpath);
 
 	if (!(d = opendir(rpath))) {
-		printerr(strerror(errno), "opendir %s failed", rpath);
+		if (!ign_diff_errs && dialog(
+		    "'i' ignore errors, <other key> continue",
+		    NULL, "opendir \"%s\" failed: %s", rpath,
+		    strerror(errno)) == 'i')
+			ign_diff_errs = TRUE;
+
 		retval = -1;
 		goto dir_scan_end;
 	}
@@ -533,7 +550,12 @@ read_link(char *path, off_t size)
 	char *l = malloc(size + 1);
 
 	if ((size = readlink(path, l, size)) == -1) {
-		printerr(strerror(errno), "readlink %s failed", lpath);
+		if (!ign_diff_errs && dialog(
+		    "'i' ignore errors, <other key> continue",
+		    NULL, "readlink \"%s\" failed: %s", path,
+		    strerror(errno)) == 'i')
+			ign_diff_errs = TRUE;
+
 		free(l);
 		return NULL;
 	}
@@ -561,25 +583,45 @@ cmp_file(char *lpth, off_t lsiz, char *rpth, off_t rsiz)
 		return 0;
 
 	if ((f1 = open(lpth, O_RDONLY)) == -1) {
-		printerr(strerror(errno), "open %s failed", lpth);
+		if (!ign_diff_errs && dialog(
+		    "'i' ignore errors, <other key> continue",
+		    NULL, "open \"%s\" failed: %s", lpth,
+		    strerror(errno)) == 'i')
+			ign_diff_errs = TRUE;
+
 		return -1;
 	}
 
 	if ((f2 = open(rpth, O_RDONLY)) == -1) {
-		printerr(strerror(errno), "open %s failed", rpth);
+		if (!ign_diff_errs && dialog(
+		    "'i' ignore errors, <other key> continue",
+		    NULL, "open \"%s\" failed: %s", rpth,
+		    strerror(errno)) == 'i')
+			ign_diff_errs = TRUE;
+
 		rv = -1;
 		goto close_f1;
 	}
 
 	while (1) {
 		if ((l1 = read(f1, lbuf, sizeof lbuf)) == -1) {
-			printerr(strerror(errno), "read %s failed", lpth);
+			if (!ign_diff_errs && dialog(
+			    "'i' ignore errors, <other key> continue",
+			    NULL, "read \"%s\" failed: %s", lpth,
+			    strerror(errno)) == 'i')
+				ign_diff_errs = TRUE;
+
 			rv = -1;
 			break;
 		}
 
 		if ((l2 = read(f2, rbuf, sizeof rbuf)) == -1) {
-			printerr(strerror(errno), "read %s failed", rpth);
+			if (!ign_diff_errs && dialog(
+			    "'i' ignore errors, <other key> continue",
+			    NULL, "read \"%s\" failed: %s", rpth,
+			    strerror(errno)) == 'i')
+				ign_diff_errs = TRUE;
+
 			rv = -1;
 			break;
 		}
