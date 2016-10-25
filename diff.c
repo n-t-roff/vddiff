@@ -167,6 +167,10 @@ no_tree2:
 		if (scan || qdiff) {
 			if (S_ISDIR(stat1.st_mode) &&
 			    S_ISDIR(stat2.st_mode)) {
+				if (!scan)
+					/* Non-recursive qdiff */
+					continue;
+
 				struct str_list *se =
 				    malloc(sizeof(struct str_list));
 				se->s = strdup(name);
@@ -409,7 +413,7 @@ dir_scan_end:
 	if (!scan)
 		return retval;
 
-	if (dir_diff)
+	if (dir_diff && !qdiff)
 		add_diff_dir();
 
 	while (dirs) {
