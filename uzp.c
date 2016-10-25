@@ -148,10 +148,13 @@ mktmpdirs(void)
 void
 rmtmpdirs(char *s)
 {
-	static char *av[] = { "rm", "-rf", NULL, NULL };
+	static char *cm[] = { "chmod", "-R" , "700", NULL, NULL };
+	static char *rm[] = { "rm"   , "-rf", NULL , NULL };
 
-	av[2] = s;
-	exec_cmd(av, 0, NULL, NULL);
+	cm[3] = s;
+	exec_cmd(cm, 0, NULL, NULL);
+	rm[2] = s;
+	exec_cmd(rm, 0, NULL, NULL);
 	free(s); /* either tmp_dir or a DB entry */
 }
 
