@@ -717,7 +717,7 @@ next_key:
 			}
 
 			c = 0;
-			follow(-1); /* toggle */
+			followlinks = followlinks ? 0 : 1;
 			rebuild_db(1);
 			break;
 		case 'H':

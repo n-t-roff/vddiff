@@ -125,7 +125,7 @@ main(int argc, char **argv)
 			set_tool(&difftool, strdup("tkdiff"), TOOL_BG);
 			break;
 		case 'l':
-			follow(1);
+			followlinks = 1;
 			break;
 		case 'm':
 			sorting = SORTMIXED;

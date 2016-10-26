@@ -39,7 +39,6 @@ static struct filediff *alloc_diff(char *);
 static void add_diff_dir(void);
 static char *read_link(char *, off_t);
 
-static int (*xstat)(const char *, struct stat *) = lstat;
 static struct filediff *diff;
 static off_t lsiz1, lsiz2;
 
@@ -681,16 +680,6 @@ alloc_diff(char *name)
 	p->rlink = NULL;
 	p->diff  = ' ';
 	return p;
-}
-
-void
-follow(int f)
-{
-	if (f < 0)
-		f = followlinks ? 0 : 1;
-
-	followlinks = f;
-	xstat = f ? stat : lstat;
 }
 
 size_t

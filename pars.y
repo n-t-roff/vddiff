@@ -24,10 +24,10 @@ PERFORMANCE OF THIS SOFTWARE.
 #include "db.h"
 #include "ed.h"
 #include "lex.h"
+#include "diff.h"
 
 void yyerror(const char *);
 int yylex(void);
-void follow(int);
 extern char *yytext;
 %}
 %union {
@@ -62,7 +62,7 @@ option:
 	| FKEY INTEGER STRING   { set_fkey($2, $3)                        ; }
 	| FILES                 { sorting = FILESFIRST                    ; }
 	| MIXED                 { sorting = SORTMIXED                     ; }
-	| FOLLOW                { follow(1)                               ; }
+	| FOLLOW                { followlinks = 1;                        ; }
 	| MONO                  { color = 0                               ; }
 	| NOEQUAL               { noequal = 1                             ; }
 	| REAL_DIFF             { real_diff = 1                           ; }
