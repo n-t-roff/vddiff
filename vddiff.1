@@ -20,9 +20,10 @@ PERFORMANCE OF THIS SOFTWARE.
 .Nd text terminal directory diff tool
 .Sh SYNOPSYS
 .Nm
-.Op Fl u
-.Op Fl bcdfgklmnorV
+.Op Fl u Op Ar "RC file"
+.Op Fl BbcdfgklmnoqrV
 .Op Fl t Ar diff_tool
+.Op Fl v Ar view_tool
 .Ar directory_1
 .Ar directory_2
 .Sh DESCRIPTION
@@ -417,6 +418,11 @@ Remove mark, edit line, or regex search.
 Test for binary difference between selected and marked file.
 Compressed files are unpacked but compressed archive files
 are compared directly.
+.begin_comment
+.Pp
+Handling of compressed files is implemented redundant
+and should be tested separately.
+.end_comment
 .It Sq Li y
 Copy file path(s) to edit line.
 If a
@@ -651,6 +657,12 @@ is ignored if the file to be viewed is compressed.
 Since it is decompressed into a temporary directory
 which is removed after starting the view tool,
 the file may be removed before the tool reads it.
+For example
+.Pp
+.Dl viewtool bg \(dqxterm -e less\(dq
+.Pp
+displayes every file to view in a separate window while not
+blocking the file browser.
 .It Li ext Ar extension Ar string
 Configure view tool
 .Ar string

@@ -4,33 +4,36 @@ MANDIR=	$(PREFIX)/share/man
 INCDIR=	$(PREFIX)/include
 LIBDIR=	$(PREFIX)/lib
 BIN=	vddiff
+
+TRACE=	#-DTRACE='"/tmp/.vddiff.trace.txt"'
+STRP=	#-s
+
 OBJ=	main.o pars.o lex.o diff.o ui.o db.o exec.o fs.o ed.o uzp.o ver.o \
 	ui2.o
-
 YFLAGS=	-d
 _CFLAGS=$(CFLAGS) $(CPPFLAGS) $(DEFINES) $(INCDIR_CURSES) -I$(INCDIR) \
-	$(__CDBG) $(__SAN) \
-	#-DTRACE='"/tmp/.vddiff.trace.txt"'
-_LDFLAGS=$(LDFLAGS) $(__SAN) -L${LIBDIR} -Wl,-rpath,${LIBDIR} \
-	$(RPATH_CURSES) \
-	-s
+	$(__CDBG) $(__CLDBG) $(TRACE)
+_LDFLAGS=$(LDFLAGS) $(__CLDBG) -L${LIBDIR} -Wl,-rpath,${LIBDIR} \
+	$(RPATH_CURSES) $(STRP)
 LDADD=	$(LIB_AVLBST) $(LIBDIR_CURSES) $(LIB_CURSES)
 
-$(BIN):	$(OBJ)
-	$(CC) $(_CFLAGS) $(_LDFLAGS) -o $@ $(OBJ) $(LDADD)
+all: $(BIN) $(BIN).1.out
 
 install:
 	[ -d $(BINDIR) ] || mkdir -p $(BINDIR)
 	install $(BIN) $(BINDIR)/
 	[ -d $(MANDIR)/man1 ] || mkdir -p $(MANDIR)/man1
-	install -m 644 $(BIN).1 $(MANDIR)/man1/
+	install -m 644 $(BIN).1.out $(MANDIR)/man1/$(BIN).1
 
 clean:
 	rm -f $(BIN) $(OBJ) y.tab.? $(BIN).1.html $(BIN).1.pdf \
-	    /tmp/.$(BIN).err /tmp/.$(BIN).toc *.gc??
+	    /tmp/.$(BIN).err /tmp/.$(BIN).toc *.gc?? $(BIN).1.out
 
 distclean: clean
 	rm -f Makefile config.log compat.h
+
+$(BIN): $(OBJ)
+	$(CC) $(_CFLAGS) $(_LDFLAGS) -o $@ $(OBJ) $(LDADD)
 
 .y.o:
 	$(YACC) $(YFLAGS) $<
@@ -40,30 +43,33 @@ distclean: clean
 .c.o:
 	$(CC) $(_CFLAGS) -c $<
 
+$(BIN).1.out: $(BIN).1
+	sed '/^\.begin_comment/,/^\.end_comment/d' $(BIN).1 > $@
+
 html:
 	make $(BIN).1.html
 
 pdf:
 	make $(BIN).1.pdf
 
-$(BIN).1.html: $(BIN).1
-	tbl $(BIN).1 | eqn | troff -Thtml -mandoc -dToc=/tmp/.$(BIN).toc \
+$(BIN).1.html: $(BIN).1.out
+	tbl $(BIN).1.out | eqn | troff -Thtml -mandoc -dToc=/tmp/.$(BIN).toc \
 	    2> /tmp/.$(BIN).err | dhtml -t "$(BIN)(1)" > $@
 	sed -n 's/^Toc://p' /tmp/.$(BIN).err > /tmp/.$(BIN).toc
-	tbl $(BIN).1 | eqn | troff -Thtml -mandoc -dToc=/tmp/.$(BIN).toc \
+	tbl $(BIN).1.out | eqn | troff -Thtml -mandoc -dToc=/tmp/.$(BIN).toc \
 	    2> /tmp/.$(BIN).err | dhtml -t "$(BIN)(1)" > $@
 	sed -n 's/^Toc://p' /tmp/.$(BIN).err > /tmp/.$(BIN).toc
-	tbl $(BIN).1 | eqn | troff -Thtml -mandoc -dToc=/tmp/.$(BIN).toc \
+	tbl $(BIN).1.out | eqn | troff -Thtml -mandoc -dToc=/tmp/.$(BIN).toc \
 	    2> /tmp/err | dhtml -t "$(BIN)(1)" > $@
 
-$(BIN).1.pdf: $(BIN).1
-	tbl -g $(BIN).1 | eqn | troff -mandoc -dToc=/tmp/.$(BIN).toc \
+$(BIN).1.pdf: $(BIN).1.out
+	tbl -g $(BIN).1.out | eqn | troff -mandoc -dToc=/tmp/.$(BIN).toc \
 	    2> /tmp/.$(BIN).err | dpost | ps2pdf - $@
 	sed -n 's/^Toc://p' /tmp/.$(BIN).err > /tmp/.$(BIN).toc
-	tbl -g $(BIN).1 | eqn | troff -mandoc -dToc=/tmp/.$(BIN).toc \
+	tbl -g $(BIN).1.out | eqn | troff -mandoc -dToc=/tmp/.$(BIN).toc \
 	    2> /tmp/.$(BIN).err | dpost | ps2pdf - $@
 	sed -n 's/^Toc://p' /tmp/.$(BIN).err > /tmp/.$(BIN).toc
-	tbl -g $(BIN).1 | eqn | troff -mandoc -dToc=/tmp/.$(BIN).toc \
+	tbl -g $(BIN).1.out | eqn | troff -mandoc -dToc=/tmp/.$(BIN).toc \
 	    2> /tmp/.$(BIN).err | dpost | ps2pdf - $@
 
 main.o: pars.o # y.tab.h

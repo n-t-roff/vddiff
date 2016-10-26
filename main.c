@@ -50,8 +50,8 @@ static int read_rc(const char *);
 static void usage(void);
 
 static char *usage_txt =
-"Usage: %s [-u] [-bcdfgklmnoqrV] [-t <diff_tool>] [-v <view_tool>]\n"
-"	<directory_1> <directory_2>\n";
+"Usage: %s [-u [<RC file>]] [-BbcdfgklmnoqrV] [-t <diff_tool>]\n"
+"	[-v <view_tool>] <directory_1> <directory_2>\n";
 static char *getopt_arg = "Bbcdfgklmnoqrt:Vv:";
 
 bool qdiff;
@@ -234,14 +234,14 @@ read_rc(const char *upath)
 	if (stat(rc_path, &stat1) == -1) {
 		if (errno == ENOENT)
 			goto free;
-		printf("stat(\"%s\") failed: %s\n", rc_path,
+		printf("stat \"%s\" failed: %s\n", rc_path,
 		    strerror(errno));
 		rv = 1;
 		goto free;
 	}
 
 	if (!(yyin = fopen(rc_path, "r"))) {
-		printf("fopen(\"%s\") failed: %s\n", rc_path,
+		printf("fopen \"%s\" failed: %s\n", rc_path,
 		    strerror(errno));
 		rv = 1;
 		goto free;
@@ -250,7 +250,7 @@ read_rc(const char *upath)
 	rv = yyparse();
 
 	if (fclose(yyin) == EOF) {
-		printf("fclose(\"%s\") failed: %s\n", rc_path,
+		printf("fclose \"%s\" failed: %s\n", rc_path,
 		    strerror(errno));
 	}
 free:
@@ -268,7 +268,7 @@ check_args(char **argv)
 	arg[0] = *argv;
 
 	if (stat(s = *argv++, &stat1) == -1) {
-		printf("stat(\"%s\") failed: %s\n", s, strerror(errno));
+		printf("stat \"%s\" failed: %s\n", s, strerror(errno));
 		exit(1);
 	}
 
@@ -286,7 +286,7 @@ check_args(char **argv)
 	arg[1] = *argv;
 
 	if (stat(s = *argv++, &stat2) == -1) {
-		printf("stat(\"%s\") failed: %s\n", s, strerror(errno));
+		printf("stat \"%s\" failed: %s\n", s, strerror(errno));
 		exit(1);
 	}
 

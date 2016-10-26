@@ -498,6 +498,7 @@ ret:
 		printerr(NULL, "Different: %s and %s", olnam, ornam);
 		break;
 	default:
+		/* Error message is already output by cmp_file() */
 		;
 	}
 }
