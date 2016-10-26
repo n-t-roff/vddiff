@@ -556,7 +556,10 @@ proc_dir(int folw)
 	}
 
 	while (!err) {
+		int i;
+
 		errno = 0;
+
 		if (!(ent = readdir(d))) {
 			if (!errno)
 				break;
@@ -574,8 +577,12 @@ proc_dir(int folw)
 
 		pthcat(pth1, len1, name);
 
-		if (( folw &&  stat(pth1, &stat1) == -1) ||
-		    (!folw && lstat(pth1, &stat1) == -1)) {
+		if (folw && tree_op != TREE_RM)
+			i =  stat(pth1, &stat1);
+		else
+			i = lstat(pth1, &stat1);
+
+		if (i == -1) {
 			if (errno != ENOENT) {
 				printerr(strerror(errno),
 				    "stat %s failed", pth1);

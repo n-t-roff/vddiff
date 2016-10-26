@@ -38,9 +38,13 @@ while [ $# -gt 0 ]; do
 done
 
 check_for () {
-	[ -e $LOG ] && echo >>$LOG
+	[ -e $LOG ] && cat <<EOT >>$LOG
+
+================================================================================
+
+EOT
 	A="Checking for $1 ... "
-	echo "$A" >>$LOG
+	printf "$A\n\n" >>$LOG
 	[ -z "$SFLAG" ] && printf "$A"
 }
 
@@ -321,25 +325,6 @@ EOT
 	check_curses && return
 }
 check_curses_wch () {
-	check_for "wget_wch(3)"
-
-	cat <<EOT >$TMPC
-#include "compat.h"
-int
-main() {
-	wint_t c;
-	wget_wch(stdscr, &c);
-	return 0;
-}
-EOT
-	gen_mk
-	cat <<EOT >>$OUTMK
-$TMPNAM: ${TMPNAM}.o
-	\$(CC) \$(_CFLAGS) \$(_LDFLAGS) \$(RPATH_CURSES) -o \$@ ${TMPNAM}.o \$(LDADD)
-EOT
-	compile
-	test_result || return;
-
 	check_for "wins_wch(3)"
 
 	cat <<EOT >$TMPC
@@ -382,6 +367,8 @@ check_libavlbst () {
 
 	cat <<EOT >$TMPC
 #include <avlbst.h>
+int bst_cmp(union bst_val, union bst_val);
+
 int
 bst_cmp(union bst_val a, union bst_val b)
 {

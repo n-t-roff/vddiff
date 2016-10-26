@@ -57,8 +57,9 @@ build_diff_db(int tree)
 	struct dirent *ent;
 	char *name;
 	struct str_list *dirs = NULL;
-	short dir_diff = 0;
 	int retval = 0;
+	short dir_diff = 0;
+	bool file_err = FALSE;
 
 	if (!(tree & 1))
 		goto right_tree;
@@ -83,7 +84,10 @@ build_diff_db(int tree)
 	}
 
 	while (1) {
+		int i;
+
 		errno = 0;
+
 		if (!(ent = readdir(d))) {
 			if (!errno)
 				break;
@@ -108,28 +112,31 @@ build_diff_db(int tree)
 		    );
 		pthcat(lpath, llen, name);
 
+		/* Get link length. Redundant code but necessary,
+		 * unfortunately. */
+
 		if (followlinks && !scan && lstat(lpath, &stat1) != -1 &&
 		    S_ISLNK(stat1.st_mode))
 			lsiz1 = stat1.st_size;
 		else
 			lsiz1 = -1;
 
-		if (xstat(lpath, &stat1) == -1) {
-			if (errno == ELOOP) {
-				if (lstat(lpath, &stat1) == -1) {
-					printerr(strerror(errno),
-					    "lstat \"%s\" failed", lpath);
-					continue;
-				}
-			} else {
-				if (errno != ENOENT) {
-					printerr(strerror(errno),
-					    "stat \"%s\" failed", lpath);
-					continue;
-				}
+		file_err = FALSE;
 
-				stat1.st_mode = 0;
+		if (!followlinks || (i = stat(lpath, &stat1)) == -1)
+			i = lstat(lpath, &stat1);
+
+		if (i == -1) {
+			if (errno != ENOENT) {
+				printerr(strerror(errno),
+				    "stat \"%s\" failed", lpath);
+				file_err = TRUE;
+
+				if (scan || qdiff)
+					continue;
 			}
+
+			stat1.st_mode = 0;
 		}
 
 		if (tree & 2) {
@@ -143,33 +150,28 @@ build_diff_db(int tree)
 		else
 			lsiz2 = -1;
 
-		if (xstat(rpath, &stat2) == -1) {
-			if (errno == ELOOP) {
-				if (lstat(rpath, &stat2) == -1) {
-					printerr(strerror(errno),
-					    "lstat \"%s\" failed", rpath);
+		if (!followlinks || (i = stat(rpath, &stat2)) == -1)
+			i = lstat(rpath, &stat2);
+
+		if (i == -1) {
+			if (errno != ENOENT) {
+				printerr(strerror(errno),
+				    "stat \"%s\" failed", rpath);
+				file_err = TRUE;
+
+				if (scan || qdiff)
 					continue;
-				}
-			} else {
-				if (errno != ENOENT) {
-					printerr(strerror(errno),
-					    "stat \"%s\" failed", rpath);
-					continue;
-				}
+			}
 
 no_tree2:
-				if (!stat1.st_mode)
-					continue; /* ignore two dead links */
-
-				if (qdiff) {
-					lpath[llen] = 0;
-					printf("Only in %s: %s\n", lpath,
-					    name);
-					continue;
-				}
-
-				stat2.st_mode = 0;
+			if (qdiff) {
+				lpath[llen] = 0;
+				printf("Only in %s: %s\n", lpath,
+				    name);
+				continue;
 			}
+
+			stat2.st_mode = 0;
 		}
 
 		if (scan || qdiff) {
@@ -248,6 +250,12 @@ free_a:
 		}
 
 		diff = alloc_diff(name);
+
+		if (file_err) {
+			diff->diff = '-';
+			diff_db_add(diff);
+			continue;
+		}
 
 		if ((diff->ltype = stat1.st_mode)) {
 			diff->luid  = stat1.st_uid;
@@ -354,7 +362,10 @@ right_tree:
 	}
 
 	while (1) {
+		int i;
+
 		errno = 0;
+
 		if (!(ent = readdir(d))) {
 			if (!errno)
 				break;
@@ -393,27 +404,39 @@ right_tree:
 		else
 			lsiz2 = -1;
 
-		if (xstat(rpath, &stat2) == -1) {
+		file_err = FALSE;
+
+		if (!followlinks || (i = stat(rpath, &stat2)) == -1)
+			i = lstat(rpath, &stat2);
+
+		if (i == -1) {
 			if (errno != ENOENT) {
-				printerr(strerror(errno), "lstat %s failed",
+				printerr(strerror(errno), "stat %s failed",
 				    rpath);
+				file_err = TRUE;
 			}
-			continue;
+
+			stat2.st_mode = 0;
 		}
 
 		diff = alloc_diff(name);
 		diff->ltype = 0;
 		diff->rtype = stat2.st_mode;
-		diff->ruid  = stat2.st_uid;
-		diff->rgid  = stat2.st_gid;
-		diff->rsiz  = stat2.st_size;
-		diff->rmtim = stat2.st_mtim.tv_sec;
 
-		if (S_ISLNK(stat2.st_mode))
-			lsiz2 = stat2.st_size;
+		if (file_err)
+			diff->diff = '-';
+		else {
+			diff->ruid  = stat2.st_uid;
+			diff->rgid  = stat2.st_gid;
+			diff->rsiz  = stat2.st_size;
+			diff->rmtim = stat2.st_mtim.tv_sec;
 
-		if (lsiz2 >= 0)
-			diff->rlink = read_link(rpath, lsiz2);
+			if (S_ISLNK(stat2.st_mode))
+				lsiz2 = stat2.st_size;
+
+			if (lsiz2 >= 0)
+				diff->rlink = read_link(rpath, lsiz2);
+		}
 
 		diff_db_add(diff);
 	}
