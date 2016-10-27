@@ -1897,10 +1897,12 @@ mark_global(void)
 		pthcat(lpath, llen, m->name);
 
 		if (!(gl_mark = realpath(lpath, NULL))) {
-			printerr(strerror(errno), "realpath \"%s\" failed",
-			    lpath);
-			clr_mark();
-			return;
+			/* Ignore error if file had just been deleted */
+			if (errno != ENOENT)
+				printerr(strerror(errno),
+				    "realpath \"%s\" failed", lpath);
+			lpath[llen] = 0;
+			goto error;
 		}
 
 		lpath[llen] = 0;
@@ -1911,10 +1913,8 @@ mark_global(void)
 		if (!*rpath)
 			m->rtype = 0;
 
-		if (!m->ltype && !m->rtype) {
-			clr_mark();
-			return;
-		}
+		if (!m->ltype && !m->rtype)
+			goto error;
 
 		if (m->ltype) {
 			pthcat(lpath, llen, m->name);
@@ -1935,6 +1935,11 @@ mark_global(void)
 	}
 
 	m->name = NULL;
+	return;
+
+error:
+	free(m);
+	clr_mark();
 }
 
 #define YANK(x) \

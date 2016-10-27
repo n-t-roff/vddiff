@@ -766,7 +766,7 @@ cp_reg(void)
 
 	if (followlinks) {
 		if (lstat(pth2, &stat2) == -1) {
-			if (errno != ENOENT)
+			if (errno == ENOENT)
 				goto copy;
 
 			printerr(strerror(errno),
