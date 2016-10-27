@@ -291,26 +291,21 @@ Show command line directory arguments.
 Show full path.
 .It Oo Ar n Oc Ns Dq Li <<
 Copy from second to first tree.
-(Does never follow symbolic links.)
 If
 .Ar n
 as a number between 2 and 9 (inclusive) is given,
 .Ar n
 files starting from the current selection are copied.
+.Pp
+If symbolic links in source and target are followed is
+toggled with
+.Sq Li F .
+Following links is signaled with letter F
+on the right side of the status line.
+When links are not followed the target file or directory
+is removed before the copy operation starts.
 .It Oo Ar n Oc Ns Dq Li >>
 Copy from first to second tree.
-(Does never follow symbolic links.)
-.It Oo Ar n Oc Ns Dq Li <F
-Copy from second to first tree,
-symbolic links are always followed.
-If
-.Ar n
-as a number between 2 and 9 (inclusive) is given,
-.Ar n
-files starting from the current selection are copied.
-.It Oo Ar n Oc Ns Dq Li >F
-Copy from first to second tree,
-symbolic links are always followed.
 .It Oo Ar n Oc Ns Dq Li dd
 Delete file or directory, which must be present in one tree only.
 (Does not follow symbolic links.)

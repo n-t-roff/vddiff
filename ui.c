@@ -458,22 +458,13 @@ next_key:
 
 			f = db_list[top_idx + curs];
 
-			if (S_ISREG(f->ltype) && S_ISREG(f->rtype)) {
-				if (f->diff != '!') {
-					c = 0;
-					action(0, 1, 0, TRUE);
-				}
-
-				break;
-			}
-
-			if (S_ISREG(f->ltype)) {
+			if (S_ISREG(f->ltype) && !S_ISREG(f->rtype)) {
 				c = 0;
 				action(0, 1, 0, TRUE);
 				break;
 			}
 
-			if (S_ISREG(f->rtype)) {
+			if (S_ISREG(f->rtype) && !S_ISREG(f->ltype)) {
 				c = 0;
 				action(0, 2, 0, TRUE);
 				break;
@@ -582,14 +573,14 @@ next_key:
 				break;
 
 			c = 0;
-			fs_cp(1, 0, num);
+			fs_cp(1, num);
 			break;
 		case '>':
 			if (*key != '>')
 				break;
 
 			c = 0;
-			fs_cp(2, 0, num);
+			fs_cp(2, num);
 			break;
 		case KEY_HOME:
 			c = 0;
@@ -709,17 +700,6 @@ next_key:
 
 			break;
 		case 'F':
-			switch (*key) {
-			case '<':
-				c = 0;
-				fs_cp(1, 1, num);
-				goto next_key;
-			case '>':
-				c = 0;
-				fs_cp(2, 1, num);
-				goto next_key;
-			}
-
 			c = 0;
 			followlinks = followlinks ? 0 : 1;
 			rebuild_db(1);
@@ -759,22 +739,13 @@ next_key:
 
 			f = db_list[top_idx + curs];
 
-			if (S_ISREG(f->ltype) && S_ISREG(f->rtype)) {
-				if (f->diff != '!') {
-					c = 0;
-					action(0, 1, 0, FALSE);
-				}
-
-				break;
-			}
-
-			if (S_ISREG(f->ltype)) {
+			if (S_ISREG(f->ltype) && !S_ISREG(f->rtype)) {
 				c = 0;
 				action(0, 1, 0, FALSE);
 				break;
 			}
 
-			if (S_ISREG(f->rtype)) {
+			if (S_ISREG(f->rtype) && !S_ISREG(f->ltype)) {
 				c = 0;
 				action(0, 2, 0, FALSE);
 				break;
@@ -858,8 +829,6 @@ static char *helptxt[] = {
        "f		Show full path",
        "[<n>]<<		Copy from second to first tree",
        "[<n>]>>		Copy from first to second tree",
-       "[<n>]<F		Copy to left side following links",
-       "[<n>]>F		Copy to right side following links",
        "[<n>]dd		Delete file or directory",
        "[<n>]dl		Delete file or directory in first tree",
        "[<n>]dr		Delete file or directory in second tree",

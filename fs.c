@@ -43,10 +43,10 @@ struct str_list {
 	struct str_list *next;
 };
 
-static int proc_dir(int);
+static int proc_dir(void);
 static int rm_file(void);
 static void cp_file(void);
-static int creatdir(int);
+static int creatdir(void);
 static void cp_link(void);
 static void cp_reg(void);
 static int ask_for_perms(mode_t *);
@@ -129,7 +129,7 @@ fs_rename(int tree)
 
 		if (S_ISDIR(stat1.st_mode)) {
 			tree_op = TREE_RM;
-			proc_dir(0);
+			proc_dir();
 		} else
 			rm_file();
 	}
@@ -416,7 +416,7 @@ fs_rm(int tree, char *txt, int num)
 
 		if (S_ISDIR(stat1.st_mode)) {
 			tree_op = TREE_RM;
-			proc_dir(0);
+			proc_dir();
 		} else
 			rm_file();
 	}
@@ -436,7 +436,7 @@ cancel:
 }
 
 void
-fs_cp(int to, int folw, int num)
+fs_cp(int to, int num)
 {
 	struct filediff *f;
 	struct stat st;
@@ -461,8 +461,8 @@ fs_cp(int to, int folw, int num)
 		f = db_list[top_idx + curs];
 		pthcat(pth1, len1, f->name);
 
-		if (( folw &&  stat(pth1, &st) == -1) ||
-		    (!folw && lstat(pth1, &st) == -1)) {
+		if (( followlinks &&  stat(pth1, &st) == -1) ||
+		    (!followlinks && lstat(pth1, &st) == -1)) {
 			if (errno != ENOENT)
 				printerr(strerror(errno), "stat %s failed",
 				    pth1);
@@ -471,7 +471,8 @@ fs_cp(int to, int folw, int num)
 
 		/* After stat src to avoid removing dest if there is a problem
 		 * with src */
-		fs_rm(to, "overwrite", 1);
+		if (!followlinks)
+			fs_rm(to, "overwrite", 1);
 
 		/* fs_rm() did change pths and stat1 */
 
@@ -496,7 +497,7 @@ fs_cp(int to, int folw, int num)
 
 		if (S_ISDIR(stat1.st_mode)) {
 			tree_op = TREE_CP;
-			proc_dir(folw);
+			proc_dir();
 		} else
 			cp_file();
 	}
@@ -539,7 +540,7 @@ rebuild_db(
 }
 
 static int
-proc_dir(int folw)
+proc_dir(void)
 {
 	DIR *d;
 	struct dirent *ent;
@@ -547,7 +548,7 @@ proc_dir(int folw)
 	struct str_list *dirs = NULL;
 	short err = 0;
 
-	if (tree_op == TREE_CP && creatdir(folw))
+	if (tree_op == TREE_CP && creatdir())
 		return err;
 
 	if (!(d = opendir(pth1))) {
@@ -577,7 +578,8 @@ proc_dir(int folw)
 
 		pthcat(pth1, len1, name);
 
-		if (folw && tree_op != TREE_RM)
+		/* fs_rm does never follow links! */
+		if (followlinks && tree_op != TREE_RM)
 			i =  stat(pth1, &stat1);
 		else
 			i = lstat(pth1, &stat1);
@@ -624,7 +626,7 @@ closedir:
 				len2 = pthcat(pth2, len2, dirs->s);
 			}
 
-			err |= proc_dir(folw);
+			err |= proc_dir();
 
 			pth1[len1 = l1] = 0;
 
@@ -683,10 +685,10 @@ cp_file(void)
 }
 
 static int
-creatdir(int folw)
+creatdir(void)
 {
-	if (( folw &&  stat(pth1, &stat1) == -1) ||
-	    (!folw && lstat(pth1, &stat1) == -1)) {
+	if (( followlinks &&  stat(pth1, &stat1) == -1) ||
+	    (!followlinks && lstat(pth1, &stat1) == -1)) {
 		if (errno != ENOENT) {
 			printerr(strerror(errno),
 			    "stat %s failed", pth1);
@@ -742,7 +744,7 @@ cp_reg(void)
 	struct utimbuf tb;
 #endif
 
-	if ((f2 = open(pth2, O_WRONLY | O_CREAT, stat1.st_mode & 07777))
+	if ((f2 = open(pth2, O_CREAT | O_TRUNC | O_WRONLY, stat1.st_mode & 07777))
 	    == -1) {
 		printerr(strerror(errno), "create %s failed", pth2);
 		return;
