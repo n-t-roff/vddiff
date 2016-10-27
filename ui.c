@@ -178,6 +178,10 @@ do_diff:
 	disp_list();
 	ui_ctrl();
 
+	/* Change out of tmpdirs before deleting them. */
+	if (chdir("/") == -1)
+		printerr(strerror(errno), "chdir \"/\" failed");
+
 	/* if !bmode: remove tmp_dirs */
 	while (ui_stack)
 		pop_state(0);
