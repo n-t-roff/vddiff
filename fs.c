@@ -765,18 +765,34 @@ cp_reg(void)
 #endif
 
 	if (followlinks) {
-		/* Target may exist. Delete it if it is no symlink. */
 		if (lstat(pth2, &stat2) == -1) {
-			if (errno != ENOENT) {
-				printerr(strerror(errno),
-				    "lstat \"%s\" failed", pth2);
-			}
-		} else if (!S_ISLNK(stat2.st_mode) && unlink(pth2) == -1) {
+			if (errno != ENOENT)
+				goto copy;
+
+			printerr(strerror(errno),
+			    "lstat \"%s\" failed", pth2);
+			goto copy;
+		}
+
+		/* Don't delete symlinks! They must be followed. */
+		if (!S_ISREG(stat2.st_mode))
+			goto copy;
+
+		/* Avoid deleting the file if it is writeable to not reset
+		 * owner and group. */
+		if (!access(pth2, W_OK))
+			goto copy;
+
+		if (errno != EACCES)
+			printerr(strerror(errno), "access \"%s\" failed", pth2);
+
+		if (unlink(pth2) == -1) {
 			printerr(strerror(errno), "unlink \"%s\" failed",
 			    pth2);
 		}
 	}
 
+copy:
 	if ((f2 = open(pth2, O_CREAT | O_TRUNC | O_WRONLY,
 	    stat1.st_mode & 07777)) == -1) {
 		printerr(strerror(errno), "create %s failed", pth2);
