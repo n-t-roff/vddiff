@@ -358,20 +358,24 @@ exit:
 		rpath[rlen] = 0;
 }
 
-void
+/* 0: Ok
+ * 1: Cancel */
+
+int
 fs_rm(int tree, char *txt, int num)
 {
 	struct filediff *f;
 	unsigned short u, m;
+	int rv = 0;
 
 	if (!db_num)
-		return;
+		return 0;
 
 	m = num > 1;
 
 	if (m && dialog(y_n_txt, NULL,
 	    "Really %s %d files?", txt ? txt : "delete", num) != 'y')
-		return;
+		return 1;
 
 	u = top_idx + curs;
 
@@ -408,8 +412,10 @@ fs_rm(int tree, char *txt, int num)
 
 		if (!m && dialog(y_n_txt, NULL,
 		    "Really %s %s%s?", txt ? txt : "delete",
-		    S_ISDIR(stat1.st_mode) ? "directory " : "", pth1) != 'y')
+		    S_ISDIR(stat1.st_mode) ? "directory " : "", pth1) != 'y') {
+			rv = 1;
 			goto cancel;
+		}
 
 		printerr(NULL, "Deleting %s%s", S_ISDIR(stat1.st_mode) ?
 		    "directory " : "", pth1);
@@ -426,13 +432,15 @@ fs_rm(int tree, char *txt, int num)
 
 	ign_rm_errs = FALSE;
 	rebuild_db(0);
-	return;
+	return 0;
 
 cancel:
 	lpath[llen] = 0;
 
 	if (!bmode)
 		rpath[rlen] = 0;
+
+	return rv;
 }
 
 void
@@ -441,11 +449,14 @@ fs_cp(int to, int num)
 	struct filediff *f;
 	struct stat st;
 	unsigned short ti = top_idx;
+	bool m;
 
 	if (!db_num)
 		return;
 
-	if (num > 1 && dialog(y_n_txt, NULL,
+	m = num > 1;
+
+	if (m && dialog(y_n_txt, NULL,
 	    "Really copy %d files?", num) != 'y')
 		return;
 
@@ -453,13 +464,18 @@ fs_cp(int to, int num)
 		if (to == 1) {
 			pth1 = rpath;
 			len1 = rlen;
+			pth2 = lpath;
+			len2 = llen;
 		} else {
 			pth1 = lpath;
 			len1 = llen;
+			pth2 = rpath;
+			len2 = rlen;
 		}
 
 		f = db_list[top_idx + curs];
 		pthcat(pth1, len1, f->name);
+		pthcat(pth2, len2, f->name);
 
 		if (( followlinks &&  stat(pth1, &st) == -1) ||
 		    (!followlinks && lstat(pth1, &st) == -1)) {
@@ -471,8 +487,12 @@ fs_cp(int to, int num)
 
 		/* After stat src to avoid removing dest if there is a problem
 		 * with src */
-		if (!followlinks)
-			fs_rm(to, "overwrite", 1);
+		if (!followlinks) {
+			if (fs_rm(to, "overwrite", 1) == 1)
+				return;
+		} else if (!m && dialog(y_n_txt, NULL, "Really overwrite %s?",
+		    pth2) != 'y')
+			return;
 
 		/* fs_rm() did change pths and stat1 */
 
@@ -696,7 +716,7 @@ creatdir(void)
 		return -1;
 	}
 
-	if (mkdir(pth2, stat1.st_mode & 07777) == -1) {
+	if (mkdir(pth2, stat1.st_mode & 07777) == -1 && errno != EEXIST) {
 		printerr(strerror(errno), "mkdir %s failed", pth2);
 		return -1;
 	}
@@ -744,8 +764,21 @@ cp_reg(void)
 	struct utimbuf tb;
 #endif
 
-	if ((f2 = open(pth2, O_CREAT | O_TRUNC | O_WRONLY, stat1.st_mode & 07777))
-	    == -1) {
+	if (followlinks) {
+		/* Target may exist. Delete it if it is no symlink. */
+		if (lstat(pth2, &stat2) == -1) {
+			if (errno != ENOENT) {
+				printerr(strerror(errno),
+				    "lstat \"%s\" failed", pth2);
+			}
+		} else if (!S_ISLNK(stat2.st_mode) && unlink(pth2) == -1) {
+			printerr(strerror(errno), "unlink \"%s\" failed",
+			    pth2);
+		}
+	}
+
+	if ((f2 = open(pth2, O_CREAT | O_TRUNC | O_WRONLY,
+	    stat1.st_mode & 07777)) == -1) {
 		printerr(strerror(errno), "create %s failed", pth2);
 		return;
 	}
