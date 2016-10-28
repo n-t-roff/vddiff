@@ -1,9 +1,14 @@
+#define FKEY_CMD_CHR(i) \
+	fkey_flags[i] & 1 ? '!' : \
+	fkey_flags[i] & 2 ? '#' : '$'
+
 extern short noic, magic, nows, scale;
 extern short regex;
 extern unsigned short subtree;
 extern const char y_n_txt[];
 
 int test_fkey(int, unsigned short);
+void set_fkey_cmd(int, char *, int);
 void ui_srch(void);
 int srch_file(char *);
 void disp_regex(void);

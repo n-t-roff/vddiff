@@ -509,8 +509,8 @@ next_key:
 
 				if (fkey_cmd[i]) {
 					mvwprintw(wlist, i, 5,
-					    "\"%c %s\"", fkey_flags[i] & 1 ?
-					    '!' : '$', fkey_cmd[i]);
+					    "\"%c %s\"", FKEY_CMD_CHR(i),
+					    fkey_cmd[i]);
 					continue;
 				}
 

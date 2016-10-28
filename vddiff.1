@@ -13,7 +13,7 @@ LOSS OF USE, DATA OR PROFITS, WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE OR
 OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
 PERFORMANCE OF THIS SOFTWARE.
 ..
-.Dd October 27, 2016
+.Dd October 28, 2016
 .Dt VDDIFF 1
 .Sh NAME
 .Nm vddiff
@@ -507,6 +507,15 @@ instead of
 .Aq Cm ENTER
 must be pressed after running the command.
 This allows to check the command's output.
+.Pp
+For strings starting with
+.Sq Li $
+or
+.Sq Li \&!
+the user has to confirm the command execution.
+If the string starts with
+.Sq Li #
+instead the command is started immediately.
 .Pp
 To save a command for a function key which does not take
 the selected filename as argument, add a space followed

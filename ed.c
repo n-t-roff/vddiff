@@ -153,7 +153,8 @@ set_fkey(int i, char *s)
 	free(fkey_cmd[i]);
 	fkey_cmd[i] = NULL;
 
-	if (((ek = *s) == '$' || ek == '!') && isspace((int)s[1])) {
+	if (((ek = *s) == '$' || ek == '!' || ek == '#') &&
+	    isspace((int)s[1])) {
 		int c;
 		char *p = s;
 
@@ -162,8 +163,7 @@ set_fkey(int i, char *s)
 		if (!c)
 			goto free; /* empty input */
 
-		fkey_cmd[i] = strdup(p);
-		fkey_flags[i] = ek == '!' ? 1 : 0; /* 1: wait */
+		set_fkey_cmd(i, p, ek);
 
 free:
 		free(s);
