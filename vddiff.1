@@ -305,8 +305,10 @@ on the right side of the status line.
 .Pp
 When links are not followed the target file or directory
 is removed before the copy operation starts.
-This sets all file attributes on the target side
-to those of the source side.
+This sets owner and group of the target file
+to the effective user and group of the
+.Nm
+process.
 To keep e.g. owner and group setting switch to follow
 links (with
 .Sq Li F ) .
