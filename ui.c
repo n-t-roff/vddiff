@@ -63,7 +63,6 @@ static void help_pg_up(void);
 static void help_down(short);
 static void help_up(unsigned short);
 static void set_mark(void);
-static void clr_mark(void);
 static void disp_mark(void);
 static void yank_name(int);
 
@@ -1117,12 +1116,20 @@ action(
 		if (bmode) {
 			/* Take all files from left side. */
 			lnam = m->name ? m->name : gl_mark;
+
+			if (chk_mark(lnam))
+				goto ret;
+
 			ltyp = m->ltype;
 			rnam = f1->name;
 			rtyp = f1->ltype;
 
 		} else if (m->ltype && f1->rtype && (tree & 2)) {
 			lnam = m->name ? m->name : mark_lnam;
+
+			if (chk_mark(lnam))
+				goto ret;
+
 			ltyp = m->ltype;
 			rnam = f1->name;
 			rtyp = f1->rtype;
@@ -1131,6 +1138,10 @@ action(
 			lnam = f1->name;
 			ltyp = f1->ltype;
 			rnam = m->name ? m->name : mark_rnam;
+
+			if (chk_mark(rnam))
+				goto ret;
+
 			rtyp = m->rtype;
 		} else {
 			err = "Both files are in same directory";
@@ -1865,7 +1876,7 @@ disp_mark(void)
 	wrefresh(wstat);
 }
 
-static void
+void
 clr_mark(void)
 {
 	if (gl_mark) {

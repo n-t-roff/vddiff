@@ -27,6 +27,7 @@ void center(unsigned);
 void no_file(void);
 void action(short, short, unsigned short, bool);
 void mark_global(void);
+void clr_mark(void);
 
 extern short color;
 extern short color_leftonly ,

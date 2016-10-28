@@ -436,7 +436,14 @@ bindiff(void)
 		return;
 
 	f = db_list[top_idx + curs];
-	olnam = m->name;
+	olnam = m->name   ? m->name   :
+	        bmode     ? gl_mark   :
+		mark_lnam ? mark_lnam :
+		            mark_rnam ;
+
+	if (chk_mark(olnam))
+		return;
+
 	ornam = f->name;
 
 	/* check if mark needs to be unzipped */
@@ -448,7 +455,13 @@ bindiff(void)
 		f = z2;
 
 	if (m->ltype) {
-		lnam = m->name;
+		lnam = m->name ? m->name   :
+		       bmode   ? gl_mark   :
+		                 mark_lnam ;
+
+		if (chk_mark(lnam))
+			goto ret;
+
 		ltyp = m->ltype;
 		lsiz = m->lsiz;
 		rnam = f->name;
@@ -472,7 +485,13 @@ bindiff(void)
 			lsiz = f->rsiz;
 		}
 
-		rnam = m->name;
+		rnam = m->name ? m->name   :
+		       bmode   ? gl_mark   :
+		                 mark_rnam ;
+
+		if (chk_mark(rnam))
+			goto ret;
+
 		rtyp = m->rtype;
 		rsiz = m->rsiz;
 	}
@@ -515,6 +534,19 @@ ret:
 		/* Error message is already output by cmp_file() */
 		;
 	}
+}
+
+int
+chk_mark(char *file)
+{
+	struct stat st;
+
+	if (stat(file, &st) != -1)
+		return 0;
+
+	printerr(strerror(errno), "stat \"%s\" failed", file);
+	clr_mark();
+	return -1;
 }
 
 char *

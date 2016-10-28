@@ -17,6 +17,7 @@ void start_regex(char *);
 int regex_srch(int);
 void parsopt(char *);
 void bindiff(void);
+int chk_mark(char *);
 char *saveselname(void);
 unsigned findlistname(char *);
 void re_sort_list(void);
