@@ -380,7 +380,7 @@ exec_cmd(char **av, tool_flags_t flags, char *path, char *msg)
 
 		write(STDOUT_FILENO, prompt, sizeof prompt);
 		fgetc(stdin);
-		exit(77);
+		_exit(77);
 	default:
 		if (!wait_after_exec && (flags & TOOL_BG))
 			break;
