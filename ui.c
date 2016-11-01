@@ -2070,8 +2070,14 @@ pop_state(
 	}
 
 	if (st->lzip) {
-		if (mode && ((gl_mark && mark_lnam &&
-		    !strncmp(lpath, mark_lnam, llen)) || mark))
+		if (mode && (
+		      /* A global mark inside the archive */
+		      (gl_mark && mark_lnam &&
+		       !strncmp(lpath, mark_lnam, llen)) ||
+		      /* A local mark -> can only be in archive
+		       * since we are just leaving a archive */
+		      (mark && !gl_mark)
+		    ))
 			clr_mark();
 
 		st->lzip[strlen(st->lzip) - 2] = 0;
@@ -2079,8 +2085,11 @@ pop_state(
 	}
 
 	if (st->rzip) {
-		if (mode && ((gl_mark && mark_rnam &&
-		    !strncmp(rpath, mark_rnam, rlen)) || mark))
+		if (mode && (
+		      (gl_mark && mark_rnam &&
+		       !strncmp(rpath, mark_rnam, rlen)) ||
+		      (mark && !gl_mark)
+		    ))
 			clr_mark();
 
 		st->rzip[strlen(st->rzip) - 2] = 0;
@@ -2170,10 +2179,8 @@ enter_dir(char *name, char *rnam, bool lzip, bool rzip)
 #endif
 			ptr_db_del(&uz_path_db, n);
 		} else
+			/* DON'T REMOVE! (Cause currently unclear) */
 			n = NULL;
-
-		if (n && bmode < 0)
-			bmode++;
 
 		if (chdir(name) == -1) {
 			printerr(strerror(errno),
@@ -2188,7 +2195,14 @@ enter_dir(char *name, char *rnam, bool lzip, bool rzip)
 		scan_subdir(NULL, NULL, 1);
 
 		if (n) {
-			rnam[strlen(rnam) - 2] = 0; /* remove "/[lr]" */
+			size_t l;
+
+			l = strlen(rnam);
+
+			if (gl_mark && !strncmp(rnam, gl_mark, l))
+				clr_mark();
+
+			rnam[l - 2] = 0; /* remove "/[lr]" */
 			rmtmpdirs(rnam); /* does a free() */
 			free(name); /* dat */
 		}
