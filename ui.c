@@ -1117,7 +1117,7 @@ action(
 			/* Take all files from left side. */
 			lnam = m->name ? m->name : gl_mark;
 
-			if (chk_mark(lnam))
+			if (chk_mark(lnam, 1))
 				goto ret;
 
 			ltyp = m->ltype;
@@ -1127,7 +1127,7 @@ action(
 		} else if (m->ltype && f1->rtype && (tree & 2)) {
 			lnam = m->name ? m->name : mark_lnam;
 
-			if (chk_mark(lnam))
+			if (chk_mark(lnam, 1))
 				goto ret;
 
 			ltyp = m->ltype;
@@ -1139,7 +1139,7 @@ action(
 			ltyp = f1->ltype;
 			rnam = m->name ? m->name : mark_rnam;
 
-			if (chk_mark(rnam))
+			if (chk_mark(rnam, 2))
 				goto ret;
 
 			rtyp = m->rtype;

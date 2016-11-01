@@ -441,7 +441,7 @@ bindiff(void)
 		mark_lnam ? mark_lnam :
 		            mark_rnam ;
 
-	if (chk_mark(olnam))
+	if (chk_mark(olnam, 1))
 		return;
 
 	ornam = f->name;
@@ -459,7 +459,7 @@ bindiff(void)
 		       bmode   ? gl_mark   :
 		                 mark_lnam ;
 
-		if (chk_mark(lnam))
+		if (chk_mark(lnam, 1))
 			goto ret;
 
 		ltyp = m->ltype;
@@ -489,7 +489,7 @@ bindiff(void)
 		       bmode   ? gl_mark   :
 		                 mark_rnam ;
 
-		if (chk_mark(rnam))
+		if (chk_mark(rnam, 2))
 			goto ret;
 
 		rtyp = m->rtype;
@@ -537,11 +537,34 @@ ret:
 }
 
 int
-chk_mark(char *file)
+chk_mark(char *file, short tree)
 {
 	struct stat st;
+	int i;
+	bool rp;
 
-	if (stat(file, &st) != -1)
+	rp = !bmode && *file != '/';
+
+	if (rp) {
+		if (tree & 1) {
+			pthcat(lpath, llen, file);
+			file = lpath;
+		} else if (tree & 2) {
+			pthcat(rpath, rlen, file);
+			file = rpath;
+		}
+	}
+
+	i = stat(file, &st);
+
+	if (rp) {
+		if (tree & 1)
+			lpath[llen] = 0;
+		else if (tree & 2)
+			rpath[rlen] = 0;
+	}
+
+	if (i != -1)
 		return 0;
 
 	printerr(strerror(errno), "stat \"%s\" failed", file);

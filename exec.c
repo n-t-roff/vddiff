@@ -301,7 +301,8 @@ exec_tool(struct tool *t, char *name, char *rnam, int tree)
 	}
 
 	if (tree & 1) {
-		if ((zipped = *name == '/') || bmode) {
+		if (*name == '/' || bmode) {
+			zipped = 1;
 			*a++ = name;
 		} else {
 			pthcat(lpath, llen, name);
@@ -310,7 +311,8 @@ exec_tool(struct tool *t, char *name, char *rnam, int tree)
 	}
 
 	if (tree & 2) {
-		if ((zipped |= *rnam == '/') || bmode) {
+		if (*rnam == '/' || bmode) {
+			zipped = 1;
 			*a++ = rnam;
 		} else {
 			pthcat(rpath, rlen, rnam);
