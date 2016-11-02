@@ -431,17 +431,28 @@ bindiff(void)
 	char *lnam, *rnam, *olnam, *ornam;
 	off_t lsiz, rsiz;
 	int val = -1;
+	short sd;
 
 	if (!db_num || !mark)
 		return;
 
 	f = db_list[top_idx + curs];
-	olnam = m->name   ? m->name   :
-	        bmode     ? gl_mark   :
-		mark_lnam ? mark_lnam :
-		            mark_rnam ;
 
-	if (chk_mark(olnam, 1))
+	if (m->name) {
+		olnam = m->name;
+		sd = m->ltype ? 1 : 2;
+	} else if (bmode) {
+		olnam = gl_mark;
+		sd = 0;
+	} else if (mark_lnam) {
+		olnam = mark_lnam;
+		sd = 1;
+	} else {
+		olnam = mark_rnam;
+		sd = 2;
+	}
+
+	if (chk_mark(olnam, sd))
 		return;
 
 	ornam = f->name;
@@ -557,6 +568,9 @@ chk_mark(char *file, short tree)
 
 	i = stat(file, &st);
 
+	if (i == -1)
+		printerr(strerror(errno), "stat \"%s\" failed", file);
+
 	if (rp) {
 		if (tree & 1)
 			lpath[llen] = 0;
@@ -567,7 +581,6 @@ chk_mark(char *file, short tree)
 	if (i != -1)
 		return 0;
 
-	printerr(strerror(errno), "stat \"%s\" failed", file);
 	clr_mark();
 	return -1;
 }
