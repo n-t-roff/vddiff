@@ -17,6 +17,7 @@ PERFORMANCE OF THIS SOFTWARE.
 #include <string.h>
 #include <ctype.h>
 #include <stdlib.h>
+#include <regex.h>
 #include "compat.h"
 
 #ifdef HAVE_CURSES_WCH

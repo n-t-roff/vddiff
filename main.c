@@ -21,6 +21,7 @@ PERFORMANCE OF THIS SOFTWARE.
 #include <unistd.h>
 #include <errno.h>
 #include <locale.h>
+#include <regex.h>
 #include "compat.h"
 #include "main.h"
 #include "y.tab.h"
@@ -30,6 +31,7 @@ PERFORMANCE OF THIS SOFTWARE.
 #include "db.h"
 #include "diff.h"
 #include "ver.h"
+#include "ui2.h"
 
 int yyparse(void);
 
@@ -38,6 +40,8 @@ char *pwd, *rpwd, *arg[2];
 size_t llen, rlen;
 char lpath[PATHSIZ], rpath[PATHSIZ], lbuf[BUF_SIZE], rbuf[BUF_SIZE];
 struct stat stat1, stat2;
+char *find_name;
+regex_t fn_re;
 short recursive, scan;
 short bmode;
 short nosingle;
@@ -50,9 +54,9 @@ static int read_rc(const char *);
 static void usage(void);
 
 static char *usage_txt =
-"Usage: %s [-u [<RC file>]] [-BbcdfgklmnoqrV] [-t <diff_tool>]\n"
-"	[-v <view_tool>] <directory_1> <directory_2>\n";
-static char *getopt_arg = "Bbcdfgklmnoqrt:Vv:";
+"Usage: %s [-u [<RC file>]] [-BbcdEfgIiklmnoqrV] [-F <pattern>]\n"
+"	[-t <diff_tool>] [-v <view_tool>] <directory_1> <directory_2>\n";
+static char *getopt_arg = "BbcdEF:fgIiklmnoqrt:Vv:";
 
 bool qdiff;
 
@@ -112,12 +116,24 @@ main(int argc, char **argv)
 		case 'd':
 			set_tool(&difftool, strdup(diffless), 0);
 			break;
+		case 'E':
+			magic = 1;
+			break;
+		case 'F':
+			find_name = optarg;
+			break;
 		case 'f':
 			sorting = FILESFIRST;
 			break;
 		case 'g':
 			set_tool(&difftool, strdup("gvim -dR"), 0);
 			set_tool(&viewtool, strdup("gvim -R"), 0);
+			break;
+		case 'I':
+			noic = 1; /* don't ignore case */
+			break;
+		case 'i':
+			noic = 0; /* ignore case */
 			break;
 		case 'k':
 			set_tool(&difftool, strdup("tkdiff"), TOOL_BG);
@@ -164,6 +180,25 @@ main(int argc, char **argv)
 		}
 	}
 
+	if (find_name) {
+		int fl;
+
+		fl = REG_NOSUB;
+
+		if (magic)
+			fl |= REG_EXTENDED;
+		if (!noic)
+			fl |= REG_ICASE;
+
+		if (regcomp(&fn_re, find_name, fl)) {
+			printf("regcomp \"%s\" failed: %s", find_name,
+			    strerror(errno));
+			return 1;
+		}
+
+		file_pattern = 1;
+	}
+
 	argc -= optind;
 	argv += optind;
 
@@ -182,18 +217,8 @@ main(int argc, char **argv)
 			    strerror(errno));
 			exit(1);
 		}
-	}
 
-	if (bmode) {
-		if (chdir(lpath) == -1) {
-			printf("chdir \"%s\" failed: %s\n",
-			    lpath, strerror(errno));
-			exit(1);
-		}
-
-		*lpath = '.';
-		lpath[1] = 0;
-		llen = 1;
+		llen = strlen(lpath);
 	}
 
 	pwd  = lpath + llen;

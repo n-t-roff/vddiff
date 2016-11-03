@@ -25,6 +25,7 @@ PERFORMANCE OF THIS SOFTWARE.
 #include <time.h>
 #include <ctype.h>
 #include <errno.h>
+#include <regex.h>
 #include "compat.h"
 #include "diff.h"
 #include "main.h"
@@ -160,13 +161,24 @@ build_ui(void)
 
 do_diff:
 	/* Not in main since build_diff_db() uses printerr() */
-	if (recursive && !bmode) {
+	if (recursive) {
 		scan = 1;
-		build_diff_db(3);
+		build_diff_db(bmode ? 1 : 3);
 		scan = 0;
 
 		if (qdiff)
 			return;
+	}
+
+	if (bmode) {
+		if (chdir(lpath) == -1) {
+			printerr(strerror(errno), "chdir \"%s\" failed", lpath);
+			goto exit;
+		}
+
+		*lpath = '.';
+		lpath[1] = 0;
+		llen = 1;
 	}
 
 	build_diff_db(bmode ? 1 : 3);
@@ -188,6 +200,7 @@ do_diff:
 	/* if bmode: remove tmp_dirs */
 	uz_exit();
 	diff_db_free();
+exit:
 	delwin(wstat);
 	delwin(wlist);
 	erase();
@@ -431,6 +444,11 @@ next_key:
 		case '&':
 			c = 0;
 			nosingle = nosingle ? 0 : 1;
+			re_sort_list();
+			break;
+		case 'E':
+			c = 0;
+			file_pattern = file_pattern ? FALSE : TRUE;
 			re_sort_list();
 			break;
 		case KEY_RESIZE:
@@ -823,6 +841,7 @@ static char *helptxt[] = {
        "c		Toggle showing only directories and really different files",
        "&		Toggle display of files which are on one side only",
        "F		Toggle following symbolic links",
+       "E		Toggle file name or file content filter",
        "p		Show current relative work directory",
        "a		Show command line directory arguments",
        "f		Show full path",
@@ -1994,9 +2013,10 @@ yank_name(int reverse)
 void
 no_file(void)
 {
-	if ((real_diff || noequal || nosingle) && !bmode)
+	if (((real_diff || noequal || nosingle) && !bmode) || file_pattern)
 		printerr(NULL,
 		    "No file in list (type %s%s%s to disable filters).",
+		    !file_pattern ? "" : "'E'",
 		    !real_diff ? "" : "'c'",
 		    !noequal ? "" : !real_diff ? "'!'" : " or '!'",
 		    !nosingle ? "" :

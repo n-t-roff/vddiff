@@ -13,7 +13,7 @@ LOSS OF USE, DATA OR PROFITS, WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE OR
 OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
 PERFORMANCE OF THIS SOFTWARE.
 ..
-.Dd October 28, 2016
+.Dd November 3, 2016
 .Dt VDDIFF 1
 .Sh NAME
 .Nm vddiff
@@ -21,7 +21,8 @@ PERFORMANCE OF THIS SOFTWARE.
 .Sh SYNOPSYS
 .Nm
 .Op Fl u Op Ar "RC file"
-.Op Fl BbcdfgklmnoqrV
+.Op Fl BbcdEfgIiklmnoqrV
+.Op Fl F Ar pattern
 .Op Fl t Ar diff_tool
 .Op Fl v Ar view_tool
 .Ar directory_1
@@ -102,6 +103,31 @@ and really different files.
 Use
 .Dq Li diff $1 $2 | less
 as diff tool.
+.It Fl E
+Enable extended regular expressions.
+.It Fl F Ar pattern
+Display only file names which match
+.Ar pattern ,
+which is normally a case ignoring basic regular expression.
+With
+.Fl E
+extended regular expressions are enabled,
+with
+.Fl I
+case-sensitive matching is used.
+The pattern match is only applied to non-directories.
+To display only directories which contain matching
+files add option
+.Fl r
+(command
+.Do Nm
+.Fl rF Ar pattern Ar directory Dc
+works somehow similar to
+.Dq Nm find Ar directory Fl name Ar pattern ) .
+Key
+.Sq Li E
+toggles display of all files and directories or
+matching files only.
 .It Fl f
 Normally directories are displayed on top.
 With this option files are displayed first.
@@ -109,6 +135,10 @@ With this option files are displayed first.
 Use
 .Nm gvim
 as diff and view tool.
+.It Fl I
+Use case-sensitive pattern match.
+.It Fl i
+Use case-insensitive pattern match.
 .It Fl k
 Use
 .Nm tkdiff
@@ -869,3 +899,10 @@ Read on start-up to set non-default options.
 .\"Bl -bullet
 .\"It
 .\"El
+.begin_comment
+.Sh Regression test items
+.Bl -bullet
+.It
+Terminal window resize
+.El
+.end_comment

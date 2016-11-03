@@ -20,6 +20,7 @@ PERFORMANCE OF THIS SOFTWARE.
 #include <sys/stat.h>
 #include <ctype.h>
 #include <search.h>
+#include <regex.h>
 #include "compat.h"
 #include "diff.h"
 #include "main.h"
@@ -519,15 +520,22 @@ diff_db_sort(void)
 
 #define PROC_DIFF_NODE() \
 	do { \
-	if (bmode || \
-	    ((!noequal || \
-	      f->diff == '!' || S_ISDIR(f->ltype) || \
-	      (f->ltype & S_IFMT) != (f->rtype & S_IFMT)) && \
-	     (!real_diff || \
-	      f->diff == '!' || (S_ISDIR(f->ltype) && S_ISDIR(f->rtype) && \
-	      is_diff_dir(f->name))) && \
-	     (!nosingle || \
-	      (f->ltype && f->rtype)))) \
+	if ((!file_pattern || !find_name || \
+	     ((S_ISDIR(f->ltype) || S_ISDIR(f->rtype)) && \
+	      (!recursive || is_diff_dir(f->name))) || \
+	     !regexec(&fn_re, f->name, 0, NULL, 0)) && \
+	    \
+	    (bmode || \
+	     ((!noequal || \
+	       f->diff == '!' || S_ISDIR(f->ltype) || \
+	       (f->ltype & S_IFMT) != (f->rtype & S_IFMT)) && \
+	      \
+	      (!real_diff || \
+	       f->diff == '!' || (S_ISDIR(f->ltype) && S_ISDIR(f->rtype) && \
+	       is_diff_dir(f->name))) && \
+	      \
+	      (!nosingle || \
+	       (f->ltype && f->rtype))))) \
 	{ \
 		db_list[db_idx++] = f; \
 	} \

@@ -6,6 +6,7 @@ extern short noic, magic, nows, scale;
 extern short regex;
 extern unsigned short subtree;
 extern const char y_n_txt[];
+extern bool file_pattern;
 
 int test_fkey(int, unsigned short);
 void set_fkey_cmd(int, char *, int);

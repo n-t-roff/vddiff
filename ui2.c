@@ -49,6 +49,8 @@ static struct str_uint *srchmap;
 static regex_t re_dat;
 static unsigned srch_idx;
 
+bool file_pattern;
+
 int
 test_fkey(int c, unsigned short num)
 {
@@ -637,6 +639,8 @@ filt_stat(void)
 	else
 		wstandout(wstat);
 
+	if (file_pattern)
+		mvwaddch(wstat, 0, x--, 'E');
 	if (wait_after_exec)
 		mvwaddch(wstat, 0, x--, 'W');
 	if (followlinks)

@@ -22,6 +22,7 @@ PERFORMANCE OF THIS SOFTWARE.
 #include <dirent.h>
 #include <errno.h>
 #include <string.h>
+#include <regex.h>
 #include "compat.h"
 #include "main.h"
 #include "ui.h"
@@ -29,6 +30,7 @@ PERFORMANCE OF THIS SOFTWARE.
 #include "uzp.h"
 #include "exec.h"
 #include "db.h"
+#include "ui2.h"
 
 struct str_list {
 	char *s;
@@ -41,6 +43,7 @@ static char *read_link(char *, off_t);
 
 static struct filediff *diff;
 static off_t lsiz1, lsiz2;
+static size_t bmode_ini_len;
 
 short followlinks;
 
@@ -63,9 +66,12 @@ build_diff_db(int tree)
 	if (!(tree & 1))
 		goto right_tree;
 
-	if (bmode) {
+	if (bmode && !scan) {
 		if (!getcwd(rpath, sizeof rpath))
 			printerr(strerror(errno), "getcwd failed");
+
+		if (!bmode_ini_len)
+			bmode_ini_len = strlen(rpath) + 1; /* + '/' */
 
 		printerr(NULL, "Reading directory %s", rpath);
 	} else if (!qdiff)
@@ -100,6 +106,7 @@ build_diff_db(int tree)
 		}
 
 		name = ent->d_name;
+
 		if (*name == '.' && (!name[1] || (name[1] == '.' &&
 		    !name[2])))
 			continue;
@@ -175,7 +182,7 @@ no_tree2:
 
 		if (scan || qdiff) {
 			if (S_ISDIR(stat1.st_mode) &&
-			    S_ISDIR(stat2.st_mode)) {
+			    (S_ISDIR(stat2.st_mode) || bmode)) {
 				if (!scan)
 					/* Non-recursive qdiff */
 					continue;
@@ -190,6 +197,13 @@ no_tree2:
 
 			if (!qdiff && (!*pwd || dir_diff))
 				continue;
+
+			if (file_pattern) {
+				if (!regexec(&fn_re, name, 0, NULL, 0))
+					dir_diff = 1;
+
+				continue;
+			}
 
 			if (S_ISREG(stat1.st_mode) &&
 			    S_ISREG(stat2.st_mode)) {
@@ -340,7 +354,7 @@ db_add_file:
 		rpath[rlen] = 0;
 
 right_tree:
-	if (!(tree & 2))
+	if (!(tree & 2) || bmode)
 		goto build_list;
 
 	if (scan && (real_diff || dir_diff))
@@ -375,6 +389,7 @@ right_tree:
 		}
 
 		name = ent->d_name;
+
 		if (*name == '.' && (!name[1] || (name[1] == '.' &&
 		    !name[2])))
 			continue;
@@ -390,7 +405,7 @@ right_tree:
 			rpath[rlen] = 0;
 			printf("Only in %s: %s\n", rpath, name);
 			continue;
-		} else if (scan) {
+		} else if (scan && !file_pattern) {
 			dir_diff = 1;
 			break;
 		}
@@ -416,6 +431,16 @@ right_tree:
 			}
 
 			stat2.st_mode = 0;
+		}
+
+		if (scan && file_pattern) {
+			if (!S_ISDIR(stat2.st_mode) &&
+			    !regexec(&fn_re, name, 0, NULL, 0)) {
+				dir_diff = 1;
+				break;
+			}
+
+			continue;
 		}
 
 		diff = alloc_diff(name);
@@ -546,22 +571,32 @@ is_diff_dir(char *name)
 	if (!recursive)
 		return 0;
 
-	if (!*pwd)
+	if ((!bmode && !*pwd) ||
+	    (bmode && strlen(rpath) < bmode_ini_len))
 		return str_db_srch(&scan_db, name
 #ifdef HAVE_LIBAVLBST
 		    , NULL
 #endif
 		    ) ? 0 : 1;
 
-	l1 = strlen(PWD);
-	s = malloc(l1 + strlen(name) + 2);
-	memcpy(s, PWD, l1);
+	if (bmode) {
+		l1 = strlen(rpath) - bmode_ini_len;
+		s = malloc(l1 + strlen(name) + 2);
+		memcpy(s, rpath + bmode_ini_len, l1);
+	} else {
+		l1 = strlen(PWD);
+		s = malloc(l1 + strlen(name) + 2);
+		memcpy(s, PWD, l1);
+	}
+
 	pthcat(s, l1, name);
+
 	v = str_db_srch(&scan_db, s
 #ifdef HAVE_LIBAVLBST
 	    , NULL
 #endif
 	    ) ? 0 : 1;
+
 	free(s);
 	return v;
 }

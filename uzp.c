@@ -22,6 +22,7 @@ PERFORMANCE OF THIS SOFTWARE.
 #include <sys/stat.h>
 #include <unistd.h>
 #include <ctype.h>
+#include <regex.h>
 #include "compat.h"
 #include "ui.h"
 #include "exec.h"

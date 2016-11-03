@@ -19,6 +19,8 @@ extern struct stat stat1, stat2;
 extern size_t llen, rlen;
 extern char *pwd, *rpwd, *arg[];
 extern char lpath[PATHSIZ], rpath[PATHSIZ], lbuf[BUF_SIZE], rbuf[BUF_SIZE];
+extern char *find_name;
+extern regex_t fn_re;
 extern short recursive, scan;
 extern short bmode;
 extern short nosingle;
