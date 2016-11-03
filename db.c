@@ -601,7 +601,16 @@ diff_cmp(
 	    *f2 = b;
 #endif
 
-	if (sorting != SORTMIXED) {
+	if (sorting == SORTMTIME) {
+		time_t t1, t2;
+
+		t1 = f1->ltype ? f1->lmtim : f1->rmtim;
+		t2 = f2->ltype ? f2->lmtim : f2->rmtim;
+
+		if      (t1 < t2) return -1;
+		else if (t1 > t2) return  1;
+
+	} else if (sorting != SORTMIXED) {
 		short f1_dir = IS_F_DIR(1),
 		      f2_dir = IS_F_DIR(2);
 		short dirsort = f1_dir && !f2_dir ? -1 :

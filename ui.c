@@ -463,11 +463,34 @@ next_key:
 
 			break;
 		case 'd':
-			if (*key != 'd')
+			if (*key == 'S') {
+				c = 0;
+
+				if (sorting == DIRSFIRST)
+					break;
+
+				sorting = DIRSFIRST;
+				rebuild_db(1);
+				break;
+
+			} else if (*key != 'd')
 				break;
 
 			c = 0;
 			fs_rm(3, NULL, num); /* allowed for single sided only */
+			break;
+		case 't':
+			if (*key == 'S') {
+				c = 0;
+
+				if (sorting == SORTMTIME)
+					break;
+
+				sorting = SORTMTIME;
+				rebuild_db(1);
+				break;
+			}
+
 			break;
 		case 'v':
 			if (!db_num)
@@ -615,6 +638,17 @@ next_key:
 			curs_last();
 			break;
 		case 'm':
+			if (*key == 'S') {
+				c = 0;
+
+				if (sorting == SORTMIXED)
+					break;
+
+				sorting = SORTMIXED;
+				rebuild_db(1);
+				break;
+			}
+
 			c = 0;
 			set_mark();
 			break;
@@ -648,22 +682,6 @@ next_key:
 			ui_srch();
 			break;
 		case 'S':
-			c = 0;
-
-			if (sorting == SORTMIXED)
-				break;
-
-			sorting = SORTMIXED;
-			rebuild_db(1);
-			break;
-		case 'D':
-			c = 0;
-
-			if (sorting == DIRSFIRST)
-				break;
-
-			sorting = DIRSFIRST;
-			rebuild_db(1);
 			break;
 		case 'u':
 			if (*key == 'e') {
@@ -829,8 +847,9 @@ static char *helptxt[] = {
        "<END>, G	Go to last file",
        "/		Search file by typing first letters of filename",
        "//		Search file with regular expression",
-       "S		Sort files by name only",
-       "D		Sort files with directories on top",
+       "Sd		Sort files with directories on top",
+       "Sm		Sort files by name only",
+       "St		Sort files by modification time only",
        "H		Put cursor to top line",
        "M		Put cursor on middle line",
        "L		Put cursor on bottom line",
@@ -841,7 +860,8 @@ static char *helptxt[] = {
        "c		Toggle showing only directories and really different files",
        "&		Toggle display of files which are on one side only",
        "F		Toggle following symbolic links",
-       "E		Toggle file name or file content filter",
+       /*"E		Toggle file name or file content filter",*/
+       "E		Toggle file name filter",
        "p		Show current relative work directory",
        "a		Show command line directory arguments",
        "f		Show full path",
@@ -1797,15 +1817,17 @@ file_stat(struct filediff *f)
 	if (rtyp && !S_ISDIR(rtyp))
 		mvwaddstr(wstat, 1, x + w - w2, rbuf);
 
-	x += w + 1;
+	if ((ltyp && !S_ISDIR(ltyp)) ||
+	    (rtyp && !S_ISDIR(rtyp)))
+		x += w + 1;
 
-	if (ltyp && !S_ISDIR(ltyp)) {
+	if (ltyp) {
 		s1 = ctime(&f->lmtim);
 		mvwaddstr(wstat, yl, x, s1);
 		lx1 = x + strlen(s1);
 	}
 
-	if (rtyp && !S_ISDIR(rtyp)) {
+	if (rtyp) {
 		s2 = ctime(&f->rmtim);
 		mvwaddstr(wstat, 1, x, s2);
 		lx2 = x + strlen(s2);
