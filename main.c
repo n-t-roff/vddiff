@@ -70,16 +70,14 @@ main(int argc, char **argv)
 		return 1;
 	}
 
-	if (setvbuf(debug, NULL, _IONBF, 0)) {
-		printf("setvbuf \"" TRACE "\" failed: %s\n", strerror(errno));
-		return 1;
-	}
+	setbuf(debug, NULL);
 #endif
 
 #ifdef HAVE_LIBAVLBST
 	db_init();
 #endif
-	uz_init();
+	if (uz_init())
+		return 1;
 
 	set_tool(&difftool, strdup(vimdiff), 0);
 	set_tool(&viewtool, strdup("less --"), 0);

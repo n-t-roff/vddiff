@@ -40,6 +40,7 @@ static struct strlst *addarg(char *);
 static void exec_tool(struct tool *, char *, char *, int);
 static void sig_child(int);
 static int shell_char(int);
+static int tmpbasecmp(const char *);
 
 struct tool difftool;
 struct tool viewtool;
@@ -268,13 +269,15 @@ exec_tool(struct tool *t, char *name, char *rnam, int tree)
 	int o, c;
 	char *s, **a, **av;
 	int status;
-	int zipped = 0;
+	tool_flags_t flags;
 
 	if (!rnam)
 		rnam = name;
 
+	flags = t->flags | TOOL_TTY;
 	s = t->tool;
 	o = 0;
+
 	while (1) {
 		while ((c = *s++) && !isblank(c));
 		if (!c) break;
@@ -300,9 +303,11 @@ exec_tool(struct tool *t, char *name, char *rnam, int tree)
 		}
 	}
 
+	if (!tmpbasecmp(name) || !tmpbasecmp(rnam))
+		flags &= ~TOOL_BG;
+
 	if (tree & 1) {
 		if (*name == '/' || bmode) {
-			zipped = 1;
 			*a++ = name;
 		} else {
 			pthcat(lpath, llen, name);
@@ -312,7 +317,6 @@ exec_tool(struct tool *t, char *name, char *rnam, int tree)
 
 	if (tree & 2) {
 		if (*rnam == '/' || bmode) {
-			zipped = 1;
 			*a++ = rnam;
 		} else {
 			pthcat(rpath, rlen, rnam);
@@ -320,12 +324,8 @@ exec_tool(struct tool *t, char *name, char *rnam, int tree)
 		}
 	}
 
-
-	if (zipped)
-		t->flags &= ~TOOL_BG;
-
 	*a = NULL;
-	status = exec_cmd(av, t->flags | TOOL_TTY, NULL, NULL);
+	status = exec_cmd(av, flags, NULL, NULL);
 
 	if (o)
 		free(*av);
@@ -337,6 +337,31 @@ exec_tool(struct tool *t, char *name, char *rnam, int tree)
 		set_tool(&difftool, strdup(diffless), 0);
 		tool(name, rnam, tree, 0);
 	}
+}
+
+static int
+tmpbasecmp(const char *p)
+{
+	/* cache */
+	static size_t l;
+	static char *t;
+	static const char * const pf = TMPPREFIX;
+
+	if (*p != '/')
+		return 1;
+
+	if (!t) {
+		size_t l2, l3;
+
+		l2 = strlen(gettmpdirbase());
+		l3 = strlen(pf);
+		l = l2 + l3;
+		t = malloc(l + 1);
+		memcpy(t, gettmpdirbase(), l2);
+		memcpy(t + l2, pf, l3 + 1);
+	}
+
+	return strncmp(p, t, l);
 }
 
 int

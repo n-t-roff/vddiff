@@ -39,6 +39,7 @@ static char *zpths(struct filediff *, struct filediff **, int, size_t *,
     int, int);
 
 char *tmp_dir;
+static const char *tmpdirbase;
 
 static struct uz_ext exttab[] = {
 	{ "bz2"    , UZ_BZ2 },
@@ -51,13 +52,23 @@ static struct uz_ext exttab[] = {
 	{ "zip"    , UZ_ZIP }
 };
 
-void
+int
 uz_init(void)
 {
 	int i;
 
 	for (i = 0; i < (ssize_t)(sizeof(exttab)/sizeof(*exttab)); i++)
 		uz_db_add(exttab + i);
+
+	if (!(tmpdirbase = getenv("TMPDIR")))
+		tmpdirbase = "/var/tmp";
+
+	if (!(tmpdirbase = realpath(tmpdirbase, NULL))) {
+		printerr(strerror(errno), "realpath \"%s\" failed", tmpdirbase);
+		return 1;
+	}
+
+	return 0;
 }
 
 void
@@ -87,6 +98,12 @@ uz_exit(void)
 	}
 }
 
+const char *
+gettmpdirbase(void)
+{
+	return tmpdirbase;
+}
+
 static int
 mktmpdirs(void)
 {
@@ -94,22 +111,13 @@ mktmpdirs(void)
 	return 1;
 #else
 	char *d1;
-	char d2[] = "/.vddiff.XXXXXX";
+	char d2[] = TMPPREFIX "XXXXXX";
 	size_t l;
 
-	if (!(d1 = getenv("TMPDIR")))
-		d1 = "/var/tmp";
-
-	if (!(d1 = realpath(d1, NULL))) {
-		printerr(strerror(errno), "realpath \"%s\" failed", d1);
-		return 1;
-	}
-
-	l = strlen(d1);
+	l = strlen(tmpdirbase);
 	tmp_dir = malloc(l + sizeof(d2) + 2);
 
-	memcpy(tmp_dir, d1, l);
-	free(d1);
+	memcpy(tmp_dir, tmpdirbase, l);
 	memcpy(tmp_dir + l, d2, sizeof(d2));
 	l += sizeof d2;
 
