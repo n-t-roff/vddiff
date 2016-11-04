@@ -32,6 +32,7 @@ PERFORMANCE OF THIS SOFTWARE.
 #include "diff.h"
 #include "ver.h"
 #include "ui2.h"
+#include "gq.h"
 
 int yyparse(void);
 
@@ -41,6 +42,7 @@ size_t llen, rlen;
 char lpath[PATHSIZ], rpath[PATHSIZ], lbuf[BUF_SIZE], rbuf[BUF_SIZE];
 struct stat stat1, stat2;
 char *find_name;
+char *gq_pattern;
 regex_t fn_re;
 short recursive, scan;
 short bmode;
@@ -55,8 +57,9 @@ static void usage(void);
 
 static char *usage_txt =
 "Usage: %s [-u [<RC file>]] [-BbcdEfgIiklmnoqrV] [-F <pattern>]\n"
-"	[-t <diff_tool>] [-v <view_tool>] <directory_1> <directory_2>\n";
-static char *getopt_arg = "BbcdEF:fgIiklmnoqrt:Vv:";
+"	[-G <pattern>] [-t <diff_tool>] [-v <view_tool>] <directory_1>\n"
+"	<directory_2>\n";
+static char *getopt_arg = "BbcdEF:fG:gIiklmnoqrt:Vv:";
 
 bool qdiff;
 
@@ -124,6 +127,9 @@ main(int argc, char **argv)
 			break;
 		case 'f':
 			sorting = FILESFIRST;
+			break;
+		case 'G':
+			gq_pattern = optarg;
 			break;
 		case 'g':
 			set_tool(&difftool, strdup("gvim -dR"), 0);
@@ -198,6 +204,9 @@ main(int argc, char **argv)
 
 		file_pattern = 1;
 	}
+
+	if (gq_pattern && gq_init(gq_pattern))
+		return 1;
 
 	argc -= optind;
 	argv += optind;

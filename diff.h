@@ -16,3 +16,4 @@ void scan_subdir(char *, char *, int);
 int is_diff_dir(char *);
 size_t pthcat(char *, size_t, char *);
 int cmp_file(char *, off_t, char *, off_t);
+void free_diff(struct filediff *);

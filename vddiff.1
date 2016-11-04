@@ -131,6 +131,39 @@ matching files only.
 .It Fl f
 Normally directories are displayed on top.
 With this option files are displayed first.
+.It Fl G Ar pattern
+Display only files which contain
+.Ar pattern
+(which is normally a case ignoring basic regular expression).
+With
+.Fl E
+extended regular expressions are enabled,
+with
+.Fl I
+case-sensitive matching is used.
+The pattern match is only applied to regular files.
+To display only directories which contain matching
+files add option
+.Fl r
+(command
+.Do Nm
+.Fl rG Ar pattern Ar directory Dc
+works in bmode somehow similar to
+.Dq Nm grep Fl r Ar pattern Ar directory ) .
+Key
+.Sq Li E
+toggles display of all files and directories or
+matching files only.
+Option
+.Fl G
+can be combined with option
+.Fl F .
+For example
+.Pp
+.Dl vddiff \-rF '\(rs.[1-9]$' \-G '/usr'
+.Pp
+finds all manpage source files which contain
+absolut path names.
 .It Fl g
 Use
 .Nm gvim

@@ -29,6 +29,7 @@ PERFORMANCE OF THIS SOFTWARE.
 #include "uzp.h"
 #include "exec.h"
 #include "db.h"
+#include "gq.h"
 
 #ifdef HAVE_LIBAVLBST
 static void *db_new(int (*)(union bst_val, union bst_val));
@@ -520,10 +521,11 @@ diff_db_sort(void)
 
 #define PROC_DIFF_NODE() \
 	do { \
-	if ((!file_pattern || !find_name || \
+	if ((!file_pattern || \
 	     ((S_ISDIR(f->ltype) || S_ISDIR(f->rtype)) && \
 	      (!recursive || is_diff_dir(f->name))) || \
-	     !regexec(&fn_re, f->name, 0, NULL, 0)) && \
+	     ((!find_name || !regexec(&fn_re, f->name, 0, NULL, 0)) && \
+	      (!gq_pattern || !gq_proc(f)))) && \
 	    \
 	    (bmode || \
 	     ((!noequal || \
@@ -638,12 +640,6 @@ diff_db_add(struct filediff *diff)
 	tot_db_num++;
 }
 
-#define FREE_DIFF(f) \
-	free(f->name); \
-	free(f->llink); \
-	free(f->rlink); \
-	free(f);
-
 void
 diff_db_free(void)
 {
@@ -656,7 +652,7 @@ diff_db_free(void)
 	while (diff_db != NULL) {
 		f = *(struct filediff **)diff_db;
 		tdelete(f, &diff_db, diff_cmp);
-		FREE_DIFF(f);
+		free_diff(f);
 	}
 #endif
 	free(db_list);
@@ -681,7 +677,7 @@ diff_db_delete(struct bst_node *n)
 	diff_db_delete(n->left);
 	diff_db_delete(n->right);
 	f = n->key.p;
-	FREE_DIFF(f);
+	free_diff(f);
 	free(n);
 }
 #endif

@@ -20,6 +20,7 @@ extern size_t llen, rlen;
 extern char *pwd, *rpwd, *arg[];
 extern char lpath[PATHSIZ], rpath[PATHSIZ], lbuf[BUF_SIZE], rbuf[BUF_SIZE];
 extern char *find_name;
+extern char *gq_pattern;
 extern regex_t fn_re;
 extern short recursive, scan;
 extern short bmode;

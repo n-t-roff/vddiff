@@ -31,6 +31,7 @@ PERFORMANCE OF THIS SOFTWARE.
 #include "exec.h"
 #include "db.h"
 #include "ui2.h"
+#include "gq.h"
 
 struct str_list {
 	char *s;
@@ -198,10 +199,26 @@ no_tree2:
 			if (!qdiff && (!*pwd || dir_diff))
 				continue;
 
-			if (file_pattern) {
-				if (!regexec(&fn_re, name, 0, NULL, 0))
+			if (find_name) {
+				if (regexec(&fn_re, name, 0, NULL, 0))
+					continue;
+				else if (!gq_pattern) {
+					dir_diff = 1;
+					continue;
+				}
+			}
+
+			if (gq_pattern) {
+				diff = alloc_diff(name);
+				diff->ltype = stat1.st_mode;
+				diff->rtype = stat2.st_mode;
+				diff->lsiz  = stat1.st_size;
+				diff->rsiz  = stat2.st_size;
+
+				if (!gq_proc(diff))
 					dir_diff = 1;
 
+				free_diff(diff);
 				continue;
 			}
 
@@ -433,14 +450,14 @@ right_tree:
 			stat2.st_mode = 0;
 		}
 
-		if (scan && file_pattern) {
+		if (scan && find_name) {
 			if (!S_ISDIR(stat2.st_mode) &&
-			    !regexec(&fn_re, name, 0, NULL, 0)) {
+			    !regexec(&fn_re, name, 0, NULL, 0) &&
+			    !gq_pattern) {
 				dir_diff = 1;
 				break;
-			}
-
-			continue;
+			} else
+				continue;
 		}
 
 		diff = alloc_diff(name);
@@ -460,6 +477,17 @@ right_tree:
 
 			if (lsiz2 >= 0)
 				diff->rlink = read_link(rpath, lsiz2);
+		}
+
+		if (scan && gq_pattern) {
+			if (!gq_proc(diff)) {
+				free_diff(diff);
+				dir_diff = 1;
+				break;
+			}
+
+			free_diff(diff);
+			continue;
 		}
 
 		diff_db_add(diff);
@@ -715,6 +743,15 @@ alloc_diff(char *name)
 	p->rlink = NULL;
 	p->diff  = ' ';
 	return p;
+}
+
+void
+free_diff(struct filediff *f)
+{
+	free(f->name);
+	free(f->llink);
+	free(f->rlink);
+	free(f);
 }
 
 size_t
