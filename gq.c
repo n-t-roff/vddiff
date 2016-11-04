@@ -40,7 +40,7 @@ gq_init(char *s)
 {
 	int fl;
 
-	fl = REG_NOSUB;
+	fl = REG_NOSUB | REG_NEWLINE;
 
 	if (magic)
 		fl |= REG_EXTENDED;
