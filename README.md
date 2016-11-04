@@ -30,3 +30,4 @@ $ make distclean
 Please report problems and feature requests on the
 [issue list](https://github.com/n-t-roff/vddiff/issues)
 or write a mail to troff@arcor.de
+in case of any question or suggestion.

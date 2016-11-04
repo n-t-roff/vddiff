@@ -43,7 +43,7 @@ char lpath[PATHSIZ], rpath[PATHSIZ], lbuf[BUF_SIZE], rbuf[BUF_SIZE];
 struct stat stat1, stat2;
 regex_t fn_re;
 short recursive, scan;
-short bmode;
+short bmode = TRUE;
 short nosingle;
 #ifdef TRACE
 FILE *debug;
@@ -54,10 +54,10 @@ static int read_rc(const char *);
 static void usage(void);
 
 static char *usage_txt =
-"Usage: %s [-u [<RC file>]] [-BbcdEefgIiklmnoqrV] [-F <pattern>]\n"
-"	[-G <pattern>] [-t <diff_tool>] [-v <view_tool>] <directory_1>\n"
-"	<directory_2>\n";
-static char *getopt_arg = "BbcdEeF:fG:gIiklmnoqrt:Vv:";
+"Usage: %s [-u [<RC file>]] [-bcdEefgIiklmnoqrV] [-F <pattern>]\n"
+"	[-G <pattern>] [-t <diff_tool>] [-v <view_tool>] [<directory_1>\n"
+"	[<directory_2>]]\n";
+static char *getopt_arg = "bcdEeF:fG:gIiklmnoqrt:Vv:";
 
 bool qdiff;
 bool find_name;
@@ -107,10 +107,6 @@ main(int argc, char **argv)
 		int fl;
 
 		switch (opt) {
-		case 'B':
-			bmode = 1;
-			qdiff = FALSE;
-			break;
 		case 'b':
 			color = 0;
 			break;

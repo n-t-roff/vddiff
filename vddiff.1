@@ -26,8 +26,10 @@ PERFORMANCE OF THIS SOFTWARE.
 .Op Fl G Ar file content pattern
 .Op Fl t Ar diff_tool
 .Op Fl v Ar view_tool
+.Oo
 .Ar directory_1
-.Ar directory_2
+.Op Ar directory_2
+.Oc
 .Sh DESCRIPTION
 .Nm
 stands for
@@ -61,6 +63,17 @@ supported:
 and
 .Li zip .
 .Pp
+If
+.Nm
+is started with only one or no argument
+it behaves like a simple single directory view
+file browser (a mode called
+.Sy bmode
+whereas the normal mode is called
+.Sy diff mode ) .
+By use of marks files can be compared in bmode,
+but comparing directories is not possible.
+.Pp
 Symbols are printed in two columns before the names
 which have the following meaning:
 .Pp
@@ -74,7 +87,9 @@ First column: Difference type
 .It So Li - Sc Ta Error
 .El
 .Pp
-Second column: File type
+Second column (or first column in
+.Sy bmode ) :
+File type
 .Bl -column -offset indent ".Sq Li !"
 .It So Li / Sc Ta Directory
 .It So Li " " Sc Ta "Plain file"
@@ -84,17 +99,6 @@ Second column: File type
 .El
 .Sh OPTIONS
 .Bl -tag -width 12n
-.It Fl B
-If
-.Nm
-is started with only one or no argument
-it behaves like a simple single directory view
-file browser (a mode called
-.Sy bmode
-whereas the normal mode is called
-.Sy diff mode ) .
-By use of marks files can be compared in bmode,
-but comparing directories is not possible.
 .It Fl b
 Disable color.
 .It Fl c
@@ -182,7 +186,7 @@ But this can also be expressed as
 .Pp
 For example
 .Pp
-.Dl vddiff \-rF '\(rs.[1-9]$' \-IG '^\.Dd' \-G '/usr'
+.Dl vddiff \-rF '\(rs.[1-9]$' \-IG '^\.Dd' \-EG '/(usr|etc|var)'
 .Pp
 finds all manpage source files in
 .Fl mdoc
@@ -558,11 +562,9 @@ function key.
 The work directory is the directory where
 .Nm
 had been started.
-(If
-.Fl B
-or option
-.Cm bmode
-is used, the work directory is always the current view directory.)
+(In
+.Sy bmode
+the work directory is always the current view directory.)
 Each entered command is saved in a history.
 The keys
 .Aq Cm UP
@@ -923,14 +925,6 @@ A size less than 2 disables the history
 entry need to be saved to use this feature).
 .It Li scale
 Show file size in human-readable format.
-.It Li bmode
-If
-.Nm
-is started with only one or no argument
-it behaves like a simple single directory view
-file browser.
-By use of marks files can be compared in bmode,
-but comparing directories is not possible.
 .It Li shell Ar string
 Set shell for the
 .Sq Li s ,
