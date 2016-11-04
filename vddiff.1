@@ -13,7 +13,7 @@ LOSS OF USE, DATA OR PROFITS, WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE OR
 OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
 PERFORMANCE OF THIS SOFTWARE.
 ..
-.Dd November 3, 2016
+.Dd November 4, 2016
 .Dt VDDIFF 1
 .Sh NAME
 .Nm vddiff
@@ -21,8 +21,9 @@ PERFORMANCE OF THIS SOFTWARE.
 .Sh SYNOPSYS
 .Nm
 .Op Fl u Op Ar "RC file"
-.Op Fl BbcdEfgIiklmnoqrV
-.Op Fl F Ar pattern
+.Op Fl BbcdEefgIiklmnoqrV
+.Op Fl F Ar file name pattern
+.Op Fl G Ar file content pattern
 .Op Fl t Ar diff_tool
 .Op Fl v Ar view_tool
 .Ar directory_1
@@ -104,7 +105,9 @@ Use
 .Dq Li diff $1 $2 | less
 as diff tool.
 .It Fl E
-Enable extended regular expressions.
+Use extended regular expressions.
+.It Fl e
+Use basic regular expressions.
 .It Fl F Ar pattern
 Display only file names which match
 .Ar pattern ,
@@ -164,6 +167,35 @@ For example
 .Pp
 finds all manpage source files which contain
 absolut path names.
+Option
+.Fl G
+can be used multiple times, in this case
+.Sy all
+.Ar pattern Ns No s
+are required to match.
+This differs from
+.Xr grep 1 ,
+where at least one pattern needs to match.
+But this can also be expressed as
+.Pp
+.D1 Fl EG Li ' Ns Ao Ar pattern1 Ac Ns Li | Ns Ao Ar pattern1 Ac Ns Li ' .
+.Pp
+For example
+.Pp
+.Dl vddiff \-rF '\(rs.[1-9]$' \-IG '^\.Dd' \-G '/usr'
+.Pp
+finds all manpage source files in
+.Fl mdoc
+format which contain absolut path names.
+Options
+.Fl E , e , I ,
+and
+.Fl i
+can be used again before each
+.Fl G
+option to specify the kind of regular expression
+and the case sensitivity for the
+.Ar pattern .
 .It Fl g
 Use
 .Nm gvim

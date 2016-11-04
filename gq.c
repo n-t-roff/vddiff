@@ -32,13 +32,21 @@ PERFORMANCE OF THIS SOFTWARE.
 #include "ui2.h"
 #include "gq.h"
 
+struct gq_re {
+	regex_t re;
+	struct gq_re *next;
+};
+
 static char *gq_buf;
-static regex_t gq_re;
+static struct gq_re *gq_re;
+
+bool gq_pattern;
 
 int
 gq_init(char *s)
 {
 	int fl;
+	struct gq_re *re;
 
 	fl = REG_NOSUB | REG_NEWLINE;
 
@@ -47,13 +55,21 @@ gq_init(char *s)
 	if (!noic)
 		fl |= REG_ICASE;
 
-	if (regcomp(&gq_re, s, fl)) {
+	re = malloc(sizeof(struct gq_re));
+	re->next = gq_re;
+	gq_re = re;
+
+	if (regcomp(&re->re, s, fl)) {
 		printf("regcomp \"%s\" failed: %s", s, strerror(errno));
 		return 1;
 	}
 
-	gq_buf = malloc(GQBUFSIZ + 1);
-	file_pattern = 1;
+	if (!gq_buf) {
+		gq_buf = malloc(GQBUFSIZ + 1);
+		file_pattern = 1;
+		gq_pattern = TRUE;
+	}
+
 	return 0;
 }
 
@@ -65,6 +81,7 @@ gq_proc(struct filediff *f)
 	ssize_t n;
 	int fh;
 	int rv = 1; /* not found */
+	struct gq_re *re;
 
 	if (S_ISREG(f->ltype) && f->lsiz) {
 		p = lpath;
@@ -83,6 +100,8 @@ gq_proc(struct filediff *f)
 		goto ret;
 	}
 
+	re = gq_re;
+
 	while (1) {
 		if ((n = read(fh, gq_buf, GQBUFSIZ)) == -1) {
 			printerr(strerror(errno), "read \"%s\" failed", p);
@@ -95,9 +114,20 @@ gq_proc(struct filediff *f)
 
 		gq_buf[n] = 0;
 
-		if (!regexec(&gq_re, gq_buf, 0, NULL, 0)) {
-			rv = 0;
-			break;
+		if (!regexec(&re->re, gq_buf, 0, NULL, 0)) {
+			if (!(re = re->next)) {
+				rv = 0;
+				break;
+			} else {
+				if (lseek(fh, 0, SEEK_SET) == -1) {
+					printerr(strerror(errno),
+					    "lseek \"%s\" failed", p);
+					rv = -1;
+					break;
+				}
+
+				continue;
+			}
 		}
 
 		if (n != GQBUFSIZ)

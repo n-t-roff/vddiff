@@ -41,8 +41,6 @@ char *pwd, *rpwd, *arg[2];
 size_t llen, rlen;
 char lpath[PATHSIZ], rpath[PATHSIZ], lbuf[BUF_SIZE], rbuf[BUF_SIZE];
 struct stat stat1, stat2;
-char *find_name;
-char *gq_pattern;
 regex_t fn_re;
 short recursive, scan;
 short bmode;
@@ -56,12 +54,13 @@ static int read_rc(const char *);
 static void usage(void);
 
 static char *usage_txt =
-"Usage: %s [-u [<RC file>]] [-BbcdEfgIiklmnoqrV] [-F <pattern>]\n"
+"Usage: %s [-u [<RC file>]] [-BbcdEefgIiklmnoqrV] [-F <pattern>]\n"
 "	[-G <pattern>] [-t <diff_tool>] [-v <view_tool>] <directory_1>\n"
 "	<directory_2>\n";
-static char *getopt_arg = "BbcdEF:fG:gIiklmnoqrt:Vv:";
+static char *getopt_arg = "BbcdEeF:fG:gIiklmnoqrt:Vv:";
 
 bool qdiff;
+bool find_name;
 
 int
 main(int argc, char **argv)
@@ -105,6 +104,8 @@ main(int argc, char **argv)
 	}
 
 	while ((opt = getopt(argc, argv, getopt_arg)) != -1) {
+		int fl;
+
 		switch (opt) {
 		case 'B':
 			bmode = 1;
@@ -122,14 +123,33 @@ main(int argc, char **argv)
 		case 'E':
 			magic = 1;
 			break;
+		case 'e':
+			magic = 0;
+			break;
 		case 'F':
-			find_name = optarg;
+			fl = REG_NOSUB;
+
+			if (magic)
+				fl |= REG_EXTENDED;
+			if (!noic)
+				fl |= REG_ICASE;
+
+			if (regcomp(&fn_re, optarg, fl)) {
+				printf("regcomp \"%s\" failed: %s", optarg,
+				    strerror(errno));
+				return 1;
+			}
+
+			file_pattern = 1;
+			find_name = TRUE;
 			break;
 		case 'f':
 			sorting = FILESFIRST;
 			break;
 		case 'G':
-			gq_pattern = optarg;
+			if (gq_init(optarg))
+				return 1;
+
 			break;
 		case 'g':
 			set_tool(&difftool, strdup("gvim -dR"), 0);
@@ -185,28 +205,6 @@ main(int argc, char **argv)
 			usage();
 		}
 	}
-
-	if (find_name) {
-		int fl;
-
-		fl = REG_NOSUB;
-
-		if (magic)
-			fl |= REG_EXTENDED;
-		if (!noic)
-			fl |= REG_ICASE;
-
-		if (regcomp(&fn_re, find_name, fl)) {
-			printf("regcomp \"%s\" failed: %s", find_name,
-			    strerror(errno));
-			return 1;
-		}
-
-		file_pattern = 1;
-	}
-
-	if (gq_pattern && gq_init(gq_pattern))
-		return 1;
 
 	argc -= optind;
 	argv += optind;
