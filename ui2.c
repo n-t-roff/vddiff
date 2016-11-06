@@ -648,7 +648,11 @@ filt_stat(void)
 	if (real_diff)
 		mvwaddch(wstat, 0, x--, 'c');
 
-	wstandend(wstat);
+	if (color)
+		wattrset(wstat, COLOR_PAIR(PAIR_NORMAL));
+	else
+		wstandend(wstat);
+
 	mvwaddch(wstat, 0, x--, ' ');
 }
 

@@ -121,6 +121,11 @@ clr_edit(void)
 void
 disp_edit(void)
 {
+	if (color)
+		wattrset(wstat, COLOR_PAIR(PAIR_NORMAL));
+	else
+		wstandend(wstat);
+
 	werase(wstat);
 	mvwaddstr(wstat, 0, 0, lbuf);
 	filt_stat();

@@ -128,6 +128,7 @@ build_ui(void)
 		init_pair(PAIR_LINK     , color_link     , COLOR_BLACK);
 		init_pair(PAIR_CURSOR   , COLOR_BLACK    , COLOR_WHITE);
 		init_pair(PAIR_ERROR    , COLOR_WHITE    , COLOR_RED  );
+		init_pair(PAIR_NORMAL   , COLOR_WHITE    , COLOR_BLACK);
 	}
 
 	cbreak();
@@ -1592,8 +1593,12 @@ no_diff:
 
 	if (color && !info) {
 		wattron(wlist, A_BOLD);
+
 		if (color_id)
 			wattron(wlist, COLOR_PAIR(color_id));
+		else
+			/* not attrset, else bold is off */
+			wattron(wlist, COLOR_PAIR(PAIR_NORMAL));
 	}
 
 	if (bmode)
@@ -1601,7 +1606,10 @@ no_diff:
 	else
 		mvwprintw(wlist, y, 0, "%c %c %s", diff, type, f->name);
 
-	wstandend(wlist);
+	if (color)
+		wattrset(wlist, COLOR_PAIR(PAIR_NORMAL));
+	else
+		wstandend(wlist);
 
 	if (lnk) {
 		waddstr(wlist, " -> ");
@@ -1660,7 +1668,11 @@ statcol(void)
 
 	mvwaddch(wstat, 0, 0, '<');
 	mvwaddch(wstat, 1, 0, '>');
-	wstandend(wstat);
+
+	if (color)
+		wattrset(wstat, COLOR_PAIR(PAIR_NORMAL));
+	else
+		wstandend(wstat);
 }
 
 static char *
@@ -1684,6 +1696,11 @@ file_stat(struct filediff *f)
 	struct group *gr;
 	mode_t ltyp, rtyp;
 	char *s1, *s2;
+
+	if (color)
+		wattrset(wstat, COLOR_PAIR(PAIR_NORMAL));
+	else
+		wstandend(wstat);
 
 	x  = bmode ? 0 : 2;
 	yl = 0;
@@ -1872,7 +1889,11 @@ disp_mark(void)
 		wstandout(wstat);
 
 	mvwaddstr(wstat, 1, 0, gl_mark ? gl_mark : mark->name);
-	wstandend(wstat);
+
+	if (color)
+		wattrset(wstat, COLOR_PAIR(PAIR_NORMAL));
+	else
+		wstandend(wstat);
 	wrefresh(wstat);
 }
 
@@ -2234,6 +2255,7 @@ printerr(char *s2, char *s1, ...)
 	}
 
 	wstat_dirty = TRUE;
+	wattrset(wstat, COLOR_PAIR(PAIR_NORMAL));
 	werase(wstat);
 	wmove(wstat, s2 ? 0 : 1, 0);
 	va_start(ap, s1);
@@ -2257,6 +2279,7 @@ dialog(const char *quest, char *answ, char *fmt, ...)
 	char *s;
 
 	wstat_dirty = TRUE;
+	wattrset(wstat, COLOR_PAIR(PAIR_NORMAL));
 
 	if (fmt) {
 		werase(wstat);

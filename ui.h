@@ -6,6 +6,7 @@
 #define PAIR_LINK      6
 #define PAIR_CURSOR    7
 #define PAIR_ERROR     8
+#define PAIR_NORMAL    9
 
 struct ui_state {
 	char *lpth, *rpth;
