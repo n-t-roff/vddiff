@@ -43,7 +43,7 @@ char lpath[PATHSIZ], rpath[PATHSIZ], lbuf[BUF_SIZE], rbuf[BUF_SIZE];
 struct stat stat1, stat2;
 regex_t fn_re;
 short recursive, scan;
-short bmode = TRUE;
+short bmode = 1;
 short nosingle;
 #ifdef TRACE
 FILE *debug;

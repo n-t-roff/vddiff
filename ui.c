@@ -26,6 +26,7 @@ PERFORMANCE OF THIS SOFTWARE.
 #include <ctype.h>
 #include <errno.h>
 #include <regex.h>
+#include <time.h>
 #include "compat.h"
 #include "diff.h"
 #include "main.h"
@@ -58,6 +59,7 @@ static void set_win_dim(void);
 static void statcol(void);
 static void file_stat(struct filediff *);
 static size_t getfilesize(char *, size_t, off_t);
+static size_t gettimestr(char *, size_t, time_t *);
 static void disp_help(void);
 static void help_pg_down(void);
 static void help_pg_up(void);
@@ -1722,7 +1724,6 @@ file_stat(struct filediff *f)
 	struct passwd *pw;
 	struct group *gr;
 	mode_t ltyp, rtyp;
-	char *s1, *s2;
 
 	x  = bmode ? 0 : 2;
 	yl = 0;
@@ -1808,7 +1809,7 @@ file_stat(struct filediff *f)
 	if (ltyp && !S_ISDIR(ltyp))
 		w1 = getfilesize(lbuf, sizeof lbuf, f->lsiz);
 	if (rtyp && !S_ISDIR(rtyp))
-		w2 = getfilesize(rbuf, sizeof lbuf, f->rsiz);
+		w2 = getfilesize(rbuf, sizeof rbuf, f->rsiz);
 
 	w = w1 > w2 ? w1 : w2;
 
@@ -1822,15 +1823,13 @@ file_stat(struct filediff *f)
 		x += w + 1;
 
 	if (ltyp) {
-		s1 = ctime(&f->lmtim);
-		mvwaddstr(wstat, yl, x, s1);
-		lx1 = x + strlen(s1);
+		lx1 = x + gettimestr(lbuf, sizeof lbuf, &f->lmtim);
+		mvwaddstr(wstat, yl, x, lbuf);
 	}
 
 	if (rtyp) {
-		s2 = ctime(&f->rmtim);
-		mvwaddstr(wstat, 1, x, s2);
-		lx2 = x + strlen(s2);
+		lx2 = x + gettimestr(lbuf, sizeof lbuf, &f->rmtim);
+		mvwaddstr(wstat, 1, x, lbuf);
 	}
 
 	if (ltyp && f->llink)
@@ -1869,6 +1868,22 @@ getfilesize(char *buf, size_t bufsiz, off_t size)
 	}
 
 	return snprintf(buf, bufsiz, "%.1f%s", f, unit);
+}
+
+static size_t
+gettimestr(char *buf, size_t bufsiz, time_t *t)
+{
+	struct tm *tm;
+
+	if (!(tm = localtime(t))) {
+		printerr(strerror(errno), "localtime failed");
+		*buf = 0;
+		return 0;
+	}
+
+	return strftime(buf, bufsiz,
+	    time(NULL) - *t > 3600 * 24 * (366 / 2) ?
+	    "%b %e  %Y" : "%b %e %k:%M", tm);
 }
 
 static void
