@@ -2255,7 +2255,10 @@ printerr(char *s2, char *s1, ...)
 	}
 
 	wstat_dirty = TRUE;
-	wattrset(wstat, COLOR_PAIR(PAIR_NORMAL));
+
+	if (color)
+		wattrset(wstat, COLOR_PAIR(PAIR_NORMAL));
+
 	werase(wstat);
 	wmove(wstat, s2 ? 0 : 1, 0);
 	va_start(ap, s1);
@@ -2279,7 +2282,9 @@ dialog(const char *quest, char *answ, char *fmt, ...)
 	char *s;
 
 	wstat_dirty = TRUE;
-	wattrset(wstat, COLOR_PAIR(PAIR_NORMAL));
+
+	if (color)
+		wattrset(wstat, COLOR_PAIR(PAIR_NORMAL));
 
 	if (fmt) {
 		werase(wstat);
