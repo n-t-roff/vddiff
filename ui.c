@@ -1566,6 +1566,8 @@ disp_line(unsigned y, unsigned i,
 	struct filediff *f = db_list[i];
 	char *lnk = NULL;
 	short color_id = 0;
+	ssize_t l;
+	int x;
 
 	if (bmode) {
 		goto no_diff;
@@ -1630,19 +1632,30 @@ no_diff:
 			wattron(wlist, COLOR_PAIR(PAIR_NORMAL));
 	}
 
-	if (bmode)
-		mvwprintw(wlist, y, 0, "%c %s", type, f->name);
-	else
-		mvwprintw(wlist, y, 0, "%c %c %s", diff, type, f->name);
+	if (bmode) {
+		mvwprintw(wlist, y, 0, "%c ", type);
+		x = 2;
+	} else {
+		mvwprintw(wlist, y, 0, "%c %c ", diff, type);
+		x = 4;
+	}
+
+	l = prt_str(wlist, f->name);
 
 	if (color)
 		wattrset(wlist, COLOR_PAIR(PAIR_NORMAL));
 	else
 		wstandend(wlist);
 
-	if (lnk) {
+	if (l <= 0)
+		return;
+
+	x += l;
+
+	if (lnk && (x + 5 < COLS)) {
+		wmove(wlist, y, x);
 		waddstr(wlist, " -> ");
-		waddstr(wlist, lnk);
+		prt_str(wlist, lnk);
 	}
 
 	if (!info)

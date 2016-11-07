@@ -41,6 +41,8 @@ struct str_uint {
 
 static int srchcmp(const void *, const void *);
 
+static wchar_t wcbuf[BUF_SIZE];
+static cchar_t ccbuf[BUF_SIZE];
 short noic, magic, nows, scale;
 short regex;
 unsigned short subtree = 3;
@@ -685,4 +687,35 @@ refr_scr(void)
 	wnoutrefresh(wlist);
 	wnoutrefresh(wstat);
 	doupdate();
+}
+
+ssize_t
+prt_str(WINDOW *w, char *s)
+{
+	size_t l;
+	static wchar_t ws[2];
+	wchar_t *wc;
+	cchar_t *cc;
+	attr_t a;
+	char cp;
+
+	wattr_get(w, &a, &cp, NULL);
+	l = mbstowcs(wcbuf, s, sizeof(wcbuf)/sizeof(*wcbuf));
+
+	if (l == (size_t)-1) {
+		printerr(NULL, "mbstowcs \"%s\" failed", s);
+		return -1;
+	} else if (l == sizeof(wcbuf)/sizeof(*wcbuf))
+		wcbuf[sizeof(wcbuf)/sizeof(*wcbuf) - 1] = 0;
+
+	wc = wcbuf;
+	cc = ccbuf;
+
+	do {
+		*ws = *wc++;
+		setcchar(cc++, ws, a, cp, NULL);
+	} while (*ws);
+
+	wadd_wchstr(w, ccbuf);
+	return l;
 }

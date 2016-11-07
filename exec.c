@@ -422,8 +422,7 @@ exec_cmd(char **av, tool_flags_t flags, char *path, char *msg)
 		}
 	}
 
-	reset_prog_mode();
-	refresh();
+	doupdate();
 
 	if (pid == -1)
 		printerr(strerror(errno), "fork failed");
