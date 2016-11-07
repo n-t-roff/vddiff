@@ -25,3 +25,4 @@ void re_sort_list(void);
 void filt_stat(void);
 void anykey(void);
 void free_zdir(struct filediff *, char *);
+void refr_scr(void);

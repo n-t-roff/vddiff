@@ -678,3 +678,11 @@ free_zdir(struct filediff *z, char *t)
 	if (t)
 		rmtmpdirs(t);
 }
+
+void
+refr_scr(void)
+{
+	wnoutrefresh(wlist);
+	wnoutrefresh(wstat);
+	doupdate();
+}

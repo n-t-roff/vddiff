@@ -185,7 +185,14 @@ main(int argc, char **argv)
 		case 'V':
 			printf("%s %s\n\tCompile option(s): "
 #ifdef HAVE_CURSES_WCH
-			    "wide char curses, "
+			    "wide char "
+#endif
+#if defined HAVE_NCURSESW_CURSES_H
+			    "ncursesw, "
+#elif defined HAVE_NCURSES_CURSES_H
+			    "ncurses, "
+#else
+			    "curses, "
 #endif
 #ifdef HAVE_LIBAVLBST
 			    "libavlbst"

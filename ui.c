@@ -997,8 +997,7 @@ disp_help(void)
 	if (!help_top && HELP_NUM > listh)
 		printerr(NULL, "Scroll down for more");
 
-	wrefresh(wlist);
-	wrefresh(wstat);
+	refr_scr();
 }
 
 static void
@@ -1050,8 +1049,7 @@ help_down(short n)
 		mvwaddstr(wlist, listh - i, 0, helptxt[help_top + listh - i]);
 
 	werase(wstat);
-	wrefresh(wstat);
-	wrefresh(wlist);
+	refr_scr();
 }
 
 static void
@@ -1079,8 +1077,7 @@ help_up(unsigned short n)
 		mvwaddstr(wlist, i, 0, helptxt[help_top + i]);
 
 	werase(wstat);
-	wrefresh(wstat);
-	wrefresh(wlist);
+	refr_scr();
 }
 
 #ifdef NCURSES_MOUSE_VERSION
@@ -1100,8 +1097,7 @@ proc_mevent(void)
 		disp_curs(0);
 		curs = mevent.y;
 		disp_curs(1);
-		wrefresh(wlist);
-		wrefresh(wstat);
+		refr_scr();
 
 		if (mevent.bstate & BUTTON1_DOUBLE_CLICKED)
 			action(0, 3, 0, FALSE);
@@ -1353,8 +1349,7 @@ last_line_is_disp(void)
 			disp_curs(0);
 			curs = db_num - top_idx - 1;
 			disp_curs(1);
-			wrefresh(wlist);
-			wrefresh(wstat);
+			refr_scr();
 		}
 		return 1;
 	}
@@ -1370,8 +1365,7 @@ first_line_is_top(void)
 			disp_curs(0);
 			curs = 0;
 			disp_curs(1);
-			wrefresh(wlist);
-			wrefresh(wstat);
+			refr_scr();
 		}
 		return 1;
 	}
@@ -1393,8 +1387,7 @@ curs_down(void)
 			wscrl(wlist, 1);
 			top_idx++;
 			disp_curs(1);
-			wrefresh(wlist);
-			wrefresh(wstat);
+			refr_scr();
 		} else {
 			page_down();
 		}
@@ -1404,8 +1397,7 @@ curs_down(void)
 	disp_curs(0);
 	curs++;
 	disp_curs(1);
-	wrefresh(wlist);
-	wrefresh(wstat);
+	refr_scr();
 }
 
 static void
@@ -1422,8 +1414,7 @@ curs_up(void)
 			wscrl(wlist, -1);
 			top_idx--;
 			disp_curs(1);
-			wrefresh(wlist);
-			wrefresh(wstat);
+			refr_scr();
 		} else {
 			page_up();
 		}
@@ -1433,8 +1424,7 @@ curs_up(void)
 	disp_curs(0);
 	curs--;
 	disp_curs(1);
-	wrefresh(wlist);
-	wrefresh(wstat);
+	refr_scr();
 }
 
 #if NCURSES_MOUSE_VERSION >= 2
@@ -1457,8 +1447,7 @@ scroll_up(unsigned num)
 			curs = 0;
 
 		disp_curs(1);
-		wrefresh(wlist);
-		wrefresh(wstat);
+		refr_scr();
 		return;
 	}
 
@@ -1483,8 +1472,8 @@ scroll_up(unsigned num)
 
 	if (move_curs)
 		disp_curs(1);
-	wrefresh(wlist);
-	wrefresh(wstat);
+
+	refr_scr();
 }
 
 static void
@@ -1519,8 +1508,8 @@ scroll_down(unsigned num)
 
 	if (move_curs)
 		disp_curs(1);
-	wrefresh(wlist);
-	wrefresh(wstat);
+
+	refr_scr();
 }
 #endif
 
@@ -1564,8 +1553,7 @@ disp_list(void)
 	}
 
 exit:
-	wrefresh(wlist);
-	wrefresh(wstat);
+	refr_scr();
 }
 
 static void
