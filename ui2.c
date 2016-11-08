@@ -690,14 +690,14 @@ refr_scr(void)
 }
 
 ssize_t
-prt_str(WINDOW *w, char *s)
+putmbs(WINDOW *w, char *s)
 {
 	size_t l;
 	static wchar_t ws[2];
 	wchar_t *wc;
 	cchar_t *cc;
 	attr_t a;
-	char cp;
+	short cp;
 
 	wattr_get(w, &a, &cp, NULL);
 	l = mbstowcs(wcbuf, s, sizeof(wcbuf)/sizeof(*wcbuf));
@@ -718,4 +718,29 @@ prt_str(WINDOW *w, char *s)
 
 	wadd_wchstr(w, ccbuf);
 	return l;
+}
+
+int
+addmbs(WINDOW *w, char *s)
+{
+	int cy, cx, my, mx;
+	ssize_t l;
+
+	getyx(w, cy, cx);
+	getmaxyx(w, my, mx);
+	(void)my;
+
+	if (cx >= mx)
+		return 1;
+
+	if ((l = putmbs(w, s)) == -1)
+		return -1;
+
+	cx += l;
+
+	if (cx > mx)
+		cx = mx;
+
+	wmove(w, cy, cx);
+	return 0;
 }
