@@ -1674,13 +1674,17 @@ no_diff:
 		statcol();
 		mvwaddstr(wstat, 0, 2, type_name(f->ltype));
 
-		if (f->llink)
-			wprintw(wstat, " -> %s", f->llink);
+		if (f->llink) {
+			waddstr(wstat, " -> ");
+			addmbs(wstat, f->llink);
+		}
 
 		mvwaddstr(wstat, 1, 2, type_name(f->rtype));
 
-		if (f->rlink)
-			wprintw(wstat, " -> %s", f->rlink);
+		if (f->rlink) {
+			waddstr(wstat, " -> ");
+			addmbs(wstat, f->rlink);
+		}
 	} else {
 		statcol();
 		file_stat(f);
@@ -1752,12 +1756,14 @@ file_stat(struct filediff *f)
 	}
 
 	if (S_ISLNK(ltyp)) {
-		mvwprintw(wstat, yl, x, "-> %s", f->llink);
+		mvwaddstr(wstat, yl, x, "-> ");
+		addmbs(wstat, f->llink);
 		ltyp = 0;
 	}
 
 	if (S_ISLNK(rtyp)) {
-		mvwprintw(wstat, 1, x, "-> %s", f->rlink);
+		mvwaddstr(wstat, 1, x, "-> ");
+		addmbs(wstat, f->rlink);
 		rtyp = 0;
 	}
 

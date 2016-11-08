@@ -63,6 +63,7 @@ build_diff_db(int tree)
 	int retval = 0;
 	short dir_diff = 0;
 	bool file_err = FALSE;
+	static time_t lpt, lpt2;
 
 	if (!(tree & 1))
 		goto right_tree;
@@ -74,9 +75,16 @@ build_diff_db(int tree)
 		if (!bmode_ini_len)
 			bmode_ini_len = strlen(rpath) + 1; /* + '/' */
 
-		printerr(NULL, "Reading directory %s", rpath);
-	} else if (!qdiff)
-		printerr(NULL, "Reading directory %s", lpath);
+		if ((lpt2 = time(NULL)) - lpt) {
+			printerr(NULL, "Reading directory %s", rpath);
+			lpt = lpt2;
+		}
+	} else if (!qdiff) {
+		if ((lpt2 = time(NULL)) - lpt) {
+			printerr(NULL, "Reading directory %s", lpath);
+			lpt = lpt2;
+		}
+	}
 
 	if (!(d = opendir(lpath))) {
 		if (!ign_diff_errs && dialog(
