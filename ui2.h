@@ -26,5 +26,7 @@ void filt_stat(void);
 void anykey(void);
 void free_zdir(struct filediff *, char *);
 void refr_scr(void);
+ssize_t mbstowchs(WINDOW *, char *);
 ssize_t putmbs(WINDOW *, char *);
 int addmbs(WINDOW *, char *);
+ssize_t putmbsra(WINDOW *, char *);

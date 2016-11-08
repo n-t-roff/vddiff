@@ -1741,10 +1741,10 @@ file_stat(struct filediff *f)
 	ltyp = f->ltype;
 	rtyp = f->rtype;
 
-	if (bmode)
-		/* TODO: Right align */
-		mvwaddstr(wstat, 1, 0, rpath);
-	else if (dir_change) {
+	if (bmode) {
+		wmove(wstat, 1, 0);
+		putmbsra(wstat, rpath);
+	} else if (dir_change) {
 		lpath[llen] = 0;
 		rpath[rlen] = 0;
 		mvwaddstr(wstat, 1, 0, *pwd ? PWD : RPWD);
