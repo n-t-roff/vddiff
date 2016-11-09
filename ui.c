@@ -82,7 +82,8 @@ short color_leftonly  = COLOR_CYAN   ,
       color_error_fg  = COLOR_WHITE  ,
       color_error_bg  = COLOR_RED    ,
       color_mark_fg   = COLOR_WHITE  ,
-      color_mark_bg   = COLOR_BLUE   ;
+      color_mark_bg   = COLOR_BLUE   ,
+      color_bg        = COLOR_BLACK  ;
 unsigned top_idx, curs, statw;
 
 #ifdef HAVE_CURSES_WCH
@@ -130,16 +131,17 @@ build_ui(void)
 
 	if (color) {
 		start_color();
-		init_pair(PAIR_LEFTONLY , color_leftonly , COLOR_BLACK    );
-		init_pair(PAIR_RIGHTONLY, color_rightonly, COLOR_BLACK    );
-		init_pair(PAIR_DIFF     , color_diff     , COLOR_BLACK    );
-		init_pair(PAIR_DIR      , color_dir      , COLOR_BLACK    );
-		init_pair(PAIR_UNKNOWN  , color_unknown  , COLOR_BLACK    );
-		init_pair(PAIR_LINK     , color_link     , COLOR_BLACK    );
-		init_pair(PAIR_NORMAL   , color_normal   , COLOR_BLACK    );
+		init_pair(PAIR_LEFTONLY , color_leftonly , color_bg       );
+		init_pair(PAIR_RIGHTONLY, color_rightonly, color_bg       );
+		init_pair(PAIR_DIFF     , color_diff     , color_bg       );
+		init_pair(PAIR_DIR      , color_dir      , color_bg       );
+		init_pair(PAIR_UNKNOWN  , color_unknown  , color_bg       );
+		init_pair(PAIR_LINK     , color_link     , color_bg       );
+		init_pair(PAIR_NORMAL   , color_normal   , color_bg       );
 		init_pair(PAIR_CURSOR   , color_cursor_fg, color_cursor_bg);
 		init_pair(PAIR_ERROR    , color_error_fg , color_error_bg );
 		init_pair(PAIR_MARK     , color_mark_fg  , color_mark_bg  );
+		bkgd(COLOR_PAIR(PAIR_NORMAL));
 	}
 
 	cbreak();

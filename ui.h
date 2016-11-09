@@ -44,7 +44,8 @@ extern short color_leftonly ,
              color_error_fg ,
              color_error_bg ,
              color_mark_fg  ,
-             color_mark_bg  ;
+             color_mark_bg  ,
+             color_bg       ;
 extern unsigned top_idx, curs, statw;
 extern WINDOW *wlist;
 extern WINDOW *wstat;
