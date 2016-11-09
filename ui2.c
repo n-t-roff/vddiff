@@ -55,7 +55,7 @@ static unsigned srch_idx;
 bool file_pattern;
 
 int
-test_fkey(int c, unsigned short num)
+test_fkey(int c, long u, unsigned short num)
 {
 	int i;
 	int ek;
@@ -66,7 +66,7 @@ test_fkey(int c, unsigned short num)
 
 		if (fkey_cmd[i]) {
 			struct tool t;
-			unsigned ti;
+			unsigned ti, cu;
 			static char *keys =
 			    "<ENTER> execute, 'e' edit,"
 			    " <other key> cancel";
@@ -99,6 +99,8 @@ test_fkey(int c, unsigned short num)
 			case '\n':
 exec:
 				ti = top_idx;
+				cu = curs;
+				curs = u - top_idx;
 
 				while (num--) {
 					action(1, 3, 0, FALSE);
@@ -106,6 +108,7 @@ exec:
 				}
 
 				top_idx = ti;
+				curs = cu;
 				/* action() did likely create or
 				 * delete files */
 				rebuild_db(0);
@@ -636,11 +639,7 @@ filt_stat(void)
 	unsigned x;
 
 	x = COLS - 1;
-
-	if (color)
-		wattron(wstat, COLOR_PAIR(PAIR_CURSOR));
-	else
-		wstandout(wstat);
+	standoutc(wstat);
 
 	if (file_pattern)
 		mvwaddch(wstat, 0, x--, 'E');
@@ -655,12 +654,26 @@ filt_stat(void)
 	if (real_diff)
 		mvwaddch(wstat, 0, x--, 'c');
 
-	if (color)
-		wattrset(wstat, COLOR_PAIR(PAIR_NORMAL));
-	else
-		wstandend(wstat);
-
+	standendc(wstat);
 	mvwaddch(wstat, 0, x--, ' ');
+}
+
+void
+standoutc(WINDOW *w)
+{
+	if (color)
+		wattron(w, COLOR_PAIR(PAIR_CURSOR));
+	else
+		wstandout(w);
+}
+
+void
+standendc(WINDOW *w)
+{
+	if (color)
+		wattrset(w, COLOR_PAIR(PAIR_NORMAL));
+	else
+		wstandend(w);
 }
 
 void

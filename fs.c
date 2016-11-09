@@ -153,11 +153,10 @@ exit:
 }
 
 void
-fs_chmod(int tree, int num)
+fs_chmod(int tree, long u, int num)
 {
 	struct filediff *f;
 	mode_t m;
-	unsigned short u;
 	bool have_mode = FALSE;
 
 	if (!db_num)
@@ -166,8 +165,6 @@ fs_chmod(int tree, int num)
 	if (num > 1 && dialog(y_n_txt, NULL,
 	    "Change mode of %d files?", num) != 'y')
 		return;
-
-	u = top_idx + curs;
 
 	while (num-- && u < db_num) {
 		f = db_list[u++];
@@ -269,7 +266,7 @@ ask_for_perms(mode_t *mode)
 }
 
 void
-fs_chown(int tree, int op, int num)
+fs_chown(int tree, int op, long u, int num)
 {
 	struct filediff *f;
 	static struct history owner_hist, group_hist;
@@ -278,7 +275,6 @@ fs_chown(int tree, int op, int num)
 	struct group *gr;
 	uid_t uid;
 	gid_t gid;
-	unsigned short u;
 	bool have_owner = FALSE;
 
 	if (!db_num)
@@ -287,8 +283,6 @@ fs_chown(int tree, int op, int num)
 	if (num > 1 && dialog(y_n_txt, NULL,
 	    "Change %s of %d files?", op ? "group" : "owner", num) != 'y')
 		return;
-
-	u = top_idx + curs;
 
 	while (num-- && u < db_num) {
 		f = db_list[u++];
@@ -363,24 +357,22 @@ exit:
  * 1: Cancel */
 
 int
-fs_rm(int tree, char *txt, int num)
+fs_rm(int tree, char *txt, long u, int n)
 {
 	struct filediff *f;
-	unsigned short u, m;
+	unsigned short m;
 	int rv = 0;
 
 	if (!db_num)
 		return 0;
 
-	m = num > 1;
+	m = n > 1;
 
 	if (m && dialog(y_n_txt, NULL,
-	    "Really %s %d files?", txt ? txt : "delete", num) != 'y')
+	    "Really %s %d files?", txt ? txt : "delete", n) != 'y')
 		return 1;
 
-	u = top_idx + curs;
-
-	while (num-- && u < db_num) {
+	while (n-- && u < db_num) {
 		f = db_list[u++];
 
 		/* "dd" is not allowed if both files are present */
@@ -445,23 +437,22 @@ cancel:
 }
 
 void
-fs_cp(int to, int num)
+fs_cp(int to, long u, int n)
 {
 	struct filediff *f;
 	struct stat st;
-	unsigned short ti = top_idx;
 	bool m;
 
 	if (!db_num)
 		return;
 
-	m = num > 1;
+	m = n > 1;
 
 	if (m && dialog(y_n_txt, NULL,
-	    "Really copy %d files?", num) != 'y')
+	    "Really copy %d files?", n) != 'y')
 		return;
 
-	for (; num-- && top_idx + curs < db_num; top_idx++) {
+	for (; n-- && u < db_num; u++) {
 		if (to == 1) {
 			pth1 = rpath;
 			len1 = rlen;
@@ -474,7 +465,7 @@ fs_cp(int to, int num)
 			len2 = rlen;
 		}
 
-		f = db_list[top_idx + curs];
+		f = db_list[u];
 		pthcat(pth1, len1, f->name);
 		pthcat(pth2, len2, f->name);
 
@@ -489,7 +480,7 @@ fs_cp(int to, int num)
 		/* After stat src to avoid removing dest if there is a problem
 		 * with src */
 		if (!followlinks) {
-			if (fs_rm(to, "overwrite", 1) == 1)
+			if (fs_rm(to, "overwrite", u, 1) == 1)
 				return;
 		} else if (!m && dialog(y_n_txt, NULL, "Really overwrite %s?",
 		    pth2) != 'y')
@@ -523,7 +514,6 @@ fs_cp(int to, int num)
 			cp_file();
 	}
 
-	top_idx = ti;
 	rebuild_db(0);
 	return;
 }

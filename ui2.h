@@ -9,7 +9,7 @@ extern unsigned short subtree;
 extern const char y_n_txt[];
 extern bool file_pattern;
 
-int test_fkey(int, unsigned short);
+int test_fkey(int, long, unsigned short);
 void set_fkey_cmd(int, char *, int);
 void ui_srch(void);
 int srch_file(char *);
@@ -24,6 +24,8 @@ char *saveselname(void);
 unsigned findlistname(char *);
 void re_sort_list(void);
 void filt_stat(void);
+void standoutc(WINDOW *);
+void standendc(WINDOW *);
 void anykey(void);
 void free_zdir(struct filediff *, char *);
 void refr_scr(void);

@@ -225,6 +225,7 @@ ui_ctrl(void)
 	static struct history opt_hist;
 	int key[2] = { 0, 0 }, c = 0, i;
 	unsigned short num;
+	long u;
 	struct filediff *f;
 
 	while (1) {
@@ -232,13 +233,15 @@ next_key:
 		key[1] = *key;
 		*key = c;
 
-		if (!c)
+		if (!c) {
 			num = 1;
+			u = top_idx + curs;
+		}
 
 		if ((c = getch()) == ERR)
 			goto next_key;
 
-		if (test_fkey(c, num)) {
+		if (test_fkey(c, u, num)) {
 			c = 0;
 			goto next_key;
 		}
@@ -253,10 +256,12 @@ next_key:
 		switch (c) {
 #ifdef NCURSES_MOUSE_VERSION
 		case KEY_MOUSE:
+			c = 0;
 			proc_mevent();
 			break;
 #endif
 		case '1':
+			c = 0;
 			break;
 		case 'q':
 			if (dialog(y_n_txt, NULL,
@@ -351,16 +356,16 @@ next_key:
 		case 'p':
 			if (*key == 'e') {
 				c = 0;
-				fs_chmod(3, num);
+				fs_chmod(3, u, num);
 				break;
 			} else if (key[1] == 'e') {
 				if (*key == 'l') {
 					c = 0;
-					fs_chmod(1, num);
+					fs_chmod(1, u, num);
 					break;
 				} else if (*key == 'r') {
 					c = 0;
-					fs_chmod(2, num);
+					fs_chmod(2, u, num);
 					break;
 				}
 			}
@@ -488,7 +493,8 @@ next_key:
 				break;
 
 			c = 0;
-			fs_rm(3, NULL, num); /* allowed for single sided only */
+			/* allowed for single sided only */
+			fs_rm(3, NULL, u, num);
 			break;
 		case 't':
 			if (*key == 'S') {
@@ -526,7 +532,7 @@ next_key:
 			switch (*key) {
 			case 'd':
 				c = 0;
-				fs_rm(1, NULL, num);
+				fs_rm(1, NULL, u, num);
 				goto next_key;
 			case 's':
 				c = 0;
@@ -583,7 +589,7 @@ next_key:
 			switch (*key) {
 			case 'd':
 				c = 0;
-				fs_rm(2, NULL, num);
+				fs_rm(2, NULL, u, num);
 				goto next_key;
 			case 's':
 				c = 0;
@@ -624,14 +630,14 @@ next_key:
 				break;
 
 			c = 0;
-			fs_cp(1, num);
+			fs_cp(1, u, num);
 			break;
 		case '>':
 			if (*key != '>')
 				break;
 
 			c = 0;
-			fs_cp(2, num);
+			fs_cp(2, u, num);
 			break;
 		case KEY_HOME:
 			c = 0;
@@ -697,16 +703,16 @@ next_key:
 		case 'u':
 			if (*key == 'e') {
 				c = 0;
-				fs_chown(3, 0, num);
+				fs_chown(3, 0, u, num);
 				break;
 			} else if (key[1] == 'e') {
 				if (*key == 'l') {
 					c = 0;
-					fs_chown(1, 0, num);
+					fs_chown(1, 0, u, num);
 					break;
 				} else if (*key == 'r') {
 					c = 0;
-					fs_chown(2, 0, num);
+					fs_chown(2, 0, u, num);
 					break;
 				}
 			}
@@ -717,16 +723,16 @@ next_key:
 		case 'g':
 			if (*key == 'e') {
 				c = 0;
-				fs_chown(3, 1, num);
+				fs_chown(3, 1, u, num);
 				break;
 			} else if (key[1] == 'e') {
 				if (*key == 'l') {
 					c = 0;
-					fs_chown(1, 1, num);
+					fs_chown(1, 1, u, num);
 					break;
 				} else if (*key == 'r') {
 					c = 0;
-					fs_chown(2, 1, num);
+					fs_chown(2, 1, u, num);
 					break;
 				}
 			}
@@ -816,6 +822,25 @@ next_key:
 			filt_stat();
 			wrefresh(wstat);
 			break;
+		case '`':
+			if (mark_idx < 0) {
+				standoutc(wstat);
+				/* calls standend */
+				printerr(NULL, "No local mark");
+				c = 0;
+				break;
+			}
+
+			u = top_idx + curs;
+
+			if (u <= mark_idx)
+				num = mark_idx - u + 1;
+			else {
+				num = u - mark_idx + 1;
+				u = mark_idx;
+			}
+
+			break;
 		case 'N':
 			if (regex) {
 				c = 0;
@@ -871,28 +896,41 @@ static char *helptxt[] = {
        "c		Toggle showing only directories and really different files",
        "&		Toggle display of files which are on one side only",
        "F		Toggle following symbolic links",
-       /*"E		Toggle file name or file content filter",*/
-       "E		Toggle file name filter",
+       "E		Toggle file name or file content filter",
        "p		Show current relative work directory",
        "a		Show command line directory arguments",
        "f		Show full path",
        "[<n>]<<		Copy from second to first tree",
        "[<n>]>>		Copy from first to second tree",
+       "`<<		Copy from second to first tree",
+       "`>>		Copy from first to second tree",
        "[<n>]dd		Delete file or directory",
        "[<n>]dl		Delete file or directory in first tree",
        "[<n>]dr		Delete file or directory in second tree",
+       "`dd		Delete file or directory (cursor to mark)",
+       "`dl		Delete file or directory in first tree (cursor to mark)",
+       "`dr		Delete file or directory in second tree (cursor to mark)",
        "en		Rename file",
        "eln		Rename left file",
        "ern		Rename right file",
        "[<n>]ep		Change file mode",
        "[<n>]elp	Change mode of left file",
        "[<n>]erp	Change mode of right file",
+       "`ep		Change file mode (cursor to mark)",
+       "`elp		Change mode of left file (cursor to mark)",
+       "`erp		Change mode of right file (cursor to mark)",
        "[<n>]eu		Change file owner",
        "[<n>]elu	Change owner of left file",
        "[<n>]eru	Change owner or right file",
+       "`eu		Change file owner (cursor to mark)",
+       "`elu		Change owner of left file (cursor to mark)",
+       "`eru		Change owner or right file (cursor to mark)",
        "[<n>]eg		Change file group",
        "[<n>]elg	Change group of left file",
        "[<n>]erg	Change group or right file",
+       "`eg		Change file group (cursor to mark)",
+       "`elg		Change group of left file (cursor to mark)",
+       "`erg		Change group or right file (cursor to mark)",
        "P		Create directory (bmode only)",
        "Pl		Create directory in left tree",
        "Pr		Create directory in right tree",
@@ -1525,10 +1563,7 @@ static void
 disp_curs(int a)
 {
 	if (a) {
-		if (color)
-			wattron(wlist, COLOR_PAIR(PAIR_CURSOR));
-		else
-			wstandout(wlist);
+		standoutc(wlist);
 	} else if (top_idx + curs == mark_idx) {
 		a = 1;
 
@@ -1668,11 +1703,7 @@ no_diff:
 		mvwprintw(wlist, y, 0, "%c %c ", diff, type);
 
 	v = addmbs(wlist, f->name);
-
-	if (color)
-		wattrset(wlist, COLOR_PAIR(PAIR_NORMAL));
-	else
-		wstandend(wlist);
+	standendc(wlist);
 
 	if (v)
 		return;
@@ -1731,18 +1762,10 @@ statcol(void)
 	if (dir_change || bmode)
 		return;
 
-	if (color)
-		wattron(wstat, COLOR_PAIR(PAIR_CURSOR));
-	else
-		wstandout(wstat);
-
+	standoutc(wstat);
 	mvwaddch(wstat, 0, 0, '<');
 	mvwaddch(wstat, 1, 0, '>');
-
-	if (color)
-		wattrset(wstat, COLOR_PAIR(PAIR_NORMAL));
-	else
-		wstandend(wstat);
+	standendc(wstat);
 }
 
 static char *
@@ -1766,11 +1789,7 @@ file_stat(struct filediff *f)
 	struct group *gr;
 	mode_t ltyp, rtyp;
 
-	if (color)
-		wattrset(wstat, COLOR_PAIR(PAIR_NORMAL));
-	else
-		wstandend(wstat);
-
+	standendc(wstat);
 	x  = bmode ? 0 : 2;
 	yl = 0;
 	ltyp = f->ltype;
@@ -1963,18 +1982,9 @@ disp_mark(void)
 {
 	werase(wstat);
 	filt_stat();
-
-	if (color)
-		wattron(wstat, COLOR_PAIR(PAIR_CURSOR));
-	else
-		wstandout(wstat);
-
+	standoutc(wstat);
 	mvwaddstr(wstat, 1, 0, gl_mark ? gl_mark : mark->name);
-
-	if (color)
-		wattrset(wstat, COLOR_PAIR(PAIR_NORMAL));
-	else
-		wstandend(wstat);
+	standendc(wstat);
 	wrefresh(wstat);
 }
 
@@ -2345,21 +2355,19 @@ printerr(char *s2, char *s1, ...)
 	}
 
 	wstat_dirty = TRUE;
-
-	if (color)
-		wattrset(wstat, COLOR_PAIR(PAIR_NORMAL));
-
 	werase(wstat);
 	wmove(wstat, s2 ? 0 : 1, 0);
 	va_start(ap, s1);
 	vwprintw(wstat, s1, ap);
 	va_end(ap);
+
 	if (s2) {
 		mvwaddstr(wstat, 1, 0, s2);
 		wrefresh(wstat);
 		getch();
 		werase(wstat);
 	}
+
 	filt_stat();
 	wrefresh(wstat);
 }
@@ -2373,9 +2381,6 @@ dialog(const char *quest, char *answ, char *fmt, ...)
 
 	wstat_dirty = TRUE;
 
-	if (color)
-		wattrset(wstat, COLOR_PAIR(PAIR_NORMAL));
-
 	if (fmt) {
 		werase(wstat);
 		wmove(wstat, 0, 0);
@@ -2386,13 +2391,16 @@ dialog(const char *quest, char *answ, char *fmt, ...)
 
 	mvwaddstr(wstat, 1, 0, quest);
 	wrefresh(wstat);
+
 	do {
 		c = getch();
 		for (s = answ; s && (c2 = *s); s++)
 			if (c == c2)
 				break;
 	} while (s && !c2);
+
 	werase(wstat);
+	filt_stat();
 	wrefresh(wstat);
 	return c;
 }

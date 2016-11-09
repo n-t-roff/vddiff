@@ -13,7 +13,7 @@ LOSS OF USE, DATA OR PROFITS, WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE OR
 OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
 PERFORMANCE OF THIS SOFTWARE.
 ..
-.Dd November 4, 2016
+.Dd November 9, 2016
 .Dt VDDIFF 1
 .Sh NAME
 .Nm vddiff
@@ -426,6 +426,12 @@ In this case files are only deleted
 when they are not writeable.
 .It Oo Ar n Oc Ns Dq Li >>
 Copy from first to second tree.
+.It Dq Li \(ga<<
+Copy all files between the cursor and the local mark (inclusive)
+from second to first tree.
+.It Dq Li \(ga>>
+Copy all files between the cursor and the local mark (inclusive)
+from first to second tree.
 .It Oo Ar n Oc Ns Dq Li dd
 Delete file or directory, which must be present in one tree only.
 (Does not follow symbolic links.)
@@ -441,6 +447,18 @@ Delete file or directory in first tree.
 (Does not follow symbolic links.)
 .It Oo Ar n Oc Ns Dq Li dr
 Delete file or directory in second tree.
+(Does not follow symbolic links.)
+.It Dq Li \(gadd
+Delete all files between the cursor and the local mark (inclusive),
+which must be present in one tree only.
+(Does not follow symbolic links.)
+.It Dq Li \(gadl
+Delete all files between the cursor and the local mark (inclusive)
+in first tree.
+(Does not follow symbolic links.)
+.It Dq Li \(gadr
+Delete all files between the cursor and the local mark (inclusive)
+in second tree.
 (Does not follow symbolic links.)
 .It Dq Li en
 Rename file, which must be present in one tree only.
@@ -461,6 +479,18 @@ files starting from the current selection is set.
 Change permissions of file in first tree.
 .It Oo Ar n Oc Ns Dq Li erp
 Change permissions of file in second tree.
+.It Dq Li \(gaep
+Change permissions of
+all files between the cursor and the local mark (inclusive),
+which must be present in one tree only.
+.It Dq Li \(gaelp
+Change permissions of
+all files between the cursor and the local mark (inclusive)
+in first tree.
+.It Dq Li \(gaerp
+Change permissions of
+all files between the cursor and the local mark (inclusive)
+in second tree.
 .It Oo Ar n Oc Ns Dq Li eu
 Change owner of file, which must be present in one tree only.
 If following symbolic links is not enabled
@@ -480,6 +510,18 @@ files starting from the current selection is set.
 Change owner of file in first tree.
 .It Oo Ar n Oc Ns Dq Li eru
 Change owner of file in second tree.
+.It Dq Li \(gaeu
+Change owner of
+all files between the cursor and the local mark (inclusive)
+which must be present in one tree only.
+.It Dq Li \(gaelu
+Change owner of
+all files between the cursor and the local mark (inclusive)
+in first tree.
+.It Dq Li \(gaeru
+Change owner of
+all files between the cursor and the local mark (inclusive),
+in second tree.
 .It Oo Ar n Oc Ns Dq Li eg
 Change group of file, which must be present in one tree only.
 If following symbolic links is not enabled
@@ -499,6 +541,18 @@ files starting from the current selection is set.
 Change group of file in first tree.
 .It Oo Ar n Oc Ns Dq Li erg
 Change group of file in second tree.
+.It Dq Li \(gaeg
+Change group of
+all files between the cursor and the local mark (inclusive)
+which must be present in one tree only.
+.It Dq Li \(gaelg
+Change group of
+all files between the cursor and the local mark (inclusive)
+in first tree.
+.It Dq Li \(gaerg
+Change group of
+all files between the cursor and the local mark (inclusive),
+in second tree.
 .It Sq Li P
 Create directory
 .Sy ( bmode
@@ -579,7 +633,7 @@ The shell to be used (default
 can be configured with the
 .Sy sh
 option.
-.It Oo Ar n Oc Ns Ao Cm F1 Ac \(en Aq Cm F12
+.It Oo Ar n Ns Li | Ns Cm \(ga Oc Ns Ao Cm F1 Ac \(en Aq Cm F12
 Define string which can be inserted later with this function key
 when entering a
 .Xr sh
@@ -606,12 +660,17 @@ and
 .Dq Li $2
 can be used, as in
 .Dq Li "$ nroff $1 | less" .
+.Pp
 If
 .Ar n
 as a number between 2 and 9 (inclusive) is given,
 the command is applied to
 .Ar n
 files starting from the current selection.
+If
+.Sq Li \(ga
+is prepended instead, the command is applied to
+all files between the cursor and the local mark (inclusive).
 .Pp
 If the string starts with
 .Sq Li \&!
