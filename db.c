@@ -612,6 +612,15 @@ diff_cmp(
 		if      (t1 < t2) return -1;
 		else if (t1 > t2) return  1;
 
+	} else if (sorting == SORTSIZE) {
+		off_t t1, t2;
+
+		t1 = f1->ltype ? f1->lsiz : f1->rsiz;
+		t2 = f2->ltype ? f2->lsiz : f2->rsiz;
+
+		if      (t1 < t2) return -1;
+		else if (t1 > t2) return  1;
+
 	} else if (sorting != SORTMIXED) {
 		short f1_dir = IS_F_DIR(1),
 		      f2_dir = IS_F_DIR(2);

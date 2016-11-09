@@ -261,7 +261,8 @@ next_key:
 			break;
 #endif
 		case '1':
-			c = 0;
+			/* !!! DON'T USE c = 0 !!!
+			 * else "1G" won't work anymore! */
 			break;
 		case 'q':
 			if (dialog(y_n_txt, NULL,
@@ -699,6 +700,17 @@ next_key:
 			ui_srch();
 			break;
 		case 'S':
+			if (*key == 'S') {
+				c = 0;
+
+				if (sorting == SORTSIZE)
+					break;
+
+				sorting = SORTSIZE;
+				rebuild_db(1);
+				break;
+			}
+
 			break;
 		case 'u':
 			if (*key == 'e') {
@@ -885,6 +897,7 @@ static char *helptxt[] = {
        "//		Search file with regular expression",
        "Sd		Sort files with directories on top",
        "Sm		Sort files by name only",
+       "SS		Sort files by size only",
        "St		Sort files by modification time only",
        "H		Put cursor to top line",
        "M		Put cursor on middle line",
