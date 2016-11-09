@@ -41,6 +41,7 @@ struct str_uint {
 
 static int srchcmp(const void *, const void *);
 
+long mark_idx = -1;
 static wchar_t wcbuf[BUF_SIZE];
 static cchar_t ccbuf[BUF_SIZE];
 short noic, magic, nows, scale;
@@ -696,10 +697,11 @@ mbstowchs(WINDOW *w, char *s)
 	static wchar_t ws[2];
 	wchar_t *wc;
 	cchar_t *cc;
-	attr_t a;
-	short cp;
+	attr_t a, *ap;
+	short cp, *cpp;
 
-	wattr_get(w, &a, &cp, NULL);
+	ap = &a; cpp = &cp; /* Silence NetBSD warning */
+	wattr_get(w, ap, cpp, NULL);
 	l = mbstowcs(wcbuf, s, sizeof(wcbuf)/sizeof(*wcbuf));
 
 	if (l == (size_t)-1) {

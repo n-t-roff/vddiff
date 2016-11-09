@@ -519,6 +519,9 @@ They can only be undefined with the
 key (or redefined with the
 .Sq Li m
 key).
+As long as the current directory is not left,
+the marked file is highlighted with either a bold font
+or a blue background.
 .Pp
 If a mark is set, only
 .Aq Cm RIGHT
@@ -916,6 +919,30 @@ Default is 2 (green).
 .It Li unknown_color Ar integer
 Set color for unknown file types.
 Default is 4 (blue).
+.It Li normal_color Ar integer
+Set color for normal text.
+Default is 7 (white).
+.It Li cursor_color Ar foreground Ar background
+Set the cursor color.
+.Ar foreground
+and
+.Ar background
+must be given as integers.
+Default is 0 7 (black on white).
+.It Li mark_color Ar foreground Ar background
+Set color for marks.
+.Ar foreground
+and
+.Ar background
+must be given as integers.
+Default is 7 4 (white on blue).
+.It Li error_color Ar foreground Ar background
+Set color for diff errors.
+.Ar foreground
+and
+.Ar background
+must be given as integers.
+Default is 7 1 (white on red).
 .It Li histsize Ar integer
 Set history size to
 .Ar integer .

@@ -75,7 +75,14 @@ short color_leftonly  = COLOR_CYAN   ,
       color_diff      = COLOR_RED    ,
       color_dir       = COLOR_YELLOW ,
       color_unknown   = COLOR_BLUE   ,
-      color_link      = COLOR_MAGENTA;
+      color_link      = COLOR_MAGENTA,
+      color_normal    = COLOR_WHITE  ,
+      color_cursor_fg = COLOR_BLACK  ,
+      color_cursor_bg = COLOR_WHITE  ,
+      color_error_fg  = COLOR_WHITE  ,
+      color_error_bg  = COLOR_RED    ,
+      color_mark_fg   = COLOR_WHITE  ,
+      color_mark_bg   = COLOR_BLUE   ;
 unsigned top_idx, curs, statw;
 
 #ifdef HAVE_CURSES_WCH
@@ -123,15 +130,16 @@ build_ui(void)
 
 	if (color) {
 		start_color();
-		init_pair(PAIR_LEFTONLY , color_leftonly , COLOR_BLACK);
-		init_pair(PAIR_RIGHTONLY, color_rightonly, COLOR_BLACK);
-		init_pair(PAIR_DIFF     , color_diff     , COLOR_BLACK);
-		init_pair(PAIR_DIR      , color_dir      , COLOR_BLACK);
-		init_pair(PAIR_UNKNOWN  , color_unknown  , COLOR_BLACK);
-		init_pair(PAIR_LINK     , color_link     , COLOR_BLACK);
-		init_pair(PAIR_CURSOR   , COLOR_BLACK    , COLOR_WHITE);
-		init_pair(PAIR_ERROR    , COLOR_WHITE    , COLOR_RED  );
-		init_pair(PAIR_NORMAL   , COLOR_WHITE    , COLOR_BLACK);
+		init_pair(PAIR_LEFTONLY , color_leftonly , COLOR_BLACK    );
+		init_pair(PAIR_RIGHTONLY, color_rightonly, COLOR_BLACK    );
+		init_pair(PAIR_DIFF     , color_diff     , COLOR_BLACK    );
+		init_pair(PAIR_DIR      , color_dir      , COLOR_BLACK    );
+		init_pair(PAIR_UNKNOWN  , color_unknown  , COLOR_BLACK    );
+		init_pair(PAIR_LINK     , color_link     , COLOR_BLACK    );
+		init_pair(PAIR_NORMAL   , color_normal   , COLOR_BLACK    );
+		init_pair(PAIR_CURSOR   , color_cursor_fg, color_cursor_bg);
+		init_pair(PAIR_ERROR    , color_error_fg , color_error_bg );
+		init_pair(PAIR_MARK     , color_mark_fg  , color_mark_bg  );
 	}
 
 	cbreak();
@@ -1521,6 +1529,13 @@ disp_curs(int a)
 			wattron(wlist, COLOR_PAIR(PAIR_CURSOR));
 		else
 			wstandout(wlist);
+	} else if (top_idx + curs == mark_idx) {
+		a = 1;
+
+		if (color)
+			wattron(wlist, COLOR_PAIR(PAIR_MARK));
+		else
+			wattron(wlist, A_BOLD);
 	}
 
 	disp_line(curs, top_idx + curs, a);
@@ -1548,8 +1563,20 @@ disp_list(void)
 	for (y = 0, i = top_idx; y < listh && i < db_num; y++, i++) {
 		if (y == curs)
 			disp_curs(1);
-		else
-			disp_line(y, i, 0);
+		else {
+			int j = 0;
+
+			if (top_idx + y == mark_idx) {
+				j = 1;
+
+				if (color)
+					wattron(wlist, COLOR_PAIR(PAIR_MARK));
+				else
+					wattron(wlist, A_BOLD);
+			}
+
+			disp_line(y, i, j);
+		}
 	}
 
 exit:
@@ -1557,7 +1584,11 @@ exit:
 }
 
 static void
-disp_line(unsigned y, unsigned i,
+disp_line(
+    /* display line */
+    unsigned y,
+    /* DB index */
+    unsigned i,
     /* 1: Is cursor line */
     int info)
 {
@@ -1914,15 +1945,9 @@ set_mark(void)
 	if (mark)
 		clr_mark();
 
-	f = db_list[top_idx + curs];
+	mark_idx = top_idx + curs;
+	f = db_list[mark_idx];
 	mode_t mode = f->ltype ? f->ltype : f->rtype;
-
-	/*
-	if (f->ltype && f->rtype) {
-		printerr(NULL, "Both files present");
-		return;
-	}
-	*/
 
 	if (!S_ISDIR(mode) && !(S_ISREG(mode))) {
 		printerr(NULL, "Not a directory or regular file");
@@ -1962,12 +1987,19 @@ clr_mark(void)
 		free(mark_rnam);
 		free(mark);
 		gl_mark = NULL;
+	} else if (mark_idx >= top_idx && mark_idx < top_idx + listh &&
+	    mark_idx != top_idx + curs) {
+		disp_line(mark_idx - top_idx, mark_idx, 0);
+		wnoutrefresh(wlist);
 	}
 
+
+	mark_idx = -1;
 	mark = NULL;
 	werase(wstat);
 	filt_stat();
-	wrefresh(wstat);
+	wnoutrefresh(wstat);
+	doupdate();
 }
 
 void
@@ -1975,6 +2007,7 @@ mark_global(void)
 {
 	struct filediff *m;
 
+	mark_idx = -1;
 	m = malloc(sizeof(struct filediff));
 	*m = *mark;
 	mark = m;

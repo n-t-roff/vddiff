@@ -2,6 +2,7 @@
 	fkey_flags[i] & 1 ? '!' : \
 	fkey_flags[i] & 2 ? '#' : '$'
 
+extern long mark_idx;
 extern short noic, magic, nows, scale;
 extern short regex;
 extern unsigned short subtree;

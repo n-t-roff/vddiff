@@ -39,7 +39,7 @@ extern char *yytext;
 %token DIFFTOOL FILES DIRS MIXED FOLLOW MONO NOEQUAL LEFT_COLOR RIGHT_COLOR
 %token DIFF_COLOR DIR_COLOR UNKNOWN_COLOR LINK_COLOR REAL_DIFF RECURSIVE
 %token VIEWTOOL EXT BG FKEY BMODE HISTSIZE SKIPEXT NOIC MAGIC NOWS SCALE
-%token SHELL SH
+%token SHELL SH NORMAL_COLOR CURSOR_COLOR ERROR_COLOR MARK_COLOR
 %token <str>     STRING
 %token <integer> INTEGER
 %%
@@ -61,28 +61,35 @@ option:
 	                              , 0, NULL
 #endif
 	                              ); }
-	| FKEY INTEGER STRING   { set_fkey($2, $3)                        ; }
-	| FILES                 { sorting = FILESFIRST                    ; }
-	| MIXED                 { sorting = SORTMIXED                     ; }
-	| FOLLOW                { followlinks = 1;                        ; }
-	| MONO                  { color = 0                               ; }
-	| NOEQUAL               { noequal = 1                             ; }
-	| REAL_DIFF             { real_diff = 1                           ; }
-	| RECURSIVE             { recursive = 1                           ; }
-	| LEFT_COLOR INTEGER    { color_leftonly  = $2                    ; }
-	| RIGHT_COLOR INTEGER   { color_rightonly = $2                    ; }
-	| DIFF_COLOR INTEGER    { color_diff      = $2                    ; }
-	| DIR_COLOR INTEGER     { color_dir       = $2                    ; }
-	| UNKNOWN_COLOR INTEGER { color_unknown   = $2                    ; }
-	| LINK_COLOR INTEGER    { color_link      = $2                    ; }
-	| HISTSIZE INTEGER      { histsize        = $2                    ; }
-	| NOIC                  { noic  = 1                               ; }
-	| MAGIC                 { magic = 1                               ; }
-	| NOWS                  { nows  = 1                               ; }
-	| SCALE                 { scale = 1                               ; }
-	| BMODE                 { bmode = 1                               ; }
-	| SHELL STRING          { ishell = $2                             ; }
-	| SH STRING             { nishell = $2                            ; }
+	| FKEY INTEGER STRING          { set_fkey($2, $3)                 ; }
+	| FILES                        { sorting = FILESFIRST             ; }
+	| MIXED                        { sorting = SORTMIXED              ; }
+	| FOLLOW                       { followlinks = 1;                 ; }
+	| MONO                         { color = 0                        ; }
+	| NOEQUAL                      { noequal = 1                      ; }
+	| REAL_DIFF                    { real_diff = 1                    ; }
+	| RECURSIVE                    { recursive = 1                    ; }
+	| LEFT_COLOR INTEGER           { color_leftonly  = $2             ; }
+	| RIGHT_COLOR INTEGER          { color_rightonly = $2             ; }
+	| DIFF_COLOR INTEGER           { color_diff      = $2             ; }
+	| DIR_COLOR INTEGER            { color_dir       = $2             ; }
+	| UNKNOWN_COLOR INTEGER        { color_unknown   = $2             ; }
+	| LINK_COLOR INTEGER           { color_link      = $2             ; }
+	| NORMAL_COLOR INTEGER         { color_normal    = $2             ; }
+	| CURSOR_COLOR INTEGER INTEGER { color_cursor_fg = $2             ;
+	                                 color_cursor_bg = $3             ; }
+	| ERROR_COLOR INTEGER INTEGER  { color_error_fg  = $2             ;
+	                                 color_error_bg  = $3             ; }
+	| MARK_COLOR INTEGER INTEGER   { color_mark_fg   = $2             ;
+	                                 color_mark_bg   = $3             ; }
+	| HISTSIZE INTEGER             { histsize        = $2             ; }
+	| NOIC                         { noic  = 1                        ; }
+	| MAGIC                        { magic = 1                        ; }
+	| NOWS                         { nows  = 1                        ; }
+	| SCALE                        { scale = 1                        ; }
+	| BMODE                        { bmode = 1                        ; }
+	| SHELL STRING                 { ishell = $2                      ; }
+	| SH STRING                    { nishell = $2                     ; }
 	;
 %%
 void

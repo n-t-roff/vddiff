@@ -7,6 +7,7 @@
 #define PAIR_CURSOR    7
 #define PAIR_ERROR     8
 #define PAIR_NORMAL    9
+#define PAIR_MARK      10
 
 struct ui_state {
 	char *lpth, *rpth;
@@ -36,7 +37,14 @@ extern short color_leftonly ,
              color_diff     ,
              color_dir      ,
              color_unknown  ,
-             color_link     ;
+             color_link     ,
+             color_normal   ,
+             color_cursor_fg,
+             color_cursor_bg,
+             color_error_fg ,
+             color_error_bg ,
+             color_mark_fg  ,
+             color_mark_bg  ;
 extern unsigned top_idx, curs, statw;
 extern WINDOW *wlist;
 extern WINDOW *wstat;
