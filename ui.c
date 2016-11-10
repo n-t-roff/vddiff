@@ -68,6 +68,8 @@ static void help_up(unsigned short);
 static void set_mark(void);
 static void disp_mark(void);
 static void yank_name(int);
+static void scroll_up(unsigned, bool);
+static void scroll_down(unsigned, bool);
 
 short color = 1;
 short color_leftonly  = COLOR_CYAN   ,
@@ -106,8 +108,6 @@ static struct history sh_cmd_hist;
 #ifdef NCURSES_MOUSE_VERSION
 static void proc_mevent(void);
 # if NCURSES_MOUSE_VERSION >= 2
-static void scroll_up(unsigned);
-static void scroll_down(unsigned);
 static void help_mevent(void);
 # endif
 
@@ -350,6 +350,18 @@ next_key:
 		case CERASE:
 			c = 0;
 			page_up();
+			break;
+		case CTRL('e'):
+			scroll_down(1, FALSE);
+			break;
+		case CTRL('y'):
+			scroll_up(1, FALSE);
+			break;
+		case CTRL('d'):
+			scroll_down(listh/2, TRUE);
+			break;
+		case CTRL('u'):
+			scroll_up(listh/2, TRUE);
 			break;
 		case 'h':
 		case '?':
@@ -907,6 +919,10 @@ static char *helptxt[] = {
        "z<ENTER>	Put selected line to top of screen",
        "z.		Center selected file",
        "z-		Put selected line to bottom of screen",
+       "^E		Scroll one line down",
+       "^Y		Scroll one line up",
+       "^D		Scroll half screen down",
+       "^U		Scroll half screen up",
        "!, n		Toggle display of equal files",
        "c		Toggle showing only directories and really different files",
        "&		Toggle display of files which are on one side only",
@@ -1164,9 +1180,9 @@ proc_mevent(void)
 			action(0, 3, 0, FALSE);
 # if NCURSES_MOUSE_VERSION >= 2
 	} else if (mevent.bstate & BUTTON4_PRESSED) {
-		scroll_up(3);
+		scroll_up(3, FALSE);
 	} else if (mevent.bstate & BUTTON5_PRESSED) {
-		scroll_down(3);
+		scroll_down(3, FALSE);
 # endif
 	}
 }
@@ -1488,14 +1504,13 @@ curs_up(void)
 	refr_scr();
 }
 
-#if NCURSES_MOUSE_VERSION >= 2
 static void
-scroll_up(unsigned num)
+scroll_up(unsigned num, bool keepscrpos)
 {
 	unsigned move_curs, y, i;
 
 	if (!top_idx) {
-		if (!curs) {
+		if (!curs || keepscrpos) {
 			printerr(NULL, "At top");
 			return;
 		}
@@ -1515,9 +1530,11 @@ scroll_up(unsigned num)
 	if (top_idx < num)
 		num = top_idx;
 
-	top_idx -= num;
+	if (keepscrpos) {
+		disp_curs(0);
+		move_curs = 1;
 
-	if (curs + num >= listh) {
+	} else if (curs + num >= listh) {
 		disp_curs(0);
 		curs = listh - 1;
 		move_curs = 1;
@@ -1527,6 +1544,7 @@ scroll_up(unsigned num)
 	}
 
 	wscrl(wlist, -num);
+	top_idx -= num;
 
 	for (y = 0, i = top_idx; y < num; y++, i++)
 		disp_line(y, i, 0);
@@ -1538,9 +1556,9 @@ scroll_up(unsigned num)
 }
 
 static void
-scroll_down(unsigned num)
+scroll_down(unsigned num, bool keepscrpos)
 {
-	unsigned move_curs, y, i;
+	unsigned move_curs, y, i, ti;
 
 	if (top_idx >= db_num - 1) {
 		printerr(NULL, "At bottom");
@@ -1550,9 +1568,16 @@ scroll_down(unsigned num)
 	if (top_idx + num >= db_num)
 		num = db_num - 1 - top_idx;
 
-	top_idx += num;
+	ti = top_idx + num;
 
-	if (curs < num) {
+	if (keepscrpos) {
+		disp_curs(0);
+		move_curs = 1;
+
+		if (ti + curs >= db_num)
+			curs = db_num - 1 - ti;
+
+	} else if (curs < num) {
 		disp_curs(0);
 		curs = 0;
 		move_curs = 1;
@@ -1562,6 +1587,7 @@ scroll_down(unsigned num)
 	}
 
 	wscrl(wlist, num);
+	top_idx = ti;
 
 	for (y = listh - num, i = top_idx + y; y < listh && i < db_num;
 	    y++, i++)
@@ -1572,7 +1598,6 @@ scroll_down(unsigned num)
 
 	refr_scr();
 }
-#endif
 
 static void
 disp_curs(int a)
