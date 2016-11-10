@@ -614,6 +614,13 @@ diff_cmp(
 
 	} else if (sorting == SORTSIZE) {
 		off_t t1, t2;
+		short f1_dir = IS_F_DIR(1),
+		      f2_dir = IS_F_DIR(2);
+		short dirsort = f1_dir && !f2_dir ? -1 :
+		                f2_dir && !f1_dir ?  1 : 0;
+
+		if (dirsort)
+			return dirsort;
 
 		t1 = f1->ltype ? f1->lsiz : f1->rsiz;
 		t2 = f2->ltype ? f2->lsiz : f2->rsiz;
