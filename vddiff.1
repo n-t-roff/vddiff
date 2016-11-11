@@ -13,7 +13,7 @@ LOSS OF USE, DATA OR PROFITS, WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE OR
 OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
 PERFORMANCE OF THIS SOFTWARE.
 ..
-.Dd November 10, 2016
+.Dd November 11, 2016
 .Dt VDDIFF 1
 .Sh NAME
 .Nm vddiff
@@ -108,6 +108,14 @@ and really different files.
 Use
 .Dq Li diff $1 $2 | less
 as diff tool.
+(If a specific diff tool (other than
+.Li vim -d )
+should be used in general, it is recommended
+to configure it with the RC file option
+.Sy difftool ,
+see section
+.Sx CONFIGURATION FILE ~/.vddiffrc
+below.)
 .It Fl E
 Use extended regular expressions.
 .It Fl e
@@ -812,7 +820,7 @@ These symbols are expanded to the respective filename.
 Other possible diff tools are
 .Xr colordiff 1 ,
 .Xr mgdiff 1 ,
-and
+or
 .Xr tkxcd 1 .
 .It Li difftool bg Ar string
 Start
@@ -881,6 +889,33 @@ after the keyword
 Start
 .Ar string
 as a background process.
+.It Li alias Ar name Ar string
+If a pipe of tools (like the nroff pipe above)
+or a command with options (like e.g.
+.Dq Li mplayer \-idx \-\-
+should be applied to many file types,
+an alias
+.Ar name
+can be defined for such a
+.Ar string .
+The
+.Sy ext
+command can then use this alias
+.Ar name
+instead the full command
+.Ar string ,
+for example
+.Bd -literal -offset indent
+alias mandoc  "tbl $1 | neqn | nroff -mandoc | less"
+alias mplayer "mplayer -idx --"
+
+ext "1" mandoc
+ext "2" mandoc
+ext "3" mandoc
+
+ext mts mplayer
+ext ts  mplayer
+.Ed
 .It Li skipext Ar extension
 When checking a filename extension skip
 .Ar extension

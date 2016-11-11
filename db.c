@@ -61,6 +61,7 @@ void *scan_db;
 void *name_db;
 void *skipext_db;
 void *uz_path_db;
+void *alias_db;
 
 static void *curs_db;
 static void *ext_db;
@@ -84,6 +85,7 @@ db_init(void)
 	uz_ext_db  = db_new(name_cmp);
 	skipext_db = db_new(name_cmp);
 	uz_path_db = db_new(name_cmp);
+	alias_db   = db_new(name_cmp);
 }
 
 static void *
@@ -102,17 +104,22 @@ db_new(int (*compare)(union bst_val, union bst_val))
  * ptr DB *
  **************/
 
-#ifdef HAVE_LIBAVLBST
-void
-ptr_db_add(void **db, char *key, void *dat, int br, struct bst_node *n)
-{
-	avl_add_at(*db, (union bst_val)(void *)key,
-	    (union bst_val)(void *)dat, br, n);
-}
-#else
+/* 0: Node found */
+
 int
 ptr_db_add(void **db, char *key, void *dat)
 {
+#ifdef HAVE_LIBAVLBST
+	struct bst_node *n;
+	int br;
+
+	if (!(br = bst_srch(*db, (union bst_val)(void *)key, &n)))
+		return 0; /* was already in DB */
+
+	avl_add_at(*db, (union bst_val)(void *)key,
+	    (union bst_val)(void *)dat, br, n);
+	return 1; /* was not in DB, now added */
+#else
 	struct ptr_db_ent *pe;
 	void *vp;
 
@@ -126,14 +133,20 @@ ptr_db_add(void **db, char *key, void *dat)
 		return 0; /* free mem */
 	} else
 		return 1; /* don't free mem */
-}
 #endif
+}
+
+/* 0: Node found */
 
 int
 ptr_db_srch(void **db, char *key, void **dat, void **n)
 {
 #ifdef HAVE_LIBAVLBST
 	int i;
+	struct bst_node *n1;
+
+	if (!n)
+		n = (void **)&n1;
 
 	if (!(i = bst_srch(*db, (union bst_val)(void *)key,
 	    (struct bst_node **)n)) && dat)
@@ -317,9 +330,17 @@ db_def_ext(char *ext, char *_tool, tool_flags_t flags)
 		printf("Error: Tool for extension \"%s\" set twice\n", ext);
 		exit(1);
 	} else {
+		char *s;
+
 		t = malloc(sizeof(struct tool));
 		t->tool = NULL; /* set_tool makes a free() */
 		t->args = NULL;
+
+		if (!ptr_db_srch(&alias_db, _tool, (void **)&s, NULL)) {
+			free(_tool);
+			_tool = strdup(s);
+		}
+
 		set_tool(t, _tool, flags);
 #ifdef HAVE_LIBAVLBST
 		avl_add(ext_db, (union bst_val)(void *)ext,

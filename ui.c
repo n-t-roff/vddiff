@@ -1543,7 +1543,7 @@ scroll_up(unsigned num, bool keepscrpos)
 		move_curs = 0;
 	}
 
-	wscrl(wlist, -num);
+	wscrl(wlist, -((int)num));
 	top_idx -= num;
 
 	for (y = 0, i = top_idx; y < num; y++, i++)
@@ -2324,11 +2324,7 @@ enter_dir(char *name, char *rnam, bool lzip, bool rzip)
 			if (!getcwd(rpath, sizeof rpath))
 				printerr(strerror(errno), "getcwd failed");
 
-			ptr_db_add(&uz_path_db, strdup(name), strdup(rpath)
-#ifdef HAVE_LIBAVLBST
-			    , 0, NULL
-#endif
-			    );
+			ptr_db_add(&uz_path_db, strdup(name), strdup(rpath));
 		} else if (*name == '.' && name[1] == '.' && !name[2] &&
 		    !ptr_db_srch(&uz_path_db, rpath, (void **)&rnam,
 		    (void **)&n)) {

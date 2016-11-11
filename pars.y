@@ -40,6 +40,7 @@ extern char *yytext;
 %token DIFF_COLOR DIR_COLOR UNKNOWN_COLOR LINK_COLOR REAL_DIFF RECURSIVE
 %token VIEWTOOL EXT BG FKEY BMODE HISTSIZE SKIPEXT NOIC MAGIC NOWS SCALE
 %token SHELL SH NORMAL_COLOR CURSOR_COLOR ERROR_COLOR MARK_COLOR BG_COLOR
+%token ALIAS
 %token <str>     STRING
 %token <integer> INTEGER
 %%
@@ -91,6 +92,7 @@ option:
 	| BMODE                        { bmode = 1                        ; }
 	| SHELL STRING                 { ishell = $2                      ; }
 	| SH STRING                    { nishell = $2                     ; }
+	| ALIAS STRING STRING          { ptr_db_add(&alias_db, $2, $3)    ; }
 	;
 %%
 void

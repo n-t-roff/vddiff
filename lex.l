@@ -56,6 +56,7 @@ scale                   { rc_col += yyleng; return SCALE        ; }
 bmode			{ rc_col += yyleng; return BMODE        ; }
 shell			{ rc_col += yyleng; return SHELL        ; }
 sh			{ rc_col += yyleng; return SH           ; }
+alias			{ rc_col += yyleng; return ALIAS        ; }
 [0-9]+			{ rc_col += yyleng;
 			  yylval.integer = atoi(yytext);
 			  return INTEGER; }
