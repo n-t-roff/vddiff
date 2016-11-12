@@ -91,11 +91,15 @@ Second column (or first column in
 .Sy bmode ) :
 File type
 .Bl -column -offset indent ".Sq Li !"
-.It So Li / Sc Ta Directory
+.It So Li /   Sc Ta Directory
 .It So Li " " Sc Ta "Plain file"
-.It So Li @ Sc Ta "Symbolic link"
-.It So Li ? Sc Ta "Any other file type"
-.It So Li ! Sc Ta "Different file type"
+.It So Li @   Sc Ta "Symbolic link"
+.It So Li c   Sc Ta "Character device"
+.It So Li b   Sc Ta "Block device"
+.It So Li =   Sc Ta Socket
+.It So Li |   Sc Ta FIFO
+.It So Li ?   Sc Ta "Unknown file type"
+.It So Li !   Sc Ta "Different file type"
 .El
 .Sh OPTIONS
 .Bl -tag -width 12n

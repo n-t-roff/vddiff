@@ -27,6 +27,9 @@ PERFORMANCE OF THIS SOFTWARE.
 #include <errno.h>
 #include <regex.h>
 #include <time.h>
+#ifdef USE_SYS_MKDEV_H
+# include <sys/mkdev.h>
+#endif
 #include "compat.h"
 #include "diff.h"
 #include "main.h"
@@ -126,11 +129,10 @@ build_ui(void)
 
 	initscr();
 
-	if (color && !has_colors())
+	if (color && (!has_colors() || start_color() == ERR))
 		color = 0;
 
 	if (color) {
-		start_color();
 		init_pair(PAIR_LEFTONLY , color_leftonly , color_bg       );
 		init_pair(PAIR_RIGHTONLY, color_rightonly, color_bg       );
 		init_pair(PAIR_DIFF     , color_diff     , color_bg       );
@@ -1719,7 +1721,12 @@ no_diff:
 		if (diff != '!')
 			lnk = f->llink ? f->llink : f->rlink;
 	} else if (mode) {
-		type = '?';
+		if      (S_ISCHR(mode))  type = 'c';
+		else if (S_ISBLK(mode))  type = 'b';
+		else if (S_ISSOCK(mode)) type = '=';
+		else if (S_ISFIFO(mode)) type = '|';
+		else                     type = '?';
+
 		if (!color_id)
 			color_id = PAIR_UNKNOWN;
 	}
@@ -1913,10 +1920,23 @@ file_stat(struct filediff *f)
 	x += w1 > w2 ? w1 : w2;
 	x++;
 
-	if (ltyp && !S_ISDIR(ltyp))
-		w1 = getfilesize(lbuf, sizeof lbuf, f->lsiz);
-	if (rtyp && !S_ISDIR(rtyp))
-		w2 = getfilesize(rbuf, sizeof rbuf, f->rsiz);
+	if (ltyp && !S_ISDIR(ltyp)) {
+		if (S_ISCHR(ltyp) || S_ISBLK(ltyp))
+			w1 = snprintf(lbuf, sizeof lbuf, "%lu, %lu",
+			    (unsigned long)major(f->lrdev),
+			    (unsigned long)minor(f->lrdev));
+		else
+			w1 = getfilesize(lbuf, sizeof lbuf, f->lsiz);
+	}
+
+	if (rtyp && !S_ISDIR(rtyp)) {
+		if (S_ISCHR(rtyp) || S_ISBLK(rtyp))
+			w1 = snprintf(rbuf, sizeof rbuf, "%lu, %lu",
+			    (unsigned long)major(f->rrdev),
+			    (unsigned long)minor(f->rrdev));
+		else
+			w2 = getfilesize(rbuf, sizeof rbuf, f->rsiz);
+	}
 
 	w = w1 > w2 ? w1 : w2;
 

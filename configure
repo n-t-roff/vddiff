@@ -403,6 +403,38 @@ EOT
 
 	LIB_AVLBST=""
 }
+check_major_minor () {
+	check_for "major(3), minor(3)"
+
+	cat <<EOT >$TMPC
+#include <sys/types.h>
+int
+main() {
+	(void)major(0);
+	(void)minor(0);
+	return 0;
+}
+EOT
+	gen_mk
+	compile
+	test_result && return
+
+	check_for "major(3), minor(3) using <sys/mkdev.h>"
+
+	cat <<EOT >$TMPC
+#include <sys/types.h>
+#include <sys/mkdev.h>
+int
+main() {
+	(void)major(0);
+	(void)minor(0);
+	return 0;
+}
+EOT
+	gen_mk
+	compile
+	test_result && DEFS="$DEFS -DUSE_SYS_MKDEV_H"
+}
 	[ ! -s compat.h ] && rm compat.h
 OUTMK=Makefile
 INMK=${OUTMK}.in
@@ -423,6 +455,7 @@ check_lib_curses
 check_curses_wch
 check_mkdtemp
 check_libavlbst
+check_major_minor
 
 gen_mk
 rm -f $TMPNAM*

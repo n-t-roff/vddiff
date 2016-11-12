@@ -6,6 +6,7 @@ struct filediff {
 	gid_t   lgid,   rgid;
 	off_t   lsiz,   rsiz;
 	time_t  lmtim,  rmtim;
+	dev_t   lrdev,  rrdev;
 	char    diff;
 };
 

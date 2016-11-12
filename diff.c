@@ -23,6 +23,7 @@ PERFORMANCE OF THIS SOFTWARE.
 #include <errno.h>
 #include <string.h>
 #include <regex.h>
+#include <time.h>
 #include "compat.h"
 #include "main.h"
 #include "ui.h"
@@ -300,6 +301,7 @@ free_a:
 			diff->lgid  = stat1.st_gid;
 			diff->lsiz  = stat1.st_size;
 			diff->lmtim = stat1.st_mtim.tv_sec;
+			diff->lrdev = stat1.st_rdev;
 
 			if (S_ISLNK(stat1.st_mode))
 				lsiz1 = stat1.st_size;
@@ -313,6 +315,7 @@ free_a:
 			diff->rgid  = stat2.st_gid;
 			diff->rsiz  = stat2.st_size;
 			diff->rmtim = stat2.st_mtim.tv_sec;
+			diff->rrdev = stat2.st_rdev;
 
 			if (S_ISLNK(stat2.st_mode))
 				lsiz2 = stat2.st_size;
@@ -479,6 +482,7 @@ right_tree:
 			diff->rgid  = stat2.st_gid;
 			diff->rsiz  = stat2.st_size;
 			diff->rmtim = stat2.st_mtim.tv_sec;
+			diff->rrdev = stat2.st_rdev;
 
 			if (S_ISLNK(stat2.st_mode))
 				lsiz2 = stat2.st_size;
