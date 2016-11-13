@@ -24,6 +24,7 @@ char *saveselname(void);
 unsigned findlistname(char *);
 void re_sort_list(void);
 void filt_stat(void);
+void markc(WINDOW *);
 void standoutc(WINDOW *);
 void standendc(WINDOW *);
 void anykey(void);

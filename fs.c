@@ -540,7 +540,7 @@ rebuild_db(
 	if (mark && !gl_mark)
 		mark_global();
 
-	diff_db_free();
+	diff_db_free(FALSE);
 	build_diff_db(bmode ? 1 : subtree);
 
 	if (mode && name) {

@@ -621,7 +621,7 @@ re_sort_list(void)
 	char *name;
 
 	name = saveselname();
-	diff_db_sort();
+	diff_db_sort(FALSE);
 
 	if (name) {
 		center(findlistname(name));
@@ -659,10 +659,19 @@ filt_stat(void)
 }
 
 void
+markc(WINDOW *w)
+{
+	if (color)
+		wattrset(w, COLOR_PAIR(PAIR_MARK));
+	else
+		wattrset(w, A_BOLD | A_UNDERLINE);
+}
+
+void
 standoutc(WINDOW *w)
 {
 	if (color)
-		wattron(w, COLOR_PAIR(PAIR_CURSOR));
+		wattrset(w, COLOR_PAIR(PAIR_CURSOR));
 	else
 		wstandout(w);
 }

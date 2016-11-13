@@ -40,6 +40,7 @@ PERFORMANCE OF THIS SOFTWARE.
 #include "fs.h"
 #include "ed.h"
 #include "ui2.h"
+#include "tc.h"
 
 static void ui_ctrl(void);
 static void page_down(void);
@@ -99,7 +100,8 @@ char *sh_str[FKEY_NUM];
 char *fkey_cmd[FKEY_NUM];
 unsigned fkey_flags[FKEY_NUM];
 
-static unsigned listw, listh, help_top;
+static unsigned listw, help_top;
+unsigned listh;
 WINDOW *wlist;
 WINDOW *wstat;
 static struct ui_state *ui_stack;
@@ -159,7 +161,9 @@ build_ui(void)
 #endif
 	set_win_dim();
 
-	if (!(wlist = subwin(stdscr, listh, listw, 0, 0))) {
+	if (twocols)
+		open2cwins();
+	else if (!(wlist = subwin(stdscr, listh, listw, 0, 0))) {
 		printf("subwin failed\n");
 		return;
 	}
@@ -170,8 +174,17 @@ build_ui(void)
 	}
 
 	if (scrollen) {
-		idlok(wlist, TRUE);
-		scrollok(wlist, TRUE);
+		if (twocols) {
+			idlok(wllst, TRUE);
+			scrollok(wllst, TRUE);
+			idlok(wrlst, TRUE);
+			scrollok(wrlst, TRUE);
+			idlok(wmid, TRUE);
+			scrollok(wmid, TRUE);
+		} else {
+			idlok(wlist, TRUE);
+			scrollok(wlist, TRUE);
+		}
 	}
 
 do_diff:
@@ -196,7 +209,13 @@ do_diff:
 		llen = 1;
 	}
 
-	build_diff_db(bmode ? 1 : 3);
+	if (bmode)
+		build_diff_db(1);
+	else if (fmode) {
+		build_diff_db(1);
+		build_diff_db(2);
+	} else
+		build_diff_db(3);
 
 	if (qdiff)
 		return;
@@ -214,10 +233,16 @@ do_diff:
 
 	/* if bmode: remove tmp_dirs */
 	uz_exit();
-	diff_db_free();
+	diff_db_free(FALSE);
 exit:
+	if (twocols) {
+		delwin(wllst);
+		delwin(wrlst);
+		delwin(wmid);
+	} else
+		delwin(wlist);
+
 	delwin(wstat);
-	delwin(wlist);
 	erase();
 	refresh();
 	endwin();
@@ -1608,11 +1633,7 @@ disp_curs(int a)
 		standoutc(wlist);
 	} else if (top_idx + curs == mark_idx) {
 		a = 1;
-
-		if (color)
-			wattron(wlist, COLOR_PAIR(PAIR_MARK));
-		else
-			wattron(wlist, A_BOLD);
+		markc(wlist);
 	}
 
 	disp_line(curs, top_idx + curs, a);
@@ -1645,11 +1666,7 @@ disp_list(void)
 
 			if (top_idx + y == mark_idx) {
 				j = 1;
-
-				if (color)
-					wattron(wlist, COLOR_PAIR(PAIR_MARK));
-				else
-					wattron(wlist, A_BOLD);
+				markc(wlist);
 			}
 
 			disp_line(y, i, j);
@@ -2368,7 +2385,7 @@ enter_dir(char *name, char *rnam, bool lzip, bool rzip)
 		top_idx = 0;
 		curs = 0;
 
-		diff_db_free();
+		diff_db_free(FALSE);
 		scan_subdir(NULL, NULL, 1);
 
 		if (n) {
@@ -2469,7 +2486,10 @@ ui_resize(void)
 	if (curs >= listh)
 		curs = listh -1;
 
-	wresize(wlist, listh, listw);
+	if (twocols);
+	else
+		wresize(wlist, listh, listw);
+
 	delwin(wstat);
 
 	if (!(wstat = subwin(stdscr, 2, statw, LINES-2, 0))) {
@@ -2483,6 +2503,13 @@ ui_resize(void)
 static void
 set_win_dim(void)
 {
-	listw = statw = COLS;
+	statw = COLS;
 	listh = LINES - 2;
+
+	if (twocols) {
+		rlstx = COLS / 2;
+		llstw = rlstx - 1;
+		rlstw = COLS - rlstx;
+	} else
+		listw = COLS;
 }

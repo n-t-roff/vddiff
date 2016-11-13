@@ -54,8 +54,9 @@ static void mk_list(const void *, const VISIT, const int);
 #endif
 
 enum sorting sorting;
-unsigned db_num;
-struct filediff **db_list;
+unsigned db_num, db2_num;
+struct filediff **db_list, **db2_list;
+static struct filediff **cur_list;
 short noequal, real_diff;
 void *scan_db;
 void *name_db;
@@ -66,12 +67,14 @@ void *alias_db;
 static void *curs_db;
 static void *ext_db;
 static void *uz_ext_db;
-static unsigned db_idx, tot_db_num;
+static unsigned db_idx, tot_db_num, tot_db2_num;
 
 #ifdef HAVE_LIBAVLBST
 static struct bst diff_db = { NULL, diff_cmp };
+static struct bst diff_db2 = { NULL, diff_cmp };
 #else
 static void *diff_db;
+static void *diff_db2;
 #endif
 
 #ifdef HAVE_LIBAVLBST
@@ -514,7 +517,7 @@ diff_db_store(struct ui_state *st)
 void
 diff_db_restore(struct ui_state *st)
 {
-	diff_db_free();
+	diff_db_free(FALSE);
 #ifdef HAVE_LIBAVLBST
 	diff_db.root = st->bst;
 #else
@@ -525,19 +528,39 @@ diff_db_restore(struct ui_state *st)
 }
 
 void
-diff_db_sort(void)
+diff_db_sort(bool b)
 {
-	if (!tot_db_num)
-		return;
-	if (!db_list)
-		db_list = malloc(tot_db_num * sizeof(struct filediff *));
-	db_idx = 0;
+	if (b) {
+		if (!tot_db2_num)
+			return;
+
+		if (!db2_list)
+			cur_list = db2_list =
+			    malloc(tot_db2_num * sizeof(struct filediff *));
+
+		db_idx = 0;
 #ifdef HAVE_LIBAVLBST
-	mk_list(diff_db.root);
+		mk_list(diff_db2.root);
 #else
-	twalk(diff_db, mk_list);
+		twalk(diff_db2, mk_list);
 #endif
-	db_num = db_idx;
+		db_num = db_idx;
+	} else {
+		if (!tot_db_num)
+			return;
+
+		if (!db_list)
+			cur_list = db_list =
+			    malloc(tot_db_num * sizeof(struct filediff *));
+
+		db_idx = 0;
+#ifdef HAVE_LIBAVLBST
+		mk_list(diff_db.root);
+#else
+		twalk(diff_db, mk_list);
+#endif
+		db_num = db_idx;
+	}
 }
 
 #define PROC_DIFF_NODE() \
@@ -560,7 +583,7 @@ diff_db_sort(void)
 	      (!nosingle || \
 	       (f->ltype && f->rtype))))) \
 	{ \
-		db_list[db_idx++] = f; \
+		cur_list[db_idx++] = f; \
 	} \
 	} while (0)
 
@@ -667,34 +690,55 @@ diff_cmp(
 }
 
 void
-diff_db_add(struct filediff *diff)
+diff_db_add(struct filediff *diff, bool b)
 {
 #ifdef HAVE_LIBAVLBST
-	avl_add(&diff_db, (union bst_val)(void *)diff, (union bst_val)(int)0);
+	avl_add(b ? &diff_db2 : &diff_db,
+	    (union bst_val)(void *)diff, (union bst_val)(int)0);
 #else
-	tsearch(diff, &diff_db, diff_cmp);
+	tsearch(diff, b ? &diff_db2 : &diff_db, diff_cmp);
 #endif
-	tot_db_num++;
+	if (b)
+		tot_db2_num++;
+	else
+		tot_db_num++;
 }
 
 void
-diff_db_free(void)
+diff_db_free(bool b)
 {
-#ifdef HAVE_LIBAVLBST
-	diff_db_delete(diff_db.root);
-	diff_db.root = NULL;
-#else
+#ifndef HAVE_LIBAVLBST
 	struct filediff *f;
-
-	while (diff_db != NULL) {
-		f = *(struct filediff **)diff_db;
-		tdelete(f, &diff_db, diff_cmp);
-		free_diff(f);
-	}
 #endif
-	free(db_list);
-	db_list = NULL;
-	db_num = 0;
+	if (b) {
+#ifdef HAVE_LIBAVLBST
+		diff_db_delete(diff_db2.root);
+		diff_db2.root = NULL;
+#else
+		while (diff_db2 != NULL) {
+			f = *(struct filediff **)diff_db2;
+			tdelete(f, &diff_db2, diff_cmp);
+			free_diff(f);
+		}
+#endif
+		free(db2_list);
+		db2_list = NULL;
+		db2_num = 0;
+	} else {
+#ifdef HAVE_LIBAVLBST
+		diff_db_delete(diff_db.root);
+		diff_db.root = NULL;
+#else
+		while (diff_db != NULL) {
+			f = *(struct filediff **)diff_db;
+			tdelete(f, &diff_db, diff_cmp);
+			free_diff(f);
+		}
+#endif
+		free(db_list);
+		db_list = NULL;
+		db_num = 0;
+	}
 }
 
 /* In the libavlbst case the nodes are not really deleted, just the memory

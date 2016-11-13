@@ -33,6 +33,7 @@ PERFORMANCE OF THIS SOFTWARE.
 #include "ver.h"
 #include "ui2.h"
 #include "gq.h"
+#include "tc.h"
 
 int yyparse(void);
 
@@ -43,22 +44,22 @@ char lpath[PATHSIZ], rpath[PATHSIZ], lbuf[BUF_SIZE], rbuf[BUF_SIZE];
 struct stat stat1, stat2;
 regex_t fn_re;
 short recursive, scan;
-short bmode = 1;
 short nosingle;
 #ifdef TRACE
 FILE *debug;
 #endif
 
-static void check_args(char **);
+static void check_args(int, char **);
 static int read_rc(const char *);
 static void usage(void);
 
 static char *usage_txt =
-"Usage: %s [-u [<RC file>]] [-bcdEefgIiklmnoqrV] [-F <pattern>]\n"
+"Usage: %s [-u [<RC file>]] [-bcdEefgIiklmnoqrVy] [-F <pattern>]\n"
 "	[-G <pattern>] [-t <diff_tool>] [-v <view_tool>] [<directory_1>\n"
 "	[<directory_2>]]\n";
-static char *getopt_arg = "bcdEeF:fG:gIiklmnoqrt:Vv:";
+static char *getopt_arg = "bcdEeF:fG:gIiklmnoqrt:Vv:y";
 
+bool bmode;
 bool qdiff;
 bool find_name;
 
@@ -174,7 +175,6 @@ main(int argc, char **argv)
 			break;
 		case 'q':
 			qdiff = TRUE;
-			bmode = 0;
 			break;
 		case 'r':
 			recursive = 1;
@@ -204,6 +204,9 @@ main(int argc, char **argv)
 		case 'v':
 			set_tool(&viewtool, strdup(optarg), 0);
 			break;
+		case 'y':
+			twocols = TRUE;
+			break;
 		default:
 			usage();
 		}
@@ -212,15 +215,21 @@ main(int argc, char **argv)
 	argc -= optind;
 	argv += optind;
 
-	if (argc == 2)
-		bmode = 0;
-	else if (argc > 2 || !bmode) {
+	if (argc > 2 || (qdiff && argc != 2)) {
 		printf("Two arguments expected\n");
 		usage();
+		/* not reached */
 	}
 
-	if (argc)
-		check_args(argv);
+	if (argc < 2) {
+		if (twocols)
+			fmode = TRUE;
+		else
+			bmode = TRUE;
+	}
+
+	if (argc || fmode)
+		check_args(argc, argv);
 	else {
 		if (!getcwd(lpath, sizeof lpath)) {
 			printf("getcwd failed: %s\n",
@@ -294,13 +303,19 @@ free:
 }
 
 static void
-check_args(char **argv)
+check_args(int argc, char **argv)
 {
 	char *s;
 
-	arg[0] = *argv;
+	if (argc) {
+		s = *argv++;
+		argc--;
+	} else
+		s = ".";
 
-	if (stat(s = *argv++, &stat1) == -1) {
+	arg[0] = s;
+
+	if (stat(s, &stat1) == -1) {
 		printf("stat \"%s\" failed: %s\n", s, strerror(errno));
 		exit(1);
 	}
@@ -316,14 +331,18 @@ check_args(char **argv)
 	if (bmode)
 		return;
 
-	arg[1] = *argv;
+	if (argc)
+		s = *argv;
 
-	if (stat(s = *argv++, &stat2) == -1) {
+	arg[1] = s;
+
+	if (stat(s, &stat2) == -1) {
 		printf("stat \"%s\" failed: %s\n", s, strerror(errno));
 		exit(1);
 	}
 
-	if (stat1.st_ino == stat2.st_ino &&
+	if (!fmode &&
+	    stat1.st_ino == stat2.st_ino &&
 	    stat1.st_dev == stat2.st_dev) {
 		printf("\"%s\" and \"%s\" are the same directory\n",
 		    lpath, s);
