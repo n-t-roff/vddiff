@@ -904,6 +904,17 @@ next_key:
 			}
 
 			break;
+		case '\t':
+			if (!twocols)
+				break;
+
+			disp_curs(0);
+			wnoutrefresh(getlstwin());
+			right_col = right_col ? FALSE : TRUE;
+			prt2chead();
+			disp_curs(1);
+			wrefresh(getlstwin());
+			break;
 		case 'N':
 			if (regex) {
 				c = 0;
@@ -933,6 +944,7 @@ static char *helptxt[] = {
        "Q		Quit vddiff",
        "h, ?		Display help",
        "^L		Refresh display",
+       "<TAB>		In two-column mode: Toggle column",
        "<UP>, k, -	Move cursor up",
        "<DOWN>, j, +	Move cursor down",
        "<LEFT>		Leave directory (one directory up)",
@@ -1490,16 +1502,22 @@ first_line_is_top(void)
 static void
 curs_down(void)
 {
-	if (top_idx + curs + 1 >= db_num) {
+	if ((right_col ? top_idx2 + curs2 : top_idx + curs) + 1 >=
+	    (right_col ? db2_num : db_num)) {
 		printerr(NULL, "At bottom");
 		return;
 	}
 
-	if (curs + 1 >= listh) {
+	if ((right_col ? curs2 : curs) + 1 >= listh) {
 		if (scrollen) {
 			disp_curs(0);
 			wscrl(getlstwin(), 1);
-			top_idx++;
+
+			if (right_col)
+				top_idx2++;
+			else
+				top_idx++;
+
 			disp_curs(1);
 			refr_scr();
 		} else {
@@ -1509,7 +1527,12 @@ curs_down(void)
 	}
 
 	disp_curs(0);
-	curs++;
+
+	if (right_col)
+		curs2++;
+	else
+		curs++;
+
 	disp_curs(1);
 	refr_scr();
 }
@@ -1517,8 +1540,8 @@ curs_down(void)
 static void
 curs_up(void)
 {
-	if (!curs) {
-		if (!top_idx) {
+	if (!(right_col ? curs2 : curs)) {
+		if (!(right_col ? top_idx2 : top_idx)) {
 			printerr(NULL, "At top");
 			return;
 		}
@@ -1526,7 +1549,12 @@ curs_up(void)
 		if (scrollen) {
 			disp_curs(0);
 			wscrl(getlstwin(), -1);
-			top_idx--;
+
+			if (right_col)
+				top_idx2--;
+			else
+				top_idx--;
+
 			disp_curs(1);
 			refr_scr();
 		} else {
@@ -1536,7 +1564,12 @@ curs_up(void)
 	}
 
 	disp_curs(0);
-	curs--;
+
+	if (right_col)
+		curs2--;
+	else
+		curs--;
+
 	disp_curs(1);
 	refr_scr();
 }
@@ -1643,14 +1676,23 @@ disp_curs(int a)
 
 	w = getlstwin();
 
-	if (a) {
+	if (twocols) {
+		if (!a)
+			mvwchgat(w, right_col ? curs2 : curs,
+			    0, -1, 0, 0, NULL);
+	} else if (a) {
 		standoutc(w);
 	} else if (top_idx + curs == mark_idx) {
 		a = 1;
 		markc(w);
 	}
 
-	disp_line(curs, top_idx + curs, a);
+	disp_line(right_col ? curs2 : curs,
+	    right_col ? top_idx2 + curs2 : top_idx + curs, a);
+
+	if (twocols && a)
+		mvwchgat(w, right_col ? curs2 : curs, 0, -1,
+		    color ? 0 : A_STANDOUT, color ? PAIR_CURSOR : 0, NULL);
 }
 
 void
@@ -1678,6 +1720,14 @@ disp_list(void) /* 0: both, 1: left, 2: right */
 
 	if (ti + cu >= dn)
 		cu = dn ? dn - ti - 1 : 0;
+
+	if (right_col) {
+		top_idx2 = ti;
+		curs2 = cu;
+	} else {
+		top_idx = ti;
+		curs = cu;
+	}
 
 	werase(w);
 
@@ -1725,7 +1775,7 @@ disp_line(
 	w = getlstwin();
 	f = right_col ? db2_list[i] : db_list[i];
 
-	if (bmode) {
+	if (fmode || bmode) {
 		goto no_diff;
 	} else if (!f->ltype) {
 		diff     = '>';
@@ -1743,7 +1793,8 @@ disp_line(
 	} else {
 no_diff:
 		diff = f->diff;
-		mode = f->ltype;
+		mode = right_col ? f->rtype : f->ltype;
+
 		if (diff == '!')
 			color_id = PAIR_DIFF;
 		else if (diff == '-')
@@ -1827,7 +1878,12 @@ no_diff:
 		return;
 	}
 
-	werase(wstat);
+	if (twocols) {
+		wmove(wstat, 0, 0);
+		wclrtoeol(wstat);
+	} else
+		werase(wstat);
+
 	if (type == '!') {
 		statcol();
 		mvwaddstr(wstat, 0, 2, type_name(f->ltype));
@@ -1855,7 +1911,7 @@ no_diff:
 static void
 statcol(void)
 {
-	if (dir_change || bmode)
+	if (twocols || dir_change || bmode)
 		return;
 
 	standoutc(wstat);
@@ -1880,18 +1936,20 @@ type_name(mode_t m)
 static void
 file_stat(struct filediff *f)
 {
-	int x = 2, w, w1, w2, yl, lx1, lx2;
+	int x = 2, w, w1, w2, yl, yr, lx1, lx2;
 	struct passwd *pw;
 	struct group *gr;
 	mode_t ltyp, rtyp;
 
 	standendc(wstat);
-	x  = bmode ? 0 : 2;
+	x  = twocols || bmode ? 0 : 2;
 	yl = 0;
+	yr = twocols ? 0 : 1;
 	ltyp = f->ltype;
 	rtyp = f->rtype;
 
-	if (bmode) {
+	if (twocols) {
+	} else if (bmode) {
 		wmove(wstat, 1, 0);
 		putmbsra(wstat, rpath, 0);
 	} else if (dir_change) {
@@ -1908,7 +1966,7 @@ file_stat(struct filediff *f)
 	}
 
 	if (S_ISLNK(rtyp)) {
-		mvwaddstr(wstat, 1, x, "-> ");
+		mvwaddstr(wstat, yr, x, "-> ");
 		addmbs(wstat, f->rlink);
 		rtyp = 0;
 	}
@@ -1916,7 +1974,7 @@ file_stat(struct filediff *f)
 	if (ltyp)
 		mvwprintw(wstat, yl, x, "%04o", ltyp & 07777);
 	if (rtyp)
-		mvwprintw(wstat, 1, x, "%04o", rtyp & 07777);
+		mvwprintw(wstat, yr, x, "%04o", rtyp & 07777);
 	x += 5;
 
 	if (ltyp) {
@@ -1936,7 +1994,7 @@ file_stat(struct filediff *f)
 	if (ltyp)
 		mvwaddstr(wstat, yl, x, lbuf);
 	if (rtyp)
-		mvwaddstr(wstat, 1, x, rbuf);
+		mvwaddstr(wstat, yr, x, rbuf);
 
 	w1 = ltyp ? strlen(lbuf) : 0;
 	w2 = rtyp ? strlen(rbuf) : 0;
@@ -1960,7 +2018,7 @@ file_stat(struct filediff *f)
 	if (ltyp)
 		mvwaddstr(wstat, yl, x, lbuf);
 	if (rtyp)
-		mvwaddstr(wstat, 1, x, rbuf);
+		mvwaddstr(wstat, yr, x, rbuf);
 
 	w1 = ltyp ? strlen(lbuf) : 0;
 	w2 = rtyp ? strlen(rbuf) : 0;
@@ -1992,7 +2050,7 @@ file_stat(struct filediff *f)
 	if (ltyp && !S_ISDIR(ltyp))
 		mvwaddstr(wstat, yl, x + w - w1, lbuf);
 	if (rtyp && !S_ISDIR(rtyp))
-		mvwaddstr(wstat, 1, x + w - w2, rbuf);
+		mvwaddstr(wstat, yr, x + w - w2, rbuf);
 
 	if ((ltyp && !S_ISDIR(ltyp)) ||
 	    (rtyp && !S_ISDIR(rtyp)))
@@ -2005,14 +2063,14 @@ file_stat(struct filediff *f)
 
 	if (rtyp) {
 		lx2 = x + gettimestr(lbuf, sizeof lbuf, &f->rmtim);
-		mvwaddstr(wstat, 1, x, lbuf);
+		mvwaddstr(wstat, yr, x, lbuf);
 	}
 
 	if (ltyp && f->llink)
 		mvwprintw(wstat, yl, lx1, " -> %s", f->llink);
 
 	if (rtyp && f->rlink)
-		mvwprintw(wstat, 1, lx2, " -> %s", f->rlink);
+		mvwprintw(wstat, yr, lx2, " -> %s", f->rlink);
 }
 
 static size_t
@@ -2050,6 +2108,7 @@ static size_t
 gettimestr(char *buf, size_t bufsiz, time_t *t)
 {
 	struct tm *tm;
+	bool o;
 
 	if (!(tm = localtime(t))) {
 		printerr(strerror(errno), "localtime failed");
@@ -2057,9 +2116,11 @@ gettimestr(char *buf, size_t bufsiz, time_t *t)
 		return 0;
 	}
 
-	return strftime(buf, bufsiz,
-	    time(NULL) - *t > 3600 * 24 * (366 / 2) ?
-	    "%b %e  %Y" : "%b %e %k:%M", tm);
+	o = time(NULL) - *t > 3600 * 24 * (366 / 2);
+
+	return strftime(buf, bufsiz, o ?
+	    (twocols ? "%m/%d %Y" : "%b %e  %Y"  ) :
+	    (twocols ? "%m/%d %k:%M" : "%b %e %k:%M"), tm);
 }
 
 static void
