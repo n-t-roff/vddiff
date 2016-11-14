@@ -220,7 +220,17 @@ do_diff:
 	if (qdiff)
 		return;
 
-	disp_list();
+	if (fmode) {
+		disp_list();
+		right_col = TRUE;
+		disp_list();
+		right_col = FALSE;
+	} else
+		disp_list();
+
+	if (twocols)
+		prt2chead();
+
 	ui_ctrl();
 
 	/* Change out of tmpdirs before deleting them. */
@@ -1488,7 +1498,7 @@ curs_down(void)
 	if (curs + 1 >= listh) {
 		if (scrollen) {
 			disp_curs(0);
-			wscrl(wlist, 1);
+			wscrl(getlstwin(), 1);
 			top_idx++;
 			disp_curs(1);
 			refr_scr();
@@ -1515,7 +1525,7 @@ curs_up(void)
 
 		if (scrollen) {
 			disp_curs(0);
-			wscrl(wlist, -1);
+			wscrl(getlstwin(), -1);
 			top_idx--;
 			disp_curs(1);
 			refr_scr();
@@ -1570,7 +1580,7 @@ scroll_up(unsigned num, bool keepscrpos)
 		move_curs = 0;
 	}
 
-	wscrl(wlist, -((int)num));
+	wscrl(getlstwin(), -((int)num));
 	top_idx -= num;
 
 	for (y = 0, i = top_idx; y < num; y++, i++)
@@ -1613,7 +1623,7 @@ scroll_down(unsigned num, bool keepscrpos)
 		move_curs = 0;
 	}
 
-	wscrl(wlist, num);
+	wscrl(getlstwin(), num);
 	top_idx = ti;
 
 	for (y = listh - num, i = top_idx + y; y < listh && i < db_num;
@@ -1629,44 +1639,62 @@ scroll_down(unsigned num, bool keepscrpos)
 static void
 disp_curs(int a)
 {
+	WINDOW *w;
+
+	w = getlstwin();
+
 	if (a) {
-		standoutc(wlist);
+		standoutc(w);
 	} else if (top_idx + curs == mark_idx) {
 		a = 1;
-		markc(wlist);
+		markc(w);
 	}
 
 	disp_line(curs, top_idx + curs, a);
 }
 
 void
-disp_list(void)
+disp_list(void) /* 0: both, 1: left, 2: right */
 {
 	unsigned y, i;
+	unsigned ti, cu, dn;
+	WINDOW *w;
+
+	w = getlstwin();
+
+	if (right_col) {
+		ti = top_idx2;
+		dn = db2_num;
+		cu = curs2;
+	} else {
+		ti = top_idx;
+		dn = db_num;
+		cu = curs;
+	}
 
 	/* For the case that entries had been removed */
-	if (top_idx >= db_num)
-		top_idx = db_num ? db_num - 1 : 0;
+	if (ti >= dn)
+		ti = dn ? dn - 1 : 0;
 
-	if (top_idx + curs >= db_num)
-		curs = db_num ? db_num - top_idx - 1 : 0;
+	if (ti + cu >= dn)
+		cu = dn ? dn - ti - 1 : 0;
 
-	werase(wlist);
+	werase(w);
 
-	if (!db_num) {
+	if (!dn) {
 		no_file();
 		goto exit;
 	}
 
-	for (y = 0, i = top_idx; y < listh && i < db_num; y++, i++) {
-		if (y == curs)
+	for (y = 0, i = ti; y < listh && i < dn; y++, i++) {
+		if (y == cu)
 			disp_curs(1);
 		else {
 			int j = 0;
 
-			if (top_idx + y == mark_idx) {
+			if (ti + y == mark_idx) {
 				j = 1;
-				markc(wlist);
+				markc(w);
 			}
 
 			disp_line(y, i, j);
@@ -1688,10 +1716,14 @@ disp_line(
 {
 	int diff, type;
 	mode_t mode;
-	struct filediff *f = db_list[i];
+	struct filediff *f;
 	char *lnk = NULL;
 	short color_id = 0;
 	int v;
+	WINDOW *w;
+
+	w = getlstwin();
+	f = right_col ? db2_list[i] : db_list[i];
 
 	if (bmode) {
 		goto no_diff;
@@ -1752,29 +1784,29 @@ no_diff:
 		lnk = f->llink ? f->llink : f->rlink;
 
 	if (color && !info) {
-		wattron(wlist, A_BOLD);
+		wattron(w, A_BOLD);
 
 		if (color_id)
-			wattron(wlist, COLOR_PAIR(color_id));
+			wattron(w, COLOR_PAIR(color_id));
 		else
 			/* not attrset, else bold is off */
-			wattron(wlist, COLOR_PAIR(PAIR_NORMAL));
+			wattron(w, COLOR_PAIR(PAIR_NORMAL));
 	}
 
-	if (bmode)
-		mvwprintw(wlist, y, 0, "%c ", type);
+	if (twocols || bmode)
+		mvwprintw(w, y, 0, "%c ", type);
 	else
-		mvwprintw(wlist, y, 0, "%c %c ", diff, type);
+		mvwprintw(w, y, 0, "%c %c ", diff, type);
 
-	v = addmbs(wlist, f->name);
-	standendc(wlist);
+	v = addmbs(w, f->name);
+	standendc(w);
 
 	if (v)
 		return;
 
 	if (lnk) {
-		addmbs(wlist, " -> ");
-		addmbs(wlist, lnk);
+		addmbs(w, " -> ");
+		addmbs(w, lnk);
 	}
 
 	if (!info)
@@ -1861,7 +1893,7 @@ file_stat(struct filediff *f)
 
 	if (bmode) {
 		wmove(wstat, 1, 0);
-		putmbsra(wstat, rpath);
+		putmbsra(wstat, rpath, 0);
 	} else if (dir_change) {
 		lpath[llen] = 0;
 		rpath[rlen] = 0;

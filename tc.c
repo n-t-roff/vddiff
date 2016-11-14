@@ -14,14 +14,19 @@ OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
 PERFORMANCE OF THIS SOFTWARE.
 */
 
+#include <regex.h>
 #include "compat.h"
 #include "ui.h"
 #include "tc.h"
+#include "main.h"
+#include "ui2.h"
 
 int llstw, rlstw, rlstx;
 WINDOW *wllst, *wmid, *wrlst;
+unsigned top_idx2, curs2;
 bool twocols;
 bool fmode;
+bool right_col;
 
 void
 open2cwins(void)
@@ -45,4 +50,31 @@ open2cwins(void)
 		wbkgd(wmid, COLOR_PAIR(PAIR_CURSOR));
 	else
 		wbkgd(wmid, A_STANDOUT);
+}
+
+void
+prt2chead(void)
+{
+	wmove(wstat, 1, 0);
+	wclrtoeol(wstat);
+	lpath[llen] = 0;
+	putmbsra(wstat, lpath, llstw);
+	wmove(wstat, 1, rlstx);
+	rpath[rlen] = 0;
+	putmbsra(wstat, rpath, 0);
+	mvwchgat(wstat, 1, right_col ? rlstx : 0, right_col ? rlstw : llstw,
+	    color ? 0 : A_STANDOUT, color ? PAIR_CURSOR : 0, NULL);
+	wrefresh(wstat);
+}
+
+WINDOW *
+getlstwin(void)
+{
+	if (twocols) {
+		if (fmode && right_col)
+			return wrlst;
+		else
+			return wllst;
+	} else
+		return wlist;
 }

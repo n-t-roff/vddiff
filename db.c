@@ -544,7 +544,7 @@ diff_db_sort(bool b)
 #else
 		twalk(diff_db2, mk_list);
 #endif
-		db_num = db_idx;
+		db2_num = db_idx;
 	} else {
 		if (!tot_db_num)
 			return;

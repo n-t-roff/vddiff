@@ -32,6 +32,7 @@ PERFORMANCE OF THIS SOFTWARE.
 #include "main.h"
 #include "exec.h"
 #include "db.h"
+#include "tc.h"
 
 const char y_n_txt[] = "'y' yes, <other key> no";
 struct str_uint {
@@ -707,7 +708,7 @@ free_zdir(struct filediff *z, char *t)
 void
 refr_scr(void)
 {
-	wnoutrefresh(wlist);
+	wnoutrefresh(getlstwin());
 	wnoutrefresh(wstat);
 	doupdate();
 }
@@ -779,14 +780,17 @@ addmbs(WINDOW *w, char *s)
 }
 
 ssize_t
-putmbsra(WINDOW *w, char *s)
+putmbsra(WINDOW *w, char *s, int mx)
 {
-	int cy, cx, my, mx;
+	int cy, cx, my;
 	ssize_t l;
 	cchar_t *cs;
 
 	getyx(w, cy, cx);
-	getmaxyx(w, my, mx);
+
+	if (!mx)
+		getmaxyx(w, my, mx);
+
 	(void)cy;
 	(void)my;
 

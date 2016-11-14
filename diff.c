@@ -33,6 +33,7 @@ PERFORMANCE OF THIS SOFTWARE.
 #include "db.h"
 #include "ui2.h"
 #include "gq.h"
+#include "tc.h"
 
 struct str_list {
 	char *s;
@@ -77,12 +78,12 @@ build_diff_db(int tree)
 			bmode_ini_len = strlen(rpath) + 1; /* + '/' */
 
 		if ((lpt2 = time(NULL)) - lpt) {
-			printerr(NULL, "Reading directory %s", rpath);
+			printerr(NULL, "Reading directory \"%s\"", rpath);
 			lpt = lpt2;
 		}
 	} else if (!qdiff) {
 		if ((lpt2 = time(NULL)) - lpt) {
-			printerr(NULL, "Reading directory %s", lpath);
+			printerr(NULL, "Reading directory \"%s\"", lpath);
 			lpt = lpt2;
 		}
 	}
@@ -389,7 +390,7 @@ right_tree:
 		goto dir_scan_end;
 
 	if (!qdiff)
-		printerr(NULL, "Reading directory %s", rpath);
+		printerr(NULL, "Reading directory \"%s\"", rpath);
 
 	if (!(d = opendir(rpath))) {
 		if (!ign_diff_errs && dialog(
@@ -502,14 +503,14 @@ right_tree:
 			continue;
 		}
 
-		diff_db_add(diff, FALSE);
+		diff_db_add(diff, fmode);
 	}
 
 	closedir(d);
 
 build_list:
 	if (!scan)
-		diff_db_sort(FALSE);
+		diff_db_sort(fmode && (tree & 2));
 
 dir_scan_end:
 	free_names();
