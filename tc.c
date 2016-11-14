@@ -47,9 +47,9 @@ open2cwins(void)
 	}
 
 	if (color)
-		wbkgd(wmid, COLOR_PAIR(PAIR_CURSOR));
+		wbkgd(wmid, '|' | COLOR_PAIR(PAIR_CURSOR));
 	else
-		wbkgd(wmid, A_STANDOUT);
+		wbkgd(wmid, '|' | A_STANDOUT);
 }
 
 void
@@ -62,19 +62,20 @@ prt2chead(void)
 	wmove(wstat, 1, rlstx);
 	rpath[rlen] = 0;
 	putmbsra(wstat, rpath, 0);
-	mvwchgat(wstat, 1, right_col ? rlstx : 0, right_col ? rlstw : llstw,
-	    color ? 0 : A_STANDOUT, color ? PAIR_CURSOR : 0, NULL);
+
+	if (fmode)
+		mvwchgat(wstat, 1, right_col ? rlstx : 0,
+		    right_col ? rlstw : llstw,
+		    (color ? 0 : A_REVERSE) | A_BOLD,
+		    color ? PAIR_HEADLINE : 0, NULL);
+
 	wrefresh(wstat);
 }
 
 WINDOW *
 getlstwin(void)
 {
-	if (twocols) {
-		if (fmode && right_col)
-			return wrlst;
-		else
-			return wllst;
-	} else
-		return wlist;
+	return right_col ? wrlst :
+	       fmode     ? wllst :
+	                   wlist ;
 }

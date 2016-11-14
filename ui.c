@@ -145,6 +145,7 @@ build_ui(void)
 		init_pair(PAIR_CURSOR   , color_cursor_fg, color_cursor_bg);
 		init_pair(PAIR_ERROR    , color_error_fg , color_error_bg );
 		init_pair(PAIR_MARK     , color_mark_fg  , color_mark_bg  );
+		init_pair(PAIR_HEADLINE , COLOR_BLACK    , COLOR_YELLOW   );
 		bkgd(COLOR_PAIR(PAIR_NORMAL));
 	}
 
@@ -161,9 +162,7 @@ build_ui(void)
 #endif
 	set_win_dim();
 
-	if (twocols)
-		open2cwins();
-	else if (!(wlist = subwin(stdscr, listh, listw, 0, 0))) {
+	if (!(wlist = subwin(stdscr, listh, listw, 0, 0))) {
 		printf("subwin failed\n");
 		return;
 	}
@@ -173,17 +172,20 @@ build_ui(void)
 		return;
 	}
 
+	if (fmode)
+		open2cwins();
+
 	if (scrollen) {
-		if (twocols) {
+		idlok(wlist, TRUE);
+		scrollok(wlist, TRUE);
+
+		if (fmode) {
 			idlok(wllst, TRUE);
 			scrollok(wllst, TRUE);
 			idlok(wrlst, TRUE);
 			scrollok(wrlst, TRUE);
 			idlok(wmid, TRUE);
 			scrollok(wmid, TRUE);
-		} else {
-			idlok(wlist, TRUE);
-			scrollok(wlist, TRUE);
 		}
 	}
 
@@ -221,10 +223,12 @@ do_diff:
 		return;
 
 	if (fmode) {
-		disp_list();
 		right_col = TRUE;
 		disp_list();
+		disp_curs(2);
+		wnoutrefresh(getlstwin());
 		right_col = FALSE;
+		disp_list();
 	} else
 		disp_list();
 
@@ -243,18 +247,8 @@ do_diff:
 
 	/* if bmode: remove tmp_dirs */
 	uz_exit();
-	diff_db_free(FALSE);
-exit:
-	if (twocols) {
-		delwin(wllst);
-		delwin(wrlst);
-		delwin(wmid);
-	} else
-		delwin(wlist);
 
-	delwin(wstat);
-	erase();
-	refresh();
+exit:
 	endwin();
 }
 
@@ -905,10 +899,10 @@ next_key:
 
 			break;
 		case '\t':
-			if (!twocols)
+			if (!fmode)
 				break;
 
-			disp_curs(0);
+			disp_curs(2);
 			wnoutrefresh(getlstwin());
 			right_col = right_col ? FALSE : TRUE;
 			prt2chead();
@@ -1260,7 +1254,11 @@ action(
 	if (!db_num)
 		return;
 
-	f1 = f2 = db_list[top_idx + curs];
+	if (fmode) {
+		f1 = db_list[top_idx + curs];
+		f2 = db2_list[top_idx2 + curs2];
+	} else
+		f1 = f2 = db_list[top_idx + curs];
 
 	if (mark && act) {
 		struct filediff *m = mark;
@@ -1361,7 +1359,7 @@ action(
 			f2 = z2;
 	}
 
-	if (!f1->ltype ||
+	if (right_col || !f1->ltype ||
 	    /* Tested here to support "or" */
 	    tree == 2) {
 		if (S_ISREG(f2->rtype) || ign_ext)
@@ -1670,13 +1668,17 @@ scroll_down(unsigned num, bool keepscrpos)
 }
 
 static void
-disp_curs(int a)
+disp_curs(
+    /* 0: Remove cursor
+     * 1: Normal cursor
+     * 2: Mark */
+    int a)
 {
 	WINDOW *w;
 
 	w = getlstwin();
 
-	if (twocols) {
+	if (fmode) {
 		if (!a)
 			mvwchgat(w, right_col ? curs2 : curs,
 			    0, -1, 0, 0, NULL);
@@ -1690,9 +1692,20 @@ disp_curs(int a)
 	disp_line(right_col ? curs2 : curs,
 	    right_col ? top_idx2 + curs2 : top_idx + curs, a);
 
-	if (twocols && a)
-		mvwchgat(w, right_col ? curs2 : curs, 0, -1,
-		    color ? 0 : A_STANDOUT, color ? PAIR_CURSOR : 0, NULL);
+	if (fmode) {
+		switch (a) {
+		case 1:
+			mvwchgat(w, right_col ? curs2 : curs, 0, -1,
+			    color ? 0 : A_STANDOUT, color ? PAIR_CURSOR : 0,
+			    NULL);
+			break;
+		case 2:
+			mvwchgat(w, right_col ? curs2 : curs, 0, -1,
+			    color ? 0 : A_BOLD | A_UNDERLINE,
+			    color ? PAIR_MARK : 0, NULL);
+			break;
+		}
+	}
 }
 
 void
@@ -1844,7 +1857,7 @@ no_diff:
 			wattron(w, COLOR_PAIR(PAIR_NORMAL));
 	}
 
-	if (twocols || bmode)
+	if (fmode || bmode)
 		mvwprintw(w, y, 0, "%c ", type);
 	else
 		mvwprintw(w, y, 0, "%c %c ", diff, type);
@@ -2079,7 +2092,7 @@ getfilesize(char *buf, size_t bufsiz, off_t size)
 	char *unit;
 	float f;
 
-	if (!scale || size < 1024)
+	if (!(scale || twocols) || size < 1024)
 		return snprintf(buf, bufsiz, "%'lld", (long long)size);
 	else {
 		f = size / 1024.0;
@@ -2579,7 +2592,7 @@ ui_resize(void)
 	if (curs >= listh)
 		curs = listh -1;
 
-	if (twocols);
+	if (bmode);
 	else
 		wresize(wlist, listh, listw);
 
@@ -2598,11 +2611,8 @@ set_win_dim(void)
 {
 	statw = COLS;
 	listh = LINES - 2;
-
-	if (twocols) {
-		rlstx = COLS / 2;
-		llstw = rlstx - 1;
-		rlstw = COLS - rlstx;
-	} else
-		listw = COLS;
+	listw = COLS;
+	rlstx = COLS / 2;
+	rlstw = COLS - rlstx;
+	llstw = rlstx - 1;
 }
