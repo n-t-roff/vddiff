@@ -62,6 +62,10 @@ static void ui_resize(void);
 static void set_win_dim(void);
 static void statcol(void);
 static void file_stat(struct filediff *);
+static void set_file_info(struct filediff *, mode_t, int *, short *, char **,
+    int *);
+static int disp_name(WINDOW *, int, int, int, struct filediff *, int, short,
+    char *, int);
 static size_t getfilesize(char *, size_t, off_t);
 static size_t gettimestr(char *, size_t, time_t *);
 static void disp_help(void);
@@ -1777,12 +1781,11 @@ disp_line(
     /* 1: Is cursor line */
     int info)
 {
-	int diff, type;
-	mode_t mode;
+	int diff, type[2];
+	mode_t mode[2];
 	struct filediff *f;
-	char *lnk = NULL;
-	short color_id = 0;
-	int v;
+	char *lnk[2] = { NULL, NULL };
+	short color_id[2] = { 0, 0 };
 	WINDOW *w;
 
 	w = getlstwin();
@@ -1792,85 +1795,51 @@ disp_line(
 		goto no_diff;
 	} else if (!f->ltype) {
 		diff     = '>';
-		mode     = f->rtype;
-		color_id = PAIR_RIGHTONLY;
+		*mode     = f->rtype;
+		*color_id = PAIR_RIGHTONLY;
 	} else if (!f->rtype) {
 		diff     = '<';
-		mode     = f->ltype;
-		color_id = PAIR_LEFTONLY;
+		*mode     = f->ltype;
+		*color_id = PAIR_LEFTONLY;
 	} else if ((f->ltype & S_IFMT) != (f->rtype & S_IFMT)) {
 		diff = ' ';
-		mode = 0;
-		type = '!';
-		color_id = PAIR_DIFF;
+		*mode = 0;
+		type[0] = '!';
+		*color_id = PAIR_DIFF;
 	} else {
 no_diff:
 		diff = f->diff;
-		mode = right_col ? f->rtype : f->ltype;
+		*mode = right_col ? f->rtype : f->ltype;
 
 		if (diff == '!')
-			color_id = PAIR_DIFF;
+			*color_id = PAIR_DIFF;
 		else if (diff == '-')
-			color_id = PAIR_ERROR;
+			*color_id = PAIR_ERROR;
 	}
 
-	if (S_ISREG(mode)) {
-		if (mode & 0100)
-			type = '*';
+	set_file_info(f, mode[0], type, color_id, lnk, &diff);
+
+	if (twocols && !fmode) {
+		set_file_info(f, f->rtype, type+1, color_id+1, lnk+1, &diff);
+
+		if (diff == '>')
+			goto prtc2;
+	}
+
+	disp_name(w, y, 0, info, f, *type, *color_id, *lnk, diff);
+
+	if (twocols && !fmode) {
+prtc2:
+		if (color)
+			wattron(w, COLOR_PAIR(PAIR_CURSOR));
 		else
-			type = ' ';
-	} else if (S_ISDIR(mode)) {
-		type = '/';
-		if (!color_id) {
-			color_id = PAIR_DIR;
+			wattron(w, A_STANDOUT);
+		
+		mvwaddch(w, y, llstw, diff);
 
-			if (is_diff_dir(f->name))
-				diff = '!';
-		}
-	} else if (S_ISLNK(mode)) {
-		type = '@';
-		if (!color_id)
-			color_id = PAIR_LINK;
-		if (diff != '!')
-			lnk = f->llink ? f->llink : f->rlink;
-	} else if (mode) {
-		if      (S_ISCHR(mode))  type = 'c';
-		else if (S_ISBLK(mode))  type = 'b';
-		else if (S_ISSOCK(mode)) type = '=';
-		else if (S_ISFIFO(mode)) type = '|';
-		else                     type = '?';
-
-		if (!color_id)
-			color_id = PAIR_UNKNOWN;
-	}
-
-	if (followlinks && !S_ISLNK(mode))
-		lnk = f->llink ? f->llink : f->rlink;
-
-	if (color && !info) {
-		wattron(w, A_BOLD);
-
-		if (color_id)
-			wattron(w, COLOR_PAIR(color_id));
-		else
-			/* not attrset, else bold is off */
-			wattron(w, COLOR_PAIR(PAIR_NORMAL));
-	}
-
-	if (fmode || bmode)
-		mvwprintw(w, y, 0, "%c ", type);
-	else
-		mvwprintw(w, y, 0, "%c %c ", diff, type);
-
-	v = addmbs(w, f->name);
-	standendc(w);
-
-	if (v)
-		return;
-
-	if (lnk) {
-		addmbs(w, " -> ");
-		addmbs(w, lnk);
+		if (diff != '<')
+			disp_name(w, y, rlstx, info, f, type[1], color_id[1],
+			    lnk[1], diff);
 	}
 
 	if (!info)
@@ -1897,7 +1866,7 @@ no_diff:
 	} else
 		werase(wstat);
 
-	if (type == '!') {
+	if (type[0] == '!') {
 		statcol();
 		mvwaddstr(wstat, 0, 2, type_name(f->ltype));
 
@@ -1919,6 +1888,79 @@ no_diff:
 
 	filt_stat();
 	dir_change = FALSE;
+}
+
+static void
+set_file_info(struct filediff *f, mode_t m, int *t, short *ct, char **l,
+    int *d)
+{
+	if (S_ISREG(m)) {
+		if (m & 0100)
+			*t = '*';
+		else
+			*t = ' ';
+	} else if (S_ISDIR(m)) {
+		*t = '/';
+		if (!*ct) {
+			*ct = PAIR_DIR;
+
+			if (is_diff_dir(f->name))
+				*d = '!';
+		}
+	} else if (S_ISLNK(m)) {
+		*t = '@';
+		if (!*ct)
+			*ct = PAIR_LINK;
+		if (l && *d != '!')
+			*l = f->llink ? f->llink : f->rlink;
+	} else if (m) {
+		if      (S_ISCHR(m))  *t = 'c';
+		else if (S_ISBLK(m))  *t = 'b';
+		else if (S_ISSOCK(m)) *t = '=';
+		else if (S_ISFIFO(m)) *t = '|';
+		else                  *t = '?';
+
+		if (!*ct)
+			*ct = PAIR_UNKNOWN;
+	}
+
+	if (l && followlinks && !S_ISLNK(m))
+		*l = f->llink ? f->llink : f->rlink;
+}
+
+static int
+disp_name(WINDOW *w, int y, int x, int o, struct filediff *f, int t, short ct,
+    char *l, int d)
+{
+	int i;
+
+	if (color && !o) {
+		wattron(w, A_BOLD);
+
+		if (ct)
+			wattron(w, COLOR_PAIR(ct));
+		else
+			/* not attrset, else bold is off */
+			wattron(w, COLOR_PAIR(PAIR_NORMAL));
+	}
+
+	if (twocols || bmode)
+		mvwprintw(w, y, x, "%c ", t);
+	else
+		mvwprintw(w, y, x, "%c %c ", d, t);
+
+	i = addmbs(w, f->name);
+	standendc(w);
+
+	if (i)
+		return 1;
+
+	if (l) {
+		addmbs(w, " -> ");
+		addmbs(w, l);
+	}
+
+	return 0;
 }
 
 static void
@@ -2131,9 +2173,7 @@ gettimestr(char *buf, size_t bufsiz, time_t *t)
 
 	o = time(NULL) - *t > 3600 * 24 * (366 / 2);
 
-	return strftime(buf, bufsiz, o ?
-	    (twocols ? "%m/%d %Y" : "%b %e  %Y"  ) :
-	    (twocols ? "%m/%d %k:%M" : "%b %e %k:%M"), tm);
+	return strftime(buf, bufsiz, o ? "%b %e  %Y" : "%b %e %k:%M", tm);
 }
 
 static void
