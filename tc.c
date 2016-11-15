@@ -59,7 +59,9 @@ prt2chead(void)
 	wclrtoeol(wstat);
 	lpath[llen] = 0;
 	putmbsra(wstat, lpath, llstw);
-	wmove(wstat, 1, rlstx);
+	standoutc(wstat);
+	mvwaddch(wstat, 1, llstw, fmode ? '|' : ' ');
+	standendc(wstat);
 	rpath[rlen] = 0;
 	putmbsra(wstat, rpath, 0);
 

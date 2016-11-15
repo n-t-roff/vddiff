@@ -64,8 +64,8 @@ static void statcol(void);
 static void file_stat(struct filediff *);
 static void set_file_info(struct filediff *, mode_t, int *, short *, char **,
     int *);
-static int disp_name(WINDOW *, int, int, int, struct filediff *, int, short,
-    char *, int);
+static int disp_name(WINDOW *, int, int, int, int, struct filediff *, int,
+    short, char *, int);
 static size_t getfilesize(char *, size_t, off_t);
 static size_t gettimestr(char *, size_t, time_t *);
 static void disp_help(void);
@@ -1682,7 +1682,7 @@ disp_curs(
 
 	w = getlstwin();
 
-	if (fmode) {
+	if (fmode) { /* if "fmode"->"twocols" bar is used */
 		if (!a)
 			mvwchgat(w, right_col ? curs2 : curs,
 			    0, -1, 0, 0, NULL);
@@ -1696,7 +1696,7 @@ disp_curs(
 	disp_line(right_col ? curs2 : curs,
 	    right_col ? top_idx2 + curs2 : top_idx + curs, a);
 
-	if (fmode) {
+	if (fmode) { /* if "fmode"->"twocols" bar is used */
 		switch (a) {
 		case 1:
 			mvwchgat(w, right_col ? curs2 : curs, 0, -1,
@@ -1787,9 +1787,14 @@ disp_line(
 	char *lnk[2] = { NULL, NULL };
 	short color_id[2] = { 0, 0 };
 	WINDOW *w;
+	attr_t a;
+	short cp;
 
 	w = getlstwin();
 	f = right_col ? db2_list[i] : db_list[i];
+
+	if (twocols && !fmode)
+		wattr_get(w, &a, &cp, NULL);
 
 	if (fmode || bmode) {
 		goto no_diff;
@@ -1826,20 +1831,19 @@ no_diff:
 			goto prtc2;
 	}
 
-	disp_name(w, y, 0, info, f, *type, *color_id, *lnk, diff);
+	disp_name(w, y, 0, twocols ? llstw : 0, info, f, *type, *color_id,
+	    *lnk, diff);
 
 	if (twocols && !fmode) {
 prtc2:
-		if (color)
-			wattron(w, COLOR_PAIR(PAIR_CURSOR));
-		else
-			wattron(w, A_STANDOUT);
-		
-		mvwaddch(w, y, llstw, diff);
-
-		if (diff != '<')
-			disp_name(w, y, rlstx, info, f, type[1], color_id[1],
+		if (diff != '<') {
+			wattr_set(w, a, cp, NULL);
+			disp_name(w, y, rlstx, 0, info, f, type[1], color_id[1],
 			    lnk[1], diff);
+		}
+
+		standoutc(w);
+		mvwaddch(w, y, llstw, diff);
 	}
 
 	if (!info)
@@ -1929,8 +1933,8 @@ set_file_info(struct filediff *f, mode_t m, int *t, short *ct, char **l,
 }
 
 static int
-disp_name(WINDOW *w, int y, int x, int o, struct filediff *f, int t, short ct,
-    char *l, int d)
+disp_name(WINDOW *w, int y, int x, int mx, int o, struct filediff *f, int t,
+    short ct, char *l, int d)
 {
 	int i;
 
@@ -1957,7 +1961,7 @@ disp_name(WINDOW *w, int y, int x, int o, struct filediff *f, int t, short ct,
 
 	if (l) {
 		addmbs(w, " -> ");
-		addmbs(w, l);
+		putmbsra(w, l, mx);
 	}
 
 	return 0;
@@ -1991,19 +1995,24 @@ type_name(mode_t m)
 static void
 file_stat(struct filediff *f)
 {
-	int x = 2, w, w1, w2, yl, yr, lx1, lx2;
+	int x, x2, w, w1, w2, yl, yr, lx1, lx2;
 	struct passwd *pw;
 	struct group *gr;
 	mode_t ltyp, rtyp;
 
 	standendc(wstat);
 	x  = twocols || bmode ? 0 : 2;
+	x2 = twocols ? rlstx :
+	     bmode   ? 0     : 2;
 	yl = 0;
 	yr = twocols ? 0 : 1;
 	ltyp = f->ltype;
 	rtyp = f->rtype;
 
 	if (twocols) {
+		standoutc(wstat);
+		mvwaddch(wstat, 0, llstw, fmode ? '|' : ' ');
+		standendc(wstat);
 	} else if (bmode) {
 		wmove(wstat, 1, 0);
 		putmbsra(wstat, rpath, 0);
@@ -2016,21 +2025,24 @@ file_stat(struct filediff *f)
 
 	if (S_ISLNK(ltyp)) {
 		mvwaddstr(wstat, yl, x, "-> ");
-		addmbs(wstat, f->llink);
+		putmbsra(wstat, f->llink, twocols ? llstw : 0);
 		ltyp = 0;
 	}
 
 	if (S_ISLNK(rtyp)) {
-		mvwaddstr(wstat, yr, x, "-> ");
-		addmbs(wstat, f->rlink);
+		mvwaddstr(wstat, yr, x2, "-> ");
+		putmbsra(wstat, f->rlink, 0);
 		rtyp = 0;
 	}
 
 	if (ltyp)
 		mvwprintw(wstat, yl, x, "%04o", ltyp & 07777);
+
 	if (rtyp)
-		mvwprintw(wstat, yr, x, "%04o", rtyp & 07777);
+		mvwprintw(wstat, yr, x2, "%04o", rtyp & 07777);
+
 	x += 5;
+	x2 += 5;
 
 	if (ltyp) {
 		if ((pw = getpwuid(f->luid)))
@@ -2049,12 +2061,19 @@ file_stat(struct filediff *f)
 	if (ltyp)
 		mvwaddstr(wstat, yl, x, lbuf);
 	if (rtyp)
-		mvwaddstr(wstat, yr, x, rbuf);
+		mvwaddstr(wstat, yr, x2, rbuf);
 
 	w1 = ltyp ? strlen(lbuf) : 0;
 	w2 = rtyp ? strlen(rbuf) : 0;
-	x += w1 > w2 ? w1 : w2;
-	x++;
+
+	if (twocols) {
+		x += w1 + 1;
+		x2 += w2 + 1;
+	} else {
+		x += w1 > w2 ? w1 : w2;
+		x++;
+		x2 = x;
+	}
 
 	if (ltyp) {
 		if ((gr = getgrgid(f->lgid)))
@@ -2073,14 +2092,21 @@ file_stat(struct filediff *f)
 	if (ltyp)
 		mvwaddstr(wstat, yl, x, lbuf);
 	if (rtyp)
-		mvwaddstr(wstat, yr, x, rbuf);
+		mvwaddstr(wstat, yr, x2, rbuf);
 
 	w1 = ltyp ? strlen(lbuf) : 0;
 	w2 = rtyp ? strlen(rbuf) : 0;
 	lx1 = x + w1;
-	lx2 = x + w2;
-	x += w1 > w2 ? w1 : w2;
-	x++;
+	lx2 = x2 + w2;
+
+	if (twocols) {
+		x += w1 + 1;
+		x2 += w2 + 1;
+	} else {
+		x += w1 > w2 ? w1 : w2;
+		x++;
+		x2 = x;
+	}
 
 	if (ltyp && !S_ISDIR(ltyp)) {
 		if (S_ISCHR(ltyp) || S_ISBLK(ltyp))
@@ -2102,14 +2128,26 @@ file_stat(struct filediff *f)
 
 	w = w1 > w2 ? w1 : w2;
 
-	if (ltyp && !S_ISDIR(ltyp))
+	if (ltyp && !S_ISDIR(ltyp)) {
 		mvwaddstr(wstat, yl, x + w - w1, lbuf);
-	if (rtyp && !S_ISDIR(rtyp))
-		mvwaddstr(wstat, yr, x + w - w2, rbuf);
 
-	if ((ltyp && !S_ISDIR(ltyp)) ||
-	    (rtyp && !S_ISDIR(rtyp)))
+		if (twocols)
+			x += w1 + 1;
+	}
+
+	if (rtyp && !S_ISDIR(rtyp)) {
+		mvwaddstr(wstat, yr, x2 + w - w2, rbuf);
+
+		if (twocols)
+			x2 += w2 + 1;
+	}
+
+	if (!twocols && (
+	    (ltyp && !S_ISDIR(ltyp)) ||
+	    (rtyp && !S_ISDIR(rtyp)))) {
 		x += w + 1;
+		x2 = x;
+	}
 
 	if (ltyp) {
 		lx1 = x + gettimestr(lbuf, sizeof lbuf, &f->lmtim);
@@ -2117,15 +2155,19 @@ file_stat(struct filediff *f)
 	}
 
 	if (rtyp) {
-		lx2 = x + gettimestr(lbuf, sizeof lbuf, &f->rmtim);
-		mvwaddstr(wstat, yr, x, lbuf);
+		lx2 = x2 + gettimestr(lbuf, sizeof lbuf, &f->rmtim);
+		mvwaddstr(wstat, yr, x2, lbuf);
 	}
 
-	if (ltyp && f->llink)
-		mvwprintw(wstat, yl, lx1, " -> %s", f->llink);
+	if (ltyp && f->llink) {
+		mvwaddstr(wstat, yl, lx1, " -> ");
+		putmbsra(wstat, f->llink, twocols ? llstw : 0);
+	}
 
-	if (rtyp && f->rlink)
-		mvwprintw(wstat, yr, lx2, " -> %s", f->rlink);
+	if (rtyp && f->rlink) {
+		mvwaddstr(wstat, yr, lx2, " -> ");
+		putmbsra(wstat, f->rlink, 0);
+	}
 }
 
 static size_t
