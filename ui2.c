@@ -754,13 +754,16 @@ putmbs(WINDOW *w, char *s)
 }
 
 int
-addmbs(WINDOW *w, char *s)
+addmbs(WINDOW *w, char *s, int mx)
 {
-	int cy, cx, my, mx;
+	int cy, cx, my;
 	ssize_t l;
 
 	getyx(w, cy, cx);
-	getmaxyx(w, my, mx);
+
+	if (!mx)
+		getmaxyx(w, my, mx);
+
 	(void)my;
 
 	if (cx >= mx)

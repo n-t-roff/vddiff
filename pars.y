@@ -89,7 +89,7 @@ option:
 	| MAGIC                        { magic = 1                        ; }
 	| NOWS                         { nows  = 1                        ; }
 	| SCALE                        { scale = 1                        ; }
-	| BMODE                        { bmode = 1                        ; }
+	| BMODE                        {                                  ; }
 	| SHELL STRING                 { ishell = $2                      ; }
 	| SH STRING                    { nishell = $2                     ; }
 	| ALIAS STRING STRING          { ptr_db_add(&alias_db, $2, $3)    ; }
