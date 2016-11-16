@@ -62,8 +62,7 @@ static void ui_resize(void);
 static void set_win_dim(void);
 static void statcol(void);
 static void file_stat(struct filediff *);
-static void set_file_info(struct filediff *, mode_t, int *, short *, char **,
-    int *);
+static void set_file_info(struct filediff *, mode_t, int *, short *, int *);
 static int disp_name(WINDOW *, int, int, int, int, struct filediff *, int,
     short, char *, int);
 static size_t getfilesize(char *, size_t, off_t);
@@ -338,6 +337,18 @@ next_key:
 			curs_up();
 			break;
 		case KEY_LEFT:
+			if (*key == '|') {
+				c = *key;
+
+				if (COLS / 2 + midoffs < 0)
+					break;
+
+				midoffs -= 10;
+				set_win_dim();
+				disp_list();
+				break;
+			}
+
 			c = 0;
 
 			if (bmode)
@@ -362,6 +373,18 @@ next_key:
 
 			/* fall through */
 		case KEY_RIGHT:
+			if (*key == '|') {
+				c = *key;
+
+				if (midoffs > COLS / 2)
+					break;
+
+				midoffs += 10;
+				set_win_dim();
+				disp_list();
+				break;
+			}
+
 			if (!db_num) {
 				no_file();
 				c = 0;
@@ -370,6 +393,20 @@ next_key:
 
 			action(0, 3, c == '\n' ? 1 : 0, FALSE);
 			c = 0;
+			break;
+		case '=':
+			if (*key == '|') {
+				c = *key;
+
+				if (!midoffs)
+					break;
+
+				midoffs = 0;
+				set_win_dim();
+				disp_list();
+				break;
+			}
+
 			break;
 		case 'b':
 			c = 0;
@@ -906,12 +943,18 @@ next_key:
 			if (!fmode)
 				break;
 
+			c = 0;
 			disp_curs(2);
 			wnoutrefresh(getlstwin());
 			right_col = right_col ? FALSE : TRUE;
 			prt2chead();
 			disp_curs(1);
 			wrefresh(getlstwin());
+			break;
+		case '|':
+			if (!twocols)
+				c = 0;
+
 			break;
 		case 'N':
 			if (regex) {
@@ -954,6 +997,9 @@ static char *helptxt[] = {
        "		Scroll one screen down",
        "<HOME>, 1G	Go to first file",
        "<END>, G	Go to last file",
+       "|<LEFT>		In two-column mode: Enlarge right column",
+       "|<RIGHT>	In two-column mode: Enlarge left column",
+       "|=		In two-column mode: Make column widths equal",
        "/		Search file by typing first letters of filename",
        "//		Search file with regular expression",
        "Sd		Sort files with directories on top",
@@ -1631,6 +1677,9 @@ static void
 scroll_down(unsigned num, bool keepscrpos)
 {
 	unsigned move_curs, y, i, ti;
+	WINDOW *w;
+
+	w = getlstwin();
 
 	if (top_idx >= db_num - 1) {
 		printerr(NULL, "At bottom");
@@ -1658,12 +1707,17 @@ scroll_down(unsigned num, bool keepscrpos)
 		move_curs = 0;
 	}
 
-	wscrl(getlstwin(), num);
+	wscrl(w, num);
 	top_idx = ti;
 
-	for (y = listh - num, i = top_idx + y; y < listh && i < db_num;
+	for (y = listh - num, i = top_idx + y;
+	    y < listh && ((twocols && !fmode) || i < db_num);
 	    y++, i++)
-		disp_line(y, i, 0);
+		if (i >= db_num) {
+			standoutc(w);
+			mvwaddch(w, y, llstw, ' ');
+		} else
+			disp_line(y, i, 0);
 
 	if (move_curs)
 		disp_curs(1);
@@ -1753,8 +1807,12 @@ disp_list(void) /* 0: both, 1: left, 2: right */
 		goto exit;
 	}
 
-	for (y = 0, i = ti; y < listh && i < dn; y++, i++) {
-		if (y == cu)
+	for (y = 0, i = ti; y < listh && ((twocols && !fmode) || i < dn);
+	    y++, i++) {
+		if (i >= dn) {
+			standoutc(w);
+			mvwaddch(w, y, llstw, ' ');
+		} else if (y == cu)
 			disp_curs(1);
 		else {
 			int j = 0;
@@ -1784,8 +1842,7 @@ disp_line(
 	int diff, type[2];
 	mode_t mode[2];
 	struct filediff *f;
-	char *lnk[2] = { NULL, NULL };
-	short color_id[2] = { 0, 0 };
+	short color_id = 0;
 	WINDOW *w;
 	attr_t a;
 	short cp;
@@ -1801,48 +1858,45 @@ disp_line(
 	} else if (!f->ltype) {
 		diff     = '>';
 		*mode     = f->rtype;
-		*color_id = PAIR_RIGHTONLY;
+		color_id = PAIR_RIGHTONLY;
 	} else if (!f->rtype) {
 		diff     = '<';
 		*mode     = f->ltype;
-		*color_id = PAIR_LEFTONLY;
+		color_id = PAIR_LEFTONLY;
 	} else if ((f->ltype & S_IFMT) != (f->rtype & S_IFMT)) {
 		diff = ' ';
 		*mode = 0;
 		type[0] = '!';
-		*color_id = PAIR_DIFF;
+		color_id = PAIR_DIFF;
 	} else {
 no_diff:
 		diff = f->diff;
 		*mode = right_col ? f->rtype : f->ltype;
 
 		if (diff == '!')
-			*color_id = PAIR_DIFF;
+			color_id = PAIR_DIFF;
 		else if (diff == '-')
-			*color_id = PAIR_ERROR;
+			color_id = PAIR_ERROR;
 	}
 
-	set_file_info(f, mode[0], type, color_id, lnk, &diff);
-
-	if (twocols && !fmode) {
-		set_file_info(f, f->rtype, type+1, color_id+1, lnk+1, &diff);
-
-		if (diff == '>')
+	if (twocols && !fmode && diff == '>')
 			goto prtc2;
-	}
 
-	disp_name(w, y, 0, twocols ? llstw : 0, info, f, *type, *color_id,
-	    *lnk, diff);
+	set_file_info(f, *mode, type, &color_id, &diff);
+	disp_name(w, y, 0, twocols ? llstw : 0, info, f, *type, color_id,
+	    twocols || f->llink ? f->llink : f->rlink, diff);
 
 	if (twocols && !fmode) {
 prtc2:
 		if (diff != '<') {
 			wattr_set(w, a, cp, NULL);
-			disp_name(w, y, rlstx, 0, info, f, type[1], color_id[1],
-			    lnk[1], diff);
+			set_file_info(f, f->rtype, type+1, &color_id, &diff);
+			disp_name(w, y, rlstx, 0, info, f, type[1], color_id,
+			    f->rlink, diff);
 		}
 
 		standoutc(w);
+		wattron(w, A_BOLD);
 		mvwaddch(w, y, llstw, diff);
 	}
 
@@ -1895,8 +1949,7 @@ prtc2:
 }
 
 static void
-set_file_info(struct filediff *f, mode_t m, int *t, short *ct, char **l,
-    int *d)
+set_file_info(struct filediff *f, mode_t m, int *t, short *ct, int *d)
 {
 	if (S_ISREG(m)) {
 		if (m & 0100)
@@ -1905,6 +1958,7 @@ set_file_info(struct filediff *f, mode_t m, int *t, short *ct, char **l,
 			*t = ' ';
 	} else if (S_ISDIR(m)) {
 		*t = '/';
+
 		if (!*ct) {
 			*ct = PAIR_DIR;
 
@@ -1913,10 +1967,9 @@ set_file_info(struct filediff *f, mode_t m, int *t, short *ct, char **l,
 		}
 	} else if (S_ISLNK(m)) {
 		*t = '@';
+
 		if (!*ct)
 			*ct = PAIR_LINK;
-		if (l && *d != '!')
-			*l = f->llink ? f->llink : f->rlink;
 	} else if (m) {
 		if      (S_ISCHR(m))  *t = 'c';
 		else if (S_ISBLK(m))  *t = 'b';
@@ -1927,9 +1980,6 @@ set_file_info(struct filediff *f, mode_t m, int *t, short *ct, char **l,
 		if (!*ct)
 			*ct = PAIR_UNKNOWN;
 	}
-
-	if (l && followlinks && !S_ISLNK(m))
-		*l = f->llink ? f->llink : f->rlink;
 }
 
 static int
@@ -2010,6 +2060,7 @@ file_stat(struct filediff *f)
 	rtyp = f->rtype;
 
 	if (twocols) {
+		prt2chead();
 		standoutc(wstat);
 		mvwaddch(wstat, 0, llstw, fmode ? '|' : ' ');
 		standendc(wstat);
@@ -2694,7 +2745,13 @@ set_win_dim(void)
 	statw = COLS;
 	listh = LINES - 2;
 	listw = COLS;
-	rlstx = COLS / 2;
+	rlstx = COLS / 2 + midoffs;
+
+	if (rlstx < 2)
+		rlstx = 2;
+	else if (rlstx > COLS - 1)
+		rlstx = COLS - 1;
+
 	rlstw = COLS - rlstx;
 	llstw = rlstx - 1;
 }

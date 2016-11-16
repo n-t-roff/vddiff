@@ -21,7 +21,7 @@ PERFORMANCE OF THIS SOFTWARE.
 #include "main.h"
 #include "ui2.h"
 
-int llstw, rlstw, rlstx;
+int llstw, rlstw, rlstx, midoffs;
 WINDOW *wllst, *wmid, *wrlst;
 unsigned top_idx2, curs2;
 bool twocols;
@@ -70,8 +70,6 @@ prt2chead(void)
 		    right_col ? rlstw : llstw,
 		    (color ? 0 : A_REVERSE) | A_BOLD,
 		    color ? PAIR_HEADLINE : 0, NULL);
-
-	wrefresh(wstat);
 }
 
 WINDOW *

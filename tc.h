@@ -1,4 +1,4 @@
-extern int llstw, rlstw, rlstx;
+extern int llstw, rlstw, rlstx, midoffs;
 extern WINDOW *wllst, *wmid, *wrlst;
 extern unsigned top_idx2, curs2;
 extern bool twocols;
