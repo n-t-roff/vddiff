@@ -252,6 +252,8 @@ do_diff:
 	uz_exit();
 
 exit:
+	erase();
+	refresh();
 	endwin();
 }
 
@@ -644,6 +646,7 @@ next_key:
 			}
 
 			c = 0;
+			standendc(wlist);
 			werase(wlist);
 
 			for (i = 0;
@@ -958,6 +961,10 @@ next_key:
 				c = 0;
 
 			break;
+		case CTRL('w'):
+			c = 0;
+			tgl2c();
+			break;
 		case 'N':
 			if (regex) {
 				c = 0;
@@ -1002,6 +1009,7 @@ static char *helptxt[] = {
        "|<LEFT>		In two-column mode: Enlarge right column",
        "|<RIGHT>	In two-column mode: Enlarge left column",
        "|=		In two-column mode: Make column widths equal",
+       "^W		In diff mode: Toggle two-column mode",
        "/		Search file by typing first letters of filename",
        "//		Search file with regular expression",
        "Sd		Sort files with directories on top",
@@ -1160,6 +1168,7 @@ disp_help(void)
 {
 	unsigned y, i;
 
+	standendc(wlist);
 	werase(wlist);
 	werase(wstat);
 

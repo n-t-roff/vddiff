@@ -13,7 +13,7 @@ LOSS OF USE, DATA OR PROFITS, WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE OR
 OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
 PERFORMANCE OF THIS SOFTWARE.
 ..
-.Dd November 11, 2016
+.Dd November 17, 2016
 .Dt VDDIFF 1
 .Sh NAME
 .Nm vddiff
@@ -21,7 +21,7 @@ PERFORMANCE OF THIS SOFTWARE.
 .Sh SYNOPSYS
 .Nm
 .Op Fl u Op Ar "RC file"
-.Op Fl BbcdEefgIiklmnoqrV
+.Op Fl BbcdEefgIiklmnoqrVy
 .Op Fl F Ar file name pattern
 .Op Fl G Ar file content pattern
 .Op Fl t Ar diff_tool
@@ -289,6 +289,9 @@ The filenames is appended to the given string.
 To include it into the string the symbolic name
 .Dq Li $1
 can be embedded which is expanded to the filename.
+.It Fl y
+Start in two-column mode.
+This is currently only supported if two arguments are given.
 .El
 .Sh INTERACTIVE COMMANDS
 .Bl -tag -width 12n
@@ -337,6 +340,18 @@ Scroll one screen down.
 Go to first file.
 .It Ao Cm END Ac or Sq Li G
 Go to last file.
+.It So Li | Sc Ns Aq Cm LEFT
+In two-column mode:
+Enlarge right column by 10 characters.
+.It So Li | Sc Ns Aq Cm RIGHT
+In two-column mode:
+Enlarge left column by 10 characters.
+.It Dq Li |=
+In two-column mode:
+Make column widths equal.
+.It Aq Cm CTRL-w
+In diff mode:
+Toggle two-column mode.
 .It Sq Li /
 Search file in list by typing the begin of the filename.
 Searching is normally done case-insensitive.
@@ -799,6 +814,9 @@ Everything following a
 (outside quoted strings)
 to the end of the line is a comment.
 .Bl -tag -width 12n
+.It Li twocolumn
+Start in two-column mode.
+This is currently only supported if two arguments are given.
 .It Li difftool Ar string
 Configure
 .Ar string

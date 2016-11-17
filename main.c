@@ -223,7 +223,8 @@ main(int argc, char **argv)
 
 	if (argc < 2) {
 		if (twocols)
-			fmode = TRUE;
+			/*fmode = TRUE;*/
+			twocols=0,bmode=TRUE;
 		else
 			bmode = TRUE;
 	}

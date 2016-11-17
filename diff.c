@@ -145,8 +145,12 @@ build_diff_db(int tree)
 
 		if (i == -1) {
 			if (errno != ENOENT) {
-				printerr(strerror(errno),
-				    "stat \"%s\" failed", lpath);
+				if (!ign_diff_errs && dialog(
+				    "'i' ignore errors, <other key> continue",
+				    NULL, "stat \"%s\" failed: %s", lpath,
+				    strerror(errno)) == 'i')
+					ign_diff_errs = TRUE;
+
 				file_err = TRUE;
 
 				if (scan || qdiff)
@@ -172,8 +176,12 @@ build_diff_db(int tree)
 
 		if (i == -1) {
 			if (errno != ENOENT) {
-				printerr(strerror(errno),
-				    "stat \"%s\" failed", rpath);
+				if (!ign_diff_errs && dialog(
+				    "'i' ignore errors, <other key> continue",
+				    NULL, "stat \"%s\" failed: %s", rpath,
+				    strerror(errno)) == 'i')
+					ign_diff_errs = TRUE;
+
 				file_err = TRUE;
 
 				if (scan || qdiff)
@@ -411,7 +419,8 @@ right_tree:
 		if (!(ent = readdir(d))) {
 			if (!errno)
 				break;
-			printerr(strerror(errno), "readdir %s failed", rpath);
+			printerr(strerror(errno), "readdir \"%s\" failed",
+			    rpath);
 			closedir(d);
 			retval = -1;
 			goto dir_scan_end;
@@ -454,8 +463,12 @@ right_tree:
 
 		if (i == -1) {
 			if (errno != ENOENT) {
-				printerr(strerror(errno), "stat %s failed",
-				    rpath);
+				if (!ign_diff_errs && dialog(
+				    "'i' ignore errors, <other key> continue",
+				    NULL, "stat \"%s\" failed: %s", rpath,
+				    strerror(errno)) == 'i')
+					ign_diff_errs = TRUE;
+
 				file_err = TRUE;
 			}
 

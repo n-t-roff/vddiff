@@ -79,3 +79,13 @@ getlstwin(void)
 	       fmode     ? wllst :
 	                   wlist ;
 }
+
+void
+tgl2c(void)
+{
+	if (bmode || fmode)
+		return;
+
+	twocols = twocols ? FALSE : TRUE;
+	disp_list();
+}
