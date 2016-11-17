@@ -710,6 +710,12 @@ refr_scr(void)
 {
 	wnoutrefresh(getlstwin());
 	wnoutrefresh(wstat);
+
+	if (fmode) {
+		touchwin(wmid);
+		wnoutrefresh(wmid);
+	}
+
 	doupdate();
 }
 
@@ -744,12 +750,14 @@ mbstowchs(WINDOW *w, char *s)
 }
 
 ssize_t
-putmbs(WINDOW *w, char *s)
+putmbs(WINDOW *w, char *s,
+    /* -1: unlimited */
+    int n)
 {
 	ssize_t l;
 
 	l = mbstowchs(w, s);
-	wadd_wchstr(w, ccbuf);
+	wadd_wchnstr(w, ccbuf, n);
 	return l;
 }
 
@@ -758,18 +766,22 @@ addmbs(WINDOW *w, char *s, int mx)
 {
 	int cy, cx, my;
 	ssize_t l;
+	int n;
 
 	getyx(w, cy, cx);
 
-	if (!mx)
+	if (!mx) {
+		n = -1; /* wadd_wchnstr does the work */
 		getmaxyx(w, my, mx);
+	} else
+		n = mx - cx;
 
 	(void)my;
 
 	if (cx >= mx)
 		return 1;
 
-	if ((l = putmbs(w, s)) == -1)
+	if ((l = putmbs(w, s, n)) == -1)
 		return -1;
 
 	cx += l;

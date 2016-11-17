@@ -51,7 +51,6 @@ static int last_line_is_disp(void);
 static int first_line_is_top(void);
 static void curs_down(void);
 static void curs_up(void);
-static void disp_curs(int);
 static void disp_line(unsigned, unsigned, int);
 static void push_state(char *, char *, bool, bool);
 static void pop_state(short);
@@ -225,14 +224,9 @@ do_diff:
 	if (qdiff)
 		return;
 
-	if (fmode) {
-		right_col = TRUE;
-		disp_list();
-		disp_curs(2);
-		wnoutrefresh(getlstwin());
-		right_col = FALSE;
-		disp_list();
-	} else
+	if (fmode)
+		disp_fmode();
+	else
 		disp_list();
 
 	if (twocols)
@@ -347,7 +341,12 @@ next_key:
 
 				midoffs -= 10;
 				set_win_dim();
-				disp_list();
+
+				if (fmode) {
+					resize_fmode();
+				} else
+					disp_list();
+
 				break;
 			}
 
@@ -383,7 +382,12 @@ next_key:
 
 				midoffs += 10;
 				set_win_dim();
-				disp_list();
+
+				if (fmode) {
+					resize_fmode();
+				} else
+					disp_list();
+
 				break;
 			}
 
@@ -1736,7 +1740,7 @@ scroll_down(unsigned num, bool keepscrpos)
 	refr_scr();
 }
 
-static void
+void
 disp_curs(
     /* 0: Remove cursor
      * 1: Normal cursor
@@ -1856,10 +1860,12 @@ disp_line(
 	short color_id = 0;
 	WINDOW *w;
 	attr_t a;
+	int mx;
 	short cp;
 
 	w = getlstwin();
 	f = right_col ? db2_list[i] : db_list[i];
+	mx = twocols ? llstw : 0;
 
 	if (twocols && !fmode)
 		wattr_get(w, &a, &cp, NULL);
@@ -1900,7 +1906,7 @@ no_diff:
 
 	set_file_info(f, twocols && !fmode ? f->ltype : *mode, type, &color_id,
 	    &diff);
-	disp_name(w, y, 0, twocols ? llstw : 0, info, f, *type, color_id,
+	disp_name(w, y, 0, mx, info, f, *type, color_id,
 	    twocols || f->llink ? f->llink : f->rlink, diff);
 
 	if (twocols && !fmode) {
@@ -1946,14 +1952,14 @@ prtc2:
 		mvwaddstr(wstat, 0, 2, type_name(f->ltype));
 
 		if (f->llink) {
-			waddstr(wstat, " -> ");
-			addmbs(wstat, f->llink, 0);
+			addmbs(wstat, " -> ", mx);
+			addmbs(wstat, f->llink, mx);
 		}
 
 		mvwaddstr(wstat, 1, 2, type_name(f->rtype));
 
 		if (f->rlink) {
-			waddstr(wstat, " -> ");
+			addmbs(wstat, " -> ", 0);
 			addmbs(wstat, f->rlink, 0);
 		}
 	} else {
@@ -2020,14 +2026,14 @@ disp_name(WINDOW *w, int y, int x, int mx, int o, struct filediff *f, int t,
 	else
 		mvwprintw(w, y, x, "%c %c ", d, t);
 
-	i = addmbs(w, f->name, 0);
+	i = addmbs(w, f->name, mx);
 	standendc(w);
 
 	if (i)
 		return 1;
 
 	if (l) {
-		addmbs(w, " -> ", 0);
+		addmbs(w, " -> ", mx);
 		putmbsra(w, l, mx);
 	}
 
@@ -2080,7 +2086,7 @@ file_stat(struct filediff *f)
 	if (twocols) {
 		prt2chead();
 		standoutc(wstat);
-		mvwaddch(wstat, 0, llstw, fmode ? '|' : ' ');
+		mvwaddch(wstat, 0, llstw, ' ');
 		standendc(wstat);
 	} else if (bmode) {
 		wmove(wstat, 1, 0);
@@ -2093,13 +2099,15 @@ file_stat(struct filediff *f)
 	}
 
 	if (S_ISLNK(ltyp)) {
-		mvwaddstr(wstat, yl, x, "-> ");
+		wmove(wstat, yl, x);
+		addmbs(wstat, "-> ", mx1);
 		putmbsra(wstat, f->llink, mx1);
 		ltyp = 0;
 	}
 
 	if (S_ISLNK(rtyp)) {
-		mvwaddstr(wstat, yr, x2, "-> ");
+		wmove(wstat, yr, x2);
+		addmbs(wstat, "-> ", 0);
 		putmbsra(wstat, f->rlink, 0);
 		rtyp = 0;
 	}
@@ -2271,12 +2279,14 @@ file_stat(struct filediff *f)
 	}
 
 	if (ltyp && f->llink) {
-		mvwaddstr(wstat, yl, lx1, " -> ");
-		putmbsra(wstat, f->llink, twocols ? llstw : 0);
+		wmove(wstat, yl, lx1);
+		addmbs(wstat, " -> ", mx1);
+		putmbsra(wstat, f->llink, mx1);
 	}
 
 	if (rtyp && f->rlink) {
-		mvwaddstr(wstat, yr, lx2, " -> ");
+		wmove(wstat, yr, lx2);
+		addmbs(wstat, " -> ", 0);
 		putmbsra(wstat, f->rlink, 0);
 	}
 }

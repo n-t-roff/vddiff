@@ -36,7 +36,7 @@ open2cwins(void)
 		return;
 	}
 
-	if (!(wmid = subwin(stdscr, listh, 1, 0, llstw))) {
+	if (!(wmid = newwin(listh, 1, 0, llstw))) {
 		printf("subwin failed\n");
 		return;
 	}
@@ -47,9 +47,9 @@ open2cwins(void)
 	}
 
 	if (color)
-		wbkgd(wmid, '|' | COLOR_PAIR(PAIR_CURSOR));
+		wbkgd(wmid, COLOR_PAIR(PAIR_CURSOR));
 	else
-		wbkgd(wmid, '|' | A_STANDOUT);
+		wbkgd(wmid, A_STANDOUT);
 }
 
 void
@@ -60,7 +60,7 @@ prt2chead(void)
 	lpath[llen] = 0;
 	putmbsra(wstat, lpath, llstw);
 	standoutc(wstat);
-	mvwaddch(wstat, 1, llstw, fmode ? '|' : ' ');
+	mvwaddch(wstat, 1, llstw, ' ');
 	standendc(wstat);
 	rpath[rlen] = 0;
 	putmbsra(wstat, rpath, 0);
@@ -88,4 +88,27 @@ tgl2c(void)
 
 	twocols = twocols ? FALSE : TRUE;
 	disp_list();
+}
+
+void
+resize_fmode(void)
+{
+	wresize(wllst, listh, llstw);
+	mvwin(wmid, 0, llstw);
+	wresize(wrlst, listh, rlstw);
+	disp_fmode();
+	wrefresh(getlstwin());
+}
+
+void
+disp_fmode(void)
+{
+	right_col = right_col ? FALSE : TRUE;
+	disp_list();
+	disp_curs(2);
+	wnoutrefresh(getlstwin());
+	right_col = right_col ? FALSE : TRUE;
+	disp_list();
+	touchwin(wmid);
+	wrefresh(wmid);
 }
