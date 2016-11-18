@@ -69,12 +69,6 @@ prt2chead(void)
 	standendc(wstat);
 	rpath[rlen] = 0;
 	putmbsra(wstat, rpath, 0);
-
-	if (fmode)
-		mvwchgat(wstat, 1, right_col ? rlstx : 0,
-		    right_col ? rlstw : llstw,
-		    color ? 0 : (A_REVERSE | A_BOLD),
-		    color ? PAIR_HEADLINE : 0, NULL);
 }
 
 WINDOW *

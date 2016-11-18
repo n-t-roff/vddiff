@@ -597,10 +597,19 @@ chk_mark(char *file, short tree)
 char *
 saveselname(void)
 {
-	if (!db_num)
-		return NULL;
+	if (right_col) {
+		if (!db2_num)
+			return NULL;
 
-	return strdup(((struct filediff *)(db_list[top_idx + curs]))->name);
+		return strdup(((struct filediff *)(db2_list[top_idx2 +
+		    curs2]))->name);
+	} else {
+		if (!db_num)
+			return NULL;
+
+		return strdup(((struct filediff *)(db_list[top_idx +
+		    curs]))->name);
+	}
 }
 
 unsigned
@@ -608,10 +617,17 @@ findlistname(char *name)
 {
 	unsigned u;
 
-	for (u = 0; u < db_num; u++)
-		if (!strcmp(name,
-		    ((struct filediff *)(db_list[u]))->name))
-			return u;
+	if (right_col) {
+		for (u = 0; u < db2_num; u++)
+			if (!strcmp(name,
+			    ((struct filediff *)(db2_list[u]))->name))
+				return u;
+	} else {
+		for (u = 0; u < db_num; u++)
+			if (!strcmp(name,
+			    ((struct filediff *)(db_list[u]))->name))
+				return u;
+	}
 
 	return 0;
 }

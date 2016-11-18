@@ -38,6 +38,7 @@ PERFORMANCE OF THIS SOFTWARE.
 #include "db.h"
 #include "fs.h"
 #include "ed.h"
+#include "tc.h"
 
 struct str_list {
 	char *s;
@@ -541,7 +542,12 @@ rebuild_db(
 		mark_global();
 
 	diff_db_free(FALSE);
-	build_diff_db(bmode ? 1 : subtree);
+	build_diff_db(bmode || fmode ? 1 : subtree);
+
+	if (fmode) {
+		diff_db_free(TRUE);
+		build_diff_db(2);
+	}
 
 	if (mode && name) {
 		center(findlistname(name));

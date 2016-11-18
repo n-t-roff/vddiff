@@ -8,7 +8,6 @@
 #define PAIR_ERROR     8
 #define PAIR_NORMAL    9
 #define PAIR_MARK      10
-#define PAIR_HEADLINE  11
 
 struct ui_state {
 	char *lpth, *rpth;

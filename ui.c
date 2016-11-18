@@ -147,7 +147,6 @@ build_ui(void)
 		init_pair(PAIR_CURSOR   , color_cursor_fg, color_cursor_bg);
 		init_pair(PAIR_ERROR    , color_error_fg , color_error_bg );
 		init_pair(PAIR_MARK     , color_mark_fg  , color_mark_bg  );
-		init_pair(PAIR_HEADLINE , COLOR_BLACK    , COLOR_YELLOW   );
 		bkgd(COLOR_PAIR(PAIR_NORMAL));
 	}
 
@@ -1956,7 +1955,9 @@ no_diff:
 	set_file_info(f, twocols && !fmode ? f->ltype : *mode, type, &color_id,
 	    &diff);
 	disp_name(w, y, 0, mx, info, f, *type, color_id,
-	    twocols || f->llink ? f->llink : f->rlink, diff);
+	    right_col           ? f->rlink :
+	    twocols || f->llink ? f->llink : f->rlink,
+	    diff);
 
 	if (twocols && !fmode) {
 prtc2:
@@ -1990,35 +1991,28 @@ prtc2:
 		return;
 	}
 
-	if (twocols) {
-		wmove(wstat, 0, 0);
-		wclrtoeol(wstat);
-	} else
-		werase(wstat);
+	werase(wstat);
+	statcol();
 
-	if (type[0] == '!') {
-		statcol();
-		mvwaddstr(wstat, 0, 2, type_name(f->ltype));
+	if (type[0] == '!' || diff == 'X') {
+		mvwaddstr(wstat, 0, twocols ? 0 : 2, type_name(f->ltype));
 
 		if (f->llink) {
 			addmbs(wstat, " -> ", mx);
 			addmbs(wstat, f->llink, mx);
 		}
 
-		mvwaddstr(wstat, 1, 2, type_name(f->rtype));
+		mvwaddstr(wstat, twocols ? 0 : 1, twocols ? rlstx : 2,
+		    type_name(f->rtype));
 
 		if (f->rlink) {
 			addmbs(wstat, " -> ", 0);
 			addmbs(wstat, f->rlink, 0);
 		}
-	} else {
-		statcol();
-
-		if (fmode) {
-			file_stat(db_list[curs], db2_list[curs2]);
-		} else
-			file_stat(f, NULL);
-	}
+	} else if (fmode)
+		file_stat(db_list[curs], db2_list[curs2]);
+	else
+		file_stat(f, NULL);
 
 	filt_stat();
 	dir_change = FALSE;
@@ -2096,7 +2090,15 @@ disp_name(WINDOW *w, int y, int x, int mx, int o, struct filediff *f, int t,
 static void
 statcol(void)
 {
-	if (twocols || dir_change || bmode)
+	if (twocols) {
+		prt2chead();
+		standoutc(wstat);
+		mvwaddch(wstat, 0, llstw, ' ');
+		standendc(wstat);
+		return;
+	}
+
+	if (dir_change || bmode)
 		return;
 
 	standoutc(wstat);
@@ -2140,10 +2142,6 @@ file_stat(struct filediff *f, struct filediff *f2)
 	mx1 = twocols ? llstw : 0;
 
 	if (twocols) {
-		prt2chead();
-		standoutc(wstat);
-		mvwaddch(wstat, 0, llstw, ' ');
-		standendc(wstat);
 	} else if (bmode) {
 		wmove(wstat, 1, 0);
 		putmbsra(wstat, rpath, 0);
@@ -2459,6 +2457,11 @@ mark_global(void)
 {
 	struct filediff *m;
 
+	if (fmode) {
+		mark = NULL;
+		return;
+	}
+
 	mark_idx = -1;
 	m = malloc(sizeof(struct filediff));
 	*m = *mark;
@@ -2571,14 +2574,26 @@ no_file(void)
 void
 center(unsigned idx)
 {
-	if (db_num <= listh || idx <= listh / 2)
-		top_idx = 0;
-	else if (db_num - idx < listh / 2)
-		top_idx = db_num - listh;
-	else
-		top_idx = idx - listh / 2;
+	unsigned dn, *ti, *cu;
 
-	curs = idx - top_idx;
+	if (right_col) {
+		dn = db2_num;
+		ti = &top_idx2;
+		cu = &curs2;
+	} else {
+		dn = db_num;
+		ti = &top_idx;
+		cu = &curs;
+	}
+
+	if (dn <= listh || idx <= listh / 2)
+		*ti = 0;
+	else if (dn - idx < listh / 2)
+		*ti = dn - listh;
+	else
+		*ti = idx - listh / 2;
+
+	*cu = idx - *ti;
 	disp_list();
 }
 
