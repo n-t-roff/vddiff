@@ -223,8 +223,7 @@ main(int argc, char **argv)
 
 	if (argc < 2) {
 		if (twocols)
-			/*fmode = TRUE;*/
-			twocols=0,bmode=TRUE;
+			fmode = TRUE;
 		else
 			bmode = TRUE;
 	}
@@ -306,7 +305,7 @@ free:
 static void
 check_args(int argc, char **argv)
 {
-	char *s;
+	char *s, *s2;
 
 	if (argc) {
 		s = *argv++;
@@ -326,8 +325,24 @@ check_args(int argc, char **argv)
 		exit(1);
 	}
 
-	llen = strlen(s);
-	memcpy(lpath, s, llen + 1);
+	if (fmode) {
+		if (!(s2 = realpath(s, NULL))) {
+			printf("realpath \"%s\" failed: %s\n", s,
+			    strerror(errno));
+			exit(1);
+		}
+	} else
+		s2 = s;
+
+	if ((llen = strlen(s2)) >= PATHSIZ - 1) {
+		printf("Path too long: %s\n", s2);
+		exit(1);
+	}
+
+	memcpy(lpath, s2, llen + 1);
+
+	if (fmode)
+		free(s2);
 
 	if (bmode)
 		return;
@@ -355,8 +370,25 @@ check_args(int argc, char **argv)
 		exit(1);
 	}
 
-	rlen = strlen(s);
+	if (fmode) {
+		if (!(s2 = realpath(s, NULL))) {
+			printf("realpath \"%s\" failed: %s\n", s,
+			    strerror(errno));
+			exit(1);
+		}
+
+		s = s2;
+	}
+
+	if ((rlen = strlen(s)) >= PATHSIZ - 1) {
+		printf("Path too long: %s\n", s);
+		exit(1);
+	}
+
 	memcpy(rpath, s, rlen + 1);
+
+	if (fmode)
+		free(s);
 }
 
 static void

@@ -692,7 +692,7 @@ anykey(void)
 	wrefresh(wlist);
 	printerr(NULL, "Press any key to continue");
 	getch();
-	disp_list();
+	disp_fmode();
 }
 
 void
@@ -708,14 +708,14 @@ free_zdir(struct filediff *z, char *t)
 void
 refr_scr(void)
 {
-	wnoutrefresh(getlstwin());
-	wnoutrefresh(wstat);
-
 	if (fmode) {
-		touchwin(wmid);
+		wnoutrefresh(wllst);
 		wnoutrefresh(wmid);
-	}
+		wnoutrefresh(wrlst);
+	} else
+		wnoutrefresh(wlist);
 
+	wnoutrefresh(wstat);
 	doupdate();
 }
 

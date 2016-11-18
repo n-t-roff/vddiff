@@ -32,6 +32,7 @@ PERFORMANCE OF THIS SOFTWARE.
 #include "db.h"
 #include "diff.h"
 #include "fs.h"
+#include "tc.h"
 
 const char *const vimdiff  = "vim -dR --";
 const char *const diffless = "diff -- $1 $2 | less";
@@ -428,7 +429,7 @@ exec_cmd(char **av, tool_flags_t flags, char *path, char *msg)
 		printerr(strerror(errno), "fork failed");
 
 	if (!(flags & TOOL_NOLIST))
-		disp_list();
+		disp_fmode();
 
 	return status;
 }

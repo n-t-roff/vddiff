@@ -60,7 +60,7 @@ static char *type_name(mode_t);
 static void ui_resize(void);
 static void set_win_dim(void);
 static void statcol(void);
-static void file_stat(struct filediff *);
+static void file_stat(struct filediff *, struct filediff *);
 static void set_file_info(struct filediff *, mode_t, int *, short *, int *);
 static int disp_name(WINDOW *, int, int, int, int, struct filediff *, int,
     short, char *, int);
@@ -224,10 +224,7 @@ do_diff:
 	if (qdiff)
 		return;
 
-	if (fmode)
-		disp_fmode();
-	else
-		disp_list();
+	disp_fmode();
 
 	if (twocols)
 		prt2chead();
@@ -951,7 +948,7 @@ next_key:
 				break;
 
 			c = 0;
-			disp_curs(2);
+			disp_curs(0);
 			wnoutrefresh(getlstwin());
 			right_col = right_col ? FALSE : TRUE;
 			prt2chead();
@@ -1150,7 +1147,7 @@ help(void) {
 	}
 
 exit:
-	disp_list();
+	disp_fmode();
 }
 
 #if NCURSES_MOUSE_VERSION >= 2
@@ -1179,10 +1176,10 @@ disp_help(void)
 	for (y = 0, i = help_top; y < listh && i < HELP_NUM; y++, i++)
 		mvwaddstr(wlist, y, 0, helptxt[i]);
 
+	wrefresh(wlist);
+
 	if (!help_top && HELP_NUM > listh)
 		printerr(NULL, "Scroll down for more");
-
-	refr_scr();
 }
 
 static void
@@ -1234,7 +1231,8 @@ help_down(short n)
 		mvwaddstr(wlist, listh - i, 0, helptxt[help_top + listh - i]);
 
 	werase(wstat);
-	refr_scr();
+	wnoutrefresh(wlist);
+	wrefresh(wstat);
 }
 
 static void
@@ -1262,7 +1260,8 @@ help_up(unsigned short n)
 		mvwaddstr(wlist, i, 0, helptxt[help_top + i]);
 
 	werase(wstat);
-	refr_scr();
+	wnoutrefresh(wlist);
+	wrefresh(wstat);
 }
 
 #ifdef NCURSES_MOUSE_VERSION
@@ -1964,7 +1963,11 @@ prtc2:
 		}
 	} else {
 		statcol();
-		file_stat(f);
+
+		if (fmode) {
+			file_stat(db_list[curs], db2_list[curs2]);
+		} else
+			file_stat(f, NULL);
 	}
 
 	filt_stat();
@@ -2066,12 +2069,15 @@ type_name(mode_t m)
 }
 
 static void
-file_stat(struct filediff *f)
+file_stat(struct filediff *f, struct filediff *f2)
 {
 	int x, x2, w, w1, w2, yl, yr, lx1, lx2, mx1;
 	struct passwd *pw;
 	struct group *gr;
 	mode_t ltyp, rtyp;
+
+	if (!f2)
+		f2 = f;
 
 	standendc(wstat);
 	x  = twocols || bmode ? 0 : 2;
@@ -2080,7 +2086,7 @@ file_stat(struct filediff *f)
 	yl = 0;
 	yr = twocols ? 0 : 1;
 	ltyp = f->ltype;
-	rtyp = f->rtype;
+	rtyp = f2->rtype;
 	mx1 = twocols ? llstw : 0;
 
 	if (twocols) {
@@ -2108,7 +2114,7 @@ file_stat(struct filediff *f)
 	if (S_ISLNK(rtyp)) {
 		wmove(wstat, yr, x2);
 		addmbs(wstat, "-> ", 0);
-		putmbsra(wstat, f->rlink, 0);
+		putmbsra(wstat, f2->rlink, 0);
 		rtyp = 0;
 	}
 
@@ -2135,10 +2141,10 @@ file_stat(struct filediff *f)
 	}
 
 	if (rtyp) {
-		if ((pw = getpwuid(f->ruid)))
+		if ((pw = getpwuid(f2->ruid)))
 			memcpy(rbuf, pw->pw_name, strlen(pw->pw_name) + 1);
 		else
-			snprintf(rbuf, sizeof rbuf, "%u", f->ruid);
+			snprintf(rbuf, sizeof rbuf, "%u", f2->ruid);
 	}
 
 	if (ltyp) {
@@ -2176,10 +2182,10 @@ file_stat(struct filediff *f)
 	}
 
 	if (rtyp) {
-		if ((gr = getgrgid(f->rgid)))
+		if ((gr = getgrgid(f2->rgid)))
 			memcpy(rbuf, gr->gr_name, strlen(gr->gr_name) + 1);
 		else
-			snprintf(rbuf, sizeof rbuf, "%u", f->rgid);
+			snprintf(rbuf, sizeof rbuf, "%u", f2->rgid);
 	}
 
 	if (ltyp) {
@@ -2226,10 +2232,10 @@ file_stat(struct filediff *f)
 	if (rtyp && !S_ISDIR(rtyp)) {
 		if (S_ISCHR(rtyp) || S_ISBLK(rtyp))
 			w2 = snprintf(rbuf, sizeof rbuf, "%lu, %lu",
-			    (unsigned long)major(f->rrdev),
-			    (unsigned long)minor(f->rrdev));
+			    (unsigned long)major(f2->rrdev),
+			    (unsigned long)minor(f2->rrdev));
 		else
-			w2 = getfilesize(rbuf, sizeof rbuf, f->rsiz);
+			w2 = getfilesize(rbuf, sizeof rbuf, f2->rsiz);
 
 		w2++;
 	} else
@@ -2273,7 +2279,7 @@ file_stat(struct filediff *f)
 	}
 
 	if (rtyp) {
-		lx2 = x2 + gettimestr(rbuf, sizeof rbuf, &f->rmtim);
+		lx2 = x2 + gettimestr(rbuf, sizeof rbuf, &f2->rmtim);
 		wmove(wstat, yr, x2);
 		addmbs(wstat, rbuf, 0);
 	}
@@ -2284,10 +2290,10 @@ file_stat(struct filediff *f)
 		putmbsra(wstat, f->llink, mx1);
 	}
 
-	if (rtyp && f->rlink) {
+	if (rtyp && f2->rlink) {
 		wmove(wstat, yr, lx2);
 		addmbs(wstat, " -> ", 0);
-		putmbsra(wstat, f->rlink, 0);
+		putmbsra(wstat, f2->rlink, 0);
 	}
 }
 

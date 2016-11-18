@@ -124,7 +124,7 @@ fs_rename(int tree)
 			printerr(strerror(errno), "lstat \"%s\" failed", pth1);
 	} else {
 		if (dialog(y_n_txt, NULL,
-		    "Delete existing %s %s?", S_ISDIR(stat1.st_mode) ?
+		    "Delete existing %s \"%s\"?", S_ISDIR(stat1.st_mode) ?
 		    "directory" : "file", pth1) != 'y')
 			goto exit;
 
@@ -139,7 +139,7 @@ fs_rename(int tree)
 	pthcat(pth1, len1, f->name);
 
 	if (rename(pth1, s) == -1) {
-		printerr(strerror(errno), "rename %s failed");
+		printerr(strerror(errno), "rename \"%s\" failed");
 		goto exit;
 	}
 
@@ -205,7 +205,7 @@ fs_chmod(int tree, long u, int num)
 		pthcat(pth1, len1, f->name);
 
 		if (chmod(pth1, m) == -1) {
-			printerr(strerror(errno), "chmod %s failed");
+			printerr(strerror(errno), "chmod \"%s\" failed");
 			goto exit;
 		}
 	}
@@ -404,13 +404,13 @@ fs_rm(int tree, char *txt, long u, int n)
 		}
 
 		if (!m && dialog(y_n_txt, NULL,
-		    "Really %s %s%s?", txt ? txt : "delete",
+		    "Really %s %s\"%s\"?", txt ? txt : "delete",
 		    S_ISDIR(stat1.st_mode) ? "directory " : "", pth1) != 'y') {
 			rv = 1;
 			goto cancel;
 		}
 
-		printerr(NULL, "Deleting %s%s", S_ISDIR(stat1.st_mode) ?
+		printerr(NULL, "Deleting %s\"%s\"", S_ISDIR(stat1.st_mode) ?
 		    "directory " : "", pth1);
 
 		if (S_ISDIR(stat1.st_mode)) {
@@ -472,7 +472,7 @@ fs_cp(int to, long u, int n)
 		if (( followlinks &&  stat(pth1, &st) == -1) ||
 		    (!followlinks && lstat(pth1, &st) == -1)) {
 			if (errno != ENOENT)
-				printerr(strerror(errno), "stat %s failed",
+				printerr(strerror(errno), "stat \"%s\" failed",
 				    pth1);
 			continue;
 		}
@@ -482,8 +482,8 @@ fs_cp(int to, long u, int n)
 		if (!followlinks) {
 			if (fs_rm(to, "overwrite", u, 1) == 1)
 				return;
-		} else if (!m && dialog(y_n_txt, NULL, "Really overwrite %s?",
-		    pth2) != 'y')
+		} else if (!m && dialog(y_n_txt, NULL,
+		    "Really overwrite \"%s\"?", pth2) != 'y')
 			return;
 
 		/* fs_rm() did change pths and stat1 */

@@ -31,6 +31,9 @@ bool right_col;
 void
 open2cwins(void)
 {
+	/* Else wmid ist not displayed. ncurses bug? */
+	refresh();
+
 	if (!(wllst = subwin(stdscr, listh, llstw, 0, 0))) {
 		printf("subwin failed\n");
 		return;
@@ -50,6 +53,8 @@ open2cwins(void)
 		wbkgd(wmid, COLOR_PAIR(PAIR_CURSOR));
 	else
 		wbkgd(wmid, A_STANDOUT);
+
+	wnoutrefresh(wmid);
 }
 
 void
@@ -68,7 +73,7 @@ prt2chead(void)
 	if (fmode)
 		mvwchgat(wstat, 1, right_col ? rlstx : 0,
 		    right_col ? rlstw : llstw,
-		    (color ? 0 : A_REVERSE) | A_BOLD,
+		    color ? 0 : (A_REVERSE | A_BOLD),
 		    color ? PAIR_HEADLINE : 0, NULL);
 }
 
@@ -103,12 +108,17 @@ resize_fmode(void)
 void
 disp_fmode(void)
 {
+	if (!fmode) {
+		disp_list();
+		return;
+	}
+
 	right_col = right_col ? FALSE : TRUE;
 	disp_list();
-	disp_curs(2);
+	disp_curs(0);
 	wnoutrefresh(getlstwin());
+	touchwin(wmid);
+	wnoutrefresh(wmid);
 	right_col = right_col ? FALSE : TRUE;
 	disp_list();
-	touchwin(wmid);
-	wrefresh(wmid);
 }
