@@ -349,7 +349,7 @@ next_key:
 
 			c = 0;
 
-			if (bmode)
+			if (bmode || fmode)
 				enter_dir("..", NULL, FALSE, FALSE);
 			else
 				pop_state(1);
@@ -1319,8 +1319,10 @@ action(
 		return;
 
 	if (fmode) {
-		f1 = db_list[top_idx + curs];
-		f2 = db2_list[top_idx2 + curs2];
+		if (right_col)
+			f1 = f2 = db2_list[top_idx2 + curs2];
+		else
+			f1 = f2 = db_list[top_idx + curs];
 	} else
 		f1 = f2 = db_list[top_idx + curs];
 
@@ -1423,7 +1425,7 @@ action(
 			f2 = z2;
 	}
 
-	if (right_col || !f1->ltype ||
+	if (!f1->ltype ||
 	    /* Tested here to support "or" */
 	    tree == 2) {
 		if (S_ISREG(f2->rtype) || ign_ext)
@@ -1483,8 +1485,14 @@ page_down(void)
 		return;
 	}
 
-	top_idx += listh;
-	curs = 0;
+	if (right_col) {
+		top_idx2 += listh;
+		curs2 = 0;
+	} else {
+		top_idx += listh;
+		curs = 0;
+	}
+
 	disp_list();
 }
 
@@ -1494,25 +1502,41 @@ curs_last(void)
 	if (last_line_is_disp())
 		return;
 
-	top_idx = db_num - listh;
-	curs = listh - 1;
+	if (right_col) {
+		top_idx2 = db2_num - listh;
+		curs2 = listh - 1;
+	} else {
+		top_idx = db_num - listh;
+		curs = listh - 1;
+	}
+
 	disp_list();
 }
 
 static void
 page_up(void)
 {
+	unsigned *ti, *cu;
+
 	if (first_line_is_top()) {
 		printerr(NULL, "At top");
 		return;
 	}
 
-	if (top_idx < listh) {
-		top_idx = 0;
-		curs -= top_idx;
+	if (right_col) {
+		ti = &top_idx2;
+		cu = &curs2;
 	} else {
-		top_idx -= listh;
-		curs = listh - 1;
+		ti = &top_idx;
+		cu = &curs;
+	}
+
+	if (*ti < listh) {
+		*ti = 0;
+		*cu -= *ti;
+	} else {
+		*ti -= listh;
+		*cu = listh - 1;
 	}
 
 	disp_list();
@@ -1524,18 +1548,34 @@ curs_first(void)
 	if (first_line_is_top())
 		return;
 
-	top_idx = curs = 0;
+	if (right_col)
+		top_idx2 = curs2 = 0;
+	else
+		top_idx = curs = 0;
+
 	disp_list();
 }
 
 static int
 last_line_is_disp(void)
 {
-	if (db_num - top_idx <= listh) {
+	unsigned dn, ti, *cu;
+
+	if (right_col) {
+		dn = db2_num;
+		ti = top_idx2;
+		cu = &curs2;
+	} else {
+		dn = db_num;
+		ti = top_idx;
+		cu = &curs;
+	}
+
+	if (dn - ti <= listh) {
 		/* last line is currently displayed */
-		if (curs != db_num - top_idx - 1) {
+		if (*cu != dn - ti - 1) {
 			disp_curs(0);
-			curs = db_num - top_idx - 1;
+			*cu = dn - ti - 1;
 			disp_curs(1);
 			refr_scr();
 		}
@@ -1548,10 +1588,20 @@ last_line_is_disp(void)
 static int
 first_line_is_top(void)
 {
-	if (!top_idx) {
-		if (curs) {
+	unsigned ti, *cu;
+
+	if (right_col) {
+		ti = top_idx2;
+		cu = &curs2;
+	} else {
+		ti = top_idx;
+		cu = &curs;
+	}
+
+	if (!ti) {
+		if (*cu) {
 			disp_curs(0);
-			curs = 0;
+			*cu = 0;
 			disp_curs(1);
 			refr_scr();
 		}
@@ -2658,27 +2708,50 @@ enter_dir(char *name, char *rnam, bool lzip, bool rzip)
 	if (mark && !gl_mark)
 		mark_global();
 
-	if (!bmode) {
+	if (!bmode && !fmode) {
 		push_state(name, rnam, lzip, rzip);
 		subtree = (name ? 1 : 0) | (rnam ? 2 : 0);
 		scan_subdir(name, rnam, subtree);
 	} else {
 		unsigned *uv;
+		char *cp; /* current path */
+		unsigned *ti, *cu;
 #ifdef HAVE_LIBAVLBST
 		struct bst_node *n;
 #else
 		struct ptr_db_ent *n;
 #endif
-		db_set_curs(rpath, top_idx, curs);
+		if (!name)
+			name = rnam;
+
+		if (bmode || right_col)
+			cp = rpath;
+		else
+			cp = lpath;
+
+		if (right_col) {
+			ti = &top_idx2;
+			cu = &curs2;
+		} else {
+			ti = &top_idx;
+			cu = &curs;
+		}
+
+		db_set_curs(cp, *ti, *cu);
 		n = NULL; /* flag */
 
 		if (*name == '/') {
-			if (!getcwd(rpath, sizeof rpath))
-				printerr(strerror(errno), "getcwd failed");
+			if (bmode) {
+				if (!getcwd(rpath, sizeof rpath))
+					printerr(strerror(errno),
+					    "getcwd failed");
 
-			ptr_db_add(&uz_path_db, strdup(name), strdup(rpath));
+				cp = rpath;
+			}
+
+			ptr_db_add(&uz_path_db, strdup(name), strdup(cp));
 		} else if (*name == '.' && name[1] == '.' && !name[2] &&
-		    !ptr_db_srch(&uz_path_db, rpath, (void **)&rnam,
+		    !ptr_db_srch(&uz_path_db, cp, (void **)&rnam,
 		    (void **)&n)) {
 			name = rnam; /* dat */
 #ifdef HAVE_LIBAVLBST
@@ -2691,17 +2764,24 @@ enter_dir(char *name, char *rnam, bool lzip, bool rzip)
 			/* DON'T REMOVE! (Cause currently unclear) */
 			n = NULL;
 
-		if (chdir(name) == -1) {
+		if (bmode && chdir(name) == -1) {
 			printerr(strerror(errno),
 			    "chdir \"%s\" failed", name);
 			return;
 		}
 
-		top_idx = 0;
-		curs = 0;
+		if (fmode)
+			name = strdup(name);
+		else
+			name = NULL;
 
-		diff_db_free(FALSE);
-		scan_subdir(NULL, NULL, 1);
+		*ti = 0;
+		*cu = 0;
+		diff_db_free(right_col);
+		scan_subdir(name, NULL, right_col ? 2 : 1);
+
+		if (fmode)
+			free(name);
 
 		if (n) {
 			size_t l;
@@ -2716,9 +2796,9 @@ enter_dir(char *name, char *rnam, bool lzip, bool rzip)
 			free(name); /* dat */
 		}
 
-		if ((uv = db_get_curs(rpath))) {
-			top_idx = *uv++;
-			curs    = *uv;
+		if ((uv = db_get_curs(cp))) {
+			*ti = *uv++;
+			*cu = *uv;
 		}
 	}
 

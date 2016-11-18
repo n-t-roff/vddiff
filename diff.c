@@ -43,6 +43,7 @@ struct str_list {
 static struct filediff *alloc_diff(char *);
 static void add_diff_dir(void);
 static char *read_link(char *, off_t);
+static size_t pthcut(char *, size_t);
 
 static struct filediff *diff;
 static off_t lsiz1, lsiz2;
@@ -558,6 +559,9 @@ dir_scan_end:
 void
 scan_subdir(char *name, char *rnam, int tree)
 {
+	if (!rnam)
+		rnam = name;
+
 	if (tree & 1) {
 		if (name)
 			llen = pthcat(lpath, llen, name);
@@ -566,7 +570,7 @@ scan_subdir(char *name, char *rnam, int tree)
 	}
 
 	if (tree & 2)
-		rlen = pthcat(rpath, rlen, rnam ? rnam : name);
+		rlen = pthcat(rpath, rlen, rnam);
 
 	build_diff_db(tree);
 }
@@ -785,6 +789,9 @@ pthcat(char *p, size_t l, char *n)
 {
 	size_t ln = strlen(n);
 
+	if (*n == '.' && n[1] == '.' && !n[2])
+		return pthcut(p, l);
+
 	if (l + ln + 2 > PATHSIZ) {
 		printerr(NULL, "Path buffer overflow");
 		return l;
@@ -796,4 +803,15 @@ pthcat(char *p, size_t l, char *n)
 
 	memcpy(p + l, n, ln + 1);
 	return l + ln;
+}
+
+static size_t
+pthcut(char *p, size_t l)
+{
+	if (l == 1)
+		return l;
+
+	while (l > 1 && p[--l] != '/');
+	p[l] = 0;
+	return l;
 }
