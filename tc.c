@@ -14,12 +14,14 @@ OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
 PERFORMANCE OF THIS SOFTWARE.
 */
 
+#include <string.h>
 #include <regex.h>
 #include "compat.h"
 #include "ui.h"
 #include "tc.h"
 #include "main.h"
 #include "ui2.h"
+#include "fs.h"
 
 int llstw, rlstw, rlstx, midoffs;
 WINDOW *wllst, *wmid, *wrlst;
@@ -114,4 +116,20 @@ disp_fmode(void)
 	wnoutrefresh(wmid);
 	right_col = right_col ? FALSE : TRUE;
 	disp_list();
+}
+
+void
+fmode_cp_pth(void)
+{
+	if (right_col) {
+		lpath[llen] = 0;
+		memcpy(rpath, lpath, llen + 1);
+		rlen = llen;
+	} else {
+		rpath[rlen] = 0;
+		memcpy(lpath, rpath, rlen + 1);
+		llen = rlen;
+	}
+
+	enter_dir(NULL, NULL, FALSE, FALSE);
 }

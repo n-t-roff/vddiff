@@ -31,6 +31,7 @@ void action(short, short, unsigned short, bool);
 void mark_global(void);
 void clr_mark(void);
 void disp_curs(int);
+void enter_dir(char *, char *, bool, bool);
 
 extern short color;
 extern short color_leftonly ,

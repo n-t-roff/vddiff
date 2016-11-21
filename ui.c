@@ -54,7 +54,6 @@ static void curs_up(void);
 static void disp_line(unsigned, unsigned, int);
 static void push_state(char *, char *, bool, bool);
 static void pop_state(short);
-static void enter_dir(char *, char *, bool, bool);
 static void help(void);
 static char *type_name(mode_t);
 static void ui_resize(void);
@@ -971,6 +970,13 @@ next_key:
 			c = 0;
 			tgl2c();
 			break;
+		case '#':
+			if (!fmode)
+				break;
+
+			c = 0;
+			fmode_cp_pth();
+			break;
 		case 'N':
 			if (regex) {
 				c = 0;
@@ -1095,6 +1101,7 @@ static char *helptxt[] = {
        "vl		View raw left file contents",
        "vr		View raw right file contents",
        ":		Enter configuration option",
+       "#		In fmode: Copy current path from other column",
        "W		Toggle wait for <ENTER> after running external tool" };
 
 #define HELP_NUM (sizeof(helptxt) / sizeof(*helptxt))
@@ -2626,7 +2633,7 @@ pop_state(
 	}
 }
 
-static void
+void
 enter_dir(char *name, char *rnam, bool lzip, bool rzip)
 {
 	dir_change = TRUE;
@@ -2649,15 +2656,20 @@ enter_dir(char *name, char *rnam, bool lzip, bool rzip)
 		if (!name)
 			name = rnam;
 
-		if (bmode || right_col)
+		if (bmode)
 			cp = rpath;
-		else
+		else if (right_col) {
+			rpath[rlen] = 0;
+			cp = rpath;
+		} else {
+			lpath[llen] = 0;
 			cp = lpath;
+		}
 
 		db_set_curs(cp, top_idx[right_col], curs[right_col]);
 		n = NULL; /* flag */
 
-		if (*name == '/') {
+		if (name && *name == '/') {
 			if (bmode) {
 				if (!getcwd(rpath, sizeof rpath))
 					printerr(strerror(errno),
@@ -2667,7 +2679,7 @@ enter_dir(char *name, char *rnam, bool lzip, bool rzip)
 			}
 
 			ptr_db_add(&uz_path_db, strdup(name), strdup(cp));
-		} else if (*name == '.' && name[1] == '.' && !name[2] &&
+		} else if (name && *name == '.' && name[1] == '.' && !name[2] &&
 		    !ptr_db_srch(&uz_path_db, cp, (void **)&rnam,
 		    (void **)&n)) {
 			name = rnam; /* dat */
@@ -2687,7 +2699,7 @@ enter_dir(char *name, char *rnam, bool lzip, bool rzip)
 			return;
 		}
 
-		if (fmode)
+		if (fmode && name)
 			name = strdup(name);
 		else
 			name = NULL;
@@ -2712,6 +2724,11 @@ enter_dir(char *name, char *rnam, bool lzip, bool rzip)
 			rmtmpdirs(rnam); /* does a free() */
 			free(name); /* dat */
 		}
+
+		if (right_col)
+			rpath[rlen] = 0;
+		else if (fmode)
+			lpath[llen] = 0;
 
 		if ((uv = db_get_curs(cp))) {
 			top_idx[right_col] = *uv++;

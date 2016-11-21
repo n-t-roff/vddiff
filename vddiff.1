@@ -73,6 +73,16 @@ whereas the normal mode is called
 .Sy diff mode ) .
 By use of marks files can be compared in bmode,
 but comparing directories is not possible.
+If less than two arguments are used in two-column mode
+kind of a file manager mode (called
+.Sy fmode )
+is started.
+This mode does not support global marks but allows
+comparison of directories.
+All
+.Nm
+modes are explained in section
+.Sx VDDIFF MODES .
 .Pp
 Symbols are printed in two columns before the names
 which have the following meaning:
@@ -796,6 +806,10 @@ which can be accessed with the
 and
 .Aq Cm DOWN
 keys.
+.It Sq Li #
+In
+.Sy fmode :
+Set path of active column to path of the other column.
 .It Sq Li W
 Toggle to always wait for <ENTER> after running an external tool.
 This can be useful for debugging purposes.
@@ -1112,6 +1126,40 @@ In the latter case
 .Li $PATH
 is searched to determine the full path.
 .El
+.Sh VDDIFF MODES
+.Ss Diff mode
+Diff mode is entered when two arguments are used.
+Key
+.Aq Cm CTRL-w
+switches to two-column diff mode.
+.Ss Two-column diff mode
+Two-column diff mode is equal to diff mode
+except for a different data presentation.
+Key
+.Aq Cm CTRL-w
+switches to single-column diff mode,
+key
+.Sq Li =
+switches to fmode.
+.Ss Bmode (browse mode)
+Bmode is a simply file browser mode.
+It allows file comparison by use or marks,
+but directory comparison is not possible.
+It is not possible to switch from any mode to
+or to any mode from bmode.
+.Ss Fmode (file manager mode)
+Fmode is a simple two-column file manager mode.
+It allows comparison of files and directories
+by use of local marks.
+This mode does not have global marks.
+If a directory is left, an existing mark in this
+directory is deleted.
+Generally in any mode at most one mark is supported.
+If a mark is defined, an existing mark (in either column)
+is deleted.
+Key
+.Sq Li =
+switches to two-column diff mode.
 .Sh FILES
 .Bl -tag -width ~/.vddiffrc -compact
 .It Pa ~/.vddiffrc

@@ -524,7 +524,9 @@ fs_cp(int to, long u, int n)
 void
 rebuild_db(
     /* 0: keep top_idx and curs unchanged
-     * 1: keep selected name unchanged */
+     *    (for filesystem operations)
+     * 1: keep selected name unchanged
+     *    (for changing the list sort mode) */
     short mode)
 {
 	char *name;

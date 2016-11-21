@@ -569,8 +569,12 @@ scan_subdir(char *name, char *rnam, int tree)
 			lpath[llen] = 0; /* -> lpath = "." */
 	}
 
-	if (tree & 2)
-		rlen = pthcat(rpath, rlen, rnam);
+	if (tree & 2) {
+		if (rnam)
+			rlen = pthcat(rpath, rlen, rnam);
+		else
+			rpath[rlen] = 0; /* fmode_cp_pth() */
+	}
 
 	build_diff_db(tree);
 }
