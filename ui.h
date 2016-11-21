@@ -47,7 +47,7 @@ extern short color_leftonly ,
              color_mark_fg  ,
              color_mark_bg  ,
              color_bg       ;
-extern unsigned top_idx, curs, statw;
+extern unsigned top_idx[2], curs[2], statw;
 extern unsigned listh;
 extern WINDOW *wlist;
 extern WINDOW *wstat;

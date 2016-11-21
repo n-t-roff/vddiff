@@ -482,8 +482,8 @@ open_sh(int tree)
 	struct passwd *pw;
 	char *av[2];
 
-	if (db_num) {
-		f = db_list[top_idx + curs];
+	if (db_num[right_col]) {
+		f = db_list[right_col][top_idx[right_col] + curs[right_col]];
 
 		if ((tree == 3 && f->ltype && f->rtype) ||
 		    (tree == 1 && !f->ltype) ||
@@ -493,7 +493,7 @@ open_sh(int tree)
 
 	if (bmode)
 		s = rpath;
-	else if (tree == 2 || ((tree & 2) && db_num && f->rtype)) {
+	else if (tree == 2 || ((tree & 2) && db_num[right_col] && f->rtype)) {
 		rpath[rlen] = 0;
 		s = rpath;
 	} else {

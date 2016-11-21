@@ -92,7 +92,7 @@ short color_leftonly  = COLOR_CYAN   ,
       color_mark_fg   = COLOR_WHITE  ,
       color_mark_bg   = COLOR_BLUE   ,
       color_bg        = COLOR_BLACK  ;
-unsigned top_idx, curs, statw;
+unsigned top_idx[2], curs[2], statw;
 
 #ifdef HAVE_CURSES_WCH
 wchar_t *sh_str[FKEY_NUM];
@@ -263,7 +263,7 @@ next_key:
 
 		if (!c) {
 			num = 1;
-			u = top_idx + curs;
+			u = top_idx[right_col] + curs[right_col];
 		}
 
 		if ((c = getch()) == ERR)
@@ -312,14 +312,16 @@ next_key:
 			c = 0;
 
 			if (*key == 'z') {
-				if (!top_idx)
+				if (!top_idx[right_col])
 					break;
-				else if (top_idx >= listh - 1 - curs) {
-					top_idx -= listh - 1 - curs;
-					curs = listh - 1;
+				else if (top_idx[right_col] >=
+				    listh - 1 - curs[right_col]) {
+					top_idx[right_col] -=
+					    listh - 1 - curs[right_col];
+					curs[right_col] = listh - 1;
 				} else {
-					curs += top_idx;
-					top_idx = 0;
+					curs[right_col] += top_idx[right_col];
+					top_idx[right_col] = 0;
 				}
 
 				disp_list();
@@ -356,13 +358,13 @@ next_key:
 			break;
 		case '\n':
 			if (*key == 'z') {
-				if (!curs) {
+				if (!curs[right_col]) {
 					c = 0;
 					break;
 				}
 
-				top_idx += curs;
-				curs = 0;
+				top_idx[right_col] += curs[right_col];
+				curs[right_col] = 0;
 				disp_list();
 				c = 0;
 				break;
@@ -387,7 +389,7 @@ next_key:
 				break;
 			}
 
-			if (!db_num) {
+			if (!db_num[right_col]) {
 				no_file();
 				c = 0;
 				break;
@@ -599,10 +601,11 @@ next_key:
 
 			break;
 		case 'v':
-			if (!db_num)
+			if (!db_num[right_col])
 				break;
 
-			f = db_list[top_idx + curs];
+			f = db_list[right_col][top_idx[right_col] +
+			    curs[right_col]];
 
 			if (S_ISREG(f->ltype) && !S_ISREG(f->rtype)) {
 				c = 0;
@@ -848,7 +851,7 @@ next_key:
 		case '.':
 			if (*key == 'z') {
 				c = 0;
-				center(top_idx + curs);
+				center(top_idx[right_col] + curs[right_col]);
 			}
 
 			break;
@@ -860,37 +863,40 @@ next_key:
 		case 'H':
 			c = 0;
 
-			if (!curs)
+			if (!curs[right_col])
 				break;
 
-			curs = 0;
+			curs[right_col] = 0;
 			disp_list();
 			break;
 		case 'M':
 			c = 0;
 
-			if (db_num < top_idx + listh)
-				curs = (db_num - top_idx) / 2;
+			if (db_num[right_col] < top_idx[right_col] + listh)
+				curs[right_col] = (db_num[right_col] -
+				    top_idx[right_col]) / 2;
 			else
-				curs = listh / 2;
+				curs[right_col] = listh / 2;
 
 			disp_list();
 			break;
 		case 'L':
 			c = 0;
 
-			if (db_num < top_idx + listh)
-				curs = db_num - top_idx - 1;
+			if (db_num[right_col] < top_idx[right_col] + listh)
+				curs[right_col] = db_num[right_col] -
+				    top_idx[right_col] - 1;
 			else
-				curs = listh - 1;
+				curs[right_col] = listh - 1;
 
 			disp_list();
 			break;
 		case 'o':
-			if (!db_num)
+			if (!db_num[right_col])
 				break;
 
-			f = db_list[top_idx + curs];
+			f = db_list[right_col][top_idx[right_col] +
+			    curs[right_col]];
 
 			if (S_ISREG(f->ltype) && !S_ISREG(f->rtype)) {
 				c = 0;
@@ -924,7 +930,7 @@ next_key:
 			wrefresh(wstat);
 			break;
 		case '`':
-			if (mark_idx < 0) {
+			if (mark_idx[right_col] < 0) {
 				standoutc(wstat);
 				/* calls standend */
 				printerr(NULL, "No local mark");
@@ -932,13 +938,13 @@ next_key:
 				break;
 			}
 
-			u = top_idx + curs;
+			u = top_idx[right_col] + curs[right_col];
 
-			if (u <= mark_idx)
-				num = mark_idx - u + 1;
+			if (u <= mark_idx[right_col])
+				num = mark_idx[right_col] - u + 1;
 			else {
-				num = u - mark_idx + 1;
-				u = mark_idx;
+				num = u - mark_idx[right_col] + 1;
+				u = mark_idx[right_col];
 			}
 
 			break;
@@ -1274,11 +1280,11 @@ proc_mevent(void)
 	    mevent.bstate & BUTTON1_DOUBLE_CLICKED ||
 	    mevent.bstate & BUTTON1_PRESSED) {
 		if (mevent.y >= (int)listh ||
-		    mevent.y >= (int)(db_num - top_idx))
+		    mevent.y >= (int)(db_num[right_col] - top_idx[right_col]))
 			return;
 
 		disp_curs(0);
-		curs = mevent.y;
+		curs[right_col] = mevent.y;
 		disp_curs(1);
 		refr_scr();
 
@@ -1314,16 +1320,10 @@ action(
 	static char *typerr = "Not a directory or regular file";
 	static char *typdif = "Different file type";
 
-	if (!db_num)
+	if (!db_num[right_col])
 		return;
 
-	if (fmode) {
-		if (right_col)
-			f1 = f2 = db2_list[top_idx2 + curs2];
-		else
-			f1 = f2 = db_list[top_idx + curs];
-	} else
-		f1 = f2 = db_list[top_idx + curs];
+	f1 = f2 = db_list[right_col][top_idx[right_col] + curs[right_col]];
 
 	if (mark && act) {
 		struct filediff *m = mark;
@@ -1484,13 +1484,8 @@ page_down(void)
 		return;
 	}
 
-	if (right_col) {
-		top_idx2 += listh;
-		curs2 = 0;
-	} else {
-		top_idx += listh;
-		curs = 0;
-	}
+	top_idx[right_col] += listh;
+	curs[right_col] = 0;
 
 	disp_list();
 }
@@ -1501,13 +1496,8 @@ curs_last(void)
 	if (last_line_is_disp())
 		return;
 
-	if (right_col) {
-		top_idx2 = db2_num - listh;
-		curs2 = listh - 1;
-	} else {
-		top_idx = db_num - listh;
-		curs = listh - 1;
-	}
+	top_idx[right_col] = db_num[right_col] - listh;
+	curs[right_col] = listh - 1;
 
 	disp_list();
 }
@@ -1515,27 +1505,17 @@ curs_last(void)
 static void
 page_up(void)
 {
-	unsigned *ti, *cu;
-
 	if (first_line_is_top()) {
 		printerr(NULL, "At top");
 		return;
 	}
 
-	if (right_col) {
-		ti = &top_idx2;
-		cu = &curs2;
+	if (top_idx[right_col] < listh) {
+		top_idx[right_col] = 0;
+		curs[right_col] -= top_idx[right_col];
 	} else {
-		ti = &top_idx;
-		cu = &curs;
-	}
-
-	if (*ti < listh) {
-		*ti = 0;
-		*cu -= *ti;
-	} else {
-		*ti -= listh;
-		*cu = listh - 1;
+		top_idx[right_col] -= listh;
+		curs[right_col] = listh - 1;
 	}
 
 	disp_list();
@@ -1547,34 +1527,20 @@ curs_first(void)
 	if (first_line_is_top())
 		return;
 
-	if (right_col)
-		top_idx2 = curs2 = 0;
-	else
-		top_idx = curs = 0;
-
+	top_idx[right_col] = curs[right_col] = 0;
 	disp_list();
 }
 
 static int
 last_line_is_disp(void)
 {
-	unsigned dn, ti, *cu;
-
-	if (right_col) {
-		dn = db2_num;
-		ti = top_idx2;
-		cu = &curs2;
-	} else {
-		dn = db_num;
-		ti = top_idx;
-		cu = &curs;
-	}
-
-	if (dn - ti <= listh) {
+	if (db_num[right_col] - top_idx[right_col] <= listh) {
 		/* last line is currently displayed */
-		if (*cu != dn - ti - 1) {
+		if (curs[right_col] != db_num[right_col] -
+		    top_idx[right_col] - 1) {
 			disp_curs(0);
-			*cu = dn - ti - 1;
+			curs[right_col] = db_num[right_col] -
+			    top_idx[right_col] - 1;
 			disp_curs(1);
 			refr_scr();
 		}
@@ -1587,23 +1553,14 @@ last_line_is_disp(void)
 static int
 first_line_is_top(void)
 {
-	unsigned ti, *cu;
-
-	if (right_col) {
-		ti = top_idx2;
-		cu = &curs2;
-	} else {
-		ti = top_idx;
-		cu = &curs;
-	}
-
-	if (!ti) {
-		if (*cu) {
+	if (!top_idx[right_col]) {
+		if (curs[right_col]) {
 			disp_curs(0);
-			*cu = 0;
+			curs[right_col] = 0;
 			disp_curs(1);
 			refr_scr();
 		}
+
 		return 1;
 	}
 
@@ -1613,37 +1570,26 @@ first_line_is_top(void)
 static void
 curs_down(void)
 {
-	if ((right_col ? top_idx2 + curs2 : top_idx + curs) + 1 >=
-	    (right_col ? db2_num : db_num)) {
+	if (top_idx[right_col] + curs[right_col] + 1 >= db_num[right_col]) {
 		printerr(NULL, "At bottom");
 		return;
 	}
 
-	if ((right_col ? curs2 : curs) + 1 >= listh) {
+	if (curs[right_col] + 1 >= listh) {
 		if (scrollen) {
 			disp_curs(0);
 			wscrl(getlstwin(), 1);
-
-			if (right_col)
-				top_idx2++;
-			else
-				top_idx++;
-
+			top_idx[right_col]++;
 			disp_curs(1);
 			refr_scr();
-		} else {
+		} else
 			page_down();
-		}
+
 		return;
 	}
 
 	disp_curs(0);
-
-	if (right_col)
-		curs2++;
-	else
-		curs++;
-
+	curs[right_col]++;
 	disp_curs(1);
 	refr_scr();
 }
@@ -1651,8 +1597,8 @@ curs_down(void)
 static void
 curs_up(void)
 {
-	if (!(right_col ? curs2 : curs)) {
-		if (!(right_col ? top_idx2 : top_idx)) {
+	if (!curs[right_col]) {
+		if (!top_idx[right_col]) {
 			printerr(NULL, "At top");
 			return;
 		}
@@ -1660,27 +1606,17 @@ curs_up(void)
 		if (scrollen) {
 			disp_curs(0);
 			wscrl(getlstwin(), -1);
-
-			if (right_col)
-				top_idx2--;
-			else
-				top_idx--;
-
+			top_idx[right_col]--;
 			disp_curs(1);
 			refr_scr();
-		} else {
+		} else
 			page_up();
-		}
+
 		return;
 	}
 
 	disp_curs(0);
-
-	if (right_col)
-		curs2--;
-	else
-		curs--;
-
+	curs[right_col]--;
 	disp_curs(1);
 	refr_scr();
 }
@@ -1690,44 +1626,44 @@ scroll_up(unsigned num, bool keepscrpos)
 {
 	unsigned move_curs, y, i;
 
-	if (!top_idx) {
-		if (!curs || keepscrpos) {
+	if (!top_idx[right_col]) {
+		if (!curs[right_col] || keepscrpos) {
 			printerr(NULL, "At top");
 			return;
 		}
 
 		disp_curs(0);
 
-		if (curs >= num)
-			curs -= num;
+		if (curs[right_col] >= num)
+			curs[right_col] -= num;
 		else
-			curs = 0;
+			curs[right_col] = 0;
 
 		disp_curs(1);
 		refr_scr();
 		return;
 	}
 
-	if (top_idx < num)
-		num = top_idx;
+	if (top_idx[right_col] < num)
+		num = top_idx[right_col];
 
 	if (keepscrpos) {
 		disp_curs(0);
 		move_curs = 1;
 
-	} else if (curs + num >= listh) {
+	} else if (curs[right_col] + num >= listh) {
 		disp_curs(0);
-		curs = listh - 1;
+		curs[right_col] = listh - 1;
 		move_curs = 1;
 	} else {
-		curs += num;
+		curs[right_col] += num;
 		move_curs = 0;
 	}
 
 	wscrl(getlstwin(), -((int)num));
-	top_idx -= num;
+	top_idx[right_col] -= num;
 
-	for (y = 0, i = top_idx; y < num; y++, i++)
+	for (y = 0, i = top_idx[right_col]; y < num; y++, i++)
 		disp_line(y, i, 0);
 
 	if (move_curs)
@@ -1744,39 +1680,39 @@ scroll_down(unsigned num, bool keepscrpos)
 
 	w = getlstwin();
 
-	if (top_idx >= db_num - 1) {
+	if (top_idx[right_col] >= db_num[right_col] - 1) {
 		printerr(NULL, "At bottom");
 		return;
 	}
 
-	if (top_idx + num >= db_num)
-		num = db_num - 1 - top_idx;
+	if (top_idx[right_col] + num >= db_num[right_col])
+		num = db_num[right_col] - 1 - top_idx[right_col];
 
-	ti = top_idx + num;
+	ti = top_idx[right_col] + num;
 
 	if (keepscrpos) {
 		disp_curs(0);
 		move_curs = 1;
 
-		if (ti + curs >= db_num)
-			curs = db_num - 1 - ti;
+		if (ti + curs[right_col] >= db_num[right_col])
+			curs[right_col] = db_num[right_col] - 1 - ti;
 
-	} else if (curs < num) {
+	} else if (curs[right_col] < num) {
 		disp_curs(0);
-		curs = 0;
+		curs[right_col] = 0;
 		move_curs = 1;
 	} else {
-		curs -= num;
+		curs[right_col] -= num;
 		move_curs = 0;
 	}
 
 	wscrl(w, num);
-	top_idx = ti;
+	top_idx[right_col] = ti;
 
-	for (y = listh - num, i = top_idx + y;
-	    y < listh && ((twocols && !fmode) || i < db_num);
+	for (y = listh - num, i = top_idx[right_col] + y;
+	    y < listh && ((twocols && !fmode) || i < db_num[right_col]);
 	    y++, i++)
-		if (i >= db_num) {
+		if (i >= db_num[right_col]) {
 			standoutc(w);
 			mvwaddch(w, y, llstw, ' ');
 		} else
@@ -1801,27 +1737,27 @@ disp_curs(
 
 	if (fmode) { /* if "fmode"->"twocols" bar is used */
 		if (!a)
-			mvwchgat(w, right_col ? curs2 : curs,
+			mvwchgat(w, curs[right_col],
 			    0, -1, 0, 0, NULL);
 	} else if (a) {
 		standoutc(w);
-	} else if (top_idx + curs == mark_idx) {
+	} else if (top_idx[right_col] + curs[right_col] ==
+	    mark_idx[right_col]) {
 		a = 1;
 		markc(w);
 	}
 
-	disp_line(right_col ? curs2 : curs,
-	    right_col ? top_idx2 + curs2 : top_idx + curs, a);
+	disp_line(curs[right_col], top_idx[right_col] + curs[right_col], a);
 
 	if (fmode) { /* if "fmode"->"twocols" bar is used */
 		switch (a) {
 		case 1:
-			mvwchgat(w, right_col ? curs2 : curs, 0, -1,
+			mvwchgat(w, curs[right_col], 0, -1,
 			    color ? 0 : A_STANDOUT, color ? PAIR_CURSOR : 0,
 			    NULL);
 			break;
 		case 2:
-			mvwchgat(w, right_col ? curs2 : curs, 0, -1,
+			mvwchgat(w, curs[right_col], 0, -1,
 			    color ? 0 : A_BOLD | A_UNDERLINE,
 			    color ? PAIR_MARK : 0, NULL);
 			break;
@@ -1833,54 +1769,37 @@ void
 disp_list(void) /* 0: both, 1: left, 2: right */
 {
 	unsigned y, i;
-	unsigned ti, cu, dn;
 	WINDOW *w;
 
 	w = getlstwin();
 
-	if (right_col) {
-		ti = top_idx2;
-		dn = db2_num;
-		cu = curs2;
-	} else {
-		ti = top_idx;
-		dn = db_num;
-		cu = curs;
-	}
-
 	/* For the case that entries had been removed */
-	if (ti >= dn)
-		ti = dn ? dn - 1 : 0;
+	if (top_idx[right_col] >= db_num[right_col])
+		top_idx[right_col] =
+		    db_num[right_col] ? db_num[right_col] - 1 : 0;
 
-	if (ti + cu >= dn)
-		cu = dn ? dn - ti - 1 : 0;
-
-	if (right_col) {
-		top_idx2 = ti;
-		curs2 = cu;
-	} else {
-		top_idx = ti;
-		curs = cu;
-	}
+	if (top_idx[right_col] + curs[right_col] >= db_num[right_col])
+		curs[right_col] = db_num[right_col] ? db_num[right_col] -
+		    top_idx[right_col] - 1 : 0;
 
 	werase(w);
 
-	if (!dn) {
+	if (!db_num[right_col]) {
 		no_file();
 		goto exit;
 	}
 
-	for (y = 0, i = ti; y < listh && ((twocols && !fmode) || i < dn);
-	    y++, i++) {
-		if (i >= dn) {
+	for (y = 0, i = top_idx[right_col]; y < listh && ((twocols && !fmode)
+	    || i < db_num[right_col]); y++, i++) {
+		if (i >= db_num[right_col]) {
 			standoutc(w);
 			mvwaddch(w, y, llstw, ' ');
-		} else if (y == cu)
+		} else if (y == curs[right_col])
 			disp_curs(1);
 		else {
 			int j = 0;
 
-			if (ti + y == mark_idx) {
+			if (top_idx[right_col] + y == mark_idx[right_col]) {
 				j = 1;
 				markc(w);
 			}
@@ -1912,7 +1831,7 @@ disp_line(
 	short cp;
 
 	w = getlstwin();
-	f = right_col ? db2_list[i] : db_list[i];
+	f = db_list[right_col][i];
 	mx = twocols ? llstw : 0;
 
 	if (twocols && !fmode)
@@ -2010,7 +1929,7 @@ prtc2:
 			addmbs(wstat, f->rlink, 0);
 		}
 	} else if (fmode)
-		file_stat(db_list[curs], db2_list[curs2]);
+		file_stat(db_list[0][curs[0]], db_list[1][curs[1]]);
 	else
 		file_stat(f, NULL);
 
@@ -2398,14 +2317,14 @@ set_mark(void)
 {
 	struct filediff *f;
 
-	if (!db_num)
+	if (!db_num[right_col])
 		return;
 
 	if (mark)
 		clr_mark();
 
-	mark_idx = top_idx + curs;
-	f = db_list[mark_idx];
+	mark_idx[right_col] = top_idx[right_col] + curs[right_col];
+	f = db_list[right_col][mark_idx[right_col]];
 	mode_t mode = f->ltype ? f->ltype : f->rtype;
 
 	if (!S_ISDIR(mode) && !(S_ISREG(mode))) {
@@ -2437,14 +2356,16 @@ clr_mark(void)
 		free(mark_rnam);
 		free(mark);
 		gl_mark = NULL;
-	} else if (mark_idx >= top_idx && mark_idx < top_idx + listh &&
-	    mark_idx != top_idx + curs) {
-		disp_line(mark_idx - top_idx, mark_idx, 0);
+	} else if (mark_idx[right_col] >= top_idx[right_col] &&
+	    mark_idx[right_col] < top_idx[right_col] + listh &&
+	    mark_idx[right_col] != top_idx[right_col] + curs[right_col]) {
+		disp_line(mark_idx[right_col] - top_idx[right_col],
+		    mark_idx[right_col], 0);
 		wnoutrefresh(wlist);
 	}
 
 
-	mark_idx = -1;
+	mark_idx[right_col] = -1;
 	mark = NULL;
 	werase(wstat);
 	filt_stat();
@@ -2462,7 +2383,7 @@ mark_global(void)
 		return;
 	}
 
-	mark_idx = -1;
+	mark_idx[right_col] = -1;
 	m = malloc(sizeof(struct filediff));
 	*m = *mark;
 	mark = m;
@@ -2534,10 +2455,10 @@ yank_name(int reverse)
 {
 	struct filediff *f;
 
-	if (!db_num)
+	if (!db_num[right_col])
 		return;
 
-	f = db_list[top_idx + curs];
+	f = db_list[right_col][top_idx[right_col] + curs[right_col]];
 
 	if (f->ltype)
 		pthcat(lpath, llen, f->name);
@@ -2574,26 +2495,14 @@ no_file(void)
 void
 center(unsigned idx)
 {
-	unsigned dn, *ti, *cu;
-
-	if (right_col) {
-		dn = db2_num;
-		ti = &top_idx2;
-		cu = &curs2;
-	} else {
-		dn = db_num;
-		ti = &top_idx;
-		cu = &curs;
-	}
-
-	if (dn <= listh || idx <= listh / 2)
-		*ti = 0;
-	else if (dn - idx < listh / 2)
-		*ti = dn - listh;
+	if (db_num[right_col] <= listh || idx <= listh / 2)
+		top_idx[right_col] = 0;
+	else if (db_num[right_col] - idx < listh / 2)
+		top_idx[right_col] = db_num[right_col] - listh;
 	else
-		*ti = idx - listh / 2;
+		top_idx[right_col] = idx - listh / 2;
 
-	*cu = idx - *ti;
+	curs[right_col] = idx - top_idx[right_col];
 	disp_list();
 }
 
@@ -2627,11 +2536,13 @@ push_state(char *name, char *rnam, bool lzip, bool rzip)
 
 	st->lzip = lzip ? strdup(name) : NULL;
 	st->rzip = rzip ? strdup(rnam) : NULL;
-	st->top_idx = top_idx;  top_idx = 0;
-	st->curs    = curs;     curs    = 0;
-	st->tree    = subtree;
-	st->next    = ui_stack;
-	ui_stack    = st;
+	st->top_idx = *top_idx;
+	*top_idx = 0;
+	st->curs = *curs;
+	*curs = 0;
+	st->tree = subtree;
+	st->next = ui_stack;
+	ui_stack = st;
 }
 
 static void
@@ -2701,8 +2612,8 @@ pop_state(
 		free(st->rpth);
 	}
 
-	top_idx  = st->top_idx;
-	curs     = st->curs;
+	*top_idx = st->top_idx;
+	*curs    = st->curs;
 	subtree  = st->tree;
 	ui_stack = st->next;
 	lpath[llen] = 0; /* For 'p' (pwd) */
@@ -2730,7 +2641,6 @@ enter_dir(char *name, char *rnam, bool lzip, bool rzip)
 	} else {
 		unsigned *uv;
 		char *cp; /* current path */
-		unsigned *ti, *cu;
 #ifdef HAVE_LIBAVLBST
 		struct bst_node *n;
 #else
@@ -2744,15 +2654,7 @@ enter_dir(char *name, char *rnam, bool lzip, bool rzip)
 		else
 			cp = lpath;
 
-		if (right_col) {
-			ti = &top_idx2;
-			cu = &curs2;
-		} else {
-			ti = &top_idx;
-			cu = &curs;
-		}
-
-		db_set_curs(cp, *ti, *cu);
+		db_set_curs(cp, top_idx[right_col], curs[right_col]);
 		n = NULL; /* flag */
 
 		if (*name == '/') {
@@ -2790,8 +2692,8 @@ enter_dir(char *name, char *rnam, bool lzip, bool rzip)
 		else
 			name = NULL;
 
-		*ti = 0;
-		*cu = 0;
+		top_idx[right_col] = 0;
+		curs[right_col] = 0;
 		diff_db_free(right_col);
 		scan_subdir(name, NULL, right_col ? 2 : 1);
 
@@ -2812,8 +2714,8 @@ enter_dir(char *name, char *rnam, bool lzip, bool rzip)
 		}
 
 		if ((uv = db_get_curs(cp))) {
-			*ti = *uv++;
-			*cu = *uv;
+			top_idx[right_col] = *uv++;
+			curs[right_col] = *uv;
 		}
 	}
 
@@ -2893,8 +2795,8 @@ ui_resize(void)
 {
 	set_win_dim();
 
-	if (curs >= listh)
-		curs = listh -1;
+	if (curs[right_col] >= listh)
+		curs[right_col] = listh -1;
 
 	if (bmode);
 	else

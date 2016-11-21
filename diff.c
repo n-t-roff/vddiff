@@ -302,7 +302,7 @@ free_a:
 
 		if (file_err) {
 			diff->diff = '-';
-			diff_db_add(diff, FALSE);
+			diff_db_add(diff, 0);
 			continue;
 		}
 
@@ -336,14 +336,14 @@ free_a:
 
 		if ((diff->ltype & S_IFMT) != (diff->rtype & S_IFMT)) {
 
-			diff_db_add(diff, FALSE);
+			diff_db_add(diff, 0);
 			continue;
 
 		} else if (stat1.st_ino == stat2.st_ino &&
 		           stat1.st_dev == stat2.st_dev) {
 
 			diff->diff = '=';
-			diff_db_add(diff, FALSE);
+			diff_db_add(diff, 0);
 			continue;
 
 		} else if (S_ISREG(stat1.st_mode)) {
@@ -358,13 +358,13 @@ free_a:
 				/* fall through */
 			case 0:
 db_add_file:
-				diff_db_add(diff, FALSE);
+				diff_db_add(diff, 0);
 				continue;
 			}
 
 		} else if (S_ISDIR(stat1.st_mode)) {
 
-			diff_db_add(diff, FALSE);
+			diff_db_add(diff, 0);
 			continue;
 
 		} else if (S_ISLNK(stat1.st_mode)) {
@@ -372,13 +372,13 @@ db_add_file:
 			if (diff->llink && diff->rlink) {
 				if (strcmp(diff->llink, diff->rlink))
 					diff->diff = '!';
-				diff_db_add(diff, FALSE);
+				diff_db_add(diff, 0);
 				continue;
 			}
 
 		/* any other file type */
 		} else {
-			diff_db_add(diff, FALSE);
+			diff_db_add(diff, 0);
 			continue;
 		}
 
@@ -517,14 +517,14 @@ right_tree:
 			continue;
 		}
 
-		diff_db_add(diff, fmode);
+		diff_db_add(diff, fmode ? 1 : 0);
 	}
 
 	closedir(d);
 
 build_list:
 	if (!scan)
-		diff_db_sort(fmode && (tree & 2));
+		diff_db_sort(fmode && (tree & 2) ? 1 : 0);
 
 dir_scan_end:
 	free_names();

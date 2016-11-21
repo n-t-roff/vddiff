@@ -93,10 +93,10 @@ fs_rename(int tree)
 	char *s;
 	size_t l;
 
-	if (!db_num)
+	if (!db_num[right_col])
 		return;
 
-	f = db_list[top_idx + curs];
+	f = db_list[right_col][top_idx[right_col] + curs[right_col]];
 
 	/* "en" is not allowed if both files are present */
 	if ((tree == 3 && f->ltype && f->rtype) ||
@@ -160,15 +160,15 @@ fs_chmod(int tree, long u, int num)
 	mode_t m;
 	bool have_mode = FALSE;
 
-	if (!db_num)
+	if (!db_num[right_col])
 		return;
 
 	if (num > 1 && dialog(y_n_txt, NULL,
 	    "Change mode of %d files?", num) != 'y')
 		return;
 
-	while (num-- && u < db_num) {
-		f = db_list[u++];
+	while (num-- && u < db_num[right_col]) {
+		f = db_list[right_col][u++];
 
 		/* "en" is not allowed if both files are present */
 		if ((tree == 3 && f->ltype && f->rtype) ||
@@ -278,15 +278,15 @@ fs_chown(int tree, int op, long u, int num)
 	gid_t gid;
 	bool have_owner = FALSE;
 
-	if (!db_num)
+	if (!db_num[right_col])
 		return;
 
 	if (num > 1 && dialog(y_n_txt, NULL,
 	    "Change %s of %d files?", op ? "group" : "owner", num) != 'y')
 		return;
 
-	while (num-- && u < db_num) {
-		f = db_list[u++];
+	while (num-- && u < db_num[right_col]) {
+		f = db_list[right_col][u++];
 
 		/* "en" is not allowed if both files are present */
 		if ((tree == 3 && f->ltype && f->rtype) ||
@@ -364,7 +364,7 @@ fs_rm(int tree, char *txt, long u, int n)
 	unsigned short m;
 	int rv = 0;
 
-	if (!db_num)
+	if (!db_num[right_col])
 		return 0;
 
 	m = n > 1;
@@ -373,8 +373,8 @@ fs_rm(int tree, char *txt, long u, int n)
 	    "Really %s %d files?", txt ? txt : "delete", n) != 'y')
 		return 1;
 
-	while (n-- && u < db_num) {
-		f = db_list[u++];
+	while (n-- && u < db_num[right_col]) {
+		f = db_list[right_col][u++];
 
 		/* "dd" is not allowed if both files are present */
 		if (tree == 3 && f->ltype && f->rtype)
@@ -444,7 +444,7 @@ fs_cp(int to, long u, int n)
 	struct stat st;
 	bool m;
 
-	if (!db_num)
+	if (!db_num[right_col])
 		return;
 
 	m = n > 1;
@@ -453,7 +453,7 @@ fs_cp(int to, long u, int n)
 	    "Really copy %d files?", n) != 'y')
 		return;
 
-	for (; n-- && u < db_num; u++) {
+	for (; n-- && u < db_num[right_col]; u++) {
 		if (to == 1) {
 			pth1 = rpath;
 			len1 = rlen;
@@ -466,7 +466,7 @@ fs_cp(int to, long u, int n)
 			len2 = rlen;
 		}
 
-		f = db_list[u];
+		f = db_list[right_col][u];
 		pthcat(pth1, len1, f->name);
 		pthcat(pth2, len2, f->name);
 
@@ -541,11 +541,11 @@ rebuild_db(
 	if (mark && !gl_mark)
 		mark_global();
 
-	diff_db_free(FALSE);
+	diff_db_free(0);
 	build_diff_db(bmode || fmode ? 1 : subtree);
 
 	if (fmode) {
-		diff_db_free(TRUE);
+		diff_db_free(1);
 		build_diff_db(2);
 	}
 

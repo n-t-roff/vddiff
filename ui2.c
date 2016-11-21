@@ -42,7 +42,7 @@ struct str_uint {
 
 static int srchcmp(const void *, const void *);
 
-long mark_idx = -1;
+long mark_idx[2] = { -1, -1 };
 static wchar_t wcbuf[BUF_SIZE];
 static cchar_t ccbuf[BUF_SIZE];
 short noic, magic, nows, scale;
@@ -99,17 +99,17 @@ test_fkey(int c, long u, unsigned short num)
 				goto edit_fkey;
 			case '\n':
 exec:
-				ti = top_idx;
-				cu = curs;
-				curs = u - top_idx;
+				ti = top_idx[right_col];
+				cu = curs[right_col];
+				curs[right_col] = u - top_idx[right_col];
 
 				while (num--) {
 					action(1, 3, 0, FALSE);
-					top_idx++; /* kludge */
+					top_idx[right_col]++; /* kludge */
 				}
 
-				top_idx = ti;
-				curs = cu;
+				top_idx[right_col] = ti;
+				curs[right_col] = cu;
 				/* action() did likely create or
 				 * delete files */
 				rebuild_db(0);
@@ -193,19 +193,19 @@ ui_srch(void)
 	static struct history regex_hist;
 	unsigned u;
 
-	if (!db_num) {
+	if (!db_num[right_col]) {
 		no_file();
 		return;
 	}
 
-	srchmap = malloc(sizeof(struct str_uint) * db_num);
+	srchmap = malloc(sizeof(struct str_uint) * db_num[right_col]);
 
-	for (u = 0; u < db_num; u++) {
-		srchmap[u].s = db_list[u]->name;
+	for (u = 0; u < db_num[right_col]; u++) {
+		srchmap[u].s = db_list[right_col][u]->name;
 		srchmap[u].u = u;
 	}
 
-	qsort(srchmap, db_num, sizeof(struct str_uint), srchcmp);
+	qsort(srchmap, db_num[right_col], sizeof(struct str_uint), srchcmp);
 	srch_idx = 0;
 
 	if (regex)
@@ -247,7 +247,7 @@ srch_file(char *pattern)
 	char *s;
 
 
-	if (!*pattern || !db_num)
+	if (!*pattern || !db_num[right_col])
 		return 0;
 
 	if (*pattern == '/' && !pattern[1]) {
@@ -255,8 +255,8 @@ srch_file(char *pattern)
 		return EDCB_FAIL;
 	}
 
-	if (srch_idx >= db_num)
-		srch_idx = db_num - 1;
+	if (srch_idx >= db_num[right_col])
+		srch_idx = db_num[right_col] - 1;
 
 	idx = srch_idx;
 	o = 0;
@@ -275,7 +275,7 @@ srch_file(char *pattern)
 			center(srchmap[srch_idx = idx].u);
 			break;
 		} else if (o < 0) {
-			if (oo > 0 || ++idx >= db_num)
+			if (oo > 0 || ++idx >= db_num[right_col])
 				break;
 		} else if (o > 0) {
 			if (oo < 0 || !idx)
@@ -315,7 +315,7 @@ start_regex(char *pattern)
 {
 	int fl = REG_NOSUB;
 
-	if (db_num < 2) {
+	if (db_num[right_col] < 2) {
 		regex = 0;
 		return;
 	}
@@ -350,14 +350,14 @@ regex_srch(
 	struct filediff *f;
 
 	/* does not make sense for one line */
-	if (db_num < 2)
+	if (db_num[right_col] < 2)
 		return 1;
 
-	i = j = top_idx + curs;
+	i = j = top_idx[right_col] + curs[right_col];
 
 	while (1) {
 		if (dir > 0) {
-			if (++i >= db_num) {
+			if (++i >= db_num[right_col]) {
 				if (nows)
 					goto no_match;
 				i = 0;
@@ -368,10 +368,10 @@ regex_srch(
 			else if (nows)
 				goto no_match;
 			else
-				i = db_num - 1;
+				i = db_num[right_col] - 1;
 		}
 
-		f = db_list[i];
+		f = db_list[right_col][i];
 
 		if (!regexec(&re_dat, f->name, 0, NULL, 0)) {
 			center(i);
@@ -442,10 +442,10 @@ bindiff(void)
 	int val = -1;
 	short sd;
 
-	if (!db_num || !mark)
+	if (!db_num[right_col] || !mark)
 		return;
 
-	f = db_list[top_idx + curs];
+	f = db_list[right_col][top_idx[right_col] + curs[right_col]];
 
 	if (m->name) {
 		olnam = m->name;
@@ -597,19 +597,12 @@ chk_mark(char *file, short tree)
 char *
 saveselname(void)
 {
-	if (right_col) {
-		if (!db2_num)
-			return NULL;
+	if (!db_num[right_col])
+		return NULL;
 
-		return strdup(((struct filediff *)(db2_list[top_idx2 +
-		    curs2]))->name);
-	} else {
-		if (!db_num)
-			return NULL;
-
-		return strdup(((struct filediff *)(db_list[top_idx +
-		    curs]))->name);
-	}
+	return strdup(((struct filediff *)(
+	    db_list[right_col][top_idx[right_col] +
+	    curs[right_col]]))->name);
 }
 
 unsigned
@@ -617,17 +610,10 @@ findlistname(char *name)
 {
 	unsigned u;
 
-	if (right_col) {
-		for (u = 0; u < db2_num; u++)
-			if (!strcmp(name,
-			    ((struct filediff *)(db2_list[u]))->name))
-				return u;
-	} else {
-		for (u = 0; u < db_num; u++)
-			if (!strcmp(name,
-			    ((struct filediff *)(db_list[u]))->name))
-				return u;
-	}
+	for (u = 0; u < db_num[right_col]; u++)
+		if (!strcmp(name,
+		    ((struct filediff *)(db_list[right_col][u]))->name))
+			return u;
 
 	return 0;
 }
@@ -638,14 +624,14 @@ re_sort_list(void)
 	char *name;
 
 	name = saveselname();
-	diff_db_sort(FALSE);
+	diff_db_sort(0);
 
 	if (name) {
 		center(findlistname(name));
 		free(name);
 	} else {
-		top_idx = 0;
-		curs    = 0;
+		top_idx[right_col] = 0;
+		curs[right_col] = 0;
 		disp_list();
 	}
 }

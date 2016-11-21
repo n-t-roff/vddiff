@@ -17,11 +17,11 @@ struct ptr_db_ent {
 char *str_db_add(void **, char *);
 int str_db_srch(void **, char *);
 #endif
-void diff_db_add(struct filediff *, bool);
-void diff_db_sort(bool);
+void diff_db_add(struct filediff *, int);
+void diff_db_sort(int);
 void diff_db_restore(struct ui_state *);
 void diff_db_store(struct ui_state *);
-void diff_db_free(bool);
+void diff_db_free(int);
 void free_names(void);
 void db_def_ext(char *, char *, tool_flags_t);
 struct tool *db_srch_ext(char *);
@@ -36,8 +36,8 @@ void ptr_db_del(void **, void *);
 void *ptr_db_get_node(void *);
 
 extern enum sorting sorting;
-extern unsigned db_num, db2_num;
-extern struct filediff **db_list, **db2_list;
+extern unsigned db_num[2];
+extern struct filediff **db_list[2];
 extern short noequal, real_diff;
 extern void *scan_db;
 extern void *name_db;

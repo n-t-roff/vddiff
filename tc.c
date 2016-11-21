@@ -23,7 +23,6 @@ PERFORMANCE OF THIS SOFTWARE.
 
 int llstw, rlstw, rlstx, midoffs;
 WINDOW *wllst, *wmid, *wrlst;
-unsigned top_idx2, curs2;
 bool twocols;
 bool fmode;
 bool right_col;
