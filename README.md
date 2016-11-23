@@ -16,6 +16,16 @@ It is suggested (but not required) to install
 the speed optimized AVL library
 [libavlbst](https://github.com/n-t-roff/libavlbst).
 
+Some configuration can be done in
+[Makefile.in](https://github.com/n-t-roff/vddiff/blob/master/Makefile.in):
+* Path `PREFIX` (default `/usr/local`) is prepended
+for each file to install and for searching the library `libavlbst`.
+If this library is used and is not installed in the `PREFIX` tree,
+`INCDIR` and `LIBDIR` need to be adjusted.
+* The manpage is installed in `${MANDIR}/man1`.
+Default for `MANDIR` is `${PREFIX}/share/man`.
+On some systems this might better be changed to `${PREFIX}/man`.
+
 `vddiff` is build and installed with
 ```
 $ ./configure

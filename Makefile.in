@@ -3,11 +3,11 @@ BINDIR=	$(PREFIX)/bin
 MANDIR=	$(PREFIX)/share/man
 INCDIR=	$(PREFIX)/include
 LIBDIR=	$(PREFIX)/lib
-BIN=	vddiff
 
 TRACE=	#-DTRACE='"/tmp/.vddiff.trace.txt"'
 STRP=	-s
 
+BIN=	vddiff
 OBJ=	main.o pars.o lex.o diff.o ui.o db.o exec.o fs.o ed.o uzp.o ver.o \
 	ui2.o gq.o tc.o
 YFLAGS=	-d
