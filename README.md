@@ -15,8 +15,6 @@ git pull
 It is suggested (but not required) to install
 the speed optimized AVL library
 [libavlbst](https://github.com/n-t-roff/libavlbst).
-On NetBSD it is recommended to install the `ncursesw`
-package (note the `w` for wide char support).
 
 `vddiff` is build and installed with
 ```
