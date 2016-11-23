@@ -35,20 +35,16 @@ open2cwins(void)
 	/* Else wmid ist not displayed. ncurses bug? */
 	refresh();
 
-	if (!(wllst = subwin(stdscr, listh, llstw, 0, 0))) {
-		printf("subwin failed\n");
+	if (!(wllst = new_scrl_win(listh, llstw, 0, 0)))
 		return;
-	}
 
 	if (!(wmid = newwin(listh, 1, 0, llstw))) {
-		printf("subwin failed\n");
+		printf("newwin failed\n");
 		return;
 	}
 
-	if (!(wrlst = subwin(stdscr, listh, rlstw, 0, rlstx))) {
-		printf("subwin failed\n");
+	if (!(wrlst = new_scrl_win(listh, rlstw, 0, rlstx)))
 		return;
-	}
 
 	if (color)
 		wbkgd(wmid, COLOR_PAIR(PAIR_CURSOR));

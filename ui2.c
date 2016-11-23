@@ -393,7 +393,9 @@ no_match:
 	return 0;
 }
 
-void
+/* 1: exit vddiff */
+
+int
 parsopt(char *buf)
 {
 	char *opt;
@@ -402,6 +404,9 @@ parsopt(char *buf)
 	static char nomagic_str[] = "nomagic\n";
 	static char nows_str[]    = "nows\n";
 
+	if (!strcmp(buf, "q") || !strcmp(buf, "qa"))
+		return 1;
+
 	if (!strcmp(buf, "set")) {
 		werase(wlist);
 		wmove(wlist, 0, 0);
@@ -409,7 +414,7 @@ parsopt(char *buf)
 		waddstr(wlist, magic ? nomagic_str + 2 : nomagic_str);
 		waddstr(wlist, nows  ? nows_str : nows_str + 2);
 		anykey();
-		return;
+		return 0;
 	}
 
 	if (!strncmp(buf, "no", 2)) {
@@ -428,6 +433,8 @@ parsopt(char *buf)
 		nows = not;
 	} else
 		printerr(NULL, "Unknown option \"%s\"", buf);
+
+	return 0;
 }
 
 void
@@ -823,4 +830,22 @@ putmbsra(WINDOW *w, char *s, int mx)
 
 	wadd_wchstr(w, cs);
 	return l;
+}
+
+WINDOW *
+new_scrl_win(int h, int w, int y, int x)
+{
+	WINDOW *win;
+
+	if (!(win = newwin(h, w, y, x))) {
+		printf("newwin failed\n");
+		return NULL;
+	}
+
+	if (scrollen) {
+		idlok(win, TRUE);
+		scrollok(win, TRUE);
+	}
+
+	return win;
 }

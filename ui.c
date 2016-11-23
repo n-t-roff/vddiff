@@ -120,7 +120,7 @@ static void help_mevent(void);
 static MEVENT mevent;
 #endif
 
-static bool scrollen = TRUE;
+bool scrollen = TRUE;
 static bool wstat_dirty;
 static bool dir_change;
 
@@ -160,34 +160,17 @@ build_ui(void)
 # endif
 	    , NULL);
 #endif
+	refresh();
 	set_win_dim();
 
-	if (!(wlist = subwin(stdscr, listh, listw, 0, 0))) {
-		printf("subwin failed\n");
+	if (!(wlist = new_scrl_win(listh, listw, 0, 0)))
 		return;
-	}
 
-	if (!(wstat = subwin(stdscr, 2, statw, LINES-2, 0))) {
-		printf("subwin failed\n");
+	if (!(wstat = new_scrl_win(2, statw, LINES-2, 0)))
 		return;
-	}
 
 	if (fmode)
 		open2cwins();
-
-	if (scrollen) {
-		idlok(wlist, TRUE);
-		scrollok(wlist, TRUE);
-
-		if (fmode) {
-			idlok(wllst, TRUE);
-			scrollok(wllst, TRUE);
-			idlok(wrlst, TRUE);
-			scrollok(wrlst, TRUE);
-			idlok(wmid, TRUE);
-			scrollok(wmid, TRUE);
-		}
-	}
 
 do_diff:
 	/* Not in main since build_diff_db() uses printerr() */
@@ -915,7 +898,8 @@ next_key:
 
 			if (!ed_dialog("Enter option:",
 			    NULL /* must be NULL !!! */, NULL, 0, &opt_hist)) {
-				parsopt(rbuf);
+				if (parsopt(rbuf) == 1)
+					return;
 			}
 
 			break;
@@ -2821,8 +2805,8 @@ ui_resize(void)
 
 	delwin(wstat);
 
-	if (!(wstat = subwin(stdscr, 2, statw, LINES-2, 0))) {
-		printf("subwin failed\n");
+	if (!(wstat = newwin(2, statw, LINES-2, 0))) {
+		printf("newwin failed\n");
 		return;
 	}
 
