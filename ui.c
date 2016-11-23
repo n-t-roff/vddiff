@@ -1718,41 +1718,36 @@ scroll_down(unsigned num, bool keepscrpos)
 void
 disp_curs(
     /* 0: Remove cursor
-     * 1: Normal cursor
-     * 2: Mark */
+     * 1: Normal cursor */
     int a)
 {
 	WINDOW *w;
 
 	w = getlstwin();
 
-	if (fmode) { /* if "fmode"->"twocols" bar is used */
+	if (fmode) {
 		if (!a)
-			mvwchgat(w, curs[right_col],
-			    0, -1, 0, 0, NULL);
+			chgat_off(w, curs[right_col]);
 	} else if (a) {
 		standoutc(w);
+
 	} else if (top_idx[right_col] + curs[right_col] ==
 	    mark_idx[right_col]) {
+
 		a = 1;
 		markc(w);
 	}
 
 	disp_line(curs[right_col], top_idx[right_col] + curs[right_col], a);
 
-	if (fmode) { /* if "fmode"->"twocols" bar is used */
-		switch (a) {
-		case 1:
-			mvwchgat(w, curs[right_col], 0, -1,
-			    color ? 0 : A_STANDOUT, color ? PAIR_CURSOR : 0,
-			    NULL);
-			break;
-		case 2:
-			mvwchgat(w, curs[right_col], 0, -1,
-			    color ? 0 : A_BOLD | A_UNDERLINE,
-			    color ? PAIR_MARK : 0, NULL);
-			break;
-		}
+	if (fmode) {
+		if (a)
+			chgat_curs(w, curs[right_col]);
+
+		else if (top_idx[right_col] + curs[right_col] ==
+		    mark_idx[right_col])
+
+			chgat_mark(w, curs[right_col]);
 	}
 }
 
@@ -1787,16 +1782,16 @@ disp_list(void) /* 0: both, 1: left, 2: right */
 			mvwaddch(w, y, llstw, ' ');
 		} else if (y == curs[right_col])
 			disp_curs(1);
-		else {
-			int j = 0;
-
-			if (top_idx[right_col] + y == mark_idx[right_col]) {
-				j = 1;
+		else if (top_idx[right_col] + y == mark_idx[right_col]) {
+			if (!fmode)
 				markc(w);
-			}
 
-			disp_line(y, i, j);
-		}
+			disp_line(y, i, 1);
+
+			if (fmode)
+				chgat_mark(w, y);
+		} else
+			disp_line(y, i, 0);
 	}
 
 exit:
@@ -1887,7 +1882,11 @@ prtc2:
 		return;
 
 	if (dir_change) {
-	} else if (mark) {
+	} else if (mark &&
+	    /* fmode has only local marks which are highlighted anyway.
+	     * Hence it is not necessary to display the mark in the
+	     * status line. */
+	    !fmode) {
 		if (wstat_dirty)
 			disp_mark();
 		return;
@@ -2330,6 +2329,9 @@ set_mark(void)
 static void
 disp_mark(void)
 {
+	if (fmode)
+		return;
+
 	werase(wstat);
 	filt_stat();
 	standoutc(wstat);
@@ -2341,22 +2343,44 @@ disp_mark(void)
 void
 clr_mark(void)
 {
+	int rc;
+
+	rc = right_col;
+
 	if (gl_mark) {
 		free(gl_mark);
 		free(mark_lnam);
 		free(mark_rnam);
 		free(mark);
 		gl_mark = NULL;
-	} else if (mark_idx[right_col] >= top_idx[right_col] &&
-	    mark_idx[right_col] < top_idx[right_col] + listh &&
-	    mark_idx[right_col] != top_idx[right_col] + curs[right_col]) {
-		disp_line(mark_idx[right_col] - top_idx[right_col],
-		    mark_idx[right_col], 0);
-		wnoutrefresh(wlist);
+
+	} else if (
+	    mark_idx[0] >= top_idx[0] &&
+	    mark_idx[0] <  top_idx[0] + listh &&
+	    mark_idx[0] != top_idx[0] + curs[0]) {
+
+		if (fmode)
+			chgat_off(wllst, mark_idx[0] - top_idx[0]);
+
+		right_col = 0;
+		disp_line(mark_idx[0] - top_idx[0], mark_idx[0], 0);
+		wnoutrefresh(fmode ? wllst : wlist);
+
+	} else if (fmode &&
+	    mark_idx[1] >= top_idx[1] &&
+	    mark_idx[1] <  top_idx[1] + listh &&
+	    mark_idx[1] != top_idx[1] + curs[1]) {
+
+		chgat_off(wrlst, mark_idx[1] - top_idx[1]);
+
+		right_col = 1;
+		disp_line(mark_idx[1] - top_idx[1], mark_idx[1], 0);
+		wnoutrefresh(wrlst);
 	}
 
-
-	mark_idx[right_col] = -1;
+	right_col = rc;
+	mark_idx[0] = -1;
+	mark_idx[1] = -1;
 	mark = NULL;
 	werase(wstat);
 	filt_stat();

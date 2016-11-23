@@ -678,6 +678,14 @@ markc(WINDOW *w)
 }
 
 void
+chgat_mark(WINDOW *w, int y)
+{
+	mvwchgat(w, y, 0, -1,
+	    color ? 0 : A_BOLD | A_UNDERLINE,
+	    color ? PAIR_MARK : 0, NULL);
+}
+
+void
 standoutc(WINDOW *w)
 {
 	if (color)
@@ -687,12 +695,26 @@ standoutc(WINDOW *w)
 }
 
 void
+chgat_curs(WINDOW *w, int y)
+{
+	mvwchgat(w, y, 0, -1,
+	    color ? 0 : A_STANDOUT,
+	    color ? PAIR_CURSOR : 0, NULL);
+}
+
+void
 standendc(WINDOW *w)
 {
 	if (color)
 		wattrset(w, COLOR_PAIR(PAIR_NORMAL));
 	else
 		wstandend(w);
+}
+
+void
+chgat_off(WINDOW *w, int y)
+{
+	mvwchgat(w, y, 0, -1, 0, 0, NULL);
 }
 
 void
