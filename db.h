@@ -23,6 +23,7 @@ void diff_db_restore(struct ui_state *);
 void diff_db_store(struct ui_state *);
 void diff_db_free(int);
 void free_names(void);
+void add_alias(char *, char *);
 void db_def_ext(char *, char *, tool_flags_t);
 struct tool *db_srch_ext(char *);
 void db_set_curs(char *, unsigned, unsigned);

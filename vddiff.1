@@ -13,7 +13,7 @@ LOSS OF USE, DATA OR PROFITS, WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE OR
 OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
 PERFORMANCE OF THIS SOFTWARE.
 ..
-.Dd November 17, 2016
+.Dd November 23, 2016
 .Dt VDDIFF 1
 .Sh NAME
 .Nm vddiff
@@ -950,6 +950,15 @@ ext "3" mandoc
 
 ext mts mplayer
 ext ts  mplayer
+.Ed
+.Pp
+It is also possible to use an alias for defining another alias:
+.Bd -literal -offset indent
+alias mplayer "mplayer -idx --"
+alias audio mplayer
+
+ext mpg mplayer
+ext mp3 audio
 .Ed
 .It Li skipext Ar extension
 When checking a filename extension skip

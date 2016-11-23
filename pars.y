@@ -93,7 +93,7 @@ option:
 	| BMODE                        {                                  ; }
 	| SHELL STRING                 { ishell = $2                      ; }
 	| SH STRING                    { nishell = $2                     ; }
-	| ALIAS STRING STRING          { ptr_db_add(&alias_db, $2, $3)    ; }
+	| ALIAS STRING STRING          { add_alias($2, $3)                ; }
 	| TWOCOLUMN                    { twocols = 1                      ; }
 	;
 %%

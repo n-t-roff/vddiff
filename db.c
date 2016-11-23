@@ -309,6 +309,23 @@ uz_cmp(const void *a, const void *b)
 }
 #endif
 
+/************
+ * Alias DB *
+ ************/
+
+void
+add_alias(char *key, char *value)
+{
+	char *s;
+
+	if (!ptr_db_srch(&alias_db, value, (void **)&s, NULL)) {
+		free(value);
+		value = strdup(s);
+	}
+
+	ptr_db_add(&alias_db, key, value);
+}
+
 /**********
  * ext DB *
  **********/
