@@ -297,9 +297,10 @@ EOT
 
 	check_fixterm
 	check_resetterm
+	true
 }
 
-check_lib_curses () {
+curses_mk_compat_h () {
 	cat <<EOT >>compat.h
 #define _XOPEN_SOURCE_EXTENDED
 #if defined HAVE_NCURSESW_CURSES_H
@@ -316,6 +317,22 @@ check_lib_curses () {
 # endif
 #endif
 EOT
+}
+
+check_lib_curses () {
+	curses_mk_compat_h
+	DEFS0=$DEFS
+	DEFS="$DEFS  -DHAVE_ATTR_T -DHAVE_ATTR_GET -DHAVE_FIXTERM \
+-DHAVE_RESETTERM"
+	check_ncursesw && return
+	check_ncurses && return
+	DEFS=$DEFS0
+	check_curses && return
+}
+
+check_netbsd_curses () {
+	curses_mk_compat_h
+	[ `uname` = "NetBSD" ] && check_curses && return
 	DEFS0=$DEFS
 	DEFS="$DEFS  -DHAVE_ATTR_T -DHAVE_ATTR_GET -DHAVE_FIXTERM \
 -DHAVE_RESETTERM"
@@ -451,7 +468,7 @@ gen_mk
 check_make
 #check_Sanitizer
 check_futimens
-check_lib_curses
+check_netbsd_curses
 check_curses_wch
 check_mkdtemp
 check_libavlbst
