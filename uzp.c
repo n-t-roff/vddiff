@@ -30,6 +30,7 @@ PERFORMANCE OF THIS SOFTWARE.
 #include "uzp.h"
 #include "db.h"
 #include "main.h"
+#include "tc.h"
 
 static int mktmpdirs(void);
 static enum uz_id check_ext(char *, int *);
@@ -80,7 +81,8 @@ uz_exit(void)
 #else
 	struct ptr_db_ent *n;
 #endif
-	char *key, *dat;
+	char *key;
+	struct bpth *dat;
 
 	while ((n = ptr_db_get_node(uz_path_db))) {
 #ifdef HAVE_LIBAVLBST
@@ -95,6 +97,7 @@ uz_exit(void)
 		ptr_db_del(&uz_path_db, n);
 		key[strlen(key) - 2] = 0;
 		rmtmpdirs(key);
+		free(dat->pth);
 		free(dat);
 	}
 }

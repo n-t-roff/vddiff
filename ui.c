@@ -1919,7 +1919,9 @@ prtc2:
 			addmbs(wstat, f->rlink, 0);
 		}
 	} else if (fmode)
-		file_stat(db_list[0][curs[0]], db_list[1][curs[1]]);
+		file_stat(
+		    db_num[0] ? db_list[0][curs[0]] : NULL,
+		    db_num[1] ? db_list[1][curs[1]] : NULL);
 	else
 		file_stat(f, NULL);
 
@@ -2037,17 +2039,14 @@ file_stat(struct filediff *f, struct filediff *f2)
 	struct group *gr;
 	mode_t ltyp, rtyp;
 
-	if (!f2)
-		f2 = f;
-
 	standendc(wstat);
 	x  = twocols || bmode ? 0 : 2;
 	x2 = twocols ? rlstx :
 	     bmode   ? 0     : 2;
 	yl = 0;
 	yr = twocols ? 0 : 1;
-	ltyp = f->ltype;
-	rtyp = f2->rtype;
+	ltyp = f  ? f->ltype  : 0;
+	rtyp = f2 ? f2->rtype : 0;
 	mx1 = twocols ? llstw : 0;
 
 	if (twocols) {
@@ -2531,6 +2530,7 @@ push_state(char *name, char *rnam, bool lzip, bool rzip)
 
 	/* If an absolute path is given, save the current path for the
 	 * time when this absolute path is left later */
+
 	if (!(name && *name == '/'))
 		st->lpth = NULL;
 	else {
@@ -2549,8 +2549,11 @@ push_state(char *name, char *rnam, bool lzip, bool rzip)
 		rpwd = rpath;
 	}
 
+	/* Save name if temporary directory for removing it later */
+
 	st->lzip = lzip ? strdup(name) : NULL;
 	st->rzip = rzip ? strdup(rnam) : NULL;
+
 	st->top_idx = *top_idx;
 	*top_idx = 0;
 	st->curs = *curs;
@@ -2656,6 +2659,8 @@ enter_dir(char *name, char *rnam, bool lzip, bool rzip)
 	} else {
 		unsigned *uv;
 		char *cp; /* current path */
+		struct bpth *bpth;
+		size_t *lp;
 #ifdef HAVE_LIBAVLBST
 		struct bst_node *n;
 #else
@@ -2669,9 +2674,11 @@ enter_dir(char *name, char *rnam, bool lzip, bool rzip)
 		else if (right_col) {
 			rpath[rlen] = 0;
 			cp = rpath;
+			lp = &rlen;
 		} else {
 			lpath[llen] = 0;
 			cp = lpath;
+			lp = &llen;
 		}
 
 		db_set_curs(cp, top_idx[right_col], curs[right_col]);
@@ -2686,11 +2693,37 @@ enter_dir(char *name, char *rnam, bool lzip, bool rzip)
 				cp = rpath;
 			}
 
-			ptr_db_add(&uz_path_db, strdup(name), strdup(cp));
+			bpth = malloc(sizeof(struct bpth));
+			bpth->pth = strdup(cp);
+			bpth->col = right_col;
+			*lp = 0;
+			*cp = 0;
+			ptr_db_add(&uz_path_db, strdup(name), bpth);
+
 		} else if (name && *name == '.' && name[1] == '.' && !name[2] &&
-		    !ptr_db_srch(&uz_path_db, cp, (void **)&rnam,
+		    !ptr_db_srch(&uz_path_db, cp, (void **)&bpth,
 		    (void **)&n)) {
-			name = rnam; /* dat */
+
+			name = bpth->pth; /* dat */
+
+			if (!bmode) {
+				size_t l;
+
+				l = strlen(name);
+
+				if (bpth->col) {
+					memcpy(rpath, name, l+1);
+					rlen = l;
+				} else {
+					memcpy(lpath, name, l+1);
+					llen = l;
+				}
+
+				free(name);
+				name = NULL;
+			}
+
+			free(bpth);
 #ifdef HAVE_LIBAVLBST
 			rnam = n->key.p;
 #else
@@ -2709,13 +2742,11 @@ enter_dir(char *name, char *rnam, bool lzip, bool rzip)
 
 		if (fmode && name)
 			name = strdup(name);
-		else
-			name = NULL;
 
 		top_idx[right_col] = 0;
 		curs[right_col] = 0;
 		diff_db_free(right_col);
-		scan_subdir(name, NULL, right_col ? 2 : 1);
+		scan_subdir(fmode ? name : NULL, NULL, right_col ? 2 : 1);
 
 		if (fmode)
 			free(name);
@@ -2730,7 +2761,9 @@ enter_dir(char *name, char *rnam, bool lzip, bool rzip)
 
 			rnam[l - 2] = 0; /* remove "/[lr]" */
 			rmtmpdirs(rnam); /* does a free() */
-			free(name); /* dat */
+
+			if (bmode)
+				free(name); /* dat */
 		}
 
 		if (right_col)

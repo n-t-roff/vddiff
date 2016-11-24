@@ -1,3 +1,8 @@
+struct bpth {
+	char *pth;
+	int col;
+};
+
 extern int llstw, rlstw, rlstx, midoffs;
 extern WINDOW *wllst, *wmid, *wrlst;
 extern bool twocols;
