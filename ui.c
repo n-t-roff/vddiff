@@ -1821,7 +1821,7 @@ disp_line(
 	mx = twocols ? llstw : 0;
 
 	if (twocols && !fmode)
-		wattr_get(w, &a, &cp, NULL);
+		(wattr_get)(w, &a, &cp, NULL);
 
 	if (fmode || bmode) {
 		goto no_diff;
@@ -1867,7 +1867,7 @@ no_diff:
 	if (twocols && !fmode) {
 prtc2:
 		if (diff != '<') {
-			wattr_set(w, a, cp, NULL);
+			(wattr_set)(w, a, cp, NULL);
 			set_file_info(f, f->rtype, type+1, &color_id, &diff);
 			disp_name(w, y, rlstx, 0, info, f, type[1], color_id,
 			    f->rlink, diff);

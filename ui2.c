@@ -760,7 +760,7 @@ mbstowchs(WINDOW *w, char *s)
 	attr_t a;
 	short cp;
 
-	wattr_get(w, &a, &cp, NULL);
+	(wattr_get)(w, &a, &cp, NULL);
 	l = mbstowcs(wcbuf, s, sizeof(wcbuf)/sizeof(*wcbuf));
 
 	if (l == (size_t)-1) {
