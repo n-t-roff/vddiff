@@ -50,6 +50,10 @@ char *ishell;
 char *nishell;
 bool wait_after_exec;
 
+/* If tree==3 and only name is given, name is applied to both trees.
+ * If tree!=3 but name and rnam are given, both names are applied to the
+ * tree side. */
+
 void
 tool(char *name, char *rnam, int tree, int ign_ext)
 {
@@ -63,7 +67,12 @@ tool(char *name, char *rnam, int tree, int ign_ext)
 	cmd = lbuf + sizeof lbuf;
 	*--cmd = 0;
 
-	if (tree == 3 || ign_ext)
+	/* Make diff instead calling a type specific viewer */
+
+	if (tree == 3 ||
+	   /* Case: fmode and both files are on same side */
+	   (name && rnam) ||
+	   ign_ext)
 		goto settool;
 
 	while (l) {
@@ -90,7 +99,8 @@ tool(char *name, char *rnam, int tree, int ign_ext)
 
 	if (!tmptool)
 settool:
-		tmptool = tree == 3 && !ign_ext ? &difftool : &viewtool;
+		tmptool = (tree == 3 || (name && rnam)) && !ign_ext ?
+		    &difftool : &viewtool;
 
 	if (tmptool->flags & TOOL_SHELL) {
 		cmd = exec_mk_cmd(tmptool, name, rnam, tree);
@@ -112,11 +122,10 @@ char *
 exec_mk_cmd(struct tool *tmptool, char *name, char *rnam, int tree)
 {
 	size_t csiz, clen, l;
-	char *cmd, *s;
+	char *cmd, *s, *nam2;
 	struct strlst *args;
 
-	if (!rnam)
-		rnam = name;
+	nam2 = rnam ? rnam : name;
 
 	csiz = 2 * PATHSIZ;
 	cmd = malloc(csiz);
@@ -138,7 +147,7 @@ exec_mk_cmd(struct tool *tmptool, char *name, char *rnam, int tree)
 				clen = add_path(cmd, clen, lpath, name);
 				break;
 			case '2':
-				clen = add_path(cmd, clen, rpath, rnam);
+				clen = add_path(cmd, clen, rpath, nam2);
 				break;
 			}
 
@@ -149,14 +158,23 @@ exec_mk_cmd(struct tool *tmptool, char *name, char *rnam, int tree)
 			}
 		} while ((args = args->next));
 	} else {
-		if (tree & 1) {
+		if (tree != 3 && name && rnam) {
 			GRWCMD;
-			clen = add_path(cmd, clen, lpath, name);
-		}
+			clen = add_path(cmd, clen,
+			    tree == 1 ? lpath : rpath, name);
+			GRWCMD;
+			clen = add_path(cmd, clen,
+			    tree == 1 ? lpath : rpath, rnam);
+		} else {
+			if (tree & 1) {
+				GRWCMD;
+				clen = add_path(cmd, clen, lpath, name);
+			}
 
-		if (tree & 2) {
-			GRWCMD;
-			clen = add_path(cmd, clen, rpath, rnam);
+			if (tree & 2) {
+				GRWCMD;
+				clen = add_path(cmd, clen, rpath, nam2);
+			}
 		}
 	}
 
@@ -269,12 +287,12 @@ static void
 exec_tool(struct tool *t, char *name, char *rnam, int tree)
 {
 	int o, c;
-	char *s, **a, **av;
+	char *s, **a, **av, *nam2, *s1, *s2;
 	int status;
 	tool_flags_t flags;
 
-	if (!rnam)
-		rnam = name;
+	fprintf(debug,"exec_tool(%s,%s,%d)\n",name,rnam,tree);
+	nam2 = rnam ? rnam : name;
 
 	flags = t->flags | TOOL_TTY;
 	s = t->tool;
@@ -288,7 +306,9 @@ exec_tool(struct tool *t, char *name, char *rnam, int tree)
 		o++;
 	}
 
-	a = av = malloc((1 + o + (tree == 3 ? 2 : 1) + 1) * sizeof(*av));
+	/* tool + any opt (= o) + 2 args + NULL = o + 4 */
+
+	a = av = malloc((o + 4) * sizeof(*av));
 
 	if (!o) {
 		*a++ = t->tool;
@@ -308,26 +328,40 @@ exec_tool(struct tool *t, char *name, char *rnam, int tree)
 	if (!tmpbasecmp(name) || !tmpbasecmp(rnam))
 		flags &= ~TOOL_BG;
 
-	if (tree & 1) {
+	s1 = s2 = NULL;
+
+	if ((tree & 1) || (tree != 3 && name && rnam)) {
 		if (*name == '/' || bmode) {
 			*a++ = name;
-		} else {
+
+		} else if (tree & 1) {
 			pthcat(lpath, llen, name);
-			*a++ = lpath;
+			*a++ = s1 = strdup(lpath);
+
+		} else if (tree == 2) {
+			pthcat(rpath, rlen, name);
+			*a++ = s1 = strdup(rpath);
 		}
 	}
 
-	if (tree & 2) {
-		if (*rnam == '/' || bmode) {
-			*a++ = rnam;
-		} else {
-			pthcat(rpath, rlen, rnam);
-			*a++ = rpath;
+	if ((tree & 2) || (tree != 3 && name && rnam)) {
+		if (*nam2 == '/' || bmode) {
+			*a++ = nam2;
+
+		} else if (tree & 2) {
+			pthcat(rpath, rlen, nam2);
+			*a++ = s2 = strdup(rpath);
+
+		} else if (tree == 1) {
+			pthcat(lpath, llen, nam2);
+			*a++ = s2 = strdup(lpath);
 		}
 	}
 
 	*a = NULL;
 	status = exec_cmd(av, flags, NULL, NULL);
+	free(s1);
+	free(s2);
 
 	if (o)
 		free(*av);
@@ -349,7 +383,7 @@ tmpbasecmp(const char *p)
 	static char *t;
 	static const char * const pf = TMPPREFIX;
 
-	if (*p != '/')
+	if (!p || *p != '/')
 		return 1;
 
 	if (!t) {

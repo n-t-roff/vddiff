@@ -1361,6 +1361,31 @@ action(
 				goto ret;
 
 			rtyp = m->rtype;
+
+		/* for fmode: Both files on one side */
+
+		} else if (m->ltype && f1->ltype) {
+			lnam = m->name;
+
+			if (chk_mark(lnam, 1))
+				goto ret;
+
+			ltyp = m->ltype;
+			rnam = f1->name;
+			rtyp = f1->ltype;
+			tree = 1;
+
+		} else if (m->rtype && f1->rtype) {
+			lnam = m->name;
+
+			if (chk_mark(lnam, 2))
+				goto ret;
+
+			ltyp = m->rtype;
+			rnam = f1->name;
+			rtyp = f1->rtype;
+			tree = 2;
+
 		} else {
 			err = "Both files are in same directory";
 			goto ret;
@@ -1373,7 +1398,7 @@ action(
 		}
 
 		if (ign_ext || (S_ISREG(ltyp) && S_ISREG(rtyp)))
-			tool(lnam, rnam, 3, ign_ext || raw_cont);
+			tool(lnam, rnam, tree, ign_ext || raw_cont);
 
 		else if (S_ISDIR(ltyp) || S_ISDIR(rtyp)) {
 			if (bmode) {
@@ -2393,7 +2418,7 @@ mark_global(void)
 	struct filediff *m;
 
 	if (fmode) {
-		mark = NULL;
+		clr_mark();
 		return;
 	}
 
