@@ -55,6 +55,16 @@ open2cwins(void)
 }
 
 void
+fmode_dmode(void)
+{
+	fmode = 0;
+	right_col = 0;
+	delwin(wllst);
+	delwin(wmid);
+	delwin(wrlst);
+}
+
+void
 prt2chead(void)
 {
 	wmove(wstat, 1, 0);

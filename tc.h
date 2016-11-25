@@ -16,3 +16,4 @@ void tgl2c(void);
 void resize_fmode(void);
 void disp_fmode(void);
 void fmode_cp_pth(void);
+void fmode_dmode(void);

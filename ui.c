@@ -1298,8 +1298,8 @@ action(
      * (Don't enter directories!) */
     short ign_ext,
     short tree,
-    /* 0: <RIGHT> or double click
-     * 1: <ENTER> */
+    /* 0: <RIGHT> or double click: Enter directory
+     * 1: <ENTER>: Do a compare */
     unsigned short act,
     /* Used by 'v', "vl" and "vr":
      * Unzip file but then view raw file using standard view tool. */
@@ -1841,6 +1841,9 @@ disp_line(
 	int mx;
 	short cp;
 
+	if (!db_num[right_col])
+		return;
+
 	w = getlstwin();
 	f = db_list[right_col][i];
 	mx = twocols ? llstw : 0;
@@ -1901,6 +1904,7 @@ prtc2:
 		standoutc(w);
 		wattron(w, A_BOLD);
 		mvwaddch(w, y, llstw, diff);
+		standendc(w);
 	}
 
 	if (!info)
@@ -2674,7 +2678,13 @@ enter_dir(char *name, char *rnam, bool lzip, bool rzip)
 {
 	dir_change = TRUE;
 
-	if (mark && !gl_mark)
+	if (name && rnam)
+		fmode_dmode();
+
+	if (mark && !gl_mark && (!fmode ||
+	    (!right_col && mark->ltype) ||
+	    ( right_col && mark->rtype)))
+
 		mark_global();
 
 	if (!bmode && !fmode) {

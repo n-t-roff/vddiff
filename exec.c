@@ -291,7 +291,6 @@ exec_tool(struct tool *t, char *name, char *rnam, int tree)
 	int status;
 	tool_flags_t flags;
 
-	fprintf(debug,"exec_tool(%s,%s,%d)\n",name,rnam,tree);
 	nam2 = rnam ? rnam : name;
 
 	flags = t->flags | TOOL_TTY;
