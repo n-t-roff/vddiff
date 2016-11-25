@@ -806,7 +806,7 @@ which can be accessed with the
 and
 .Aq Cm DOWN
 keys.
-.It Sq Li #
+.It Sq Li =
 In
 .Sy fmode :
 Set path of active column to path of the other column.
@@ -1148,7 +1148,7 @@ Key
 .Aq Cm CTRL-w
 switches to single-column diff mode,
 key
-.Sq Li =
+.Sq Li #
 switches to fmode.
 .Ss Bmode (browse mode)
 Bmode is a simply file browser mode.
@@ -1166,8 +1166,8 @@ directory is deleted.
 Generally in any mode at most one mark is supported.
 If a mark is defined, an existing mark (in either column)
 is deleted.
-Key
-.Sq Li =
+A compare of a marked directory (or archive)
+with a directory (or archive)
 switches to two-column diff mode.
 .Sh FILES
 .Bl -tag -width ~/.vddiffrc -compact

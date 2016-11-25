@@ -393,6 +393,11 @@ next_key:
 				break;
 			}
 
+			if (!fmode)
+				break;
+
+			c = 0;
+			fmode_cp_pth();
 			break;
 		case 'b':
 			c = 0;
@@ -954,13 +959,6 @@ next_key:
 			c = 0;
 			tgl2c();
 			break;
-		case '#':
-			if (!fmode)
-				break;
-
-			c = 0;
-			fmode_cp_pth();
-			break;
 		case 'N':
 			if (regex) {
 				c = 0;
@@ -1085,7 +1083,7 @@ static char *helptxt[] = {
        "vl		View raw left file contents",
        "vr		View raw right file contents",
        ":		Enter configuration option",
-       "#		In fmode: Copy current path from other column",
+       "=		In fmode: Copy current path from other column",
        "W		Toggle wait for <ENTER> after running external tool" };
 
 #define HELP_NUM (sizeof(helptxt) / sizeof(*helptxt))
