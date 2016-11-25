@@ -2601,7 +2601,11 @@ pop_state(
 	struct ui_state *st = ui_stack;
 
 	if (!st) {
-		printerr(NULL, "At top directory");
+		if (from_fmode)
+			dmode_fmode();
+		else
+			printerr(NULL, "At top directory");
+
 		return;
 	}
 
@@ -2678,7 +2682,7 @@ enter_dir(char *name, char *rnam, bool lzip, bool rzip)
 {
 	dir_change = TRUE;
 
-	if (name && rnam)
+	if (fmode && name && rnam)
 		fmode_dmode();
 
 	if (mark && !gl_mark && (!fmode ||

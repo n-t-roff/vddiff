@@ -28,13 +28,11 @@ WINDOW *wllst, *wmid, *wrlst;
 bool twocols;
 bool fmode;
 bool right_col;
+bool from_fmode;
 
 void
 open2cwins(void)
 {
-	/* Else wmid ist not displayed. ncurses bug? */
-	refresh();
-
 	if (!(wllst = new_scrl_win(listh, llstw, 0, 0)))
 		return;
 
@@ -57,11 +55,23 @@ open2cwins(void)
 void
 fmode_dmode(void)
 {
-	fmode = 0;
+	if (!fmode)
+		return;
+
+	fmode = FALSE;
 	right_col = 0;
+	from_fmode = TRUE;
 	delwin(wllst);
 	delwin(wmid);
 	delwin(wrlst);
+}
+
+void
+dmode_fmode(void)
+{
+	fmode = TRUE;
+	open2cwins();
+	disp_fmode();
 }
 
 void
