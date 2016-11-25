@@ -1933,7 +1933,7 @@ prtc2:
 		    db_num[0] ? db_list[0][curs[0]] : NULL,
 		    db_num[1] ? db_list[1][curs[1]] : NULL);
 	else
-		file_stat(f, NULL);
+		file_stat(f, f);
 
 	filt_stat();
 	dir_change = FALSE;
