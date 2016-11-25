@@ -57,7 +57,6 @@ static void pop_state(short);
 static void help(void);
 static char *type_name(mode_t);
 static void ui_resize(void);
-static void set_win_dim(void);
 static void statcol(void);
 static void file_stat(struct filediff *, struct filediff *);
 static void set_file_info(struct filediff *, mode_t, int *, short *, int *);
@@ -319,14 +318,7 @@ next_key:
 				if (COLS / 2 + midoffs < 0)
 					break;
 
-				midoffs -= 10;
-				set_win_dim();
-
-				if (fmode) {
-					resize_fmode();
-				} else
-					disp_list();
-
+				resize_fmode(-10);
 				break;
 			}
 
@@ -360,14 +352,7 @@ next_key:
 				if (midoffs > COLS / 2)
 					break;
 
-				midoffs += 10;
-				set_win_dim();
-
-				if (fmode) {
-					resize_fmode();
-				} else
-					disp_list();
-
+				resize_fmode(10);
 				break;
 			}
 
@@ -387,9 +372,7 @@ next_key:
 				if (!midoffs)
 					break;
 
-				midoffs = 0;
-				set_win_dim();
-				disp_list();
+				resize_fmode(0);
 				break;
 			}
 
@@ -2544,7 +2527,7 @@ center(unsigned idx)
 		top_idx[right_col] = idx - listh / 2;
 
 	curs[right_col] = idx - top_idx[right_col];
-	disp_list();
+	disp_fmode();
 }
 
 static void
@@ -2907,7 +2890,7 @@ ui_resize(void)
 	disp_list();
 }
 
-static void
+void
 set_win_dim(void)
 {
 	statw = COLS;

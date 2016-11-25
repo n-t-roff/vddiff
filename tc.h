@@ -14,7 +14,7 @@ void open2cwins(void);
 void prt2chead(void);
 WINDOW *getlstwin(void);
 void tgl2c(void);
-void resize_fmode(void);
+void resize_fmode(int);
 void disp_fmode(void);
 void fmode_cp_pth(void);
 void fmode_dmode(void);

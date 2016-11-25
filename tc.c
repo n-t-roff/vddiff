@@ -23,6 +23,8 @@ PERFORMANCE OF THIS SOFTWARE.
 #include "ui2.h"
 #include "fs.h"
 
+static void close2cwins(void);
+
 int llstw, rlstw, rlstx, midoffs;
 WINDOW *wllst, *wmid, *wrlst;
 bool twocols;
@@ -52,6 +54,14 @@ open2cwins(void)
 	wnoutrefresh(wmid);
 }
 
+static void
+close2cwins(void)
+{
+	delwin(wllst);
+	delwin(wmid);
+	delwin(wrlst);
+}
+
 void
 fmode_dmode(void)
 {
@@ -61,9 +71,7 @@ fmode_dmode(void)
 	fmode = FALSE;
 	right_col = 0;
 	from_fmode = TRUE;
-	delwin(wllst);
-	delwin(wmid);
-	delwin(wrlst);
+	close2cwins();
 }
 
 void
@@ -107,13 +115,21 @@ tgl2c(void)
 }
 
 void
-resize_fmode(void)
+resize_fmode(int d)
 {
-	wresize(wllst, listh, llstw);
-	mvwin(wmid, 0, llstw);
-	wresize(wrlst, listh, rlstw);
+	if (d)
+		midoffs += d;
+	else
+		midoffs = 0;
+
+	set_win_dim();
+
+	if (fmode) {
+		close2cwins();
+		open2cwins();
+	}
+
 	disp_fmode();
-	wrefresh(getlstwin());
 }
 
 void

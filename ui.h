@@ -32,6 +32,7 @@ void mark_global(void);
 void clr_mark(void);
 void disp_curs(int);
 void enter_dir(char *, char *, bool, bool);
+void set_win_dim(void);
 
 extern short color;
 extern short color_leftonly ,

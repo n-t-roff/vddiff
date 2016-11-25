@@ -555,7 +555,7 @@ rebuild_db(
 		center(findlistname(name));
 		free(name);
 	} else
-		disp_list();
+		disp_fmode();
 }
 
 static int
