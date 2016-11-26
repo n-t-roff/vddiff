@@ -53,7 +53,6 @@ static void curs_down(void);
 static void curs_up(void);
 static void disp_line(unsigned, unsigned, int);
 static void push_state(char *, char *, bool, bool);
-static void pop_state(short);
 static void help(void);
 static char *type_name(mode_t);
 static void ui_resize(void);
@@ -104,7 +103,7 @@ static unsigned listw, help_top;
 unsigned listh;
 WINDOW *wlist;
 WINDOW *wstat;
-static struct ui_state *ui_stack;
+struct ui_state *ui_stack;
 /* Line scroll enable. Else only full screen is scrolled */
 struct filediff *mark;
 char *gl_mark, *mark_lnam, *mark_rnam;
@@ -539,9 +538,9 @@ next_key:
 			ui_resize();
 			break;
 		case 'P':
-			if (bmode) {
+			if (bmode || fmode) {
 				c = 0;
-				fs_mkdir(1);
+				fs_mkdir(right_col ? 2 : 1);
 				break;
 			}
 
@@ -949,6 +948,10 @@ next_key:
 			c = 0;
 			tgl2c();
 			break;
+		case '#':
+			c = 0;
+			dmode_fmode();
+			break;
 		case 'N':
 			if (regex) {
 				c = 0;
@@ -1074,6 +1077,7 @@ static char *helptxt[] = {
        "vr		View raw right file contents",
        ":		Enter configuration option",
        "=		In fmode: Copy current path from other column",
+       "#		In diff mode: Start two column browse mode (fmode)",
        "W		Toggle wait for <ENTER> after running external tool" };
 
 #define HELP_NUM (sizeof(helptxt) / sizeof(*helptxt))
@@ -2586,7 +2590,7 @@ push_state(char *name, char *rnam, bool lzip, bool rzip)
 	ui_stack = st;
 }
 
-static void
+void
 pop_state(
     /* 1: Normal mode
      * 0: Cleanup mode */

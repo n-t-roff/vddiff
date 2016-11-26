@@ -22,6 +22,9 @@ PERFORMANCE OF THIS SOFTWARE.
 #include "main.h"
 #include "ui2.h"
 #include "fs.h"
+#include "exec.h"
+#include "uzp.h"
+#include "db.h"
 
 static void close2cwins(void);
 
@@ -69,6 +72,7 @@ fmode_dmode(void)
 		return;
 
 	fmode = FALSE;
+	/*diff_db_free(?);*/
 	right_col = 0;
 	from_fmode = TRUE;
 	close2cwins();
@@ -77,8 +81,16 @@ fmode_dmode(void)
 void
 dmode_fmode(void)
 {
+	if (bmode || fmode)
+		return;
+
+	while (ui_stack)
+		pop_state(0);
+
+	twocols = TRUE;
 	fmode = TRUE;
 	open2cwins();
+	rebuild_db(1);
 	disp_fmode();
 }
 

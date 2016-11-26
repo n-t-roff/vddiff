@@ -33,6 +33,7 @@ void clr_mark(void);
 void disp_curs(int);
 void enter_dir(char *, char *, bool, bool);
 void set_win_dim(void);
+void pop_state(short);
 
 extern short color;
 extern short color_leftonly ,
@@ -64,4 +65,5 @@ extern char *sh_str[FKEY_NUM];
 #endif
 extern char *fkey_cmd[FKEY_NUM];
 extern unsigned fkey_flags[FKEY_NUM];
+extern struct ui_state *ui_stack;
 extern bool scrollen;

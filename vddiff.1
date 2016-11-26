@@ -13,7 +13,7 @@ LOSS OF USE, DATA OR PROFITS, WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE OR
 OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
 PERFORMANCE OF THIS SOFTWARE.
 ..
-.Dd November 23, 2016
+.Dd November 26, 2016
 .Dt VDDIFF 1
 .Sh NAME
 .Nm vddiff
@@ -603,6 +603,8 @@ in second tree.
 .It Sq Li P
 Create directory
 .Sy ( bmode
+and
+.Sy fmode
 only).
 .It Dq Li Pl
 Create directory in left tree.
@@ -1140,7 +1142,10 @@ is searched to determine the full path.
 Diff mode is entered when two arguments are used.
 Key
 .Aq Cm CTRL-w
-switches to two-column diff mode.
+switches to two-column diff mode,
+key
+.Sq Li #
+switches to fmode.
 .Ss Two-column diff mode
 Two-column diff mode is equal to diff mode
 except for a different data presentation.
