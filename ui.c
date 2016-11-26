@@ -57,7 +57,7 @@ static void pop_state(short);
 static void help(void);
 static char *type_name(mode_t);
 static void ui_resize(void);
-static void statcol(void);
+static void statcol(int);
 static void file_stat(struct filediff *, struct filediff *);
 static void set_file_info(struct filediff *, mode_t, int *, short *, int *);
 static int disp_name(WINDOW *, int, int, int, int, struct filediff *, int,
@@ -431,6 +431,9 @@ next_key:
 				}
 			}
 
+			if (fmode)
+				break;
+
 			if (!bmode) {
 				c = 0;
 				lpath[llen] = 0;
@@ -438,13 +441,13 @@ next_key:
 
 				if (!*pwd && !*rpwd)
 					printerr(NULL, "At top directory");
-				else if (!*pwd || !rpwd || !strcmp(PWD, RPWD))
+				else if (!twocols &&
+				    (!*pwd || !rpwd || !strcmp(PWD, RPWD)))
 					printerr(NULL, "%s", *pwd ? PWD : RPWD);
 				else {
 					werase(wstat);
-					statcol();
-					mvwaddstr(wstat, 0, 2, PWD);
-					mvwaddstr(wstat, 1, 2, RPWD);
+					statcol(0);
+					stmbsra(PWD, RPWD);
 					wrefresh(wstat);
 				}
 
@@ -453,20 +456,25 @@ next_key:
 
 			/* fall through */
 		case 'f':
+			if (fmode)
+				break;
+
 			if (!bmode) {
 				c = 0;
 				lpath[llen] = 0;
 				rpath[rlen] = 0;
 				werase(wstat);
-				statcol();
-				mvwaddstr(wstat, 0, 2, lpath);
-				mvwaddstr(wstat, 1, 2, rpath);
+				statcol(0);
+				stmbsra(lpath, rpath);
 				wrefresh(wstat);
 				break;
 			}
 
 			/* fall through */
 		case 'a':
+			if (fmode)
+				break;
+
 			c = 0;
 
 			if (bmode) {
@@ -483,9 +491,8 @@ next_key:
 			}
 
 			werase(wstat);
-			statcol();
-			mvwaddstr(wstat, 0, 2, arg[0]);
-			mvwaddstr(wstat, 1, 2, arg[1]);
+			statcol(0);
+			stmbsra(arg[0], arg[1]);
 			wrefresh(wstat);
 			break;
 		case 'n':
@@ -1911,7 +1918,7 @@ prtc2:
 	}
 
 	werase(wstat);
-	statcol();
+	statcol(1);
 
 	if (type[0] == '!' || diff == 'X') {
 		mvwaddstr(wstat, 0, twocols ? 0 : 2, type_name(f->ltype));
@@ -2009,12 +2016,18 @@ disp_name(WINDOW *w, int y, int x, int mx, int o, struct filediff *f, int t,
 }
 
 static void
-statcol(void)
+statcol(int m)
 {
 	if (twocols) {
-		prt2chead();
+		if (m)
+			prt2chead();
+
 		standoutc(wstat);
 		mvwaddch(wstat, 0, llstw, ' ');
+
+		if (!m)
+			mvwaddch(wstat, 1, llstw, ' ');
+
 		standendc(wstat);
 		return;
 	}

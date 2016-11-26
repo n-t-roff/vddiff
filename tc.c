@@ -165,3 +165,28 @@ fmode_cp_pth(void)
 
 	enter_dir(NULL, NULL, FALSE, FALSE);
 }
+
+void
+stmove(int i)
+{
+	if (twocols) {
+		if (i)
+			wmove(wstat, 1, rlstx);
+		else
+			wmove(wstat, 1, 0);
+	} else {
+		if (i)
+			wmove(wstat, 1, 2);
+		else
+			wmove(wstat, 0, 2);
+	}
+}
+
+void
+stmbsra(char *s1, char *s2)
+{
+	stmove(0);
+	putmbsra(wstat, s1, twocols ? llstw : 0);
+	stmove(1);
+	putmbsra(wstat, s2, 0);
+}
