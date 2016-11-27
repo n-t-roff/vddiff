@@ -1052,7 +1052,7 @@ static char *helptxt[] = {
        "`eg		Change file group (range cursor...mark)",
        "`elg		Change group of left file (range cursor...mark)",
        "`erg		Change group or right file (range cursor...mark)",
-       "P		Create directory (bmode only)",
+       "P		Create directory (bmode and fmode only)",
        "Pl		Create directory in left tree",
        "Pr		Create directory in right tree",
        "m		Mark file or directory",
@@ -1786,6 +1786,8 @@ disp_list(void) /* 0: both, 1: left, 2: right */
 		    top_idx[right_col] - 1 : 0;
 
 	werase(w);
+	/* Else glyphs are left with NetBSD curses */
+	wrefresh(w);
 
 	if (!db_num[right_col]) {
 		no_file();
