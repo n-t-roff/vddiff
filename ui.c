@@ -907,11 +907,24 @@ next_key:
 			}
 
 			break;
-		case CTRL('L'):
+		case CTRL('l'):
+			c = 0;
 			endwin();
 			refresh();
+
+			if (fmode) {
+				touchwin(wllst);
+				touchwin(wmid);
+				touchwin(wrlst);
+			} else {
+				touchwin(wlist);
+			}
+
+			touchwin(wstat);
+			refr_scr();
 			break;
 		case 'W':
+			c = 0;
 			wait_after_exec = wait_after_exec ? FALSE : TRUE;
 			filt_stat();
 			wrefresh(wstat);
@@ -999,7 +1012,7 @@ static char *helptxt[] = {
        "Q		Quit vddiff",
        "h, ?		Display help",
        "^L		Refresh display",
-       "<TAB>		In two-column mode: Toggle column",
+       "<TAB>		In fmode: Toggle column",
        "<UP>, k, -	Move cursor up",
        "<DOWN>, j, +	Move cursor down",
        "<LEFT>		Leave directory (one directory up)",
@@ -1049,8 +1062,8 @@ static char *helptxt[] = {
        "`dd		Delete file or directory (range cursor...mark)",
        "`dl		Delete file or directory in first tree (range cursor...mark)",
        "`dr		Delete file or directory in second tree (range cursor...mark)",
-       "[<n>]T		fmode only: Move file or directory"
-       "`T		fmode only: Move file or directory (range cursor...mark)"
+       "[<n>]T		In fmode: Move file or directory",
+       "`T		In fmode: Move file or directory (range cursor...mark)",
        "en		Rename file",
        "eln		Rename left file",
        "ern		Rename right file",
