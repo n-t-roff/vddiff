@@ -2979,11 +2979,14 @@ ui_resize(void)
 	set_win_dim();
 
 	if (curs[right_col] >= listh)
-		curs[right_col] = listh -1;
+		curs[right_col] = listh - 1;
 
-	if (bmode);
-	else
+	if (fmode) {
+		close2cwins();
+		open2cwins();
+	} else {
 		wresize(wlist, listh, listw);
+	}
 
 	delwin(wstat);
 
@@ -2992,7 +2995,7 @@ ui_resize(void)
 		return;
 	}
 
-	disp_list();
+	disp_fmode();
 }
 
 void

@@ -11,6 +11,7 @@ extern bool right_col;
 extern bool from_fmode;
 
 void open2cwins(void);
+void close2cwins(void);
 void prt2chead(void);
 WINDOW *getlstwin(void);
 void tgl2c(void);

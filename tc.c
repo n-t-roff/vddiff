@@ -26,8 +26,6 @@ PERFORMANCE OF THIS SOFTWARE.
 #include "uzp.h"
 #include "db.h"
 
-static void close2cwins(void);
-
 int llstw, rlstw, rlstx, midoffs;
 WINDOW *wllst, *wmid, *wrlst;
 bool twocols;
@@ -57,7 +55,7 @@ open2cwins(void)
 	wnoutrefresh(wmid);
 }
 
-static void
+void
 close2cwins(void)
 {
 	delwin(wllst);
