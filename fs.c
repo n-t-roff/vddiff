@@ -358,7 +358,9 @@ exit:
  * 1: Cancel */
 
 int
-fs_rm(int tree, char *txt, long u, int n)
+fs_rm(int tree, char *txt, long u, int n,
+    /* 1: Force */
+    unsigned md)
 {
 	struct filediff *f;
 	unsigned short m;
@@ -369,7 +371,7 @@ fs_rm(int tree, char *txt, long u, int n)
 
 	m = n > 1;
 
-	if (m && dialog(y_n_txt, NULL,
+	if (!(md & 1) && m && dialog(y_n_txt, NULL,
 	    "Really %s %d files?", txt ? txt : "delete", n) != 'y')
 		return 1;
 
@@ -404,7 +406,7 @@ fs_rm(int tree, char *txt, long u, int n)
 			continue;
 		}
 
-		if (!m && dialog(y_n_txt, NULL,
+		if (!(md & 1) && !m && dialog(y_n_txt, NULL,
 		    "Really %s %s\"%s\"?", txt ? txt : "delete",
 		    S_ISDIR(stat1.st_mode) ? "directory " : "", pth1) != 'y') {
 			rv = 1;
@@ -437,21 +439,23 @@ cancel:
 	return rv;
 }
 
-void
-fs_cp(int to, long u, int n)
+int /* !0: Error */
+fs_cp(int to, long u, int n,
+    /* 1: don't rebuild DB */
+    unsigned md)
 {
 	struct filediff *f;
 	struct stat st;
 	bool m;
 
 	if (!db_num[right_col])
-		return;
+		return 1;
 
 	m = n > 1;
 
 	if (m && dialog(y_n_txt, NULL,
-	    "Really copy %d files?", n) != 'y')
-		return;
+	    "Really %s %d files?", (md & 1) ? "move" : "copy", n) != 'y')
+		return 1;
 
 	for (; n-- && u < db_num[right_col]; u++) {
 		if (to == 1) {
@@ -481,11 +485,11 @@ fs_cp(int to, long u, int n)
 		/* After stat src to avoid removing dest if there is a problem
 		 * with src */
 		if (!followlinks) {
-			if (fs_rm(to, "overwrite", u, 1) == 1)
-				return;
+			if (fs_rm(to, "overwrite", u, 1, 0) == 1)
+				return 1;
 		} else if (!m && dialog(y_n_txt, NULL,
 		    "Really overwrite \"%s\"?", pth2) != 'y')
-			return;
+			return 1;
 
 		/* fs_rm() did change pths and stat1 */
 
@@ -515,8 +519,10 @@ fs_cp(int to, long u, int n)
 			cp_file();
 	}
 
-	rebuild_db(0);
-	return;
+	if (!(md & 1))
+		rebuild_db(0);
+
+	return 0;
 }
 
 /* top_idx and curs must kept unchanged for "//" */

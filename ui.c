@@ -561,7 +561,7 @@ next_key:
 
 			c = 0;
 			/* allowed for single sided only */
-			fs_rm(3, NULL, u, num);
+			fs_rm(3, NULL, u, num, 0);
 			break;
 		case 't':
 			if (*key == 'S') {
@@ -600,7 +600,7 @@ next_key:
 			switch (*key) {
 			case 'd':
 				c = 0;
-				fs_rm(1, NULL, u, num);
+				fs_rm(1, NULL, u, num, 0);
 				goto next_key;
 			case 's':
 				c = 0;
@@ -658,7 +658,7 @@ next_key:
 			switch (*key) {
 			case 'd':
 				c = 0;
-				fs_rm(2, NULL, u, num);
+				fs_rm(2, NULL, u, num, 0);
 				goto next_key;
 			case 's':
 				c = 0;
@@ -699,14 +699,24 @@ next_key:
 				break;
 
 			c = 0;
-			fs_cp(1, u, num);
+			fs_cp(1, u, num, 0);
 			break;
 		case '>':
 			if (*key != '>')
 				break;
 
 			c = 0;
-			fs_cp(2, u, num);
+			fs_cp(2, u, num, 0);
+			break;
+		case 'T':
+			if (!fmode)
+				break;
+
+			c = 0;
+
+			if (!fs_cp(right_col ? 1 : 2, u, num, 1))
+				fs_rm(right_col ? 2 : 1, NULL, u, num, 1);
+
 			break;
 		case KEY_HOME:
 			c = 0;
@@ -1039,6 +1049,8 @@ static char *helptxt[] = {
        "`dd		Delete file or directory (range cursor...mark)",
        "`dl		Delete file or directory in first tree (range cursor...mark)",
        "`dr		Delete file or directory in second tree (range cursor...mark)",
+       "[<n>]T		fmode only: Move file or directory"
+       "`T		fmode only: Move file or directory (range cursor...mark)"
        "en		Rename file",
        "eln		Rename left file",
        "ern		Rename right file",
