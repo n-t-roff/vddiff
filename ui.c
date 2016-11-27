@@ -71,8 +71,8 @@ static void help_up(unsigned short);
 static void set_mark(void);
 static void disp_mark(void);
 static void yank_name(int);
-static void scroll_up(unsigned, bool);
-static void scroll_down(unsigned, bool);
+static void scroll_up(unsigned, bool, int);
+static void scroll_down(unsigned, bool, int);
 
 short color = 1;
 short color_leftonly  = COLOR_CYAN   ,
@@ -397,16 +397,16 @@ next_key:
 			page_up();
 			break;
 		case CTRL('e'):
-			scroll_down(1, FALSE);
+			scroll_down(1, FALSE, -1);
 			break;
 		case CTRL('y'):
-			scroll_up(1, FALSE);
+			scroll_up(1, FALSE, -1);
 			break;
 		case CTRL('d'):
-			scroll_down(listh/2, TRUE);
+			scroll_down(listh/2, TRUE, -1);
 			break;
 		case CTRL('u'):
-			scroll_up(listh/2, TRUE);
+			scroll_up(listh/2, TRUE, -1);
 			break;
 		case 'h':
 		case '?':
@@ -1275,9 +1275,25 @@ proc_mevent(void)
 			action(0, 3, 0, FALSE);
 # if NCURSES_MOUSE_VERSION >= 2
 	} else if (mevent.bstate & BUTTON4_PRESSED) {
-		scroll_up(3, FALSE);
+		if (fmode) {
+			if (mevent.x < llstw) {
+				scroll_up(3, FALSE, 0);
+			} else if (mevent.x >= rlstx) {
+				scroll_up(3, FALSE, 1);
+			}
+		} else {
+			scroll_up(3, FALSE, -1);
+		}
 	} else if (mevent.bstate & BUTTON5_PRESSED) {
-		scroll_down(3, FALSE);
+		if (fmode) {
+			if (mevent.x < llstw) {
+				scroll_down(3, FALSE, 0);
+			} else if (mevent.x >= rlstx) {
+				scroll_down(3, FALSE, 1);
+			}
+		} else {
+			scroll_down(3, FALSE, -1);
+		}
 # endif
 	}
 }
@@ -1630,32 +1646,53 @@ curs_up(void)
 }
 
 static void
-scroll_up(unsigned num, bool keepscrpos)
+scroll_up(unsigned num, bool keepscrpos,
+    /* -1: Use active column, 0: Force left column, 1: Force right column */
+    int col)
 {
 	unsigned move_curs, y, i;
+	WINDOW *w;
+	int ocol;
+	bool fake = FALSE;
+
+	ocol = right_col;
+
+	if (col == -1) {
+		w = getlstwin();
+	} else {
+		if (right_col != col)
+			fake = TRUE;
+
+		right_col = col;
+		w = col ? wrlst : wllst;
+	}
 
 	if (!top_idx[right_col]) {
 		if (!curs[right_col] || keepscrpos) {
 			printerr(NULL, "At top");
-			return;
+			goto exit;
 		}
 
-		disp_curs(0);
+		if (!fake)
+			disp_curs(0);
 
 		if (curs[right_col] >= num)
 			curs[right_col] -= num;
 		else
 			curs[right_col] = 0;
 
-		disp_curs(1);
+		if (!fake)
+			disp_curs(1);
+
 		refr_scr();
-		return;
+		goto exit;
 	}
 
 	if (top_idx[right_col] < num)
 		num = top_idx[right_col];
 
-	if (keepscrpos) {
+	if (fake) {
+	} else if (keepscrpos) {
 		disp_curs(0);
 		move_curs = 1;
 
@@ -1668,7 +1705,7 @@ scroll_up(unsigned num, bool keepscrpos)
 		move_curs = 0;
 	}
 
-	wscrl(getlstwin(), -((int)num));
+	wscrl(w, -((int)num));
 	top_idx[right_col] -= num;
 
 	for (y = 0, i = top_idx[right_col]; y < num; y++, i++)
@@ -1678,19 +1715,34 @@ scroll_up(unsigned num, bool keepscrpos)
 		disp_curs(1);
 
 	refr_scr();
+
+exit:
+	right_col = ocol;
 }
 
 static void
-scroll_down(unsigned num, bool keepscrpos)
+scroll_down(unsigned num, bool keepscrpos, int col)
 {
 	unsigned move_curs, y, i, ti;
 	WINDOW *w;
+	int ocol;
+	bool fake = FALSE;
 
-	w = getlstwin();
+	ocol = right_col;
+
+	if (col == -1) {
+		w = getlstwin();
+	} else {
+		if (right_col != col)
+			fake = TRUE;
+
+		right_col = col;
+		w = col ? wrlst : wllst;
+	}
 
 	if (top_idx[right_col] >= db_num[right_col] - 1) {
 		printerr(NULL, "At bottom");
-		return;
+		goto exit;
 	}
 
 	if (top_idx[right_col] + num >= db_num[right_col])
@@ -1698,7 +1750,8 @@ scroll_down(unsigned num, bool keepscrpos)
 
 	ti = top_idx[right_col] + num;
 
-	if (keepscrpos) {
+	if (fake) {
+	} else if (keepscrpos) {
 		disp_curs(0);
 		move_curs = 1;
 
@@ -1730,6 +1783,9 @@ scroll_down(unsigned num, bool keepscrpos)
 		disp_curs(1);
 
 	refr_scr();
+
+exit:
+	right_col = ocol;
 }
 
 void
@@ -1769,7 +1825,7 @@ disp_curs(
 }
 
 void
-disp_list(void) /* 0: both, 1: left, 2: right */
+disp_list(void)
 {
 	unsigned y, i;
 	WINDOW *w;

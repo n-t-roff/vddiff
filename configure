@@ -208,6 +208,16 @@ check_ncursesw () {
 	# traditional curses.h if both curses systems are installed.
 
 	DEFS="$DEFS -DHAVE_NCURSESW_CURSES_H"
+	INCDIR_CURSES="-I/usr/include/ncurses6"
+	RPATH_CURSES="-Wl,-rpath,/usr/lib64/ncurses6"
+	LIBDIR_CURSES="-L/usr/lib64/ncurses6"
+	PASS_TEXT=" (#include <ncursesw/curses.h>, -I/usr/include/ncurses6, \
+-L/usr/lib64/ncurses6)"
+	test_curses && return # Linux NC6
+
+	INCDIR_CURSES=
+	RPATH_CURSES=
+	LIBDIR_CURSES=
 	PASS_TEXT=" (#include <ncursesw/curses.h>)"
 	test_curses && return # Linux
 
@@ -469,6 +479,7 @@ check_make
 #check_Sanitizer
 check_futimens
 check_netbsd_curses
+#check_lib_curses
 check_curses_wch
 check_mkdtemp
 check_libavlbst
