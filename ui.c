@@ -950,7 +950,15 @@ next_key:
 			break;
 		case '#':
 			c = 0;
-			dmode_fmode();
+
+			if (fmode) {
+				fmode_dmode();
+				/* Use "", not NULL here! */
+				enter_dir("", "", FALSE, FALSE);
+			} else {
+				dmode_fmode();
+			}
+
 			break;
 		case 'N':
 			if (regex) {
@@ -1076,8 +1084,8 @@ static char *helptxt[] = {
        "vl		View raw left file contents",
        "vr		View raw right file contents",
        ":		Enter configuration option",
+       "#		Toggle between diff mode and fmode",
        "=		In fmode: Copy current path from other column",
-       "#		In diff mode: Start two column browse mode (fmode)",
        "W		Toggle wait for <ENTER> after running external tool" };
 
 #define HELP_NUM (sizeof(helptxt) / sizeof(*helptxt))
@@ -1267,12 +1275,22 @@ proc_mevent(void)
 			return;
 
 		disp_curs(0);
+
+		if (fmode) {
+			if (mevent.x < llstw) {
+				right_col = 0;
+			} else if (mevent.x >= rlstx) {
+				right_col = 1;
+			}
+		}
+
 		curs[right_col] = mevent.y;
 		disp_curs(1);
 		refr_scr();
 
 		if (mevent.bstate & BUTTON1_DOUBLE_CLICKED)
 			action(0, 3, 0, FALSE);
+
 # if NCURSES_MOUSE_VERSION >= 2
 	} else if (mevent.bstate & BUTTON4_PRESSED) {
 		if (fmode) {

@@ -13,7 +13,7 @@ LOSS OF USE, DATA OR PROFITS, WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE OR
 OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
 PERFORMANCE OF THIS SOFTWARE.
 ..
-.Dd November 26, 2016
+.Dd November 27, 2016
 .Dt VDDIFF 1
 .Sh NAME
 .Nm vddiff
@@ -808,6 +808,9 @@ which can be accessed with the
 and
 .Aq Cm DOWN
 keys.
+.It Sq Li #
+Toggle between diff mode and two-column browse mode
+.Sy ( fmode ) .
 .It Sq Li =
 In
 .Sy fmode :
@@ -1171,7 +1174,9 @@ directory is deleted.
 Generally in any mode at most one mark is supported.
 If a mark is defined, an existing mark (in either column)
 is deleted.
-A compare of a marked directory (or archive)
+Key
+.Sq Li #
+or a compare of a marked directory (or archive)
 with a directory (or archive)
 switches to two-column diff mode.
 .Sh FILES

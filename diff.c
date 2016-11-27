@@ -802,7 +802,8 @@ pthcat(char *p, size_t l, char *n)
 	}
 
 	/* For archives push_state() sets l = 0 */
-	if (l && p[l-1] != '/')
+	/* ln = 0 for '#' in fmode */
+	if (ln && l && p[l-1] != '/')
 		p[l++] = '/';
 
 	memcpy(p + l, n, ln + 1);
