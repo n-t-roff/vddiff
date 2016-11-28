@@ -754,30 +754,45 @@ ssize_t
 mbstowchs(WINDOW *w, char *s)
 {
 	size_t l;
-	static wchar_t ws[2];
-	wchar_t *wc;
-	cchar_t *cc;
-	attr_t a;
-	short cp;
 
-	(wattr_get)(w, &a, &cp, NULL);
 	l = mbstowcs(wcbuf, s, sizeof(wcbuf)/sizeof(*wcbuf));
 
 	if (l == (size_t)-1) {
 		printerr(NULL, "mbstowcs \"%s\" failed", s);
 		return -1;
-	} else if (l == sizeof(wcbuf)/sizeof(*wcbuf))
-		wcbuf[sizeof(wcbuf)/sizeof(*wcbuf) - 1] = 0;
 
-	wc = wcbuf;
+	} else if (l == sizeof(wcbuf)/sizeof(*wcbuf)) {
+		wcbuf[sizeof(wcbuf)/sizeof(*wcbuf) - 1] = 0;
+	}
+
+	wcs2ccs(w, wcbuf);
+	return l;
+}
+
+void
+wcs2ccs(WINDOW *w, wchar_t *wc)
+{
+	attr_t a;
+	short cp;
+	cchar_t *cc;
+	static wchar_t ws[2];
+
+	(wattr_get)(w, &a, &cp, NULL);
 	cc = ccbuf;
 
 	do {
 		*ws = *wc++;
 		setcchar(cc++, ws, a, cp, NULL);
 	} while (*ws);
+}
 
-	return l;
+void
+putwcs(WINDOW *w, wchar_t *s,
+    /* -1: unlimited */
+    int n)
+{
+	wcs2ccs(w, s);
+	wadd_wchnstr(w, ccbuf, n);
 }
 
 ssize_t

@@ -13,7 +13,7 @@ LOSS OF USE, DATA OR PROFITS, WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE OR
 OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
 PERFORMANCE OF THIS SOFTWARE.
 ..
-.Dd November 27, 2016
+.Dd November 28, 2016
 .Dt VDDIFF 1
 .Sh NAME
 .Nm vddiff
@@ -1193,7 +1193,7 @@ Key
 switches to two-column diff mode,
 key
 .Sq Li #
-switches to fmode.
+switches to two-column browse mode.
 .Ss Two-column diff mode
 Two-column diff mode is equal to diff mode
 except for a different data presentation.
@@ -1202,13 +1202,14 @@ Key
 switches to single-column diff mode,
 key
 .Sq Li #
-switches to fmode.
+switches to two-column browse mode.
 .Ss One-column browse mode (bmode)
 Bmode is a simply file browser mode.
 It allows file comparison by use or marks,
 but directory comparison is not possible.
-It is not possible to switch from any mode to
-or to any mode from bmode.
+Key
+.Sq Li #
+switches to two-column browse mode.
 .Ss Two-column browse mode (fmode)
 Fmode is a simple two-column file manager mode.
 It allows comparison of files and directories
@@ -1220,6 +1221,9 @@ Generally in any mode at most one mark is supported.
 If a mark is defined, an existing mark (in either column)
 is deleted.
 Key
+.Aq Cm CTRL-w
+switches to single-column browse mode,
+key
 .Sq Li #
 or a compare of a marked directory (or archive)
 with a directory (or archive)

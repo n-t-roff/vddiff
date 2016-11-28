@@ -34,6 +34,8 @@ void anykey(void);
 void free_zdir(struct filediff *, char *);
 void refr_scr(void);
 ssize_t mbstowchs(WINDOW *, char *);
+void wcs2ccs(WINDOW *, wchar_t *);
+void putwcs(WINDOW *, wchar_t *, int);
 ssize_t putmbs(WINDOW *, char *, int);
 int addmbs(WINDOW *, char *, int);
 ssize_t putmbsra(WINDOW *, char *, int);

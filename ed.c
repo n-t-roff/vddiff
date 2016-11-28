@@ -131,7 +131,8 @@ disp_edit(void)
 	mvwprintw(wstat, 0, 0, "%s", lbuf);
 	filt_stat();
 #ifdef HAVE_CURSES_WCH
-	mvwaddwstr(wstat, 1, 0, linebuf + leftpos);
+	wmove(wstat, 1, 0);
+	putwcs(wstat, linebuf + leftpos, -1);
 #else
 	mvwprintw(wstat, 1, 0, "%s", linebuf + leftpos);
 #endif
@@ -318,36 +319,77 @@ next_key:
 			return 1;
 		case '\n':
 			return 0;
+
 		case KEY_HOME:
-			if (!linepos)
+			if (leftpos) {
+				leftpos = 0;
+				wmove(wstat, 1, 0);
+				putwcs(wstat, linebuf, -1);
+			} else if (linepos) {
+				wmove(wstat, 1, 0);
+			} else {
 				break;
+			}
 
 			linepos = 0;
-			wmove(wstat, 1, 0);
 			wrefresh(wstat);
 			break;
-		case KEY_LEFT:
-			if (!linepos)
-				break;
 
-			wmove(wstat, 1, --linepos - leftpos);
+		case KEY_LEFT:
+			if (linepos - leftpos) {
+				wmove(wstat, 1, --linepos - leftpos);
+			} else if (leftpos) {
+				--leftpos;
+				*ws = linebuf[--linepos];
+				setcchar(&cc, ws, 0, 0, NULL);
+				wins_wch(wstat, &cc);
+			} else {
+				break;
+			}
+
 			wrefresh(wstat);
 			break;
+
 		case KEY_END:
-			if (linepos == linelen)
+			if (linepos == linelen) {
 				break;
+			}
 
 			linepos = linelen;
-			wmove(wstat, 1, linepos - leftpos);
-			wrefresh(wstat);
-			break;
-		case KEY_RIGHT:
-			if (linepos == linelen)
-				break;
 
-			wmove(wstat, 1, ++linepos - leftpos);
+			if (linepos - leftpos < statw - 1) {
+				wmove(wstat, 1, linepos - leftpos);
+			} else {
+				leftpos = linepos - statw + 1;
+				wmove(wstat, 1, 0);
+				wclrtoeol(wstat);
+				putwcs(wstat, linebuf + leftpos, -1);
+				wmove(wstat, 1, statw - 1);
+			}
+
 			wrefresh(wstat);
 			break;
+
+		case KEY_RIGHT:
+			if (linepos == linelen) {
+				break;
+			}
+
+			if (linepos - leftpos < statw - 1) {
+				wmove(wstat, 1, ++linepos - leftpos);
+			} else {
+				wmove(wstat, 1, 0);
+				wdelch(wstat);
+				wmove(wstat, 1, statw - 1);
+				++leftpos;
+				*ws = linebuf[++linepos];
+				setcchar(&cc, ws, 0, 0, NULL);
+				wins_wch(wstat, &cc);
+			}
+
+			wrefresh(wstat);
+			break;
+
 		case KEY_BACKSPACE:
 		case CERASE:
 backspace:
