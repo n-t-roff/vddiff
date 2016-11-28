@@ -484,7 +484,8 @@ next_key:
 				}
 
 				werase(wstat);
-				mvwaddstr(wstat, 1, 0, rpath);
+				wmove(wstat, 1, 0);
+				putmbsra(wstat, rpath, 0);
 				wrefresh(wstat);
 				break;
 			}
@@ -1194,8 +1195,11 @@ disp_help(void)
 	werase(wlist);
 	werase(wstat);
 
-	for (y = 0, i = help_top; y < listh && i < HELP_NUM; y++, i++)
-		mvwaddstr(wlist, y, 0, helptxt[i]);
+	for (y = 0, i = help_top; y < listh && i < HELP_NUM; y++, i++) {
+		/* Does ignore tab char on NetBSD curses */
+		/*mvwaddstr(wlist, y, 0, helptxt[i]);*/
+		mvwprintw(wlist, y, 0, "%s", helptxt[i]);
+	}
 
 	wrefresh(wlist);
 
@@ -1248,8 +1252,10 @@ help_down(short n)
 	wscrl(wlist, n);
 	help_top += n;
 
-	for (i = n; i > 0; i--)
-		mvwaddstr(wlist, listh - i, 0, helptxt[help_top + listh - i]);
+	for (i = n; i > 0; i--) {
+		mvwprintw(wlist, listh - i, 0, "%s",
+		    helptxt[help_top + listh - i]);
+	}
 
 	werase(wstat);
 	wnoutrefresh(wlist);
@@ -1277,8 +1283,9 @@ help_up(unsigned short n)
 	wscrl(wlist, -n);
 	help_top -= n;
 
-	for (i = 0; i < n; i++)
-		mvwaddstr(wlist, i, 0, helptxt[help_top + i]);
+	for (i = 0; i < n; i++) {
+		mvwprintw(wlist, i, 0, "%s", helptxt[help_top + i]);
+	}
 
 	werase(wstat);
 	wnoutrefresh(wlist);
@@ -2943,7 +2950,7 @@ printerr(char *s2, char *s1, ...)
 	va_end(ap);
 
 	if (s2) {
-		mvwaddstr(wstat, 1, 0, s2);
+		mvwprintw(wstat, 1, 0, "%s", s2);
 		wrefresh(wstat);
 		getch();
 		werase(wstat);
@@ -2970,7 +2977,7 @@ dialog(const char *quest, char *answ, char *fmt, ...)
 		va_end(ap);
 	}
 
-	mvwaddstr(wstat, 1, 0, quest);
+	mvwprintw(wstat, 1, 0, "%s", quest);
 	wrefresh(wstat);
 
 	do {

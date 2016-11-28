@@ -128,12 +128,12 @@ disp_edit(void)
 		wstandend(wstat);
 
 	werase(wstat);
-	mvwaddstr(wstat, 0, 0, lbuf);
+	mvwprintw(wstat, 0, 0, "%s", lbuf);
 	filt_stat();
 #ifdef HAVE_CURSES_WCH
 	mvwaddwstr(wstat, 1, 0, linebuf + leftpos);
 #else
-	mvwaddstr(wstat, 1, 0, linebuf + leftpos);
+	mvwprintw(wstat, 1, 0, "%s", linebuf + leftpos);
 #endif
 	wmove(wstat, 1, linepos - leftpos);
 	wrefresh(wstat);
