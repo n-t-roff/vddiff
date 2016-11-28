@@ -1152,7 +1152,7 @@ help(void) {
 		case CERASE:
 			help_pg_up();
 			break;
-		case CTRL('L'):
+		case CTRL('l'):
 			endwin();
 			refresh();
 			break;

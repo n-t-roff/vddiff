@@ -54,14 +54,15 @@ static int read_rc(const char *);
 static void usage(void);
 
 static char *usage_txt =
-"Usage: %s [-u [<RC file>]] [-bcdEefgIiklmnoqrVy] [-F <pattern>]\n"
+"Usage: %s [-u [<RC file>]] [-BbcdEefgIiklmnoqrVy] [-F <pattern>]\n"
 "	[-G <pattern>] [-t <diff_tool>] [-v <view_tool>] [<directory_1>\n"
 "	[<directory_2>]]\n";
-static char *getopt_arg = "bcdEeF:fG:gIiklmnoqrt:Vv:y";
+static char *getopt_arg = "BbcdEeF:fG:gIiklmnoqrt:Vv:y";
 
 bool bmode;
 bool qdiff;
 bool find_name;
+bool dontdiff;
 
 int
 main(int argc, char **argv)
@@ -108,6 +109,9 @@ main(int argc, char **argv)
 		int fl;
 
 		switch (opt) {
+		case 'B':
+			dontdiff = TRUE;
+			break;
 		case 'b':
 			color = 0;
 			break;
@@ -226,6 +230,9 @@ main(int argc, char **argv)
 			fmode = TRUE;
 		else
 			bmode = TRUE;
+	} else if (dontdiff) {
+		twocols = TRUE;
+		fmode = TRUE;
 	}
 
 	if (argc || fmode)

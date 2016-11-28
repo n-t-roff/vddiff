@@ -14,6 +14,9 @@ OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
 PERFORMANCE OF THIS SOFTWARE.
 */
 
+#include <unistd.h>
+#include <errno.h>
+#include <stdlib.h>
 #include <string.h>
 #include <regex.h>
 #include "compat.h"
@@ -27,6 +30,10 @@ PERFORMANCE OF THIS SOFTWARE.
 #include "db.h"
 
 int llstw, rlstw, rlstx, midoffs;
+/* Used for bmode <-> fmode transitions the remember fmode column */
+static int old_col;
+/* fmode <-> bmode: Path of other column */
+static char *fpath;
 WINDOW *wllst, *wmid, *wrlst;
 bool twocols;
 bool fmode;
@@ -71,6 +78,7 @@ fmode_dmode(void)
 
 	fmode = FALSE;
 	/*diff_db_free(?);*/
+	old_col = right_col;
 	right_col = 0;
 	from_fmode = TRUE;
 	close2cwins();
@@ -79,14 +87,16 @@ fmode_dmode(void)
 void
 dmode_fmode(void)
 {
-	if (bmode || fmode)
+	if (fmode)
 		return;
 
-	while (ui_stack)
+	while (!bmode && ui_stack)
 		pop_state(0);
 
+	bmode = FALSE; /* from tgl2c() */
 	twocols = TRUE;
 	fmode = TRUE;
+	right_col = old_col;
 	open2cwins();
 	rebuild_db(1);
 	disp_fmode();
@@ -117,11 +127,60 @@ getlstwin(void)
 void
 tgl2c(void)
 {
-	if (bmode || fmode)
-		return;
+	size_t l1, l2;
+	char *s;
 
-	twocols = twocols ? FALSE : TRUE;
-	disp_list();
+	if (bmode) { /* -> fmode */
+		s = fpath ? fpath : rpath;
+		l1 = strlen(rpath);
+		l2 = strlen(s);
+
+		if (old_col) {
+			llen = l2;
+			rlen = l1;
+			memcpy(lpath, s, llen + 1);
+		} else {
+			llen = l1;
+			rlen = l2;
+			memcpy(lpath, rpath, llen + 1);
+			memcpy(rpath, s    , rlen + 1);
+		}
+
+		if (fpath) {
+			free(fpath);
+			fpath = NULL;
+		}
+
+		dmode_fmode();
+
+	} else if (fmode) { /* -> bmode */
+		lpath[llen] = 0;
+		rpath[rlen] = 0;
+
+		if (right_col) {
+			fpath = strdup(lpath);
+		} else {
+			fpath = strdup(rpath);
+			memcpy(rpath, lpath, llen + 1);
+		}
+
+		if (chdir(rpath) == -1) {
+			printerr(strerror(errno), "chdir \"%s\":", rpath);
+		}
+
+		*lpath = '.';
+		lpath[1] = 0;
+		llen = 1;
+		fmode_dmode();
+		bmode = TRUE;
+		twocols = FALSE;
+		rebuild_db(1);
+		disp_list();
+
+	} else { /* 1C <-> 2C diff modes */
+		twocols = twocols ? FALSE : TRUE;
+		disp_fmode();
+	}
 }
 
 void

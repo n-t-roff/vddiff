@@ -114,6 +114,15 @@ File type
 .El
 .Sh OPTIONS
 .Bl -tag -width 12n
+.It Fl B
+Force two-column file browser mode even if two arguments are given.
+Normally diff mode is started with two arguments.
+Even if it is possible to change to browse mode with key
+.Sq Li # ,
+it may take a long time until the (not needed) diff is done.
+So
+.Fl B
+avoids diff mode at all.
 .It Fl b
 Disable color.
 .It Fl c
@@ -1154,7 +1163,30 @@ In the latter case
 is searched to determine the full path.
 .El
 .Sh VDDIFF MODES
-.Ss Diff mode
+.Nm
+has four modes:
+A diff mode and a browser mode, both have an
+one-column and a two-column submode.
+The following table shows the transition
+bewteen these modes:
+Key
+.Aq Cm CTRL-w
+toggles between one-column and two-column mode
+and key
+.Sq Li #
+toggles between diff mode and browse mode:
+.Bd -literal -offset indent
+               [1-column]        [2-column]
+
+[Diff mode]         <----- ^W ----->
+                       \(rs             ^
+                        \(rs            |
+                         -- # -->    #
+                                 \(rs   |
+                                  \(rs  v
+[Browse mode]       <----- ^W ----->
+.Ed
+.Ss One-column diff mode
 Diff mode is entered when two arguments are used.
 Key
 .Aq Cm CTRL-w
@@ -1171,13 +1203,13 @@ switches to single-column diff mode,
 key
 .Sq Li #
 switches to fmode.
-.Ss Bmode (browse mode)
+.Ss One-column browse mode (bmode)
 Bmode is a simply file browser mode.
 It allows file comparison by use or marks,
 but directory comparison is not possible.
 It is not possible to switch from any mode to
 or to any mode from bmode.
-.Ss Fmode (file manager mode)
+.Ss Two-column browse mode (fmode)
 Fmode is a simple two-column file manager mode.
 It allows comparison of files and directories
 by use of local marks.
