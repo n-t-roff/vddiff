@@ -1,5 +1,5 @@
 #include "ver.h"
 
 const char version[] = "version pre-1.3.0  "
-    "2016-11-28 18:00"
+    "2016-11-28 22:24"
     ;

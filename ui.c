@@ -2047,12 +2047,13 @@ prtc2:
 			addmbs(wstat, " -> ", 0);
 			addmbs(wstat, f->rlink, 0);
 		}
-	} else if (fmode)
+	} else if (fmode) {
 		file_stat(
-		    db_num[0] ? db_list[0][curs[0]] : NULL,
-		    db_num[1] ? db_list[1][curs[1]] : NULL);
-	else
+		    db_num[0] ? db_list[0][top_idx[0] + curs[0]] : NULL,
+		    db_num[1] ? db_list[1][top_idx[1] + curs[1]] : NULL);
+	} else {
 		file_stat(f, f);
+	}
 
 	filt_stat();
 	dir_change = FALSE;
