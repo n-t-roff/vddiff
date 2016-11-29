@@ -58,11 +58,7 @@ extern struct filediff *mark;
 extern char *gl_mark, *mark_lnam, *mark_rnam;
 
 #define FKEY_NUM 12
-#ifdef HAVE_CURSES_WCH
 extern wchar_t *sh_str[FKEY_NUM];
-#else
-extern char *sh_str[FKEY_NUM];
-#endif
 extern char *fkey_cmd[FKEY_NUM];
 extern unsigned fkey_flags[FKEY_NUM];
 extern struct ui_state *ui_stack;

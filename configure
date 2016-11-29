@@ -351,28 +351,6 @@ check_netbsd_curses () {
 	DEFS=$DEFS0
 	check_curses && return
 }
-check_curses_wch () {
-	check_for "wins_wch(3)"
-
-	cat <<EOT >$TMPC
-#include "compat.h"
-int
-main() {
-	cchar_t c;
-	wins_wch(stdscr, &c);
-	return 0;
-}
-EOT
-	gen_mk
-	cat <<EOT >>$OUTMK
-$TMPNAM: ${TMPNAM}.o
-	\$(CC) \$(_CFLAGS) \$(_LDFLAGS) \$(RPATH_CURSES) -o \$@ ${TMPNAM}.o \$(LDADD)
-EOT
-	compile
-	test_result || return;
-
-	DEFS="$DEFS -DHAVE_CURSES_WCH"
-}
 check_mkdtemp () {
 	check_for "mkdtemp(3)"
 
@@ -480,7 +458,6 @@ check_make
 check_futimens
 check_netbsd_curses
 #check_lib_curses
-check_curses_wch
 check_mkdtemp
 check_libavlbst
 check_major_minor

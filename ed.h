@@ -23,8 +23,4 @@ extern short edit;
 extern unsigned histsize;
 extern unsigned linelen;
 
-#ifdef HAVE_CURSES_WCH
 extern wchar_t *linebuf;
-#else
-extern char *linebuf;
-#endif

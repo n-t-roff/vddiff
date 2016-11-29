@@ -19,11 +19,7 @@ PERFORMANCE OF THIS SOFTWARE.
 #include <stdlib.h>
 #include <regex.h>
 #include "compat.h"
-
-#ifdef HAVE_CURSES_WCH
-# include <wctype.h>
-#endif
-
+#include <wctype.h>
 #include "ui.h"
 #include "main.h"
 #include "exec.h"
@@ -47,13 +43,9 @@ unsigned histsize = 100;
 unsigned linelen;
 static unsigned linepos, leftpos;
 
-#ifdef HAVE_CURSES_WCH
 wchar_t *linebuf;
 static wchar_t ws[2];
 static cchar_t cc;
-#else
-char *linebuf;
-#endif
 
 #ifdef NCURSES_MOUSE_VERSION
 static void proc_mevent(void);
@@ -76,11 +68,7 @@ ed_append(char *txt)
 		return;
 	}
 
-#ifdef HAVE_CURSES_WCH
 	l = mbstowcs(linebuf + linelen, txt, l + 1);
-#else
-	memcpy(linebuf + linelen, txt, l + 1);
-#endif
 	linelen += l;
 	linepos = linelen;
 
@@ -95,11 +83,7 @@ init_edit(void)
 		clr_edit();
 
 	edit = 1;
-#ifdef HAVE_CURSES_WCH
 	linebuf = malloc(LINESIZ * sizeof(*linebuf));
-#else
-	linebuf = rbuf;
-#endif
 	*linebuf = 0;
 	linelen = linepos = leftpos = 0;
 	*lbuf = 0;
@@ -110,9 +94,7 @@ void
 clr_edit(void)
 {
 	edit = 0;
-#ifdef HAVE_CURSES_WCH
 	free(linebuf);
-#endif
 	curs_set(0);
 	werase(wstat);
 	filt_stat();
@@ -130,12 +112,8 @@ disp_edit(void)
 	werase(wstat);
 	mvwprintw(wstat, 0, 0, "%s", lbuf);
 	filt_stat();
-#ifdef HAVE_CURSES_WCH
 	wmove(wstat, 1, 0);
 	putwcs(wstat, linebuf + leftpos, -1);
-#else
-	mvwprintw(wstat, 1, 0, "%s", linebuf + leftpos);
-#endif
 	wmove(wstat, 1, linepos - leftpos);
 	wrefresh(wstat);
 }
@@ -144,9 +122,7 @@ void
 set_fkey(int i, char *s)
 {
 	int ek;
-#ifdef HAVE_CURSES_WCH
 	size_t l;
-#endif
 
 	if (i < 1 || i > FKEY_NUM) {
 		printf("Function key number must be in range 1-%d\n",
@@ -177,15 +153,11 @@ free:
 		return;
 	}
 
-#ifdef HAVE_CURSES_WCH
 	/* wcslen(wcs) should be <= strlen(mbs) */
 	l = strlen(s) + 1;
 	sh_str[i] = malloc(l * sizeof(wchar_t));
 	mbstowcs(sh_str[i], s, l);
 	free(s);
-#else
-	sh_str[i] = s;
-#endif
 }
 
 int
@@ -210,10 +182,9 @@ ed_dialog(char *msg,
 		return 1;
 	}
 
-#ifdef HAVE_CURSES_WCH
 	/* both rbuf and linebuf are used by ui.c */
 	wcstombs(rbuf, linebuf, sizeof rbuf);
-#endif
+
 	if (!keep_buf)
 		clr_edit();
 
@@ -262,48 +233,28 @@ hist_add(struct history *hist)
 static int
 edit_line(int (*callback)(char *), struct history *hist)
 {
-#ifdef HAVE_CURSES_WCH
 	wint_t c;
-#else
-	int c;
-#endif
 	int i;
 	size_t l;
 
 	while (1) {
 next_key:
-#ifdef HAVE_CURSES_WCH
 		get_wch(&c);
-#else
-		c = getch();
-#endif
 
 		for (i = 0; i < FKEY_NUM; i++) {
-			if (c !=
-#ifdef HAVE_CURSES_WCH
-			    (wint_t)
-#endif
-			    KEY_F(i + 1))
+			if (c != (wint_t)KEY_F(i + 1))
 				continue;
 
 			if (!sh_str[i])
 				goto next_key;
-#ifdef HAVE_CURSES_WCH
 			l = wcslen(sh_str[i]);
-#else
-			l = strlen(sh_str[i]);
-#endif
 			if (linelen + l >= LINESIZ) {
 				printerr(NULL, "Line buffer overflow");
 				goto next_key;
 			}
 
 			linebuf_insch(l);
-#ifdef HAVE_CURSES_WCH
 			wmemcpy(linebuf + linepos, sh_str[i], l);
-#else
-			memcpy(linebuf + linepos, sh_str[i], l);
-#endif
 			linepos += l;
 			disp_edit();
 			goto next_key;
@@ -427,9 +378,7 @@ del_char:
 			wrefresh(wstat);
 
 			if (callback) {
-#ifdef HAVE_CURSES_WCH
 				wcstombs(rbuf, linebuf, sizeof rbuf);
-#endif
 				callback(rbuf);
 			}
 
@@ -466,23 +415,13 @@ del_char:
 
 			linebuf[linepos++] = c;
 
-#ifdef HAVE_CURSES_WCH
 			*ws = c;
 			setcchar(&cc, ws, 0, 0, NULL);
-#endif
 
 			if (linepos == linelen) {
-#ifdef HAVE_CURSES_WCH
 				wadd_wch(wstat, &cc);
-#else
-				waddch(wstat, c);
-#endif
 			} else {
-#ifdef HAVE_CURSES_WCH
 				wins_wch(wstat, &cc);
-#else
-				winsch(wstat, c);
-#endif
 				wmove(wstat, 1, linepos - leftpos);
 			}
 
@@ -490,9 +429,8 @@ del_char:
 
 			if (callback) {
 				int i2;
-#ifdef HAVE_CURSES_WCH
+
 				wcstombs(rbuf, linebuf, sizeof rbuf);
-#endif
 				i2 = callback(rbuf);
 
 				if (i2 & EDCB_FAIL)
@@ -512,13 +450,9 @@ static void
 overful_del(void)
 {
 	wmove(wstat, 1, 0);
-#ifdef HAVE_CURSES_WCH
 	*ws = linebuf[--leftpos];
 	setcchar(&cc, ws, 0, 0, NULL);
 	wins_wch(wstat, &cc);
-#else
-	winsch(wstat, linebuf[leftpos]);
-#endif
 	wmove(wstat, 1, linepos - leftpos);
 }
 
@@ -570,10 +504,8 @@ hist_up(struct history *hist)
 	if (!histsize || !hist->top || (hist->have_ent && !hist->ent->next))
 		return;
 
-#ifdef HAVE_CURSES_WCH
 	if (!hist->have_ent || !hist->ent->prev)
 		wcstombs(rbuf, linebuf, sizeof rbuf);
-#endif
 
 	if (!hist->have_ent) {
 		hist->have_ent = 1;

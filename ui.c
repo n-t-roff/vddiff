@@ -91,11 +91,7 @@ short color_leftonly  = COLOR_CYAN   ,
       color_bg        = COLOR_BLACK  ;
 unsigned top_idx[2], curs[2], statw;
 
-#ifdef HAVE_CURSES_WCH
 wchar_t *sh_str[FKEY_NUM];
-#else
-char *sh_str[FKEY_NUM];
-#endif
 char *fkey_cmd[FKEY_NUM];
 unsigned fkey_flags[FKEY_NUM];
 
@@ -644,13 +640,7 @@ next_key:
 				if (!sh_str[i])
 					continue;
 
-				mvwprintw(wlist, i, 5,
-#ifdef HAVE_CURSES_WCH
-				    "\"%ls\""
-#else
-				    "\"%s\""
-#endif
-				    , sh_str[i]);
+				mvwprintw(wlist, i, 5, "\"%ls\"", sh_str[i]);
 			}
 
 			anykey();
