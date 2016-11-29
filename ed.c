@@ -390,6 +390,12 @@ next_key:
 			wrefresh(wstat);
 			break;
 
+		/* Delete char left from cursor.
+		 * Short string: Shifting right part of string to left.
+		 * Long string: Shifting left part to the right. This has
+		 *   the advantage, that most information is kept in the line
+		 *   and it is seen what will be deleted. */
+
 		case KEY_BACKSPACE:
 		case CERASE:
 backspace:
@@ -399,6 +405,7 @@ backspace:
 			linepos--;
 			wmove(wstat, 1, linepos - leftpos);
 			goto del_char;
+
 		case KEY_DC:
 			if (linepos == linelen)
 				break;
@@ -407,8 +414,15 @@ del_char:
 			linebuf_delch();
 			wdelch(wstat);
 
-			if (leftpos)
+			if (leftpos) {
 				overful_del();
+			} else if (linelen >= statw) {
+				wmove(wstat, 1, statw - 1);
+				*ws = linebuf[statw - 1];
+				setcchar(&cc, ws, 0, 0, NULL);
+				wins_wch(wstat, &cc);
+				wmove(wstat, 1, linepos - leftpos);
+			}
 
 			wrefresh(wstat);
 
@@ -420,6 +434,7 @@ del_char:
 			}
 
 			break;
+
 		case KEY_UP:
 			if (hist)
 				hist_up(hist);
@@ -435,7 +450,12 @@ del_char:
 			if (linelen >= statw - 1) {
 				wmove(wstat, 1, 0);
 				wdelch(wstat);
-				wmove(wstat, 1, linepos - ++leftpos);
+				leftpos++;
+
+				/* Else cursor is already in place */
+				if (linepos >= leftpos) {
+					wmove(wstat, 1, linepos - leftpos);
+				}
 			}
 
 			if (linepos == linelen) {

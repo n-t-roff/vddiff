@@ -62,7 +62,7 @@ static char *getopt_arg = "BbcdEeF:fG:gIiklmnoqrt:Vv:y";
 bool bmode;
 bool qdiff;
 bool find_name;
-bool dontdiff;
+static bool dontdiff;
 
 int
 main(int argc, char **argv)
@@ -230,7 +230,7 @@ main(int argc, char **argv)
 			fmode = TRUE;
 		else
 			bmode = TRUE;
-	} else if (dontdiff) {
+	} else if (dontdiff) { /* Exactly 2 args */
 		twocols = TRUE;
 		fmode = TRUE;
 	}
