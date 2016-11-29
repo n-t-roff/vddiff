@@ -314,8 +314,10 @@ check_args(int argc, char **argv)
 	if (argc) {
 		s = *argv++;
 		argc--;
-	} else
+	} else if (!(s = getenv("PWD"))) {
+		printf("PWD not set\n");
 		s = ".";
+	}
 
 	arg[0] = s;
 

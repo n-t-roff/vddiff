@@ -259,3 +259,17 @@ stmbsra(char *s1, char *s2)
 	stmove(1);
 	putmbsra(wstat, s2, 0);
 }
+
+void
+fmode_chdir(void)
+{
+	char *s;
+
+	lpath[llen] = 0;
+	rpath[rlen] = 0;
+	s = right_col ? rpath : lpath;
+
+	if (chdir(s) == -1) {
+		printerr(strerror(errno), "chdir \"%s\":", s);
+	}
+}

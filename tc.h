@@ -22,3 +22,4 @@ void fmode_dmode(void);
 void dmode_fmode(void);
 void stmove(int);
 void stmbsra(char *, char *);
+void fmode_chdir(void);

@@ -177,15 +177,17 @@ do_diff:
 			return;
 	}
 
-	if (bmode) {
+	if (bmode || fmode) {
 		if (chdir(lpath) == -1) {
-			printerr(strerror(errno), "chdir \"%s\" failed", lpath);
+			printerr(strerror(errno), "chdir \"%s\":", lpath);
 			goto exit;
 		}
 
-		*lpath = '.';
-		lpath[1] = 0;
-		llen = 1;
+		if (bmode) {
+			*lpath = '.';
+			lpath[1] = 0;
+			llen = 1;
+		}
 	}
 
 	if (bmode)
@@ -952,6 +954,7 @@ next_key:
 			wnoutrefresh(getlstwin());
 			wnoutrefresh(wstat);
 			doupdate();
+			fmode_chdir();
 			break;
 		case '|':
 			if (!twocols)
@@ -1304,6 +1307,8 @@ proc_mevent(void)
 			} else if (mevent.x >= rlstx) {
 				right_col = 1;
 			}
+
+			fmode_chdir();
 		}
 
 		curs[right_col] = mevent.y;
@@ -2871,9 +2876,7 @@ enter_dir(char *name, char *rnam, bool lzip, bool rzip)
 			n = NULL;
 
 		if (bmode && chdir(name) == -1) {
-			printerr(strerror(errno),
-			    "chdir \"%s\" failed", name);
-			return;
+			printerr(strerror(errno), "chdir \"%s\":", name);
 		}
 
 		if (fmode && name)
@@ -2884,8 +2887,10 @@ enter_dir(char *name, char *rnam, bool lzip, bool rzip)
 		diff_db_free(right_col);
 		scan_subdir(fmode ? name : NULL, NULL, right_col ? 2 : 1);
 
-		if (fmode)
+		if (fmode) {
 			free(name);
+			fmode_chdir();
+		}
 
 		if (n) {
 			size_t l;
