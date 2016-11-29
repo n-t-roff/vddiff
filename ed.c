@@ -396,22 +396,22 @@ del_char:
 			if (linelen + 1 >= LINESIZ)
 				break;
 
-			if (linelen >= statw - 1) {
+			/* If cursor is at right window border,
+			 * shift whole line to the left one char. */
+
+			if (linepos - leftpos == statw - 1) {
 				wmove(wstat, 1, 0);
 				wdelch(wstat);
 				leftpos++;
-
-				/* Else cursor is already in place */
-				if (linepos >= leftpos) {
-					wmove(wstat, 1, linepos - leftpos);
-				}
+				wmove(wstat, 1, linepos - leftpos);
 			}
 
 			if (linepos == linelen) {
 				linelen++;
 				linebuf[linepos + 1] = 0;
-			} else
+			} else {
 				linebuf_insch(1);
+			}
 
 			linebuf[linepos++] = c;
 
