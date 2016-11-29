@@ -232,9 +232,12 @@ main(int argc, char **argv)
 		fmode = TRUE;
 	}
 
-	if (argc || fmode)
+	if (argc || fmode) {
 		check_args(argc, argv);
-	else {
+	} else { /* bmode only */
+		/* Since bmode does not work with paths it need to
+		 * resolve the absolute path. */
+
 		if (!getcwd(lpath, sizeof lpath)) {
 			printf("getcwd failed: %s\n",
 			    strerror(errno));

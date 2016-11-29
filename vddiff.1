@@ -1186,6 +1186,12 @@ toggles between diff mode and browse mode:
                                   \(rs  v
 [Browse mode]       <----- ^W ----->
 .Ed
+.Pp
+While the diff modes access files with their path name,
+the browse modes always set the current working directory
+to the active file list column.
+This is relevant if shell commands are applied
+which create files.
 .Ss One-column diff mode
 Diff mode is entered when two arguments are used.
 Key
@@ -1207,8 +1213,12 @@ switches to two-column browse mode.
 Bmode is a simply file browser mode.
 It allows file comparison by use or marks,
 but directory comparison is not possible.
+.begin_comment
+Since bmode uses chdir instead of paths
+it needs to resolve paths with symbolic links.
+.end_comment
 Key
-.Sq Li #
+.Aq Cm CTRL-w
 switches to two-column browse mode.
 .Ss Two-column browse mode (fmode)
 Fmode is a simple two-column file manager mode.
@@ -1220,6 +1230,16 @@ directory is deleted.
 Generally in any mode at most one mark is supported.
 If a mark is defined, an existing mark (in either column)
 is deleted.
+The symbolic variables
+.Dq Cm $1
+and
+.Dq Cm $2
+exchange when the cursor is in the right column.
+That means
+.Dq Cm $1
+is the file from the cursor column and
+.Dq Cm $2
+is the file from the other column.
 Key
 .Aq Cm CTRL-w
 switches to single-column browse mode,

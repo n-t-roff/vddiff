@@ -32,6 +32,7 @@ PERFORMANCE OF THIS SOFTWARE.
 int llstw, rlstw, rlstx, midoffs;
 /* Used for bmode <-> fmode transitions the remember fmode column */
 static int old_col;
+static unsigned old_top_idx, old_curs;
 /* fmode <-> bmode: Path of other column */
 static char *fpath;
 WINDOW *wllst, *wmid, *wrlst;
@@ -85,7 +86,10 @@ fmode_dmode(void)
 }
 
 void
-dmode_fmode(void)
+dmode_fmode(
+    /* 1: Arg=1 for rebuild_db()
+     * 2: Don't disp_list */
+    unsigned mode)
 {
 	if (fmode)
 		return;
@@ -98,8 +102,11 @@ dmode_fmode(void)
 	fmode = TRUE;
 	right_col = old_col;
 	open2cwins();
-	rebuild_db(1);
-	disp_fmode();
+	rebuild_db((mode & 1) ? 1 : 0);
+
+	if (!(mode & 2)) {
+		disp_fmode();
+	}
 }
 
 void
@@ -151,7 +158,14 @@ tgl2c(void)
 			fpath = NULL;
 		}
 
-		dmode_fmode();
+		dmode_fmode(2);
+
+		if (old_col) {
+			top_idx[0] = old_top_idx;
+			curs[0] = old_curs;
+		}
+
+		disp_fmode();
 
 	} else if (fmode) { /* -> bmode */
 		lpath[llen] = 0;
@@ -159,6 +173,8 @@ tgl2c(void)
 
 		if (right_col) {
 			fpath = strdup(lpath);
+			old_top_idx = top_idx[0];
+			old_curs = curs[0];
 		} else {
 			fpath = strdup(rpath);
 			memcpy(rpath, lpath, llen + 1);
@@ -174,7 +190,13 @@ tgl2c(void)
 		fmode_dmode();
 		bmode = TRUE;
 		twocols = FALSE;
-		rebuild_db(1);
+		rebuild_db(0);
+
+		if (old_col) {
+			top_idx[0] = top_idx[1];
+			curs[0] = curs[1];
+		}
+
 		disp_list();
 
 	} else { /* 1C <-> 2C diff modes */

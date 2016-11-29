@@ -973,7 +973,7 @@ next_key:
 				/* Use "", not NULL here! */
 				enter_dir("", "", FALSE, FALSE);
 			} else {
-				dmode_fmode();
+				dmode_fmode(1);
 			}
 
 			break;
@@ -2704,7 +2704,7 @@ pop_state(
 
 	if (!st) {
 		if (from_fmode)
-			dmode_fmode();
+			dmode_fmode(1);
 		else
 			printerr(NULL, "At top directory");
 

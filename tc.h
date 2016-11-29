@@ -19,7 +19,7 @@ void resize_fmode(int);
 void disp_fmode(void);
 void fmode_cp_pth(void);
 void fmode_dmode(void);
-void dmode_fmode(void);
+void dmode_fmode(unsigned);
 void stmove(int);
 void stmbsra(char *, char *);
 void fmode_chdir(void);
