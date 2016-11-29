@@ -329,23 +329,28 @@ check_args(int argc, char **argv)
 		exit(1);
 	}
 
-	if (fmode) {
+	if (fmode && *s != '/') {
 		if (!(s2 = realpath(s, NULL))) {
 			printf("realpath \"%s\" failed: %s\n", s,
 			    strerror(errno));
 			exit(1);
 		}
-	} else
+	} else {
 		s2 = s;
+	}
 
 	if ((llen = strlen(s2)) >= PATHSIZ - 1) {
 		printf("Path too long: %s\n", s2);
 		exit(1);
 	}
 
+	while (llen > 1 && s2[llen - 1] == '/') {
+		s2[--llen] = 0;
+	}
+
 	memcpy(lpath, s2, llen + 1);
 
-	if (fmode)
+	if (fmode && *s != '/')
 		free(s2);
 
 	if (bmode)
@@ -374,25 +379,29 @@ check_args(int argc, char **argv)
 		exit(1);
 	}
 
-	if (fmode) {
+	if (fmode && *s != '/') {
 		if (!(s2 = realpath(s, NULL))) {
 			printf("realpath \"%s\" failed: %s\n", s,
 			    strerror(errno));
 			exit(1);
 		}
-
-		s = s2;
+	} else {
+		s2 = s;
 	}
 
-	if ((rlen = strlen(s)) >= PATHSIZ - 1) {
-		printf("Path too long: %s\n", s);
+	if ((rlen = strlen(s2)) >= PATHSIZ - 1) {
+		printf("Path too long: %s\n", s2);
 		exit(1);
 	}
 
-	memcpy(rpath, s, rlen + 1);
+	while (rlen > 1 && s2[rlen - 1] == '/') {
+		s2[--rlen] = 0;
+	}
 
-	if (fmode)
-		free(s);
+	memcpy(rpath, s2, rlen + 1);
+
+	if (fmode && *s != '/')
+		free(s2);
 }
 
 static void
