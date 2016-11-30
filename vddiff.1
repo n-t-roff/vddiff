@@ -486,10 +486,10 @@ In this case files are only deleted
 when they are not writeable.
 .It Oo Ar n Oc Ns Dq Li >>
 Copy from first to second tree.
-.It Dq Li \(ga<<
+.It Dq Li \(aq<<
 Copy all files between the cursor and the local mark (inclusive)
 from second to first tree.
-.It Dq Li \(ga>>
+.It Dq Li \(aq>>
 Copy all files between the cursor and the local mark (inclusive)
 from first to second tree.
 .It Oo Ar n Oc Ns Dq Li dd
@@ -508,15 +508,15 @@ Delete file or directory in first tree.
 .It Oo Ar n Oc Ns Dq Li dr
 Delete file or directory in second tree.
 (Does not follow symbolic links.)
-.It Dq Li \(gadd
+.It Dq Li \(aqdd
 Delete all files between the cursor and the local mark (inclusive),
 which must be present in one tree only.
 (Does not follow symbolic links.)
-.It Dq Li \(gadl
+.It Dq Li \(aqdl
 Delete all files between the cursor and the local mark (inclusive)
 in first tree.
 (Does not follow symbolic links.)
-.It Dq Li \(gadr
+.It Dq Li \(aqdr
 Delete all files between the cursor and the local mark (inclusive)
 in second tree.
 (Does not follow symbolic links.)
@@ -524,7 +524,7 @@ in second tree.
 .Sy fmode
 only:
 Move file or directory to the other file tree.
-.It Dq Li \(gaT
+.It Dq Li \(aqT
 .Sy fmode
 only:
 Move all files between the cursor and the local mark (inclusive)
@@ -548,15 +548,15 @@ files starting from the current selection is set.
 Change permissions of file in first tree.
 .It Oo Ar n Oc Ns Dq Li erp
 Change permissions of file in second tree.
-.It Dq Li \(gaep
+.It Dq Li \(aqep
 Change permissions of
 all files between the cursor and the local mark (inclusive),
 which must be present in one tree only.
-.It Dq Li \(gaelp
+.It Dq Li \(aqelp
 Change permissions of
 all files between the cursor and the local mark (inclusive)
 in first tree.
-.It Dq Li \(gaerp
+.It Dq Li \(aqerp
 Change permissions of
 all files between the cursor and the local mark (inclusive)
 in second tree.
@@ -579,15 +579,15 @@ files starting from the current selection is set.
 Change owner of file in first tree.
 .It Oo Ar n Oc Ns Dq Li eru
 Change owner of file in second tree.
-.It Dq Li \(gaeu
+.It Dq Li \(aqeu
 Change owner of
 all files between the cursor and the local mark (inclusive)
 which must be present in one tree only.
-.It Dq Li \(gaelu
+.It Dq Li \(aqelu
 Change owner of
 all files between the cursor and the local mark (inclusive)
 in first tree.
-.It Dq Li \(gaeru
+.It Dq Li \(aqeru
 Change owner of
 all files between the cursor and the local mark (inclusive),
 in second tree.
@@ -610,15 +610,15 @@ files starting from the current selection is set.
 Change group of file in first tree.
 .It Oo Ar n Oc Ns Dq Li erg
 Change group of file in second tree.
-.It Dq Li \(gaeg
+.It Dq Li \(aqeg
 Change group of
 all files between the cursor and the local mark (inclusive)
 which must be present in one tree only.
-.It Dq Li \(gaelg
+.It Dq Li \(aqelg
 Change group of
 all files between the cursor and the local mark (inclusive)
 in first tree.
-.It Dq Li \(gaerg
+.It Dq Li \(aqerg
 Change group of
 all files between the cursor and the local mark (inclusive),
 in second tree.
@@ -704,7 +704,7 @@ The shell to be used (default
 can be configured with the
 .Sy sh
 option.
-.It Oo Ar n Ns Li | Ns Cm \(ga Oc Ns Ao Cm F1 Ac \(en Aq Cm F12
+.It Oo Ar n Ns Li | Ns Cm \(aq Oc Ns Ao Cm F1 Ac \(en Aq Cm F12
 Define string which can be inserted later with this function key
 when entering a
 .Xr sh
@@ -739,7 +739,7 @@ the command is applied to
 .Ar n
 files starting from the current selection.
 If
-.Sq Li \(ga
+.Sq Li \(aq
 is prepended instead, the command is applied to
 all files between the cursor and the local mark (inclusive).
 .Pp

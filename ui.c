@@ -919,7 +919,9 @@ next_key:
 			filt_stat();
 			wrefresh(wstat);
 			break;
+
 		case '`':
+		case '\'':
 			if (mark_idx[right_col] < 0) {
 				standoutc(wstat);
 				/* calls standend */
@@ -938,6 +940,7 @@ next_key:
 			}
 
 			break;
+
 		case '\t':
 			if (!fmode)
 				break;
@@ -1045,37 +1048,37 @@ static char *helptxt[] = {
        "f		Show full path",
        "[<n>]<<		Copy from second to first tree",
        "[<n>]>>		Copy from first to second tree",
-       "`<<		Copy from second to first tree (range cursor...mark)",
-       "`>>		Copy from first to second tree (range cursor...mark)",
+       "'<<		Copy from second to first tree (range cursor...mark)",
+       "'>>		Copy from first to second tree (range cursor...mark)",
        "[<n>]dd		Delete file or directory",
        "[<n>]dl		Delete file or directory in first tree",
        "[<n>]dr		Delete file or directory in second tree",
-       "`dd		Delete file or directory (range cursor...mark)",
-       "`dl		Delete file or directory in first tree (range cursor...mark)",
-       "`dr		Delete file or directory in second tree (range cursor...mark)",
+       "'dd		Delete file or directory (range cursor...mark)",
+       "'dl		Delete file or directory in first tree (range cursor...mark)",
+       "'dr		Delete file or directory in second tree (range cursor...mark)",
        "[<n>]T		In fmode: Move file or directory",
-       "`T		In fmode: Move file or directory (range cursor...mark)",
+       "'T		In fmode: Move file or directory (range cursor...mark)",
        "en		Rename file",
        "eln		Rename left file",
        "ern		Rename right file",
        "[<n>]ep		Change file mode",
        "[<n>]elp	Change mode of left file",
        "[<n>]erp	Change mode of right file",
-       "`ep		Change file mode (range cursor...mark)",
-       "`elp		Change mode of left file (range cursor...mark)",
-       "`erp		Change mode of right file (range cursor...mark)",
+       "'ep		Change file mode (range cursor...mark)",
+       "'elp		Change mode of left file (range cursor...mark)",
+       "'erp		Change mode of right file (range cursor...mark)",
        "[<n>]eu		Change file owner",
        "[<n>]elu	Change owner of left file",
        "[<n>]eru	Change owner or right file",
-       "`eu		Change file owner (range cursor...mark)",
-       "`elu		Change owner of left file (range cursor...mark)",
-       "`eru		Change owner or right file (range cursor...mark)",
+       "'eu		Change file owner (range cursor...mark)",
+       "'elu		Change owner of left file (range cursor...mark)",
+       "'eru		Change owner or right file (range cursor...mark)",
        "[<n>]eg		Change file group",
        "[<n>]elg	Change group of left file",
        "[<n>]erg	Change group or right file",
-       "`eg		Change file group (range cursor...mark)",
-       "`elg		Change group of left file (range cursor...mark)",
-       "`erg		Change group or right file (range cursor...mark)",
+       "'eg		Change file group (range cursor...mark)",
+       "'elg		Change group of left file (range cursor...mark)",
+       "'erg		Change group or right file (range cursor...mark)",
        "P		Create directory (bmode and fmode only)",
        "Pl		Create directory in left tree",
        "Pr		Create directory in right tree",
