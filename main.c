@@ -22,6 +22,8 @@ PERFORMANCE OF THIS SOFTWARE.
 #include <errno.h>
 #include <locale.h>
 #include <regex.h>
+#include <termios.h>
+#include <unistd.h>
 #include "compat.h"
 #include "main.h"
 #include "y.tab.h"
@@ -51,6 +53,7 @@ FILE *debug;
 
 static void check_args(int, char **);
 static int read_rc(const char *);
+static void ttcharoff(void);
 static void usage(void);
 
 static char *usage_txt =
@@ -258,6 +261,7 @@ main(int argc, char **argv)
 	pwd  = lpath + llen;
 	rpwd = rpath + rlen;
 	exec_sighdl();
+	ttcharoff();
 	build_ui();
 	return 0;
 }
@@ -415,6 +419,36 @@ check_args(int argc, char **argv)
 
 	if (fmode && *s != '/')
 		free(s2);
+}
+
+static void
+ttcharoff(void)
+{
+#ifdef VDSUSP
+	struct termios tty;
+	cc_t vd;
+
+	if (tcgetattr(STDIN_FILENO, &tty) == -1) {
+		printf("tcgetattr(): %s\n", strerror(errno));
+		return;
+	}
+
+#ifdef _POSIX_VDISABLE
+	vd = _POSIX_VDISABLE;
+#else
+	if ((vd = fpathconf(STDIN_FILENO, _PC_VDISABLE)) == -1) {
+		printf("fpathconf(): %s\n", strerror(errno));
+		vd = '\377';
+	}
+#endif
+
+	tty.c_cc[VDSUSP] = vd;
+
+	if (tcsetattr(STDIN_FILENO, TCSANOW, &tty) == -1) {
+		printf("tcsetattr(): %s\n", strerror(errno));
+		return;
+	}
+#endif
 }
 
 static void
