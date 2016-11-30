@@ -1302,7 +1302,7 @@ proc_mevent(void)
 		return;
 	}
 
-	if (fmode && (mevent.bstate & BUTTON1_PRESSED) && mevent.x == llstw) {
+	if (twocols && (mevent.bstate & BUTTON1_PRESSED) && mevent.x == llstw) {
 		mb = TRUE;
 		mousemask(REPORT_MOUSE_POSITION | BUTTON1_RELEASED, NULL);
 		return;
@@ -1368,7 +1368,8 @@ action(
     short ign_ext,
     short tree,
     /* 0: <RIGHT> or double click: Enter directory
-     * 1: <ENTER>: Do a compare */
+     * 1: <ENTER>: Do a compare
+     * ! IF ACT==0 MARKS ARE IGNORED ! */
     unsigned short act,
     /* Used by 'v', "vl" and "vr":
      * Unzip file but then view raw file using standard view tool. */
@@ -1386,9 +1387,11 @@ action(
 	f1 = f2 = db_list[right_col][top_idx[right_col] + curs[right_col]];
 
 	if (mark && act) {
-		struct filediff *m = mark;
+		struct filediff *m;
 		mode_t ltyp = 0, rtyp = 0;
 		char *lnam, *rnam;
+
+		m = mark;
 
 		if (!ign_ext) {
 			/* check if mark needs to be unzipped */

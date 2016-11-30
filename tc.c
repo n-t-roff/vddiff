@@ -311,6 +311,11 @@ movemb(int x)
 
 	llstw += dx;
 	midoffs += dx;
+
+	if (!fmode) {
+		return;
+	}
+
 	wbkgd(wmid, 0);
 	wrefresh(wmid);
 	mvwin(wmid, 0, llstw);

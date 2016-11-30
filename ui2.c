@@ -104,7 +104,7 @@ exec:
 				curs[right_col] = u - top_idx[right_col];
 
 				while (num--) {
-					action(1, 3, 0, FALSE);
+					action(1, 3, 1, FALSE);
 					top_idx[right_col]++; /* kludge */
 				}
 

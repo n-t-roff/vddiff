@@ -1230,6 +1230,7 @@ directory is deleted.
 Generally in any mode at most one mark is supported.
 If a mark is defined, an existing mark (in either column)
 is deleted.
+.Pp
 The symbolic variables
 .Dq Cm $1
 and
@@ -1239,7 +1240,8 @@ That means
 .Dq Cm $1
 is the file from the cursor column and
 .Dq Cm $2
-is the file from the other column.
+is the marked file in the other column.
+.Pp
 Key
 .Aq Cm CTRL-w
 switches to single-column browse mode,
@@ -1263,7 +1265,9 @@ in
 For example, to make this function best work in
 .Xr xterm ,
 set
-.Dq Li TERM=xterm-1002 .
+.Dq Li TERM=xterm-1002
+(else usually a further mouse click is required to finalize
+the resize).
 .Sh FILES
 .Bl -tag -width ~/.vddiffrc -compact
 .It Pa ~/.vddiffrc
