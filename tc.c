@@ -29,6 +29,8 @@ PERFORMANCE OF THIS SOFTWARE.
 #include "uzp.h"
 #include "db.h"
 
+static void set_mb_bg(void);
+
 int llstw, rlstw, rlstx, midoffs;
 /* Used for bmode <-> fmode transitions the remember fmode column */
 static int old_col;
@@ -55,12 +57,18 @@ open2cwins(void)
 	if (!(wrlst = new_scrl_win(listh, rlstw, 0, rlstx)))
 		return;
 
-	if (color)
-		wbkgd(wmid, COLOR_PAIR(PAIR_CURSOR));
-	else
-		wbkgd(wmid, A_STANDOUT);
-
+	set_mb_bg();
 	wnoutrefresh(wmid);
+}
+
+static void
+set_mb_bg(void)
+{
+	if (color) {
+		wbkgd(wmid, COLOR_PAIR(PAIR_CURSOR));
+	} else {
+		wbkgd(wmid, A_STANDOUT);
+	}
 }
 
 void
@@ -206,13 +214,8 @@ tgl2c(void)
 }
 
 void
-resize_fmode(int d)
+resize_fmode(void)
 {
-	if (d)
-		midoffs += d;
-	else
-		midoffs = 0;
-
 	set_win_dim();
 
 	if (fmode) {
@@ -295,3 +298,30 @@ fmode_chdir(void)
 		printerr(strerror(errno), "chdir \"%s\":", s);
 	}
 }
+
+#ifdef NCURSES_MOUSE_VERSION
+void
+movemb(int x)
+{
+	int dx;
+
+	if (!(dx = x - llstw)) {
+		return;
+	}
+
+	llstw += dx;
+	midoffs += dx;
+	wbkgd(wmid, 0);
+	wrefresh(wmid);
+	mvwin(wmid, 0, llstw);
+	set_mb_bg();
+	wrefresh(wmid);
+}
+
+void
+doresizecols(void)
+{
+	set_def_mouse_msk();
+	resize_fmode();
+}
+#endif

@@ -13,7 +13,7 @@ LOSS OF USE, DATA OR PROFITS, WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE OR
 OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
 PERFORMANCE OF THIS SOFTWARE.
 ..
-.Dd November 28, 2016
+.Dd November 30, 2016
 .Dt VDDIFF 1
 .Sh NAME
 .Nm vddiff
@@ -1248,6 +1248,22 @@ key
 or a compare of a marked directory (or archive)
 with a directory (or archive)
 switches to two-column diff mode.
+.Sh MOUSE SUPPORT
+For mouse support currently the ncurses interface is used
+which means that ncurses is required if one wants to use the mouse.
+Furthermore at least ncurses version 6 is currently required
+for using the mouse scroll wheel.
+.Pp
+If the middle bar can be moved with the mouse to resize the
+columns in two-column mode is terminal dependend.
+See section
+.Sx PORTABILITY
+in
+.Xr mouse 3ncurses .
+For example, to make this function best work in
+.Xr xterm ,
+set
+.Dq Li TERM=xterm-1002 .
 .Sh FILES
 .Bl -tag -width ~/.vddiffrc -compact
 .It Pa ~/.vddiffrc

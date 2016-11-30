@@ -147,13 +147,7 @@ build_ui(void)
 	noecho();
 	keypad(stdscr, TRUE);
 	curs_set(0);
-#ifdef NCURSES_MOUSE_VERSION
-	mousemask(BUTTON1_CLICKED | BUTTON1_DOUBLE_CLICKED | BUTTON1_PRESSED
-# if NCURSES_MOUSE_VERSION >= 2
-	    | BUTTON4_PRESSED | BUTTON5_PRESSED
-# endif
-	    , NULL);
-#endif
+	set_def_mouse_msk();
 	refresh();
 	set_win_dim();
 
@@ -315,7 +309,8 @@ next_key:
 				if (COLS / 2 + midoffs < 0)
 					break;
 
-				resize_fmode(-10);
+				midoffs -= 10;
+				resize_fmode();
 				break;
 			}
 
@@ -349,7 +344,8 @@ next_key:
 				if (midoffs > COLS / 2)
 					break;
 
-				resize_fmode(10);
+				midoffs += 10;
+				resize_fmode();
 				break;
 			}
 
@@ -369,7 +365,8 @@ next_key:
 				if (!midoffs)
 					break;
 
-				resize_fmode(0);
+				midoffs = 0;
+				resize_fmode();
 				break;
 			}
 
@@ -1289,8 +1286,27 @@ help_up(unsigned short n)
 static void
 proc_mevent(void)
 {
+	static bool mb;
+
 	if (getmouse(&mevent) != OK)
 		return;
+
+	if (mb) {
+		movemb(mevent.x);
+
+		if (mevent.bstate & BUTTON1_RELEASED) {
+			mb = FALSE;
+			doresizecols();
+		}
+
+		return;
+	}
+
+	if (fmode && (mevent.bstate & BUTTON1_PRESSED) && mevent.x == llstw) {
+		mb = TRUE;
+		mousemask(REPORT_MOUSE_POSITION | BUTTON1_RELEASED, NULL);
+		return;
+	}
 
 	if (mevent.bstate & BUTTON1_CLICKED ||
 	    mevent.bstate & BUTTON1_DOUBLE_CLICKED ||
@@ -1446,6 +1462,7 @@ action(
 
 		if ((ltyp & S_IFMT) != (rtyp & S_IFMT) &&
 		    !S_ISDIR(ltyp) && !S_ISDIR(rtyp)) {
+
 			err = typdif;
 			goto ret;
 		}
@@ -1705,11 +1722,12 @@ scroll_up(unsigned num, bool keepscrpos,
 	if (col == -1) {
 		w = getlstwin();
 	} else {
-		if (right_col != col)
+		if (right_col != col) {
 			fake = TRUE;
+			right_col = col;
+		}
 
-		right_col = col;
-		w = col ? wrlst : wllst;
+		w = right_col ? wrlst : wllst;
 	}
 
 	if (!top_idx[right_col]) {
@@ -1737,6 +1755,8 @@ scroll_up(unsigned num, bool keepscrpos,
 		num = top_idx[right_col];
 
 	if (fake) {
+		move_curs = 0;
+
 	} else if (keepscrpos) {
 		disp_curs(0);
 		move_curs = 1;
@@ -1796,6 +1816,8 @@ scroll_down(unsigned num, bool keepscrpos, int col)
 	ti = top_idx[right_col] + num;
 
 	if (fake) {
+		move_curs = 0;
+
 	} else if (keepscrpos) {
 		disp_curs(0);
 		move_curs = 1;

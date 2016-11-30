@@ -880,3 +880,15 @@ new_scrl_win(int h, int w, int y, int x)
 
 	return win;
 }
+
+void
+set_def_mouse_msk(void)
+{
+#ifdef NCURSES_MOUSE_VERSION
+	mousemask(BUTTON1_CLICKED | BUTTON1_DOUBLE_CLICKED | BUTTON1_PRESSED
+# if NCURSES_MOUSE_VERSION >= 2
+	    | BUTTON4_PRESSED | BUTTON5_PRESSED
+# endif
+	    , NULL);
+#endif
+}

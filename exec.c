@@ -118,12 +118,15 @@ settool:
 		} \
 	} while (0)
 
+/* Only used for commands which are executed by /bin/sh (not exec() directly */
+
 char *
 exec_mk_cmd(struct tool *tmptool, char *name, char *rnam, int tree)
 {
 	size_t csiz, clen, l;
 	char *cmd, *s, *nam2;
 	struct strlst *args;
+	int c;
 
 	nam2 = rnam ? rnam : name;
 
@@ -141,14 +144,17 @@ exec_mk_cmd(struct tool *tmptool, char *name, char *rnam, int tree)
 		do {
 			s = args->str;
 			GRWCMD;
+			c = *s;
 
-			switch (*s) {
-			case '1':
+			if ((!right_col && c == '1') ||
+			    ( right_col && c == '2')) {
+
 				clen = add_path(cmd, clen, lpath, name);
-				break;
-			case '2':
+
+			} else if ((!right_col && c == '2') ||
+			           ( right_col && c == '1')) {
+
 				clen = add_path(cmd, clen, rpath, nam2);
-				break;
 			}
 
 			if ((l = strlen(s) - 1)) {

@@ -40,3 +40,4 @@ ssize_t putmbs(WINDOW *, char *, int);
 int addmbs(WINDOW *, char *, int);
 ssize_t putmbsra(WINDOW *, char *, int);
 WINDOW *new_scrl_win(int, int, int, int);
+void set_def_mouse_msk(void);

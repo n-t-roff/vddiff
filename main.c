@@ -189,12 +189,20 @@ main(int argc, char **argv)
 		case 'V':
 			printf("%s %s\n\tCompile option(s): "
 #if defined HAVE_NCURSESW_CURSES_H
-			    "ncursesw, "
+			    "ncursesw"
 #elif defined HAVE_NCURSES_CURSES_H
-			    "ncurses, "
+			    "ncurses"
 #else
-			    "curses, "
+			    "curses"
 #endif
+
+#if !defined(NCURSES_MOUSE_VERSION)
+			    " (currently no mouse support in vddiff)"
+#elif NCURSES_MOUSE_VERSION < 2
+			    " (currently no mouse scroll wheel support"
+			    " in vddiff)"
+#endif
+			    ", "
 #ifdef HAVE_LIBAVLBST
 			    "libavlbst"
 #else
