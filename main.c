@@ -77,12 +77,21 @@ main(int argc, char **argv)
 	setlocale(LC_ALL, "");
 
 #ifdef TRACE
-	if (!(debug = fopen(TRACE, "w"))) {
-		printf("fopen \"" TRACE "\": %s\n", strerror(errno));
-		return 1;
-	}
+	{
+		size_t l;
+		static const char * const s = TRACE;
 
-	setbuf(debug, NULL);
+		l = strlen(s);
+		memcpy(lbuf, s, l);
+		snprintf(lbuf + l, BUF_SIZE - l, "%lu", (unsigned long)getuid());
+
+		if (!(debug = fopen(lbuf, "w"))) {
+			printf("fopen \"%s\": %s\n", lbuf, strerror(errno));
+			return 1;
+		}
+
+		setbuf(debug, NULL);
+	}
 #endif
 
 #ifdef HAVE_LIBAVLBST

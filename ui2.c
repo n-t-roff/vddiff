@@ -638,7 +638,7 @@ re_sort_list(void)
 	if (fmode) {
 		right_col = right_col ? 0 : 1;
 		diff_db_sort(right_col);
-		disp_list();
+		disp_list(0);
 		right_col = right_col ? 0 : 1;
 	}
 
@@ -651,7 +651,7 @@ re_sort_list(void)
 	} else {
 		top_idx[right_col] = 0;
 		curs[right_col] = 0;
-		disp_list();
+		disp_list(1);
 	}
 }
 

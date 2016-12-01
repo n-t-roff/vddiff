@@ -12,7 +12,7 @@ extern bool from_fmode;
 
 void open2cwins(void);
 void close2cwins(void);
-void prt2chead(void);
+void prt2chead(unsigned);
 WINDOW *getlstwin(void);
 void tgl2c(void);
 void resize_fmode(void);

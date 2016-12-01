@@ -118,17 +118,26 @@ dmode_fmode(
 }
 
 void
-prt2chead(void)
+prt2chead(unsigned md)
 {
-	wmove(wstat, 1, 0);
-	wclrtoeol(wstat);
-	lpath[llen] = 0;
-	putmbsra(wstat, lpath, llstw);
+	if (md) {
+		wmove(wstat, 1, 0);
+		wclrtoeol(wstat);
+		lpath[llen] = 0;
+		putmbsra(wstat, lpath, llstw);
+	}
+
 	standoutc(wstat);
+	mvwaddch(wstat, 0, llstw, ' ');
 	mvwaddch(wstat, 1, llstw, ' ');
 	standendc(wstat);
-	rpath[rlen] = 0;
-	putmbsra(wstat, rpath, 0);
+
+	/* Splitted to save one wmove */
+
+	if (md) {
+		rpath[rlen] = 0;
+		putmbsra(wstat, rpath, 0);
+	}
 }
 
 WINDOW *
@@ -205,7 +214,7 @@ tgl2c(void)
 			curs[0] = curs[1];
 		}
 
-		disp_list();
+		disp_list(1);
 
 	} else { /* 1C <-> 2C diff modes */
 		twocols = twocols ? FALSE : TRUE;
@@ -231,15 +240,14 @@ disp_fmode(void)
 {
 	if (fmode) {
 		right_col = right_col ? 0 : 1;
-		disp_list();
-		disp_curs(0);
+		disp_list(0);
 		wnoutrefresh(getlstwin());
 		touchwin(wmid);
 		wnoutrefresh(wmid);
 		right_col = right_col ? 0 : 1;
 	}
 
-	disp_list();
+	disp_list(1);
 }
 
 void
