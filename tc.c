@@ -229,18 +229,16 @@ resize_fmode(void)
 void
 disp_fmode(void)
 {
-	if (!fmode) {
+	if (fmode) {
+		right_col = right_col ? 0 : 1;
 		disp_list();
-		return;
+		disp_curs(0);
+		wnoutrefresh(getlstwin());
+		touchwin(wmid);
+		wnoutrefresh(wmid);
+		right_col = right_col ? 0 : 1;
 	}
 
-	right_col = right_col ? FALSE : TRUE;
-	disp_list();
-	disp_curs(0);
-	wnoutrefresh(getlstwin());
-	touchwin(wmid);
-	wnoutrefresh(wmid);
-	right_col = right_col ? FALSE : TRUE;
 	disp_list();
 }
 

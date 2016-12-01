@@ -510,26 +510,31 @@ next_key:
 			}
 
 			/* fall through */
+
 		case '!':
 			c = 0;
 			noequal = noequal ? 0 : 1;
 			re_sort_list();
 			break;
+
 		case 'c':
 			c = 0;
 			real_diff = real_diff ? 0 : 1;
 			re_sort_list();
 			break;
+
 		case '&':
 			c = 0;
 			nosingle = nosingle ? 0 : 1;
 			re_sort_list();
 			break;
+
 		case 'E':
 			c = 0;
 			file_pattern = file_pattern ? FALSE : TRUE;
 			re_sort_list();
 			break;
+
 		case KEY_RESIZE:
 			ui_resize();
 			break;
@@ -948,7 +953,7 @@ next_key:
 			c = 0;
 			disp_curs(0);
 			wnoutrefresh(getlstwin());
-			right_col = right_col ? FALSE : TRUE;
+			right_col = right_col ? 0 : 1;
 			prt2chead();
 			disp_curs(1);
 			wnoutrefresh(getlstwin());
@@ -1866,8 +1871,9 @@ scroll_down(unsigned num, bool keepscrpos, int col)
 		if (i >= db_num[right_col]) {
 			standoutc(w);
 			mvwaddch(w, y, llstw, ' ');
-		} else
+		} else {
 			disp_line(y, i, 0);
+		}
 
 	if (move_curs)
 		disp_curs(1);
@@ -1940,14 +1946,15 @@ disp_list(void)
 		goto exit;
 	}
 
-	for (y = 0, i = top_idx[right_col]; y < listh && ((twocols && !fmode)
-	    || i < db_num[right_col]); y++, i++) {
+	for (y = 0, i = top_idx[right_col];
+	    y < listh && ((twocols && !fmode) || i < db_num[right_col]);
+	    y++, i++) {
 		if (i >= db_num[right_col]) {
 			standoutc(w);
 			mvwaddch(w, y, llstw, ' ');
-		} else if (y == curs[right_col])
+		} else if (y == curs[right_col]) {
 			disp_curs(1);
-		else if (top_idx[right_col] + y == mark_idx[right_col]) {
+		} else if (top_idx[right_col] + y == mark_idx[right_col]) {
 			if (!fmode)
 				markc(w);
 
@@ -1955,8 +1962,9 @@ disp_list(void)
 
 			if (fmode)
 				chgat_mark(w, y);
-		} else
+		} else {
 			disp_line(y, i, 0);
+		}
 	}
 
 exit:
@@ -1981,9 +1989,12 @@ disp_line(
 	int mx;
 	short cp;
 
+#ifdef DEBUG
 	if (i >= db_num[right_col]) {
+		printerr("disp_line: i >= num", "");
 		return;
 	}
+#endif
 
 	w = getlstwin();
 	f = db_list[right_col][i];
@@ -2686,12 +2697,13 @@ no_file(void)
 void
 center(unsigned idx)
 {
-	if (db_num[right_col] <= listh || idx <= listh / 2)
+	if (db_num[right_col] <= listh || idx <= listh / 2) {
 		top_idx[right_col] = 0;
-	else if (db_num[right_col] - idx < listh / 2)
+	} else if (db_num[right_col] - idx < listh / 2) {
 		top_idx[right_col] = db_num[right_col] - listh;
-	else
+	} else {
 		top_idx[right_col] = idx - listh / 2;
+	}
 
 	curs[right_col] = idx - top_idx[right_col];
 	disp_fmode();
@@ -2829,7 +2841,8 @@ void
 enter_dir(char *name, char *rnam, bool lzip, bool rzip)
 {
 #ifdef TRACE
-	fprintf(debug,"enter_dir(%s,%s) lp(%s) rp(%s)\n",name,rnam,lpath,rpath);
+	fprintf(debug, "enter_dir(%s,%s) lp(%s) rp(%s)\n",
+	    name, rnam, lpath, rpath);
 #endif
 	dir_change = TRUE;
 

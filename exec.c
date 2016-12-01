@@ -64,7 +64,8 @@ tool(char *name, char *rnam, int tree, int ign_ext)
 	int c;
 
 #ifdef TRACE
-	fprintf(debug,"tool(%s,%s,%d) lp(%s) rp(%s)\n",name,rnam,tree,lpath,rpath);
+	fprintf(debug, "tool(%s,%s,%d) lp(%s) rp(%s)\n",
+	    name, rnam, tree, lpath, rpath);
 #endif
 	l = strlen(name);
 	cmd = lbuf + sizeof lbuf;

@@ -600,23 +600,32 @@ chk_mark(char *file, short tree)
 char *
 saveselname(void)
 {
-	if (!db_num[right_col])
-		return NULL;
+	unsigned ui;
+	struct filediff *f;
 
-	return strdup(((struct filediff *)(
-	    db_list[right_col][top_idx[right_col] +
-	    curs[right_col]]))->name);
+	ui = top_idx[right_col] + curs[right_col];
+
+	if (ui >= db_num[right_col]) {
+		return NULL;
+	}
+
+	f = db_list[right_col][ui];
+	return strdup(f->name);
 }
 
 unsigned
 findlistname(char *name)
 {
 	unsigned u;
+	struct filediff *f;
 
-	for (u = 0; u < db_num[right_col]; u++)
-		if (!strcmp(name,
-		    ((struct filediff *)(db_list[right_col][u]))->name))
+	for (u = 0; u < db_num[right_col]; u++) {
+		f = db_list[right_col][u];
+
+		if (!strcmp(name, f->name)) {
 			return u;
+		}
+	}
 
 	return 0;
 }
@@ -626,8 +635,15 @@ re_sort_list(void)
 {
 	char *name;
 
+	if (fmode) {
+		right_col = right_col ? 0 : 1;
+		diff_db_sort(right_col);
+		disp_list();
+		right_col = right_col ? 0 : 1;
+	}
+
 	name = saveselname();
-	diff_db_sort(0);
+	diff_db_sort(right_col);
 
 	if (name) {
 		center(findlistname(name));

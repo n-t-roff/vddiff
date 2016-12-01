@@ -550,19 +550,23 @@ diff_db_restore(struct ui_state *st)
 void
 diff_db_sort(int i)
 {
-	if (!tot_db_num[i])
-		return;
-
-	if (!db_list[i])
-		cur_list = db_list[i] =
-		    malloc(tot_db_num[i] * sizeof(struct filediff *));
-
 	db_idx = 0;
+
+	if (!tot_db_num[i]) {
+		goto exit;
+	}
+
+	if (!db_list[i]) {
+		db_list[i] = malloc(tot_db_num[i] * sizeof(struct filediff *));
+	}
+
+	cur_list = db_list[i];
 #ifdef HAVE_LIBAVLBST
 	mk_list(diff_db[i].root);
 #else
 	twalk(diff_db[i], mk_list);
 #endif
+exit:
 	db_num[i] = db_idx;
 }
 
@@ -596,8 +600,9 @@ mk_list(struct bst_node *n)
 {
 	struct filediff *f;
 
-	if (!n)
+	if (!n) {
 		return;
+	}
 
 	mk_list(n->left);
 	f = n->key.p;
