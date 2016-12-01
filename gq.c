@@ -41,6 +41,7 @@ static char *gq_buf;
 static struct gq_re *gq_re;
 
 bool gq_pattern;
+static bool ign_errs;
 
 int
 gq_init(char *s)
@@ -89,13 +90,21 @@ gq_proc(struct filediff *f)
 	} else if (S_ISREG(f->rtype) && f->rsiz) {
 		p = rpath;
 		l = rlen;
-	} else
+	} else {
 		return rv;
+	}
 
-	pthcat(p, llen, f->name);
+	pthcat(p, l, f->name);
 
 	if ((fh = open(p, O_RDONLY)) == -1) {
-		printerr(strerror(errno), "open \"%s\" failed", p);
+
+		if (!ign_errs && dialog(
+		    "'i' ignore errors, <other key> continue",
+		    NULL, "open \"%s\": %s", p, strerror(errno)) == 'i') {
+
+			ign_errs = TRUE;
+		}
+
 		rv = -1;
 		goto ret;
 	}
@@ -104,7 +113,7 @@ gq_proc(struct filediff *f)
 
 	while (1) {
 		if ((n = read(fh, gq_buf, GQBUFSIZ)) == -1) {
-			printerr(strerror(errno), "read \"%s\" failed", p);
+			printerr(strerror(errno), "read \"%s\"", p);
 			rv = -1;
 			break;
 		}
@@ -121,7 +130,7 @@ gq_proc(struct filediff *f)
 			} else {
 				if (lseek(fh, 0, SEEK_SET) == -1) {
 					printerr(strerror(errno),
-					    "lseek \"%s\" failed", p);
+					    "lseek \"%s\"", p);
 					rv = -1;
 					break;
 				}

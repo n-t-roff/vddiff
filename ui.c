@@ -1981,8 +1981,9 @@ disp_line(
 	int mx;
 	short cp;
 
-	if (!db_num[right_col])
+	if (i >= db_num[right_col]) {
 		return;
+	}
 
 	w = getlstwin();
 	f = db_list[right_col][i];
@@ -1994,12 +1995,12 @@ disp_line(
 	if (fmode || bmode) {
 		goto no_diff;
 	} else if (!f->ltype) {
-		diff     = '>';
-		*mode     = f->rtype;
+		diff = '>';
+		*mode = f->rtype;
 		color_id = PAIR_RIGHTONLY;
 	} else if (!f->rtype) {
-		diff     = '<';
-		*mode     = f->ltype;
+		diff = '<';
+		*mode = f->ltype;
 		color_id = PAIR_LEFTONLY;
 	} else if ((f->ltype & S_IFMT) != (f->rtype & S_IFMT)) {
 		if (twocols && !fmode)
@@ -2827,6 +2828,9 @@ pop_state(
 void
 enter_dir(char *name, char *rnam, bool lzip, bool rzip)
 {
+#ifdef TRACE
+	fprintf(debug,"enter_dir(%s,%s) lp(%s) rp(%s)\n",name,rnam,lpath,rpath);
+#endif
 	dir_change = TRUE;
 
 	if (fmode && name && rnam)

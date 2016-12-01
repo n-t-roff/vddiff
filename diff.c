@@ -725,8 +725,7 @@ cmp_file(char *lpth, off_t lsiz, char *rpth, off_t rsiz)
 	if ((f1 = open(lpth, O_RDONLY)) == -1) {
 		if (!ign_diff_errs && dialog(
 		    "'i' ignore errors, <other key> continue",
-		    NULL, "open \"%s\" failed: %s", lpth,
-		    strerror(errno)) == 'i')
+		    NULL, "open \"%s\": %s", lpth, strerror(errno)) == 'i')
 			ign_diff_errs = TRUE;
 
 		return -1;
@@ -735,8 +734,7 @@ cmp_file(char *lpth, off_t lsiz, char *rpth, off_t rsiz)
 	if ((f2 = open(rpth, O_RDONLY)) == -1) {
 		if (!ign_diff_errs && dialog(
 		    "'i' ignore errors, <other key> continue",
-		    NULL, "open \"%s\" failed: %s", rpth,
-		    strerror(errno)) == 'i')
+		    NULL, "open \"%s\": %s", rpth, strerror(errno)) == 'i')
 			ign_diff_errs = TRUE;
 
 		rv = -1;
@@ -747,7 +745,7 @@ cmp_file(char *lpth, off_t lsiz, char *rpth, off_t rsiz)
 		if ((l1 = read(f1, lbuf, sizeof lbuf)) == -1) {
 			if (!ign_diff_errs && dialog(
 			    "'i' ignore errors, <other key> continue",
-			    NULL, "read \"%s\" failed: %s", lpth,
+			    NULL, "read \"%s\": %s", lpth,
 			    strerror(errno)) == 'i')
 				ign_diff_errs = TRUE;
 
@@ -758,7 +756,7 @@ cmp_file(char *lpth, off_t lsiz, char *rpth, off_t rsiz)
 		if ((l2 = read(f2, rbuf, sizeof rbuf)) == -1) {
 			if (!ign_diff_errs && dialog(
 			    "'i' ignore errors, <other key> continue",
-			    NULL, "read \"%s\" failed: %s", rpth,
+			    NULL, "read \"%s\": %s", rpth,
 			    strerror(errno)) == 'i')
 				ign_diff_errs = TRUE;
 
