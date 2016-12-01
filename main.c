@@ -57,15 +57,16 @@ static void ttcharoff(void);
 static void usage(void);
 
 static char *usage_txt =
-"Usage: %s [-u [<RC file>]] [-BbcdEefgIiklmnoqrVy] [-F <pattern>]\n"
+"Usage: %s [-u [<RC file>]] [-BbCcdEefgIiklmnoqrVy] [-F <pattern>]\n"
 "	[-G <pattern>] [-t <diff_tool>] [-v <view_tool>] [<directory_1>\n"
 "	[<directory_2>]]\n";
-static char *getopt_arg = "BbcdEeF:fG:gIiklmnoqrt:Vv:y";
+static char *getopt_arg = "BbCcdEeF:fG:gIiklmnoqrt:Vv:y";
 
 bool bmode;
 bool qdiff;
 bool find_name;
 static bool dontdiff;
+bool dontcmp;
 
 int
 main(int argc, char **argv)
@@ -77,7 +78,7 @@ main(int argc, char **argv)
 
 #ifdef TRACE
 	if (!(debug = fopen(TRACE, "w"))) {
-		printf("fopen \"" TRACE "\" failed: %s\n", strerror(errno));
+		printf("fopen \"" TRACE "\": %s\n", strerror(errno));
 		return 1;
 	}
 
@@ -118,6 +119,11 @@ main(int argc, char **argv)
 		case 'b':
 			color = 0;
 			break;
+
+		case 'C':
+			dontcmp = TRUE;
+			break;
+
 		case 'c':
 			real_diff = 1;
 			break;

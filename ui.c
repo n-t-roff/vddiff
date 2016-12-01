@@ -972,11 +972,27 @@ next_key:
 				fmode_dmode();
 				/* Use "", not NULL here! */
 				enter_dir("", "", FALSE, FALSE);
-			} else {
+			} else if (!bmode) { /* # is invalid in bmode */
 				dmode_fmode(1);
 			}
 
 			break;
+
+		case '%':
+			c = 0;
+
+			if (bmode || fmode) {
+				break;
+			}
+
+			if (!(dontcmp = dontcmp ? FALSE : TRUE)) {
+				rebuild_db(0);
+			}
+
+			filt_stat();
+			wrefresh(wstat);
+			break;
+
 		case 'N':
 			if (regex) {
 				c = 0;
@@ -1105,6 +1121,7 @@ static char *helptxt[] = {
        ":		Enter configuration option",
        "#		Toggle between diff mode and fmode",
        "=		In fmode: Copy current path from other column",
+       "%		Toggle compare file contents",
        "W		Toggle wait for <ENTER> after running external tool" };
 
 #define HELP_NUM (sizeof(helptxt) / sizeof(*helptxt))

@@ -28,3 +28,4 @@ extern FILE *debug;
 extern bool bmode;
 extern bool qdiff;
 extern bool find_name;
+extern bool dontcmp;

@@ -13,7 +13,7 @@ LOSS OF USE, DATA OR PROFITS, WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE OR
 OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
 PERFORMANCE OF THIS SOFTWARE.
 ..
-.Dd November 30, 2016
+.Dd December 1, 2016
 .Dt VDDIFF 1
 .Sh NAME
 .Nm vddiff
@@ -21,7 +21,7 @@ PERFORMANCE OF THIS SOFTWARE.
 .Sh SYNOPSYS
 .Nm
 .Op Fl u Op Ar "RC file"
-.Op Fl BbcdEefgIiklmnoqrVy
+.Op Fl BbCcdEefgIiklmnoqrVy
 .Op Fl F Ar file name pattern
 .Op Fl G Ar file content pattern
 .Op Fl t Ar diff_tool
@@ -125,6 +125,21 @@ So
 avoids diff mode at all.
 .It Fl b
 Disable color.
+.It Fl C
+Don't compare file contents, only test for file existence.
+If differences regarding the existing of files are of interest
+in a directory with many huge files,
+it may take very long to compare their contents.
+.Fl C
+does any tests but always assumes that two existing files are equal.
+.Pp
+Alternatively it is also possible to type
+.Sq Li %
+to ignore file contents for the further directory diff.
+.Sq ( Li %
+should pressed only short and one time.
+The comparison of the current file continues which may take a while,
+but further files are not compared.)
 .It Fl c
 Show only directories which exist in both trees
 and really different files.
@@ -837,8 +852,21 @@ Toggle between diff mode and two-column browse mode
 In
 .Sy fmode :
 Set path of active column to path of the other column.
+.It Sq Li %
+Toggle ignoring file contents for further diff operations.
+This is useful if only differences regarding the file existence
+are of interest.
+Any time this function is disabled,
+the currently displayed directories are compared again.
+.Sq Li %
+can be pressed during this directory compare (short and only one time)
+to abort it.
+Note that an active file diff is not interrupted.
+This may take some time in case of a huge file.
 .It Sq Li W
-Toggle to always wait for <ENTER> after running an external tool.
+Toggle to always wait for
+.Aq Cm ENTER
+after running an external tool.
 This can be useful for debugging purposes.
 .El
 .Sh CONFIGURATION FILE ~/.vddiffrc

@@ -89,6 +89,12 @@ build_diff_db(int tree)
 		}
 	}
 
+	if (!(bmode || fmode)) {
+		mvwaddstr(wstat, 0, 0, "Type '%' to disable file compare");
+		wrefresh(wstat);
+		nodelay(stdscr, TRUE);
+	}
+
 	if (!(d = opendir(lpath))) {
 		if (!ign_diff_errs && dialog(
 		    "'i' ignore errors, <other key> continue",
@@ -529,8 +535,9 @@ build_list:
 dir_scan_end:
 	free_names();
 
-	if (!scan)
-		return retval;
+	if (!scan) {
+		goto exit;
+	}
 
 	if (dir_diff && !qdiff)
 		add_diff_dir();
@@ -551,6 +558,11 @@ dir_scan_end:
 		p = dirs;
 		dirs = dirs->next;
 		free(p);
+	}
+
+exit:
+	if (!(bmode || fmode)) {
+		nodelay(stdscr, FALSE);
 	}
 
 	return retval;
@@ -694,6 +706,15 @@ cmp_file(char *lpth, off_t lsiz, char *rpth, off_t rsiz)
 {
 	int rv = 0, f1, f2;
 	ssize_t l1, l2;
+
+	if (dontcmp) {
+		return 0;
+	}
+
+	if (getch() == '%') {
+		dontcmp = TRUE;
+		return 0;
+	}
 
 	if (lsiz != rsiz)
 		return 1;

@@ -535,7 +535,9 @@ bindiff(void)
 		}
 	}
 
+	nodelay(stdscr, TRUE);
 	val = cmp_file(lnam, lsiz, rnam, rsiz);
+	nodelay(stdscr, FALSE);
 
 ret:
 	if (z1)
@@ -645,18 +647,27 @@ filt_stat(void)
 	x = COLS - 1;
 	standoutc(wstat);
 
-	if (file_pattern)
+	if (file_pattern) {
 		mvwaddch(wstat, 0, x--, 'E');
-	if (wait_after_exec)
+	}
+	if (wait_after_exec) {
 		mvwaddch(wstat, 0, x--, 'W');
-	if (followlinks)
+	}
+	if (followlinks) {
 		mvwaddch(wstat, 0, x--, 'F');
-	if (nosingle)
+	}
+	if (dontcmp) {
+		mvwaddch(wstat, 0, x--, '%');
+	}
+	if (nosingle) {
 		mvwaddch(wstat, 0, x--, '&');
-	if (noequal)
+	}
+	if (noequal) {
 		mvwaddch(wstat, 0, x--, '!');
-	if (real_diff)
+	}
+	if (real_diff) {
 		mvwaddch(wstat, 0, x--, 'c');
+	}
 
 	standendc(wstat);
 	mvwaddch(wstat, 0, x--, ' ');
