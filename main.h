@@ -3,11 +3,21 @@
 
 #define PWD  ((pwd  != lpath && *pwd  == '/') ? pwd  + 1 : pwd )
 #define RPWD ((rpwd != rpath && *rpwd == '/') ? rpwd + 1 : rpwd)
+
 #ifndef CTRL
 # define CTRL(c) ((c) & 037)
 #endif
+
 #ifndef CERASE
 # define CERASE 0177
+#endif
+
+#ifdef DEBUG
+# define LOCFMT "%s %u "
+# define LOCVAR , __FILE__, __LINE__
+#else
+# define LOCFMT
+# define LOCVAR
 #endif
 
 struct strlst {

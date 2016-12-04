@@ -17,6 +17,7 @@ PERFORMANCE OF THIS SOFTWARE.
 #include <stdlib.h>
 #include <sys/types.h>
 #include <sys/stat.h>
+#include <sys/param.h>
 #include <fcntl.h>
 #include <unistd.h>
 #include <dirent.h>
@@ -35,19 +36,19 @@ PERFORMANCE OF THIS SOFTWARE.
 #include "gq.h"
 #include "tc.h"
 
-struct str_list {
+struct scan_dir {
 	char *s;
-	struct str_list *next;
+	short tree;
+	struct scan_dir *next;
 };
 
 static struct filediff *alloc_diff(char *);
-static void add_diff_dir(void);
+static void add_diff_dir(short);
 static char *read_link(char *, off_t);
 static size_t pthcut(char *, size_t);
 
 static struct filediff *diff;
 static off_t lsiz1, lsiz2;
-static size_t bmode_ini_len;
 
 short followlinks;
 
@@ -62,21 +63,21 @@ build_diff_db(int tree)
 	DIR *d;
 	struct dirent *ent;
 	char *name;
-	struct str_list *dirs = NULL;
+	struct scan_dir *dirs = NULL;
 	int retval = 0;
+	/* Used to show only dirs which contains diffs. Is set if any diff
+	 * is found inside a dir. */
 	short dir_diff = 0;
 	bool file_err = FALSE;
 	static time_t lpt, lpt2;
 
-	if (!(tree & 1))
+	if (!(tree & 1)) {
 		goto right_tree;
+	}
 
 	if (bmode && !scan) {
 		if (!getcwd(rpath, sizeof rpath))
 			printerr(strerror(errno), "getcwd failed");
-
-		if (!bmode_ini_len)
-			bmode_ini_len = strlen(rpath) + 1; /* + '/' */
 
 		if ((lpt2 = time(NULL)) - lpt) {
 			printerr(NULL, "Reading directory \"%s\"", rpath);
@@ -95,6 +96,9 @@ build_diff_db(int tree)
 		nodelay(stdscr, TRUE);
 	}
 
+#if defined(TRACE)
+	fprintf(debug, "build_diff_db(%d:%s)\n", tree, lpath);
+#endif
 	if (!(d = opendir(lpath))) {
 		if (!ign_diff_errs && dialog(
 		    "'i' ignore errors, <other key> continue",
@@ -154,9 +158,11 @@ build_diff_db(int tree)
 			if (errno != ENOENT) {
 				if (!ign_diff_errs && dialog(
 				    "'i' ignore errors, <other key> continue",
-				    NULL, "stat \"%s\" failed: %s", lpath,
-				    strerror(errno)) == 'i')
+				    NULL, LOCFMT "stat \"%s\": %s" LOCVAR,
+				    lpath, strerror(errno)) == 'i') {
+
 					ign_diff_errs = TRUE;
+				}
 
 				file_err = TRUE;
 
@@ -185,9 +191,11 @@ build_diff_db(int tree)
 			if (errno != ENOENT) {
 				if (!ign_diff_errs && dialog(
 				    "'i' ignore errors, <other key> continue",
-				    NULL, "stat \"%s\" failed: %s", rpath,
-				    strerror(errno)) == 'i')
+				    NULL, LOCFMT "stat \"%s\" failed: %s"
+				    LOCVAR, rpath, strerror(errno)) == 'i') {
+
 					ign_diff_errs = TRUE;
+				}
 
 				file_err = TRUE;
 
@@ -208,15 +216,19 @@ no_tree2:
 
 		if (scan || qdiff) {
 			if (S_ISDIR(stat1.st_mode) &&
-			    (S_ISDIR(stat2.st_mode) || bmode)) {
-				if (!scan)
+			    (S_ISDIR(stat2.st_mode) || bmode || fmode)) {
+
+				struct scan_dir *se;
+
+				if (!scan) {
 					/* Non-recursive qdiff */
 					continue;
+				}
 
-				struct str_list *se =
-				    malloc(sizeof(struct str_list));
+				se = malloc(sizeof(struct scan_dir));
 				se->s = strdup(name);
-				se->next = dirs ? dirs : NULL;
+				se->tree = S_ISDIR(stat2.st_mode) ? 3 : 1;
+				se->next = dirs;
 				dirs = se;
 				continue;
 			}
@@ -394,6 +406,13 @@ db_add_file:
 	closedir(d);
 	lpath[llen] = 0;
 
+	/* Now already done here for diff mode to use lpath instead of rpath.
+	 * May be useless. */
+	if (scan && dir_diff && !qdiff) {
+		add_diff_dir(0);
+		dir_diff = 0;
+	}
+
 	if (tree & 2)
 		rpath[rlen] = 0;
 
@@ -404,9 +423,16 @@ right_tree:
 	if (scan && (real_diff || dir_diff))
 		goto dir_scan_end;
 
-	if (!qdiff)
-		printerr(NULL, "Reading directory \"%s\"", rpath);
+	if (!qdiff) {
+		if ((lpt2 = time(NULL)) - lpt) {
+			printerr(NULL, "Reading directory \"%s\"", rpath);
+			lpt = lpt2;
+		}
+	}
 
+#if defined(TRACE)
+	fprintf(debug, "build_diff_db(%d:%s)\n", tree, rpath);
+#endif
 	if (!(d = opendir(rpath))) {
 		if (!ign_diff_errs && dialog(
 		    "'i' ignore errors, <other key> continue",
@@ -472,9 +498,11 @@ right_tree:
 			if (errno != ENOENT) {
 				if (!ign_diff_errs && dialog(
 				    "'i' ignore errors, <other key> continue",
-				    NULL, "stat \"%s\" failed: %s", rpath,
-				    strerror(errno)) == 'i')
+				    NULL, LOCFMT "stat \"%s\" failed: %s"
+				    LOCVAR, rpath, strerror(errno)) == 'i') {
+
 					ign_diff_errs = TRUE;
+				}
 
 				file_err = TRUE;
 			}
@@ -482,14 +510,28 @@ right_tree:
 			stat2.st_mode = 0;
 		}
 
-		if (scan && find_name) {
-			if (!S_ISDIR(stat2.st_mode) &&
-			    !regexec(&fn_re, name, 0, NULL, 0) &&
-			    !gq_pattern) {
-				dir_diff = 1;
-				break;
-			} else
+		if (scan) {
+			if (S_ISDIR(stat2.st_mode)) {
+				struct scan_dir *se;
+
+				se = malloc(sizeof(struct scan_dir));
+				se->s = strdup(name);
+				se->tree = 2;
+				se->next = dirs;
+				dirs = se;
 				continue;
+			}
+
+			if (find_name) {
+				if (!gq_pattern &&
+				    !regexec(&fn_re, name, 0, NULL, 0)) {
+
+					dir_diff = 1;
+					break;
+				} else {
+					continue;
+				}
+			}
 		}
 
 		diff = alloc_diff(name);
@@ -512,14 +554,17 @@ right_tree:
 				diff->rlink = read_link(rpath, lsiz2);
 		}
 
-		if (scan && gq_pattern) {
-			if (!gq_proc(diff)) {
+		if (scan) {
+			if (gq_pattern) {
+				if (!gq_proc(diff)) {
+					free_diff(diff);
+					dir_diff = 1;
+					break;
+				}
+
 				free_diff(diff);
-				dir_diff = 1;
-				break;
 			}
 
-			free_diff(diff);
 			continue;
 		}
 
@@ -539,16 +584,17 @@ dir_scan_end:
 		goto exit;
 	}
 
-	if (dir_diff && !qdiff)
-		add_diff_dir();
+	if (dir_diff && !qdiff) {
+		add_diff_dir(1);
+	}
 
 	while (dirs) {
 		size_t l1, l2 = 0 /* silence warning */;
-		struct str_list *p;
+		struct scan_dir *p;
 
 		l1 = llen;
 		l2 = rlen;
-		scan_subdir(dirs->s, NULL, 3);
+		scan_subdir(dirs->s, NULL, dirs->tree);
 		/* Not done in scan_subdirs(), since there are cases where
 		 * scan_subdirs() must not reset the path */
 		lpath[llen = l1] = 0;
@@ -571,8 +617,13 @@ exit:
 void
 scan_subdir(char *name, char *rnam, int tree)
 {
-	if (!rnam)
+#if defined(TRACE) && 0
+	fprintf(debug, "scan_subdir(%s,%s,%d) lp(%s) rp(%s)\n",
+	    name, rnam, tree, lpath, rpath);
+#endif
+	if (!rnam) {
 		rnam = name;
+	}
 
 	if (tree & 1) {
 		if (name)
@@ -592,14 +643,27 @@ scan_subdir(char *name, char *rnam, int tree)
 }
 
 static void
-add_diff_dir(void)
+add_diff_dir(
+    /* Only fmode: 0: lpath, 1: rpath */
+    short side)
 {
-	char *path, *end;
+	char *path, *end, *rp = NULL;
 
-	if (!*pwd)
+	/* During scan bmode uses lpath */
+	lpath[llen] = 0;
+	rpath[rlen] = 0;
+	path = side ? rpath : lpath;
+#if defined(TRACE)
+	fprintf(debug, "add_diff_dir(%d:%s) lp(%s) rp(%s)\n",
+	    side, path, lpath, rpath);
+#endif
+
+	if (!(rp = realpath(path, NULL))) {
+		printerr(strerror(errno), "realpath \"%s\"", path);
 		return;
+	}
 
-	path = strdup(PWD);
+	path = rp;
 	end = path + strlen(path);
 
 	while (1) {
@@ -623,55 +687,86 @@ add_diff_dir(void)
 		}
 #endif
 
+#if defined(TRACE)
+		fprintf(debug, "add_diff_dir \"%s\" added\n", path);
+#endif
 		do {
 			if (--end < path)
 				goto ret;
 		} while (*end != '/');
 
-		*end = 0;
+		if (end == path) {
+			end[1] = 0;
+		} else {
+			*end = 0;
+		}
 	}
 
 ret:
-	free(path);
+	free(rp);
 }
 
 int
-is_diff_dir(char *name)
+is_diff_dir(struct filediff *f)
 {
-	char *s;
-	size_t l1;
-	short v;
+	char *bp = NULL, *pth, *rp = NULL;
+	size_t l;
+	int v = 0;
 
-	if (!recursive)
-		return 0;
-
-	if ((!bmode && !*pwd) ||
-	    (bmode && strlen(rpath) < bmode_ini_len))
-		return str_db_srch(&scan_db, name
-#ifdef HAVE_LIBAVLBST
-		    , NULL
+	/* E.g. for file stat called independend from 'recursive' */
+	if (!recursive) {
+		goto ret0; /* No debug print */
+	}
+#if defined(TRACE)
+	fprintf(debug, "is_diff_dir(%s)", f->name);
 #endif
-		    ) ? 0 : 1;
 
 	if (bmode) {
-		l1 = strlen(rpath) - bmode_ini_len;
-		s = malloc(l1 + strlen(name) + 2);
-		memcpy(s, rpath + bmode_ini_len, l1);
+		pth = rpath;
+		l = strlen(pth);
+		bp = malloc(l + strlen(f->name) + 2);
+		memcpy(bp, pth, l);
+		pth = bp;
 	} else {
-		l1 = strlen(PWD);
-		s = malloc(l1 + strlen(name) + 2);
-		memcpy(s, PWD, l1);
+		if (f->ltype) {
+			pth = lpath;
+			l = llen;
+		} else {
+			pth = rpath;
+			l = rlen;
+		}
+
+		pth[l] = 0;
 	}
 
-	pthcat(s, l1, name);
+	pthcat(pth, l, f->name);
 
-	v = str_db_srch(&scan_db, s
+	/* Here since both path and name can be symlink */
+	if (!(rp = realpath(pth, NULL))) {
+		printerr(strerror(errno), "realpath \"%s\"", pth);
+		goto ret;
+	}
+
+	pth = rp;
+
+#if defined(TRACE)
+	fprintf(debug, " \"%s\"", pth);
+#endif
+	v = str_db_srch(&scan_db, pth
 #ifdef HAVE_LIBAVLBST
 	    , NULL
 #endif
 	    ) ? 0 : 1;
 
-	free(s);
+	free(rp);
+ret:
+	if (bp) {
+		free(bp);
+	}
+#if defined(TRACE)
+	fprintf(debug, " %d\n", v);
+#endif
+ret0:
 	return v;
 }
 

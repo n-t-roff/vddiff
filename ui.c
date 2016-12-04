@@ -377,11 +377,13 @@ next_key:
 			c = 0;
 			bindiff();
 			break;
+
 		case KEY_NPAGE:
 		case ' ':
 			c = 0;
 			page_down();
 			break;
+
 		case KEY_PPAGE:
 		case KEY_BACKSPACE:
 		case CERASE:
@@ -405,6 +407,7 @@ next_key:
 			c = 0;
 			help();
 			break;
+
 		case 'p':
 			if (*key == 'e') {
 				c = 0;
@@ -421,9 +424,6 @@ next_key:
 					break;
 				}
 			}
-
-			if (fmode)
-				break;
 
 			if (!bmode) {
 				c = 0;
@@ -447,9 +447,6 @@ next_key:
 
 			/* fall through */
 		case 'f':
-			if (fmode)
-				break;
-
 			if (!bmode) {
 				c = 0;
 				lpath[llen] = 0;
@@ -463,9 +460,6 @@ next_key:
 
 			/* fall through */
 		case 'a':
-			if (fmode)
-				break;
-
 			c = 0;
 
 			if (bmode) {
@@ -487,6 +481,7 @@ next_key:
 			stmbsra(arg[0], arg[1]);
 			wrefresh(wstat);
 			break;
+
 		case 'n':
 			c = 0;
 
@@ -1403,11 +1398,17 @@ action(
 	static char *typerr = "Not a directory or regular file";
 	static char *typdif = "Different file type";
 
+#if defined(TRACE)
+	fprintf(debug, "->action(%d %d %u)\n", ign_ext, tree, act);
+#endif
 	if (!db_num[right_col])
-		return;
+		goto out;
 
 	f1 = f2 = db_list[right_col][top_idx[right_col] + curs[right_col]];
 
+#if defined(TRACE)
+	fprintf(debug, "name(%s)\n", f1->name);
+#endif
 	if (mark && act) {
 		struct filediff *m;
 		mode_t ltyp = 0, rtyp = 0;
@@ -1585,6 +1586,11 @@ ret:
 
 	if (err)
 		printerr(NULL, err);
+out:
+#if defined(TRACE)
+	fprintf(debug, "<-action\n");
+#endif
+	return;
 }
 
 static void
@@ -1595,21 +1601,23 @@ page_down(void)
 		return;
 	}
 
+#if defined(TRACE) && 0
+	fprintf(debug, "<->page_down\n");
+#endif
 	top_idx[right_col] += listh;
 	curs[right_col] = 0;
-
 	disp_list(1);
 }
 
 static void
 curs_last(void)
 {
-	if (last_line_is_disp())
+	if (last_line_is_disp()) {
 		return;
+	}
 
 	top_idx[right_col] = db_num[right_col] - listh;
 	curs[right_col] = listh - 1;
-
 	disp_list(1);
 }
 
@@ -1649,6 +1657,7 @@ last_line_is_disp(void)
 		/* last line is currently displayed */
 		if (curs[right_col] != db_num[right_col] -
 		    top_idx[right_col] - 1) {
+
 			disp_curs(0);
 			curs[right_col] = db_num[right_col] -
 			    top_idx[right_col] - 1;
@@ -1905,6 +1914,10 @@ disp_curs(
 	} else if (i == m) {
 		a = 1;
 		markc(w);
+	} else {
+		/* Did fix bug in mono mode. For whatever reason standout
+		 * was active. */
+		standendc(w);
 	}
 
 	if (i < db_num[right_col]) {
@@ -1930,16 +1943,25 @@ disp_list(
 	unsigned y, i;
 	WINDOW *w;
 
+#if defined(TRACE) && 0
+	fprintf(debug, "<->disp_list\n");
+#endif
 	w = getlstwin();
 
-	/* For the case that entries had been removed */
-	if (top_idx[right_col] >= db_num[right_col])
+	/* For the case that entries had been removed
+	 * and page_down() */
+
+	if (top_idx[right_col] >= db_num[right_col]) {
+
 		top_idx[right_col] =
 		    db_num[right_col] ? db_num[right_col] - 1 : 0;
+	}
 
-	if (top_idx[right_col] + curs[right_col] >= db_num[right_col])
+	if (top_idx[right_col] + curs[right_col] >= db_num[right_col]) {
+
 		curs[right_col] = db_num[right_col] ? db_num[right_col] -
 		    top_idx[right_col] - 1 : 0;
+	}
 
 	werase(w);
 	/* Else glyphs are left with NetBSD curses */
@@ -1959,8 +1981,9 @@ disp_list(
 		} else if (md && y == curs[right_col]) {
 			disp_curs(1);
 		} else if (top_idx[right_col] + y == mark_idx[right_col]) {
-			if (!fmode)
+			if (!fmode) {
 				markc(w);
+			}
 
 			disp_line(y, i, 1);
 
@@ -2000,6 +2023,9 @@ disp_line(
 		printerr("disp_line: i >= num", "");
 		return;
 	}
+#endif
+#if defined(TRACE) && 0
+	fprintf(debug, "<->disp_line(%u,%u,%i)\n", y, i, info);
 #endif
 
 	w = getlstwin();
@@ -2131,8 +2157,9 @@ set_file_info(struct filediff *f, mode_t m, int *t, short *ct, int *d)
 		if (!*ct) {
 			*ct = PAIR_DIR;
 
-			if (is_diff_dir(f->name))
+			if (is_diff_dir(f)) {
 				*d = '!';
+			}
 		}
 	} else if (S_ISLNK(m)) {
 		*t = '@';

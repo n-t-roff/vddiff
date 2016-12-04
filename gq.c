@@ -84,6 +84,9 @@ gq_proc(struct filediff *f)
 	int rv = 1; /* not found */
 	struct gq_re *re;
 
+#if defined(TRACE) && 0
+	fprintf(debug, "gq_proc(%s)", f->name);
+#endif
 	if (S_ISREG(f->ltype) && f->lsiz) {
 		p = lpath;
 		l = llen;
@@ -91,11 +94,14 @@ gq_proc(struct filediff *f)
 		p = rpath;
 		l = rlen;
 	} else {
-		return rv;
+		goto ret2; /* Not "ret" since p and l are not set */
 	}
 
 	pthcat(p, l, f->name);
 
+#if defined(TRACE) && 0
+	fprintf(debug, " \"%s\"", p);
+#endif
 	if ((fh = open(p, O_RDONLY)) == -1) {
 
 		if (!ign_errs && dialog(
@@ -156,5 +162,9 @@ gq_proc(struct filediff *f)
 
 ret:
 	p[l] = 0;
+ret2:
+#if defined(TRACE) && 0
+	fprintf(debug, "->(%d)\n", rv);
+#endif
 	return rv;
 }

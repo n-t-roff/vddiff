@@ -574,7 +574,7 @@ exit:
 	do { \
 	if ((!file_pattern || \
 	     ((S_ISDIR(f->ltype) || S_ISDIR(f->rtype)) && \
-	      (!recursive || is_diff_dir(f->name))) || \
+	      (!recursive || is_diff_dir(f))) || \
 	     ((!find_name || !regexec(&fn_re, f->name, 0, NULL, 0)) && \
 	      (!gq_pattern || !gq_proc(f)))) && \
 	    \
@@ -585,7 +585,7 @@ exit:
 	      \
 	      (!real_diff || \
 	       f->diff == '!' || (S_ISDIR(f->ltype) && S_ISDIR(f->rtype) && \
-	       is_diff_dir(f->name))) && \
+	       is_diff_dir(f))) && \
 	      \
 	      (!nosingle || \
 	       (f->ltype && f->rtype))))) \

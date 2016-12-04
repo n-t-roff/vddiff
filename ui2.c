@@ -53,7 +53,7 @@ static struct str_uint *srchmap;
 static regex_t re_dat;
 static unsigned srch_idx;
 
-bool file_pattern;
+bool file_pattern; /* TRUE for -F or -G */
 
 int
 test_fkey(int c, long u, unsigned short num)
@@ -68,6 +68,7 @@ test_fkey(int c, long u, unsigned short num)
 		if (fkey_cmd[i]) {
 			struct tool t;
 			unsigned ti, cu;
+			unsigned short act;
 			static char *keys =
 			    "<ENTER> execute, 'e' edit,"
 			    " <other key> cancel";
@@ -87,8 +88,14 @@ test_fkey(int c, long u, unsigned short num)
 			mvwprintw(wstat, 0, 0, "Really execute \"%s\"",
 			    fkey_cmd[i]);
 
-			if (num > 1)
+			if (num > 1) {
 				wprintw(wstat, " for %d files", num);
+				/* Mark makes no sense for multiple file
+				 * operation */
+				act = 0;
+			} else {
+				act = 1;
+			}
 
 			waddstr(wstat, "?");
 
@@ -104,7 +111,7 @@ exec:
 				curs[right_col] = u - top_idx[right_col];
 
 				while (num--) {
-					action(1, 3, 1, FALSE);
+					action(1, 3, act, FALSE);
 					top_idx[right_col]++; /* kludge */
 				}
 
@@ -566,6 +573,12 @@ chk_mark(char *file, short tree)
 	int i;
 	bool rp;
 
+#if defined(TRACE)
+	lpath[llen] = 0;
+	if (tree & 2) rpath[rlen] = 0;
+	fprintf(debug, "<->chk_mark(%s,%d) lp(%s) rp(%s)\n",
+	    file, tree, lpath, rpath);
+#endif
 	rp = !bmode && *file != '/';
 
 	if (rp) {
@@ -580,18 +593,21 @@ chk_mark(char *file, short tree)
 
 	i = stat(file, &st);
 
-	if (i == -1)
-		printerr(strerror(errno), "stat \"%s\" failed", file);
-
-	if (rp) {
-		if (tree & 1)
-			lpath[llen] = 0;
-		else if (tree & 2)
-			rpath[rlen] = 0;
+	if (i == -1) {
+		printerr(strerror(errno), LOCFMT "stat \"%s\"" LOCVAR, file);
 	}
 
-	if (i != -1)
+	if (rp) {
+		if (tree & 1) {
+			lpath[llen] = 0;
+		} else if (tree & 2) {
+			rpath[rlen] = 0;
+		}
+	}
+
+	if (i != -1) {
 		return 0;
+	}
 
 	clr_mark();
 	return -1;

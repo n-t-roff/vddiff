@@ -14,7 +14,7 @@ extern short followlinks;
 
 int build_diff_db(int);
 void scan_subdir(char *, char *, int);
-int is_diff_dir(char *);
+int is_diff_dir(struct filediff *);
 size_t pthcat(char *, size_t, char *);
 int cmp_file(char *, off_t, char *, off_t);
 void free_diff(struct filediff *);

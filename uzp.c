@@ -293,8 +293,8 @@ zcat(char *cmd, struct filediff *f, int tree, int i)
 		if (errno == ENOENT)
 			printerr("", "Unpacked file \"%s\" not found", s2);
 		else
-			printerr(strerror(errno), "lstat \"%s\" failed",
-			    s2);
+			printerr(strerror(errno), LOCFMT "lstat \"%s\""
+			    LOCVAR, s2);
 	} else if (tree == 1 || bmode)
 		z->lsiz = st.st_size;
 	else

@@ -365,6 +365,7 @@ fs_rm(int tree, char *txt, long u, int n,
 	struct filediff *f;
 	unsigned short m;
 	int rv = 0;
+	bool chg = FALSE;
 
 	if (!db_num[right_col])
 		return 0;
@@ -415,6 +416,7 @@ fs_rm(int tree, char *txt, long u, int n,
 
 		printerr(NULL, "Deleting %s\"%s\"", S_ISDIR(stat1.st_mode) ?
 		    "directory " : "", pth1);
+		chg = TRUE;
 
 		if (S_ISDIR(stat1.st_mode)) {
 			tree_op = TREE_RM;
@@ -423,8 +425,10 @@ fs_rm(int tree, char *txt, long u, int n,
 			rm_file();
 	}
 
-	if (txt)
-		goto cancel; /* rebuild is done by others */
+	if (txt || /* rebuild is done by others */
+	    !chg) { /* Nothing done */
+		goto cancel;
+	}
 
 	ign_rm_errs = FALSE;
 	rebuild_db(0);
@@ -476,9 +480,11 @@ fs_cp(int to, long u, int n,
 
 		if (( followlinks &&  stat(pth1, &st) == -1) ||
 		    (!followlinks && lstat(pth1, &st) == -1)) {
-			if (errno != ENOENT)
-				printerr(strerror(errno), "stat \"%s\" failed",
-				    pth1);
+			if (errno != ENOENT) {
+				printerr(strerror(errno), LOCFMT "stat \"%s\""
+				    LOCVAR, pth1);
+			}
+
 			continue;
 		}
 
@@ -612,7 +618,7 @@ proc_dir(void)
 		if (i == -1) {
 			if (errno != ENOENT) {
 				printerr(strerror(errno),
-				    "stat %s failed", pth1);
+				    LOCFMT "stat %s" LOCVAR, pth1);
 				goto closedir;
 			}
 			continue; /* deleted after readdir */
@@ -716,7 +722,7 @@ creatdir(void)
 	    (!followlinks && lstat(pth1, &stat1) == -1)) {
 		if (errno != ENOENT) {
 			printerr(strerror(errno),
-			    "stat %s failed", pth1);
+			    LOCFMT "stat %s" LOCVAR, pth1);
 		}
 		return -1;
 	}

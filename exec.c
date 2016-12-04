@@ -64,7 +64,7 @@ tool(char *name, char *rnam, int tree, int ign_ext)
 	int c;
 
 #ifdef TRACE
-	fprintf(debug, "tool(%s,%s,%d) lp(%s) rp(%s)\n",
+	fprintf(debug, "->tool(%s,%s,%d) lp(%s) rp(%s)\n",
 	    name, rnam, tree, lpath, rpath);
 #endif
 	l = strlen(name);
@@ -112,6 +112,9 @@ settool:
 		free(cmd);
 	} else
 		exec_tool(tmptool, name, rnam, tree);
+#ifdef TRACE
+	fprintf(debug, "<-tool\n");
+#endif
 }
 
 #define GRWCMD \
@@ -233,6 +236,9 @@ set_tool(struct tool *_tool, char *s, tool_flags_t flags)
 	struct strlst **next, *args;
 	bool sh = FALSE;
 
+#if defined(TRACE)
+	fprintf(debug, "set_tool(%s)\n", s);
+#endif
 	free_tool(_tool);
 	_tool->tool = b = s;
 	_tool->flags = flags;
@@ -369,11 +375,18 @@ exec_tool(struct tool *t, char *name, char *rnam, int tree)
 
 	*a = NULL;
 	status = exec_cmd(av, flags, NULL, NULL);
+	lpath[llen] = 0;
+
+	if (tree & 2) {
+		rpath[rlen] = 0;
+	}
+
 	free(s1);
 	free(s2);
 
-	if (o)
+	if (o) {
 		free(*av);
+	}
 
 	free(av);
 
