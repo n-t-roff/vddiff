@@ -21,7 +21,7 @@ PERFORMANCE OF THIS SOFTWARE.
 .Sh SYNOPSYS
 .Nm
 .Op Fl u Op Ar "RC file"
-.Op Fl BbCcdEefgIiklmnoqrVy
+.Op Fl BbCcdEefgIiklMmnoqrVWXy
 .Op Fl F Ar file name pattern
 .Op Fl G Ar file content pattern
 .Op Fl t Ar diff_tool
@@ -261,6 +261,14 @@ Use
 as diff tool.
 .It Fl l
 Follow symbolic links.
+.It Fl M
+Normally flags
+.Fl W
+and
+.Fl X
+are only applied on single files operations.
+.Fl M
+allows to use them on multiple file too.
 .It Fl m
 Normally directories are displayed on top.
 This is disabled with this option.
@@ -323,6 +331,10 @@ The filenames is appended to the given string.
 To include it into the string the symbolic name
 .Dq Li $1
 can be embedded which is expanded to the filename.
+.It Fl W
+Don't ask for confirmation on file system operations.
+.It Fl X
+Don't ask for confirmation on execute.
 .It Fl y
 Start in two-column mode.
 This is currently only supported if two arguments are given.

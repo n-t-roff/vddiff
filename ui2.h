@@ -1,12 +1,16 @@
+#define FKEY_WAIT  1
+#define FKEY_FORCE 2
+
 #define FKEY_CMD_CHR(i) \
-	fkey_flags[i] & 1 ? '!' : \
-	fkey_flags[i] & 2 ? '#' : '$'
+	fkey_flags[i] & FKEY_WAIT  ? '!' : \
+	fkey_flags[i] & FKEY_FORCE ? '#' : '$'
 
 extern long mark_idx[2];
 extern short noic, magic, nows, scale;
 extern short regex;
 extern unsigned short subtree;
 extern const char y_n_txt[];
+extern const char ign_txt[];
 extern bool file_pattern;
 
 int test_fkey(int, unsigned short);

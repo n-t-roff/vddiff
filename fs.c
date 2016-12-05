@@ -124,7 +124,7 @@ fs_rename(int tree)
 		if (errno != ENOENT)
 			printerr(strerror(errno), "lstat \"%s\" failed", pth1);
 	} else {
-		if (dialog(y_n_txt, NULL,
+		if (!force_fs && dialog(y_n_txt, NULL,
 		    "Delete existing %s \"%s\"?", S_ISDIR(stat1.st_mode) ?
 		    "directory" : "file", pth1) != 'y')
 			goto exit;
@@ -163,7 +163,7 @@ fs_chmod(int tree, long u, int num)
 	if (!db_num[right_col])
 		return;
 
-	if (num > 1 && dialog(y_n_txt, NULL,
+	if (!force_multi && num > 1 && dialog(y_n_txt, NULL,
 	    "Change mode of %d files?", num) != 'y')
 		return;
 
@@ -206,7 +206,7 @@ fs_chmod(int tree, long u, int num)
 		pthcat(pth1, len1, f->name);
 
 		if (chmod(pth1, m) == -1) {
-			printerr(strerror(errno), "chmod \"%s\" failed");
+			printerr(strerror(errno), "chmod \"%s\"");
 			goto exit;
 		}
 	}
@@ -281,7 +281,7 @@ fs_chown(int tree, int op, long u, int num)
 	if (!db_num[right_col])
 		return;
 
-	if (num > 1 && dialog(y_n_txt, NULL,
+	if (!force_multi && num > 1 && dialog(y_n_txt, NULL,
 	    "Change %s of %d files?", op ? "group" : "owner", num) != 'y')
 		return;
 
@@ -372,8 +372,8 @@ fs_rm(int tree, char *txt, long u, int n,
 
 	m = n > 1;
 
-	if (!(md & 1) && m && dialog(y_n_txt, NULL,
-	    "Really %s %d files?", txt ? txt : "delete", n) != 'y')
+	if (!(force_fs && force_multi) && !(md & 1) && m && dialog(y_n_txt,
+	    NULL, "Really %s %d files?", txt ? txt : "delete", n) != 'y')
 		return 1;
 
 	while (n-- && u < db_num[right_col]) {
@@ -407,7 +407,7 @@ fs_rm(int tree, char *txt, long u, int n,
 			continue;
 		}
 
-		if (!(md & 1) && !m && dialog(y_n_txt, NULL,
+		if (!force_fs && !(md & 1) && !m && dialog(y_n_txt, NULL,
 		    "Really %s %s\"%s\"?", txt ? txt : "delete",
 		    S_ISDIR(stat1.st_mode) ? "directory " : "", pth1) != 'y') {
 			rv = 1;
@@ -459,9 +459,9 @@ fs_cp(int to, long u, int n,
 
 	m = n > 1;
 
-	if (m && dialog(y_n_txt, NULL, "Really %s %d files?",
-	    (md & 2) ? "create symlink to" : (md & 1) ? "move" : "copy", n)
-	    != 'y') {
+	if (!(force_fs && force_multi) && m && dialog(y_n_txt, NULL,
+	    "Really %s %d files?", (md & 2) ? "create symlink to" :
+	    (md & 1) ? "move" : "copy", n) != 'y') {
 		return 1;
 	}
 
@@ -497,7 +497,7 @@ fs_cp(int to, long u, int n,
 		if (!followlinks) {
 			if (fs_rm(to, "overwrite", u, 1, 0) == 1)
 				return 1;
-		} else if (!m && dialog(y_n_txt, NULL,
+		} else if (!force_fs && !m && dialog(y_n_txt, NULL,
 		    "Really overwrite \"%s\"?", pth2) != 'y') {
 			return 1;
 		}

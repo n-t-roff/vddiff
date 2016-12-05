@@ -57,16 +57,17 @@ static void ttcharoff(void);
 static void usage(void);
 
 static char *usage_txt =
-"Usage: %s [-u [<RC file>]] [-BbCcdEefgIiklmnoqrVy] [-F <pattern>]\n"
+"Usage: %s [-u [<RC file>]] [-BbCcdEefgIiklMmnoqrVWXy] [-F <pattern>]\n"
 "	[-G <pattern>] [-t <diff_tool>] [-v <view_tool>] [<directory_1>\n"
 "	[<directory_2>]]\n";
-static char *getopt_arg = "BbCcdEeF:fG:gIiklmnoqrt:Vv:y";
+static char *getopt_arg = "BbCcdEeF:fG:gIiklMmnoqrt:Vv:WXy";
 
 bool bmode;
 bool qdiff;
 bool find_name;
 static bool dontdiff;
 bool dontcmp;
+bool force_exec, force_fs, force_multi;
 
 int
 main(int argc, char **argv)
@@ -83,7 +84,8 @@ main(int argc, char **argv)
 
 		l = strlen(s);
 		memcpy(lbuf, s, l);
-		snprintf(lbuf + l, BUF_SIZE - l, "%lu", (unsigned long)getuid());
+		snprintf(lbuf + l, BUF_SIZE - l, "%lu",
+		    (unsigned long)getuid());
 
 		if (!(debug = fopen(lbuf, "w"))) {
 			printf("fopen \"%s\": %s\n", lbuf, strerror(errno));
@@ -186,9 +188,15 @@ main(int argc, char **argv)
 		case 'l':
 			followlinks = 1;
 			break;
+
+		case 'M':
+			force_multi = TRUE;
+			break;
+
 		case 'm':
 			sorting = SORTMIXED;
 			break;
+
 		case 'n':
 			noequal = 1;
 			break;
@@ -231,9 +239,19 @@ main(int argc, char **argv)
 		case 'v':
 			set_tool(&viewtool, strdup(optarg), 0);
 			break;
+
+		case 'W':
+			force_fs = TRUE;
+			break;
+
+		case 'X':
+			force_exec = TRUE;
+			break;
+
 		case 'y':
 			twocols = TRUE;
 			break;
+
 		default:
 			usage();
 		}

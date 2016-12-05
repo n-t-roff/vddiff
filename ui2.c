@@ -34,7 +34,9 @@ PERFORMANCE OF THIS SOFTWARE.
 #include "db.h"
 #include "tc.h"
 
-const char y_n_txt[] = "'y' yes, <other key> no";
+const char y_n_txt[] = "'y' yes, 'n' no";
+const char ign_txt[] = "'i' ignore all errors, <ENTER> continue";
+
 struct str_uint {
 	char *s;
 	unsigned int u;
@@ -70,8 +72,7 @@ test_fkey(int c, unsigned short num)
 			unsigned ti;
 			unsigned short act;
 			static char *keys =
-			    "<ENTER> execute, 'e' edit,"
-			    " <other key> cancel";
+			    "<ENTER> execute, 'e' edit, 'n' no";
 
 			t = viewtool;
 			viewtool.tool = NULL;
@@ -79,10 +80,13 @@ test_fkey(int c, unsigned short num)
 			/* set_tool() reused here to process
 			 * embedded "$1" */
 			set_tool(&viewtool, strdup(fkey_cmd[i]),
-			    fkey_flags[i] & 1 ? TOOL_WAIT : 0);
+			    fkey_flags[i] & FKEY_WAIT ? TOOL_WAIT : 0);
+			act = num > 1 ? 0 : 1;
 
-			if ((fkey_flags[i] & 2) && num <= 1)
+			if ((force_exec || (fkey_flags[i] & FKEY_FORCE)) &&
+			    (force_multi || num <= 1)) {
 				goto exec;
+			}
 
 			werase(wstat);
 			mvwprintw(wstat, 0, 0, "Really execute \"%s\"",
@@ -90,13 +94,9 @@ test_fkey(int c, unsigned short num)
 
 			if (num > 1) {
 				wprintw(wstat, " for %d files", num);
-				/* Mark makes no sense for multiple file
-				 * operation */
-				act = 0;
-			} else {
-				act = 1;
 			}
 
+			/* Mark makes no sense for multiple file operation */
 			waddstr(wstat, "?");
 
 			switch (dialog(keys, NULL, NULL)) {
@@ -130,9 +130,9 @@ edit_fkey:
 		linelen = 0; /* Remove existing text */
 
 		if (fkey_cmd[i]) {
-			if (fkey_flags[i] & 1)
+			if (fkey_flags[i] & FKEY_WAIT)
 				ed_append("! ");
-			else if (fkey_flags[i] & 2)
+			else if (fkey_flags[i] & FKEY_FORCE)
 				ed_append("# ");
 			else
 				ed_append("$ ");
@@ -181,8 +181,8 @@ void
 set_fkey_cmd(int i, char *s, int ek)
 {
 	fkey_cmd[i] = strdup(s);
-	fkey_flags[i] = ek == '!' ? 1 : /* wait after command */
-			ek == '#' ? 2 : /* don't wait before command */
+	fkey_flags[i] = ek == '!' ? FKEY_WAIT  : /* wait after command */
+			ek == '#' ? FKEY_FORCE : /* don't wait before command */
 				    0 ;
 }
 

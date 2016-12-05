@@ -39,3 +39,4 @@ extern bool bmode;
 extern bool qdiff;
 extern bool find_name;
 extern bool dontcmp;
+extern bool force_exec, force_fs, force_multi;

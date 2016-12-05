@@ -100,9 +100,8 @@ build_diff_db(int tree)
 	fprintf(debug, "build_diff_db(%d:%s)\n", tree, lpath);
 #endif
 	if (!(d = opendir(lpath))) {
-		if (!ign_diff_errs && dialog(
-		    "'i' ignore errors, <other key> continue",
-		    NULL, "opendir \"%s\" failed: %s", lpath,
+		if (!ign_diff_errs && dialog(ign_txt, NULL,
+		    "opendir \"%s\" failed: %s", lpath,
 		    strerror(errno)) == 'i')
 			ign_diff_errs = TRUE;
 
@@ -156,9 +155,8 @@ build_diff_db(int tree)
 
 		if (i == -1) {
 			if (errno != ENOENT) {
-				if (!ign_diff_errs && dialog(
-				    "'i' ignore errors, <other key> continue",
-				    NULL, LOCFMT "stat \"%s\": %s" LOCVAR,
+				if (!ign_diff_errs && dialog(ign_txt, NULL,
+				    LOCFMT "stat \"%s\": %s" LOCVAR,
 				    lpath, strerror(errno)) == 'i') {
 
 					ign_diff_errs = TRUE;
@@ -189,9 +187,8 @@ build_diff_db(int tree)
 
 		if (i == -1) {
 			if (errno != ENOENT) {
-				if (!ign_diff_errs && dialog(
-				    "'i' ignore errors, <other key> continue",
-				    NULL, LOCFMT "stat \"%s\" failed: %s"
+				if (!ign_diff_errs && dialog(ign_txt, NULL,
+				    LOCFMT "stat \"%s\" failed: %s"
 				    LOCVAR, rpath, strerror(errno)) == 'i') {
 
 					ign_diff_errs = TRUE;
@@ -434,9 +431,8 @@ right_tree:
 	fprintf(debug, "build_diff_db(%d:%s)\n", tree, rpath);
 #endif
 	if (!(d = opendir(rpath))) {
-		if (!ign_diff_errs && dialog(
-		    "'i' ignore errors, <other key> continue",
-		    NULL, "opendir \"%s\" failed: %s", rpath,
+		if (!ign_diff_errs && dialog(ign_txt, NULL,
+		    "opendir \"%s\" failed: %s", rpath,
 		    strerror(errno)) == 'i')
 			ign_diff_errs = TRUE;
 
@@ -496,9 +492,8 @@ right_tree:
 
 		if (i == -1) {
 			if (errno != ENOENT) {
-				if (!ign_diff_errs && dialog(
-				    "'i' ignore errors, <other key> continue",
-				    NULL, LOCFMT "stat \"%s\" failed: %s"
+				if (!ign_diff_errs && dialog(ign_txt, NULL,
+				    LOCFMT "stat \"%s\" failed: %s"
 				    LOCVAR, rpath, strerror(errno)) == 'i') {
 
 					ign_diff_errs = TRUE;
@@ -776,9 +771,8 @@ read_link(char *path, off_t size)
 	char *l = malloc(size + 1);
 
 	if ((size = readlink(path, l, size)) == -1) {
-		if (!ign_diff_errs && dialog(
-		    "'i' ignore errors, <other key> continue",
-		    NULL, "readlink \"%s\" failed: %s", path,
+		if (!ign_diff_errs && dialog(ign_txt, NULL,
+		    "readlink \"%s\" failed: %s", path,
 		    strerror(errno)) == 'i')
 			ign_diff_errs = TRUE;
 
@@ -818,18 +812,16 @@ cmp_file(char *lpth, off_t lsiz, char *rpth, off_t rsiz)
 		return 0;
 
 	if ((f1 = open(lpth, O_RDONLY)) == -1) {
-		if (!ign_diff_errs && dialog(
-		    "'i' ignore errors, <other key> continue",
-		    NULL, "open \"%s\": %s", lpth, strerror(errno)) == 'i')
+		if (!ign_diff_errs && dialog(ign_txt, NULL,
+		    "open \"%s\": %s", lpth, strerror(errno)) == 'i')
 			ign_diff_errs = TRUE;
 
 		return -1;
 	}
 
 	if ((f2 = open(rpth, O_RDONLY)) == -1) {
-		if (!ign_diff_errs && dialog(
-		    "'i' ignore errors, <other key> continue",
-		    NULL, "open \"%s\": %s", rpth, strerror(errno)) == 'i')
+		if (!ign_diff_errs && dialog(ign_txt, NULL,
+		    "open \"%s\": %s", rpth, strerror(errno)) == 'i')
 			ign_diff_errs = TRUE;
 
 		rv = -1;
@@ -838,9 +830,8 @@ cmp_file(char *lpth, off_t lsiz, char *rpth, off_t rsiz)
 
 	while (1) {
 		if ((l1 = read(f1, lbuf, sizeof lbuf)) == -1) {
-			if (!ign_diff_errs && dialog(
-			    "'i' ignore errors, <other key> continue",
-			    NULL, "read \"%s\": %s", lpth,
+			if (!ign_diff_errs && dialog(ign_txt, NULL,
+			    "read \"%s\": %s", lpth,
 			    strerror(errno)) == 'i')
 				ign_diff_errs = TRUE;
 
@@ -849,9 +840,8 @@ cmp_file(char *lpth, off_t lsiz, char *rpth, off_t rsiz)
 		}
 
 		if ((l2 = read(f2, rbuf, sizeof rbuf)) == -1) {
-			if (!ign_diff_errs && dialog(
-			    "'i' ignore errors, <other key> continue",
-			    NULL, "read \"%s\": %s", rpth,
+			if (!ign_diff_errs && dialog(ign_txt, NULL,
+			    "read \"%s\": %s", rpth,
 			    strerror(errno)) == 'i')
 				ign_diff_errs = TRUE;
 
