@@ -105,11 +105,17 @@ dmode_fmode(
 	while (!bmode && ui_stack)
 		pop_state(0);
 
-	bmode = FALSE; /* from tgl2c() */
-	twocols = TRUE;
-	fmode = TRUE;
-	right_col = old_col;
-	open2cwins();
+	if (bmode || /* bmode -> fmode */
+	    twocols) { /* 2C diff -> fmode */
+		bmode = FALSE; /* from tgl2c() */
+		twocols = TRUE;
+		fmode = TRUE;
+		right_col = old_col;
+		open2cwins();
+	} else { /* 1C diff -> bmode */
+		bmode = TRUE;
+	}
+
 	rebuild_db((mode & 1) ? 1 : 0);
 
 	if (!(mode & 2)) {
@@ -149,13 +155,15 @@ getlstwin(void)
 }
 
 void
-tgl2c(void)
+tgl2c(
+    /* 1: bmode <-> 1C diff mode */
+    unsigned md)
 {
 	size_t l1, l2;
 	char *s;
 
 	if (bmode) { /* -> fmode */
-		s = fpath ? fpath : rpath;
+		s = !(md & 1) && fpath ? fpath : rpath;
 		l1 = strlen(rpath);
 		l2 = strlen(s);
 
@@ -170,21 +178,27 @@ tgl2c(void)
 			memcpy(rpath, s    , rlen + 1);
 		}
 
-		if (fpath) {
-			free(fpath);
-			fpath = NULL;
-		}
+		if (md & 1) {
+			bmode = FALSE;
+			rebuild_db(0);
+		} else {
+			if (fpath) {
+				free(fpath);
+				fpath = NULL;
+			}
 
-		dmode_fmode(2);
+			dmode_fmode(2);
 
-		if (old_col) {
-			top_idx[0] = old_top_idx;
-			curs[0] = old_curs;
+			if (old_col) {
+				top_idx[0] = old_top_idx;
+				curs[0] = old_curs;
+			}
 		}
 
 		disp_fmode();
 
-	} else if (fmode) { /* -> bmode */
+	} else if (fmode || /* fmode -> bmode */
+	    (md & 1)) { /* 1C diff -> bmode */
 		lpath[llen] = 0;
 		rpath[rlen] = 0;
 

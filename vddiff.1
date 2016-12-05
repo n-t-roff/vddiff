@@ -13,7 +13,7 @@ LOSS OF USE, DATA OR PROFITS, WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE OR
 OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
 PERFORMANCE OF THIS SOFTWARE.
 ..
-.Dd December 1, 2016
+.Dd December 5, 2016
 .Dt VDDIFF 1
 .Sh NAME
 .Nm vddiff
@@ -1206,13 +1206,15 @@ toggles between diff mode and browse mode:
 .Bd -literal -offset indent
                [1-column]        [2-column]
 
-[Diff mode]         <----- ^W ----->
-                       \(rs             ^
-                        \(rs            |
-                         -- # -->    #
-                                 \(rs   |
-                                  \(rs  v
-[Browse mode]       <----- ^W ----->
+[Diff mode]          <---- \(oq^W\(cq ---->
+                   ^                  ^
+                   |                  |
+
+                  \(oq#\(cq                \(oq#\(cq
+
+                   |                  |
+                   v                  v
+[Browse mode]        <---- \(oq^W\(cq ---->
 .Ed
 .Pp
 While the diff modes access files with their path name,

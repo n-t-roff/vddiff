@@ -960,17 +960,26 @@ next_key:
 			break;
 		case CTRL('w'):
 			c = 0;
-			tgl2c();
+			tgl2c(0);
 			break;
 		case '#':
 			c = 0;
 
-			if (fmode) {
-				fmode_dmode();
+			if (fmode || bmode) { /* FM -> diff */
+				if (bmode) {
+					tgl2c(1);
+				} else {
+					fmode_dmode();
+				}
+
 				/* Use "", not NULL here! */
 				enter_dir("", "", FALSE, FALSE);
-			} else if (!bmode) { /* # is invalid in bmode */
-				dmode_fmode(1);
+			} else { /* diff -> FM */
+				if (twocols) {
+					dmode_fmode(1);
+				} else {
+					tgl2c(1); /* diff -> bmode */
+				}
 			}
 
 			break;

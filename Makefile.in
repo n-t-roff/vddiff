@@ -4,7 +4,8 @@ MANDIR=	$(PREFIX)/share/man
 INCDIR=	$(PREFIX)/include
 LIBDIR=	$(PREFIX)/lib
 
-TRACE=	#-DTRACE='"/tmp/.vddiff.trace.txt"'
+TRACE=	#-DTRACE='"/tmp/.vddiff_trace_"'
+DEBUG=	#-DDEBUG
 STRP=	-s
 
 BIN=	vddiff
@@ -12,7 +13,7 @@ OBJ=	main.o pars.o lex.o diff.o ui.o db.o exec.o fs.o ed.o uzp.o ver.o \
 	ui2.o gq.o tc.o
 YFLAGS=	-d
 _CFLAGS=$(CFLAGS) $(CPPFLAGS) $(DEFINES) $(INCDIR_CURSES) -I$(INCDIR) \
-	$(__CDBG) $(__CLDBG) $(TRACE)
+	$(__CDBG) $(__CLDBG) $(TRACE) $(DEBUG)
 _LDFLAGS=$(LDFLAGS) $(__CLDBG) -L${LIBDIR} -Wl,-rpath,${LIBDIR} \
 	$(RPATH_CURSES) $(STRP)
 LDADD=	$(LIB_AVLBST) $(LIBDIR_CURSES) $(LIB_CURSES)
