@@ -445,21 +445,25 @@ cancel:
 
 int /* !0: Error */
 fs_cp(int to, long u, int n,
-    /* 1: don't rebuild DB */
+    /* 1: don't rebuild DB
+     * 2: Symlink instead of copying */
     unsigned md)
 {
 	struct filediff *f;
 	struct stat st;
 	bool m;
 
-	if (!db_num[right_col])
+	if (!db_num[right_col]) {
 		return 1;
+	}
 
 	m = n > 1;
 
-	if (m && dialog(y_n_txt, NULL,
-	    "Really %s %d files?", (md & 1) ? "move" : "copy", n) != 'y')
+	if (m && dialog(y_n_txt, NULL, "Really %s %d files?",
+	    (md & 2) ? "create symlink to" : (md & 1) ? "move" : "copy", n)
+	    != 'y') {
 		return 1;
+	}
 
 	for (; n-- && u < db_num[right_col]; u++) {
 		if (to == 1) {
@@ -494,8 +498,9 @@ fs_cp(int to, long u, int n,
 			if (fs_rm(to, "overwrite", u, 1, 0) == 1)
 				return 1;
 		} else if (!m && dialog(y_n_txt, NULL,
-		    "Really overwrite \"%s\"?", pth2) != 'y')
+		    "Really overwrite \"%s\"?", pth2) != 'y') {
 			return 1;
+		}
 
 		/* fs_rm() did change pths and stat1 */
 
@@ -515,18 +520,28 @@ fs_cp(int to, long u, int n,
 		len2 = pthcat(pth2, len2, f->name);
 		stat1 = st;
 
-		printerr(NULL, "Copy %s%s -> %s", S_ISDIR(stat1.st_mode) ?
-		    "directory " : "", pth1, pth2);
+		if (!(md & 2)) {
+			printerr(NULL, "Copy %s%s -> %s",
+			    S_ISDIR(stat1.st_mode) ?  "directory " : "", pth1,
+			    pth2);
+		}
 
-		if (S_ISDIR(stat1.st_mode)) {
+		if (md & 2) {
+			if (symlink(pth1, pth2) == -1) {
+				printerr(strerror(errno), "symlink %s -> %s",
+				    pth2, pth1);
+			}
+		} else if (S_ISDIR(stat1.st_mode)) {
 			tree_op = TREE_CP;
 			proc_dir();
-		} else
+		} else {
 			cp_file();
+		}
 	}
 
-	if (!(md & 1))
+	if (!(md & 1)) {
 		rebuild_db(0);
+	}
 
 	return 0;
 }

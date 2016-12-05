@@ -543,11 +543,46 @@ in second tree.
 .Sy fmode
 only:
 Move file or directory to the other file tree.
+.It Oo Ar n Oc Ns Dq Li Tl
+Move file or directory to left file tree.
+.It Oo Ar n Oc Ns Dq Li Tr
+Move file or directory to right file tree.
 .It Dq Li \(aqT
 .Sy fmode
 only:
 Move all files between the cursor and the local mark (inclusive)
 to the other file tree.
+.It Dq Li \(aqTl
+Move all files between the cursor and the local mark (inclusive)
+to left file tree.
+.It Dq Li \(aqTr
+Move all files between the cursor and the local mark (inclusive)
+to right file tree.
+.It Oo Ar n Oc Ns Sq Li @
+.Sy fmode
+only:
+Create symbolic link in other column
+to selected file in active column.
+.It Oo Ar n Oc Ns Dq Li @l
+Create symbolic link in left file tree
+to file in right file tree.
+.It Oo Ar n Oc Ns Dq Li @r
+Create symbolic link in right file tree
+to file in left file tree.
+.It Dq Li \(aq@
+.Sy fmode
+only:
+Create symlinks in other column
+to all files between the cursor and the local mark (inclusive)
+in active column.
+.It Dq Li \(aq@l
+Create symlinks in left file tree
+to all files between the cursor and the local mark (inclusive)
+in right file tree.
+.It Dq Li \(aq@r
+Create symlinks in right file tree
+to all files between the cursor and the local mark (inclusive)
+in left file tree.
 .It Dq Li en
 Rename file, which must be present in one tree only.
 .It Dq Li eln

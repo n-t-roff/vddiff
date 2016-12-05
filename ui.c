@@ -613,6 +613,18 @@ next_key:
 				c = 0;
 				fs_mkdir(1);
 				goto next_key;
+
+			case 'T':
+				if (!fs_cp(1, u, num, 1)) {
+					fs_rm(2, NULL, u, num, 1);
+				}
+
+				goto next_key;
+
+			case '@':
+				fs_cp(1, u, num, 2);
+				goto next_key;
+
 			default:
 				;
 			}
@@ -665,6 +677,19 @@ next_key:
 				c = 0;
 				fs_mkdir(2);
 				goto next_key;
+
+			case 'T':
+				if (!fs_cp(2, u, num, 1)) {
+					fs_rm(1, NULL, u, num, 1);
+				}
+
+				goto next_key;
+
+
+			case '@':
+				fs_cp(2, u, num, 2);
+				goto next_key;
+
 			default:
 				;
 			}
@@ -695,16 +720,29 @@ next_key:
 			c = 0;
 			fs_cp(2, u, num, 0);
 			break;
+
 		case 'T':
-			if (!fmode)
+			if (!fmode) {
 				break;
+			}
 
 			c = 0;
 
-			if (!fs_cp(right_col ? 1 : 2, u, num, 1))
+			if (!fs_cp(right_col ? 1 : 2, u, num, 1)) {
 				fs_rm(right_col ? 2 : 1, NULL, u, num, 1);
+			}
 
 			break;
+
+		case '@':
+			if (!fmode) {
+				break;
+			}
+
+			c = 0;
+			fs_cp(right_col ? 1 : 2, u, num, 2);
+			break;
+
 		case KEY_HOME:
 			c = 0;
 			curs_first();
@@ -1085,7 +1123,17 @@ static char *helptxt[] = {
        "'dl		Delete file or directory in first tree (range cursor...mark)",
        "'dr		Delete file or directory in second tree (range cursor...mark)",
        "[<n>]T		In fmode: Move file or directory",
+       "[<n>]Tl		Move file or directory to left tree",
+       "[<n>]Tr		Move file or directory to right tree",
        "'T		In fmode: Move file or directory (range cursor...mark)",
+       "'Tl		Move file or directory to left tree (range cursor...mark)",
+       "'Tr		Move file or directory to right tree (range cursor...mark)",
+       "[<n>]@		In fmode: Symlink in other tree to selected file or directory",
+       "[<n>]@l		Symlink in left tree to file or directory in right tree",
+       "[<n>]@r		Symlink in right tree to file or directory in left tree",
+       "'@		In fmode: Create symlink in other tree (range cursor...mark)",
+       "'@l		Create symlink in left tree (range cursor...mark)",
+       "'@r		Create symlink in right tree (range cursor...mark)",
        "en		Rename file",
        "eln		Rename left file",
        "ern		Rename right file",
