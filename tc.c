@@ -163,6 +163,7 @@ tgl2c(
 	char *s;
 
 	if (bmode) { /* -> fmode */
+		clr_mark();
 		s = !(md & 1) && fpath ? fpath : rpath;
 		l1 = strlen(rpath);
 		l2 = strlen(s);
@@ -199,6 +200,7 @@ tgl2c(
 
 	} else if (fmode || /* fmode -> bmode */
 	    (md & 1)) { /* 1C diff -> bmode */
+		clr_mark();
 		lpath[llen] = 0;
 		rpath[rlen] = 0;
 

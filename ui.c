@@ -238,7 +238,7 @@ next_key:
 		if ((c = getch()) == ERR)
 			goto next_key;
 
-		if (test_fkey(c, u, num)) {
+		if (test_fkey(c, num)) {
 			c = 0;
 			goto next_key;
 		}
@@ -929,11 +929,16 @@ next_key:
 
 			u = top_idx[right_col] + curs[right_col];
 
-			if (u <= mark_idx[right_col])
+			if (u <= mark_idx[right_col]) {
 				num = mark_idx[right_col] - u + 1;
-			else {
+			} else {
 				num = u - mark_idx[right_col] + 1;
 				u = mark_idx[right_col];
+				/* After deleting files it is distracting
+				 * when the cursor is left at some other
+				 * unrelated file. So now the cursor is left
+				 * at the first not deleted file. */
+				curs[right_col] = u - top_idx[right_col];
 			}
 
 			break;
@@ -964,6 +969,7 @@ next_key:
 			break;
 		case '#':
 			c = 0;
+			clr_mark();
 
 			if (fmode || bmode) { /* FM -> diff */
 				if (bmode) {

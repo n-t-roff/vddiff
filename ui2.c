@@ -56,7 +56,7 @@ static unsigned srch_idx;
 bool file_pattern; /* TRUE for -F or -G */
 
 int
-test_fkey(int c, long u, unsigned short num)
+test_fkey(int c, unsigned short num)
 {
 	int i;
 	int ek;
@@ -67,7 +67,7 @@ test_fkey(int c, long u, unsigned short num)
 
 		if (fkey_cmd[i]) {
 			struct tool t;
-			unsigned ti, cu;
+			unsigned ti;
 			unsigned short act;
 			static char *keys =
 			    "<ENTER> execute, 'e' edit,"
@@ -107,8 +107,6 @@ test_fkey(int c, long u, unsigned short num)
 			case '\n':
 exec:
 				ti = top_idx[right_col];
-				cu = curs[right_col];
-				curs[right_col] = u - top_idx[right_col];
 
 				while (num--) {
 					action(1, 3, act, FALSE);
@@ -116,9 +114,9 @@ exec:
 				}
 
 				top_idx[right_col] = ti;
-				curs[right_col] = cu;
-				/* action() did likely create or
-				 * delete files */
+				/* action() did likely create or delete files.
+				 * Calls mark_global() since 'mark' pointer
+				 * gets invalid. */
 				rebuild_db(0);
 				/* fall through */
 			}

@@ -504,6 +504,10 @@ Copy from first to second tree.
 .It Dq Li \(aq<<
 Copy all files between the cursor and the local mark (inclusive)
 from second to first tree.
+After any
+.Sq Li \(aq
+command the cursor is set to the mark position
+if it had been below the mark.
 .It Dq Li \(aq>>
 Copy all files between the cursor and the local mark (inclusive)
 from first to second tree.
@@ -662,6 +666,10 @@ key).
 As long as the current directory is not left,
 the marked file is highlighted with either a bold font
 or a blue background.
+(In
+.Sy fmode
+marks are cleared if the directory is left
+or if any external command is executed.)
 .Pp
 If a mark is set, only
 .Aq Cm RIGHT
@@ -1222,6 +1230,8 @@ the browse modes always set the current working directory
 to the active file list column.
 This is relevant if shell commands are applied
 which create files.
+Marks are cleared on any mode change except switching
+between one-column and two-column diff mode.
 .Ss One-column diff mode
 Diff mode is entered when two arguments are used.
 Key
