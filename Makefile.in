@@ -41,6 +41,11 @@ $(BIN): $(OBJ)
 	$(CC) $(_CFLAGS) -c y.tab.c -o $@
 	rm y.tab.c
 
+.l.o:
+	$(LEX) $<
+	$(CC) $(_CFLAGS) -c lex.yy.c -o $@
+	rm -f lex.yy.c
+
 .c.o:
 	$(CC) $(_CFLAGS) -c $<
 
