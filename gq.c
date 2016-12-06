@@ -44,10 +44,44 @@ bool gq_pattern;
 static bool ign_errs;
 
 int
+fn_init(char *s)
+{
+	int fl;
+
+	if (find_name) {
+		regfree(&fn_re);
+	}
+
+	fl = REG_NOSUB;
+
+	if (magic) {
+		fl |= REG_EXTENDED;
+	}
+
+	if (!noic) {
+		fl |= REG_ICASE;
+	}
+
+	if (regcomp(&fn_re, s, fl)) {
+		printerr(strerror(errno), "regcomp \"%s\"", s);
+		return -1;
+	}
+
+	file_pattern = TRUE;
+	find_name = TRUE;
+	return 0;
+}
+
+int
 gq_init(char *s)
 {
 	int fl;
 	struct gq_re *re;
+
+	if (gq_pattern) {
+		regfree(&gq_re->re);
+		free(gq_re);
+	}
 
 	fl = REG_NOSUB | REG_NEWLINE;
 
@@ -61,14 +95,49 @@ gq_init(char *s)
 	gq_re = re;
 
 	if (regcomp(&re->re, s, fl)) {
-		printf("regcomp \"%s\" failed: %s", s, strerror(errno));
-		return 1;
+		printerr(strerror(errno), "regcomp \"%s\"", s);
+		return -1;
 	}
 
 	if (!gq_buf) {
 		gq_buf = malloc(GQBUFSIZ + 1);
-		file_pattern = 1;
+		file_pattern = TRUE;
 		gq_pattern = TRUE;
+	}
+
+	return 0;
+}
+
+int
+fn_free(void)
+{
+	if (!find_name) {
+		return 1;
+	}
+
+	regfree(&fn_re);
+	find_name = FALSE;
+
+	if (!gq_pattern) {
+		file_pattern = FALSE;
+	}
+
+	return 0;
+}
+
+int
+gq_free(void)
+{
+	if (!gq_pattern) {
+		return 1;
+	}
+
+	regfree(&gq_re->re);
+	free(gq_re);
+	gq_pattern = FALSE;
+
+	if (!find_name) {
+		file_pattern = FALSE;
 	}
 
 	return 0;

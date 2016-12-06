@@ -121,8 +121,6 @@ main(int argc, char **argv)
 	}
 
 	while ((opt = getopt(argc, argv, getopt_arg)) != -1) {
-		int fl;
-
 		switch (opt) {
 		case 'B':
 			dontdiff = TRUE;
@@ -147,31 +145,25 @@ main(int argc, char **argv)
 		case 'e':
 			magic = 0;
 			break;
+
 		case 'F':
-			fl = REG_NOSUB;
-
-			if (magic)
-				fl |= REG_EXTENDED;
-			if (!noic)
-				fl |= REG_ICASE;
-
-			if (regcomp(&fn_re, optarg, fl)) {
-				printf("regcomp \"%s\" failed: %s", optarg,
-				    strerror(errno));
+			if (fn_init(optarg)) {
 				return 1;
 			}
 
-			file_pattern = 1;
-			find_name = TRUE;
 			break;
+
 		case 'f':
 			sorting = FILESFIRST;
 			break;
+
 		case 'G':
-			if (gq_init(optarg))
+			if (gq_init(optarg)) {
 				return 1;
+			}
 
 			break;
+
 		case 'g':
 			set_tool(&difftool, strdup("gvim -dR"), 0);
 			set_tool(&viewtool, strdup("gvim -R"), 0);

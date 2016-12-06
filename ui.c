@@ -1182,7 +1182,27 @@ static char *helptxt[] = {
        "v		View raw file contents",
        "vl		View raw left file contents",
        "vr		View raw right file contents",
-       ":		Enter configuration option",
+       ":		Enter command or configuration option:",
+       "	find <pattern>",
+       "		Display only filenames which match <pattern>",
+       "	nofind",
+       "		Remove filename pattern",
+       "	grep <pattern>",
+       "		Display only file which contain <pattern>",
+       "	nogrep",
+       "		Remove file content pattern",
+       "	ic	Case-insensitive match",
+       "	noic	Case-sensitive match",
+       "	magic",
+       "		Use extended regular expressions",
+       "	nomaigc",
+       "		Use basic regular expressions",
+       "	q, qa",
+       "		Quit vddiff",
+       "	set",
+       "		Display option values",
+       "	ws	Wrap around top or bottom on filename search",
+       "	nows	Don't wrap around top or bottom on filename search",
        "#		Toggle between diff mode and fmode",
        "=		In fmode: Copy current path from other column",
        "%		Toggle compare file contents",
@@ -3079,7 +3099,7 @@ printerr(char *s2, char *s1, ...)
 {
 	va_list ap;
 
-	if (qdiff) {
+	if (!wstat) { /* curses not opened */
 		va_start(ap, s1);
 		vfprintf(stderr, s1, ap);
 		va_end(ap);

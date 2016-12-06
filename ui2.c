@@ -33,6 +33,7 @@ PERFORMANCE OF THIS SOFTWARE.
 #include "exec.h"
 #include "db.h"
 #include "tc.h"
+#include "gq.h"
 
 const char y_n_txt[] = "'y' yes, 'n' no";
 const char ign_txt[] = "'i' ignore all errors, <ENTER> continue";
@@ -43,6 +44,7 @@ struct str_uint {
 };
 
 static int srchcmp(const void *, const void *);
+static char *getnextarg(char *);
 
 long mark_idx[2] = { -1, -1 };
 static wchar_t wcbuf[BUF_SIZE];
@@ -416,7 +418,43 @@ parsopt(char *buf)
 		return 0;
 	}
 
-	if (!strncmp(buf, "no", 2)) {
+	if (!strncmp(buf, "find ", 5)) {
+		if (!(buf = getnextarg(buf + 5))) {
+			return 0;
+		}
+
+		if (!fn_init(buf)) {
+			rebuild_db(1);
+		}
+
+		return 0;
+
+	} else if (!strncmp(buf, "grep ", 5)) {
+		if (!(buf = getnextarg(buf + 5))) {
+			return 0;
+		}
+
+		if (!gq_init(buf)) {
+			rebuild_db(1);
+		}
+
+		return 0;
+
+	} else if (!strcmp(buf, "nofind")) {
+		if (!fn_free()) {
+			rebuild_db(1);
+		}
+
+		return 0;
+
+	} else if (!strcmp(buf, "nogrep")) {
+		if (!gq_free()) {
+			rebuild_db(1);
+		}
+
+		return 0;
+
+	} else if (!strncmp(buf, "no", 2)) {
 		opt = buf + 2;
 		not = 1;
 	} else {
@@ -434,6 +472,21 @@ parsopt(char *buf)
 		printerr(NULL, "Unknown option \"%s\"", buf);
 
 	return 0;
+}
+
+static char *
+getnextarg(char *buf)
+{
+	while (*buf == ' ') {
+		buf++;
+	}
+
+	if (!*buf) {
+		printerr(NULL, "Argument expected");
+		return NULL;
+	}
+
+	return buf;
 }
 
 void

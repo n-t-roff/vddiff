@@ -892,7 +892,7 @@ View raw left file contents.
 .It Dq Li vr
 View raw right file contents.
 .It Sq Li \&:
-Enter configuration option.
+Enter command or configuration option.
 Entering
 .Cm set
 displays the current setting of the changable options.
@@ -901,7 +901,21 @@ Currently the options
 .Po Cm no Pc Ns Cm magic ,
 and
 .Po Cm no Pc Ns Cm ws
-are supported.
+and the following commands are supported:
+.Bl -tag -width 12n
+.It Li find Ar pattern
+Display only filenames which match
+.Ar pattern .
+.It Li nofind
+Remove filename pattern.
+.It Li grep Ar pattern
+Display only files which contain
+.Ar pattern .
+.It Li nogrep
+Remove file content pattern.
+.It Li q , Li qa
+Quit vddiff.
+.El
 .Pp
 Previously entered options are saved in a history,
 which can be accessed with the
