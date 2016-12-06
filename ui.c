@@ -220,8 +220,8 @@ static void
 ui_ctrl(void)
 {
 	static struct history opt_hist;
-	int key[2] = { 0, 0 }, c = 0, i;
-	unsigned short num;
+	int key[2] = { 0, 0 }, key2[2], c = 0, c2 = 0, i;
+	unsigned short num, num2;
 	long u;
 	struct filediff *f;
 
@@ -238,17 +238,28 @@ next_key:
 		if ((c = getch()) == ERR)
 			goto next_key;
 
+		if (c == '.') {
+			if (!c2) {
+				goto next_key;
+			}
+
+			c = c2;
+			key[0] = key2[0];
+			key[1] = key2[1];
+			num = num2;
+		}
+
 		if (test_fkey(c, num)) {
-			c = 0;
-			goto next_key;
+			goto save_st;
 		}
 
 		/* case '1' see below */
-		for (i = '2'; i <= '9'; i++)
+		for (i = '2'; i <= '9'; i++) {
 			if (c == i) {
 				num = i - '0';
 				goto next_key;
 			}
+		}
 
 		switch (c) {
 #ifdef NCURSES_MOUSE_VERSION
@@ -410,18 +421,15 @@ next_key:
 
 		case 'p':
 			if (*key == 'e') {
-				c = 0;
 				fs_chmod(3, u, num);
-				break;
+				goto save_st;
 			} else if (key[1] == 'e') {
 				if (*key == 'l') {
-					c = 0;
 					fs_chmod(1, u, num);
-					break;
+					goto save_st;
 				} else if (*key == 'r') {
-					c = 0;
 					fs_chmod(2, u, num);
-					break;
+					goto save_st;
 				}
 			}
 
@@ -483,21 +491,20 @@ next_key:
 			break;
 
 		case 'n':
-			c = 0;
-
 			if (regex) {
 				regex_srch(1);
+				c = 0;
 				break;
 			} else if (*key == 'e') {
 				fs_rename(3);
-				break;
+				goto save_st;
 			} else if (key[1] == 'e') {
 				if (*key == 'l') {
 					fs_rename(1);
-					break;
+					goto save_st;
 				} else if (*key == 'r') {
 					fs_rename(2);
-					break;
+					goto save_st;
 				}
 			}
 
@@ -532,9 +539,8 @@ next_key:
 			break;
 		case 'P':
 			if (bmode || fmode) {
-				c = 0;
 				fs_mkdir(right_col ? 2 : 1);
-				break;
+				goto save_st;
 			}
 
 			break;
@@ -542,20 +548,21 @@ next_key:
 			if (*key == 'S') {
 				c = 0;
 
-				if (sorting == DIRSFIRST)
+				if (sorting == DIRSFIRST) {
 					break;
+				}
 
 				sorting = DIRSFIRST;
 				rebuild_db(1);
 				break;
 
-			} else if (*key != 'd')
+			} else if (*key != 'd') {
 				break;
+			}
 
-			c = 0;
 			/* allowed for single sided only */
 			fs_rm(3, NULL, u, num, 0);
-			break;
+			goto save_st;
 		case 't':
 			if (*key == 'S') {
 				c = 0;
@@ -592,9 +599,8 @@ next_key:
 		case 'l':
 			switch (*key) {
 			case 'd':
-				c = 0;
 				fs_rm(1, NULL, u, num, 0);
-				goto next_key;
+				goto save_st;
 			case 's':
 				c = 0;
 				open_sh(1);
@@ -610,20 +616,19 @@ next_key:
 			case 'e':
 				goto next_key;
 			case 'P':
-				c = 0;
 				fs_mkdir(1);
-				goto next_key;
+				goto save_st;
 
 			case 'T':
 				if (!fs_cp(1, u, num, 1)) {
 					fs_rm(2, NULL, u, num, 1);
 				}
 
-				goto next_key;
+				goto save_st;
 
 			case '@':
 				fs_cp(1, u, num, 2);
-				goto next_key;
+				goto save_st;
 
 			default:
 				;
@@ -656,9 +661,8 @@ next_key:
 		case 'r':
 			switch (*key) {
 			case 'd':
-				c = 0;
 				fs_rm(2, NULL, u, num, 0);
-				goto next_key;
+				goto save_st;
 			case 's':
 				c = 0;
 				open_sh(2);
@@ -674,21 +678,20 @@ next_key:
 			case 'e':
 				goto next_key;
 			case 'P':
-				c = 0;
 				fs_mkdir(2);
-				goto next_key;
+				goto save_st;
 
 			case 'T':
 				if (!fs_cp(2, u, num, 1)) {
 					fs_rm(1, NULL, u, num, 1);
 				}
 
-				goto next_key;
+				goto save_st;
 
 
 			case '@':
 				fs_cp(2, u, num, 2);
-				goto next_key;
+				goto save_st;
 
 			default:
 				;
@@ -717,31 +720,27 @@ next_key:
 			if (*key != '>')
 				break;
 
-			c = 0;
 			fs_cp(2, u, num, 0);
-			break;
+			goto save_st;
 
 		case 'T':
 			if (!fmode) {
 				break;
 			}
 
-			c = 0;
-
 			if (!fs_cp(right_col ? 1 : 2, u, num, 1)) {
 				fs_rm(right_col ? 2 : 1, NULL, u, num, 1);
 			}
 
-			break;
+			goto save_st;
 
 		case '@':
 			if (!fmode) {
 				break;
 			}
 
-			c = 0;
 			fs_cp(right_col ? 1 : 2, u, num, 2);
-			break;
+			goto save_st;
 
 		case KEY_HOME:
 			c = 0;
@@ -817,18 +816,15 @@ next_key:
 			break;
 		case 'u':
 			if (*key == 'e') {
-				c = 0;
 				fs_chown(3, 0, u, num);
-				break;
+				goto save_st;
 			} else if (key[1] == 'e') {
 				if (*key == 'l') {
-					c = 0;
 					fs_chown(1, 0, u, num);
-					break;
+					goto save_st;
 				} else if (*key == 'r') {
-					c = 0;
 					fs_chown(2, 0, u, num);
-					break;
+					goto save_st;
 				}
 			}
 
@@ -837,18 +833,15 @@ next_key:
 			break;
 		case 'g':
 			if (*key == 'e') {
-				c = 0;
 				fs_chown(3, 1, u, num);
-				break;
+				goto save_st;
 			} else if (key[1] == 'e') {
 				if (*key == 'l') {
-					c = 0;
 					fs_chown(1, 1, u, num);
-					break;
+					goto save_st;
 				} else if (*key == 'r') {
-					c = 0;
 					fs_chown(2, 1, u, num);
-					break;
+					goto save_st;
 				}
 			}
 
@@ -1064,6 +1057,16 @@ next_key:
 			c = 0;
 		}
 	}
+
+	return;
+
+save_st:
+	c2 = c;
+	c = 0;
+	key2[0] = key[0];
+	key2[1] = key[1];
+	num2 = num;
+	goto next_key;
 }
 
 static char *helptxt[] = {
@@ -1158,6 +1161,7 @@ static char *helptxt[] = {
        "P		Create directory (bmode and fmode only)",
        "Pl		Create directory in left tree",
        "Pr		Create directory in right tree",
+       ".		Repeat last command",
        "m		Mark file or directory",
        "r		Remove mark, edit line or regex search",
        "b		Binary diff to marked file",

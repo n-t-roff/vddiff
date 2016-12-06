@@ -494,11 +494,17 @@ fs_cp(int to, long u, int n,
 
 		/* After stat src to avoid removing dest if there is a problem
 		 * with src */
-		if (!followlinks) {
-			if (fs_rm(to, "overwrite", u, 1, 0) == 1)
+		if (followlinks) {
+			if (stat(pth2, &stat2) == -1) {
+				if (errno != ENOENT) {
+					printerr(strerror(errno), LOCFMT
+					    "stat \"%s\"" LOCVAR, pth2);
+				}
+			} else if (!force_fs && !m && dialog(y_n_txt, NULL,
+			    "Really overwrite \"%s\"?", pth2) != 'y') {
 				return 1;
-		} else if (!force_fs && !m && dialog(y_n_txt, NULL,
-		    "Really overwrite \"%s\"?", pth2) != 'y') {
+			}
+		} else if (fs_rm(to, "overwrite", u, 1, 0) == 1) {
 			return 1;
 		}
 

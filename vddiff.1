@@ -13,7 +13,7 @@ LOSS OF USE, DATA OR PROFITS, WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE OR
 OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
 PERFORMANCE OF THIS SOFTWARE.
 ..
-.Dd December 5, 2016
+.Dd December 6, 2016
 .Dt VDDIFF 1
 .Sh NAME
 .Nm vddiff
@@ -698,6 +698,15 @@ only).
 Create directory in left tree.
 .It Dq Li Pr
 Create directory in right tree.
+.It Sq Li \&.
+Repeat last file system or function key command.
+For commands using marks and the
+.Sq Li \(aq
+key the number of files is saved.
+This number is applied on a
+.Sq Li \&.
+command, starting from the cursor position
+(the mark is not relevant then).
 .It Sq Li m
 Mark file or directory.
 This can be used to compare files or directories
