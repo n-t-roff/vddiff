@@ -2691,9 +2691,12 @@ mark_global(void)
 {
 	struct filediff *m;
 
+#if defined(TRACE)
+	fprintf(debug, "->mark_global(%s)\n", mark->name);
+#endif
 	if (fmode) {
 		clr_mark();
-		return;
+		goto ret;
 	}
 
 	mark_idx[right_col] = -1;
@@ -2710,7 +2713,7 @@ mark_global(void)
 			/* Ignore error if file had just been deleted */
 			if (errno != ENOENT)
 				printerr(strerror(errno),
-				    "realpath \"%s\" failed", lpath);
+				    "realpath \"%s\"", lpath);
 			lpath[llen] = 0;
 			goto error;
 		}
@@ -2745,11 +2748,16 @@ mark_global(void)
 	}
 
 	m->name = NULL;
-	return;
+	goto ret;
 
 error:
 	free(m);
 	clr_mark();
+ret:
+#if defined(TRACE)
+	fprintf(debug, "<-mark_global(%s)\n", gl_mark);
+#endif
+	return;
 }
 
 #define YANK(x) \
@@ -3099,6 +3107,17 @@ printerr(char *s2, char *s1, ...)
 {
 	va_list ap;
 
+#if defined(TRACE)
+	fputs("<->printerr: ", debug);
+	va_start(ap, s1);
+	vfprintf(debug, s1, ap);
+	va_end(ap);
+
+	if (s2)
+		fprintf(debug, ": %s", s2);
+
+	fputc('\n', debug);
+#endif
 	if (!wstat) { /* curses not opened */
 		va_start(ap, s1);
 		vfprintf(stderr, s1, ap);

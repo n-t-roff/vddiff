@@ -118,8 +118,15 @@ exec:
 				top_idx[right_col] = ti;
 				/* action() did likely create or delete files.
 				 * Calls mark_global() since 'mark' pointer
-				 * gets invalid. */
+				 * gets invalid. (Rebuild means at first free
+				 * all filestat pointers. 'mark' is one of
+				 * them.) */
 				rebuild_db(0);
+
+				if (gl_mark) {
+					chk_mark(gl_mark, 0);
+				}
+
 				/* fall through */
 			}
 
@@ -618,7 +625,9 @@ ret:
 }
 
 int
-chk_mark(char *file, short tree)
+chk_mark(char *file,
+    /* Can be 0 for global mark */
+    short tree)
 {
 	struct stat st;
 	int i;
@@ -630,7 +639,8 @@ chk_mark(char *file, short tree)
 	fprintf(debug, "<->chk_mark(%s,%d) lp(%s) rp(%s)\n",
 	    file, tree, lpath, rpath);
 #endif
-	rp = !bmode && *file != '/';
+	rp = tree && /* f-key command */
+	    !bmode && !strchr(file, '/');
 
 	if (rp) {
 		if (tree & 1) {
@@ -644,7 +654,7 @@ chk_mark(char *file, short tree)
 
 	i = stat(file, &st);
 
-	if (i == -1) {
+	if (i == -1 && errno != ENOENT) {
 		printerr(strerror(errno), LOCFMT "stat \"%s\"" LOCVAR, file);
 	}
 
