@@ -712,6 +712,9 @@ diff_db_add(struct filediff *diff, int i)
 void
 diff_db_free(int i)
 {
+#if defined(TRACE)
+	fprintf(debug, "<->diff_db_free(%d)\n", i);
+#endif
 #ifdef HAVE_LIBAVLBST
 	diff_db_delete(diff_db[i].root);
 	diff_db[i].root = NULL;

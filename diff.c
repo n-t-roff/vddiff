@@ -54,11 +54,13 @@ short followlinks;
 
 static bool ign_diff_errs;
 
-/* 1: Proc left dir
- * 2: Proc right dir
- * 3: Proc both dirs */
+/* !0: Error */
 int
-build_diff_db(int tree)
+build_diff_db(
+    /* 1: Proc left dir
+     * 2: Proc right dir
+     * 3: Proc both dirs */
+    int tree)
 {
 	DIR *d;
 	struct dirent *ent;
@@ -609,11 +611,12 @@ exit:
 	return retval;
 }
 
-void
+int
 scan_subdir(char *name, char *rnam, int tree)
 {
-#if defined(TRACE) && 0
-	fprintf(debug, "scan_subdir(%s,%s,%d) lp(%s) rp(%s)\n",
+	int i;
+#if defined(TRACE)
+	fprintf(debug, "->scan_subdir(%s,%s,%d) lp(%s) rp(%s)\n",
 	    name, rnam, tree, lpath, rpath);
 #endif
 	if (!rnam) {
@@ -634,7 +637,11 @@ scan_subdir(char *name, char *rnam, int tree)
 			rpath[rlen] = 0; /* fmode_cp_pth() */
 	}
 
-	build_diff_db(tree);
+	i = build_diff_db(tree);
+#if defined(TRACE)
+	fprintf(debug, "<-scan_subdir: %d\n", i);
+#endif
+	return i;
 }
 
 static void

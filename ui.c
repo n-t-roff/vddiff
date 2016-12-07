@@ -1183,6 +1183,9 @@ static char *helptxt[] = {
        "vl		View raw left file contents",
        "vr		View raw right file contents",
        ":		Enter command or configuration option:",
+       "	cd	bmode, fmode: Change to home directory",
+       "	cd <path>",
+       "		bmode, fmode: Change to directory <path>",
        "	find <pattern>",
        "		Display only filenames which match <pattern>",
        "	nofind",
@@ -2959,41 +2962,48 @@ pop_state(
 void
 enter_dir(char *name, char *rnam, bool lzip, bool rzip)
 {
+	int i;
+	unsigned *uv;
+	char *cp /* current path */, *sp /* saved path */;
+	struct bpth *bpth;
+	size_t *lp;
+#ifdef HAVE_LIBAVLBST
+	struct bst_node *n;
+#else
+	struct ptr_db_ent *n;
+#endif
 #ifdef TRACE
-	fprintf(debug, "enter_dir(%s,%s) lp(%s) rp(%s)\n",
+	fprintf(debug, "->enter_dir(%s,%s) lp(%s) rp(%s)\n",
 	    name, rnam, lpath, rpath);
 #endif
 	dir_change = TRUE;
 
-	if (fmode && name && rnam)
+	if (fmode && name && rnam) {
 		fmode_dmode();
+	}
 
 	if (mark && !gl_mark && (!fmode ||
 	    (!right_col && mark->ltype) ||
-	    ( right_col && mark->rtype)))
+	    ( right_col && mark->rtype))) {
 
 		mark_global();
+	}
 
 	if (!bmode && !fmode) {
 		push_state(name, rnam, lzip, rzip);
 		subtree = (name ? 1 : 0) | (rnam ? 2 : 0);
 		scan_subdir(name, rnam, subtree);
-	} else {
-		unsigned *uv;
-		char *cp; /* current path */
-		struct bpth *bpth;
-		size_t *lp;
-#ifdef HAVE_LIBAVLBST
-		struct bst_node *n;
-#else
-		struct ptr_db_ent *n;
-#endif
-		if (!name)
-			name = rnam;
+		goto disp;
+	}
 
-		if (bmode)
-			cp = rpath;
-		else if (right_col) {
+	if (!name) {
+		name = rnam;
+	}
+
+	if (bmode) {
+		cp = rpath;
+	} else {
+		if (right_col) {
 			rpath[rlen] = 0;
 			cp = rpath;
 			lp = &rlen;
@@ -3003,103 +3013,124 @@ enter_dir(char *name, char *rnam, bool lzip, bool rzip)
 			lp = &llen;
 		}
 
-		db_set_curs(cp, top_idx[right_col], curs[right_col]);
-		n = NULL; /* flag */
+		sp = strdup(cp);
+	}
 
-		if (name && *name == '/') {
-			if (bmode) {
-				if (!getcwd(rpath, sizeof rpath))
-					printerr(strerror(errno),
-					    "getcwd failed");
+	db_set_curs(cp, top_idx[right_col], curs[right_col]);
+	n = NULL; /* flag */
 
-				cp = rpath;
-			}
+	if (name && *name == '/') {
+		if (bmode) {
+			if (!getcwd(rpath, sizeof rpath))
+				printerr(strerror(errno),
+				    "getcwd failed");
 
-			bpth = malloc(sizeof(struct bpth));
-			bpth->pth = strdup(cp);
+			cp = rpath;
+		}
+
+		bpth = malloc(sizeof(struct bpth));
+		bpth->pth = strdup(cp);
+
+		if (!bmode) {
 			bpth->col = right_col;
 			*lp = 0;
 			*cp = 0;
-			ptr_db_add(&uz_path_db, strdup(name), bpth);
-
-		} else if (name && *name == '.' && name[1] == '.' && !name[2] &&
-		    !ptr_db_srch(&uz_path_db, cp, (void **)&bpth,
-		    (void **)&n)) {
-
-			name = bpth->pth; /* dat */
-
-			if (!bmode) {
-				size_t l;
-
-				l = strlen(name);
-
-				if (bpth->col) {
-					memcpy(rpath, name, l+1);
-					rlen = l;
-				} else {
-					memcpy(lpath, name, l+1);
-					llen = l;
-				}
-
-				free(name);
-				name = NULL;
-			}
-
-			free(bpth);
-#ifdef HAVE_LIBAVLBST
-			rnam = n->key.p;
-#else
-			rnam = n->key;
-#endif
-			ptr_db_del(&uz_path_db, n);
-		} else
-			/* DON'T REMOVE! (Cause currently unclear) */
-			n = NULL;
-
-		if (bmode && chdir(name) == -1) {
-			printerr(strerror(errno), "chdir \"%s\":", name);
 		}
 
-		if (fmode && name)
-			name = strdup(name);
+		ptr_db_add(&uz_path_db, strdup(name), bpth);
 
-		top_idx[right_col] = 0;
-		curs[right_col] = 0;
-		diff_db_free(right_col);
-		scan_subdir(fmode ? name : NULL, NULL, right_col ? 2 : 1);
+	} else if (name && *name == '.' && name[1] == '.' && !name[2] &&
+	    !ptr_db_srch(&uz_path_db, cp, (void **)&bpth,
+	    (void **)&n)) {
 
-		if (fmode) {
+		name = bpth->pth; /* dat */
+
+		if (!bmode) {
+			size_t l;
+
+			l = strlen(name);
+
+			if (bpth->col) {
+				memcpy(rpath, name, l+1);
+				rlen = l;
+			} else {
+				memcpy(lpath, name, l+1);
+				llen = l;
+			}
+
 			free(name);
+			name = NULL;
+		}
+
+		free(bpth);
+#ifdef HAVE_LIBAVLBST
+		rnam = n->key.p;
+#else
+		rnam = n->key;
+#endif
+		ptr_db_del(&uz_path_db, n);
+	} else
+		/* DON'T REMOVE! (Cause currently unclear) */
+		n = NULL;
+
+	if (bmode && chdir(name) == -1) {
+		printerr(strerror(errno), "chdir \"%s\":", name);
+	}
+
+	if (fmode && name) {
+		name = strdup(name);
+	}
+
+	top_idx[right_col] = 0;
+	curs[right_col] = 0;
+	diff_db_free(right_col);
+	i = scan_subdir(fmode ? name : NULL, NULL, right_col ? 2 : 1);
+
+	if (fmode) {
+		free(name);
+
+		if (i) {
+			/* sp is absolut. So reset length to place sp at
+			 * begin of string. */
+			*lp = 0;
+			scan_subdir(sp, NULL, right_col ? 2 : 1);
+		} else {
 			fmode_chdir();
 		}
 
-		if (n) {
-			size_t l;
-
-			l = strlen(rnam);
-
-			if (gl_mark && !strncmp(rnam, gl_mark, l))
-				clr_mark();
-
-			rnam[l - 2] = 0; /* remove "/[lr]" */
-			rmtmpdirs(rnam); /* does a free() */
-
-			if (bmode)
-				free(name); /* dat */
-		}
-
-		if (right_col)
-			rpath[rlen] = 0;
-		else if (fmode)
-			lpath[llen] = 0;
-
-		if ((uv = db_get_curs(cp))) {
-			top_idx[right_col] = *uv++;
-			curs[right_col] = *uv;
-		}
+		free(sp);
 	}
 
+	if (n) {
+		size_t l;
+
+		l = strlen(rnam);
+
+		if (gl_mark && !strncmp(rnam, gl_mark, l))
+			clr_mark();
+
+		rnam[l - 2] = 0; /* remove "/[lr]" */
+		rmtmpdirs(rnam); /* does a free() */
+
+		if (bmode)
+			free(name); /* dat */
+	}
+
+	if (right_col)
+		rpath[rlen] = 0;
+	else if (fmode)
+		lpath[llen] = 0;
+
+	if ((uv = db_get_curs(cp))) {
+		top_idx[right_col] = *uv++;
+		curs[right_col] = *uv;
+	}
+
+disp:
 	disp_list(1);
+#ifdef TRACE
+	fprintf(debug, "<-enter_dir lp(%s) rp(%s)\n", lpath, rpath);
+#endif
 }
 
 void

@@ -412,16 +412,34 @@ parsopt(char *buf)
 	static char nomagic_str[] = "nomagic\n";
 	static char nows_str[]    = "nows\n";
 
-	if (!strcmp(buf, "q") || !strcmp(buf, "qa"))
-		return 1;
+	if (!strcmp(buf, "cd")) {
+		char *s;
 
-	if (!strcmp(buf, "set")) {
-		werase(wlist);
-		wmove(wlist, 0, 0);
-		waddstr(wlist, noic  ? noic_str : noic_str + 2);
-		waddstr(wlist, magic ? nomagic_str + 2 : nomagic_str);
-		waddstr(wlist, nows  ? nows_str : nows_str + 2);
-		anykey();
+		if (!(bmode || fmode)) {
+			printerr(NULL, "cd not supported in diff mode");
+			return 0;
+		}
+
+		if (!(s = getenv("HOME"))) {
+			printerr(NULL, "HOME not set\n");
+			return 0;
+		}
+
+		enter_dir(s, NULL, FALSE, FALSE);
+		return 0;
+	}
+
+	if (!strncmp(buf, "cd ", 3)) {
+		if (!(bmode || fmode)) {
+			printerr(NULL, "cd not supported in diff mode");
+			return 0;
+		}
+
+		if (!(buf = getnextarg(buf + 3))) {
+			return 0;
+		}
+
+		enter_dir(buf, NULL, FALSE, FALSE);
 		return 0;
 	}
 
@@ -435,8 +453,9 @@ parsopt(char *buf)
 		}
 
 		return 0;
+	}
 
-	} else if (!strncmp(buf, "grep ", 5)) {
+	if (!strncmp(buf, "grep ", 5)) {
 		if (!(buf = getnextarg(buf + 5))) {
 			return 0;
 		}
@@ -446,22 +465,39 @@ parsopt(char *buf)
 		}
 
 		return 0;
+	}
 
-	} else if (!strcmp(buf, "nofind")) {
+	if (!strcmp(buf, "nofind")) {
 		if (!fn_free()) {
 			rebuild_db(1);
 		}
 
 		return 0;
+	}
 
-	} else if (!strcmp(buf, "nogrep")) {
+	if (!strcmp(buf, "nogrep")) {
 		if (!gq_free()) {
 			rebuild_db(1);
 		}
 
 		return 0;
+	}
 
-	} else if (!strncmp(buf, "no", 2)) {
+	if (!strcmp(buf, "q") || !strcmp(buf, "qa")) {
+		return 1;
+	}
+
+	if (!strcmp(buf, "set")) {
+		werase(wlist);
+		wmove(wlist, 0, 0);
+		waddstr(wlist, noic  ? noic_str : noic_str + 2);
+		waddstr(wlist, magic ? nomagic_str + 2 : nomagic_str);
+		waddstr(wlist, nows  ? nows_str : nows_str + 2);
+		anykey();
+		return 0;
+	}
+
+	if (!strncmp(buf, "no", 2)) {
 		opt = buf + 2;
 		not = 1;
 	} else {
@@ -475,8 +511,9 @@ parsopt(char *buf)
 		magic = not ? 0 : 1;
 	} else if (!strcmp(opt, "ws")) {
 		nows = not;
-	} else
+	} else {
 		printerr(NULL, "Unknown option \"%s\"", buf);
+	}
 
 	return 0;
 }

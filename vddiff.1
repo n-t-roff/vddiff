@@ -13,7 +13,7 @@ LOSS OF USE, DATA OR PROFITS, WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE OR
 OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
 PERFORMANCE OF THIS SOFTWARE.
 ..
-.Dd December 6, 2016
+.Dd December 7, 2016
 .Dt VDDIFF 1
 .Sh NAME
 .Nm vddiff
@@ -903,6 +903,15 @@ and
 .Po Cm no Pc Ns Cm ws
 and the following commands are supported:
 .Bl -tag -width 12n
+.It Li cd
+bmode and fmode only:
+Change to home directory.
+.It Li cd Ar path
+bmode and fmode only:
+Change to directory
+.Ar path .
+.Ar path
+may be absolute or relative.
 .It Li find Ar pattern
 Display only filenames which match
 .Ar pattern .
