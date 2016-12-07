@@ -52,6 +52,7 @@ static off_t lsiz1, lsiz2;
 
 short followlinks;
 
+bool one_scan;
 static bool ign_diff_errs;
 
 /* !0: Error */
@@ -73,6 +74,14 @@ build_diff_db(
 	bool file_err = FALSE;
 	static time_t lpt, lpt2;
 
+	if (one_scan) {
+		one_scan = FALSE;
+
+		if (recursive) {
+			do_scan();
+		}
+	}
+
 	if (!(tree & 1)) {
 		goto right_tree;
 	}
@@ -92,14 +101,15 @@ build_diff_db(
 		}
 	}
 
-	if (!(bmode || fmode)) {
+	if (!(bmode || fmode) || scan) {
 		mvwaddstr(wstat, 0, 0, "Type '%' to disable file compare");
 		wrefresh(wstat);
 		nodelay(stdscr, TRUE);
 	}
 
 #if defined(TRACE)
-	fprintf(debug, "build_diff_db(%d:%s)\n", tree, lpath);
+	fprintf(debug, "->build_diff_db tree(%d) opendir lp(%s)%s\n", tree,
+	    lpath, scan ? " scan" : "");
 #endif
 	if (!(d = opendir(lpath))) {
 		if (!ign_diff_errs && dialog(ign_txt, NULL,
@@ -121,8 +131,7 @@ build_diff_db(
 				break;
 
 			lpath[llen] = 0;
-			printerr(strerror(errno), "readdir \"%s\" failed",
-			    lpath);
+			printerr(strerror(errno), "readdir \"%s\"", lpath);
 			closedir(d);
 			retval = -1;
 			goto dir_scan_end;
@@ -134,11 +143,14 @@ build_diff_db(
 		    !name[2])))
 			continue;
 
-		str_db_add(&name_db, strdup(name)
+		if (!(bmode || fmode)) {
+			str_db_add(&name_db, strdup(name)
 #ifdef HAVE_LIBAVLBST
-		    , 0, NULL
+			    , 0, NULL
 #endif
-		    );
+			    );
+		}
+
 		pthcat(lpath, llen, name);
 
 		/* Get link length. Redundant code but necessary,
@@ -236,9 +248,9 @@ no_tree2:
 				continue;
 
 			if (find_name) {
-				if (regexec(&fn_re, name, 0, NULL, 0))
+				if (regexec(&fn_re, name, 0, NULL, 0)) {
 					continue;
-				else if (!gq_pattern) {
+				} else if (!gq_pattern) {
 					dir_diff = 1;
 					continue;
 				}
@@ -262,12 +274,13 @@ no_tree2:
 			    S_ISREG(stat2.st_mode)) {
 				if (cmp_file(lpath, stat1.st_size, rpath,
 				    stat2.st_size) == 1) {
-					if (qdiff)
+					if (qdiff) {
 						printf(
 						    "Files %s and %s differ\n",
 						    lpath, rpath);
-					else
+					} else {
 						dir_diff = 1;
+					}
 				}
 				continue;
 			}
@@ -430,7 +443,7 @@ right_tree:
 	}
 
 #if defined(TRACE)
-	fprintf(debug, "build_diff_db(%d:%s)\n", tree, rpath);
+	fprintf(debug, "opendir rp(%s)%s\n", rpath, scan ? " scan" : "");
 #endif
 	if (!(d = opendir(rpath))) {
 		if (!ign_diff_errs && dialog(ign_txt, NULL,
@@ -460,15 +473,18 @@ right_tree:
 		name = ent->d_name;
 
 		if (*name == '.' && (!name[1] || (name[1] == '.' &&
-		    !name[2])))
+		    !name[2]))) {
 			continue;
+		}
 
-		if ((tree & 1) && !str_db_srch(&name_db, name
+		if (!(bmode || fmode) && (tree & 1) && !str_db_srch(&name_db,
+		    name
 #ifdef HAVE_LIBAVLBST
 		    , NULL
 #endif
-		    ))
+		    )) {
 			continue;
+		}
 
 		if (qdiff) {
 			rpath[rlen] = 0;
@@ -482,15 +498,17 @@ right_tree:
 		pthcat(rpath, rlen, name);
 
 		if (followlinks && !scan && lstat(rpath, &stat2) != -1 &&
-		    S_ISLNK(stat2.st_mode))
+		    S_ISLNK(stat2.st_mode)) {
 			lsiz2 = stat2.st_size;
-		else
+		} else {
 			lsiz2 = -1;
+		}
 
 		file_err = FALSE;
 
-		if (!followlinks || (i = stat(rpath, &stat2)) == -1)
+		if (!followlinks || (i = stat(rpath, &stat2)) == -1) {
 			i = lstat(rpath, &stat2);
+		}
 
 		if (i == -1) {
 			if (errno != ENOENT) {
@@ -508,9 +526,15 @@ right_tree:
 		}
 
 		if (scan) {
+#if defined(TRACE)
+	fprintf(debug, "1(%s)\n", name);
+#endif
 			if (S_ISDIR(stat2.st_mode)) {
 				struct scan_dir *se;
 
+#if defined(TRACE)
+	fprintf(debug, "subdir(%s)\n", name);
+#endif
 				se = malloc(sizeof(struct scan_dir));
 				se->s = strdup(name);
 				se->tree = 2;
@@ -520,12 +544,13 @@ right_tree:
 			}
 
 			if (find_name) {
-				if (!gq_pattern &&
-				    !regexec(&fn_re, name, 0, NULL, 0)) {
-
+				if (regexec(&fn_re, name, 0, NULL, 0)) {
+					/* No match */
+					continue;
+				} else if (
+				    /* else *also* gq need to match */
+				    !gq_pattern) {
 					dir_diff = 1;
-					break;
-				} else {
 					continue;
 				}
 			}
@@ -552,16 +577,11 @@ right_tree:
 		}
 
 		if (scan) {
-			if (gq_pattern) {
-				if (!gq_proc(diff)) {
-					free_diff(diff);
-					dir_diff = 1;
-					break;
-				}
-
-				free_diff(diff);
+			if (gq_pattern && !gq_proc(diff)) {
+				dir_diff = 1;
 			}
 
+			free_diff(diff);
 			continue;
 		}
 
@@ -604,10 +624,13 @@ dir_scan_end:
 	}
 
 exit:
-	if (!(bmode || fmode)) {
+	if (!(bmode || fmode) || scan) {
 		nodelay(stdscr, FALSE);
 	}
 
+#if defined(TRACE)
+	fprintf(debug, "<-build_diff_db%s\n", scan ? " scan" : "");
+#endif
 	return retval;
 }
 
@@ -930,4 +953,28 @@ pthcut(char *p, size_t l)
 	while (l > 1 && p[--l] != '/');
 	p[l] = 0;
 	return l;
+}
+
+void
+do_scan(void)
+{
+#ifdef HAVE_LIBAVLBST
+	struct bst_node *n;
+#else
+	char *n;
+#endif
+
+#if defined(TRACE)
+	fprintf(debug, "->do_scan lp(%s) rp(%s)\n", lpath, rpath);
+#endif
+	while ((n = str_db_get_node(scan_db))) {
+		str_db_del(&scan_db, n);
+	}
+
+	scan = 1;
+	build_diff_db(bmode ? 1 : 3);
+	scan = 0;
+#if defined(TRACE)
+	fprintf(debug, "<-do_scan\n");
+#endif
 }

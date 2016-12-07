@@ -163,12 +163,11 @@ build_ui(void)
 do_diff:
 	/* Not in main since build_diff_db() uses printerr() */
 	if (recursive) {
-		scan = 1;
-		build_diff_db(bmode ? 1 : 3);
-		scan = 0;
+		do_scan();
 
-		if (qdiff)
+		if (qdiff) {
 			return;
+		}
 	}
 
 	if (bmode || fmode) {
@@ -1202,6 +1201,10 @@ static char *helptxt[] = {
        "		Use basic regular expressions",
        "	q, qa",
        "		Quit vddiff",
+       "	recursive",
+       "		Use recursive diff, find or grep",
+       "	norecursive",
+       "		Use non-recursive diff, find or grep",
        "	set",
        "		Display option values",
        "	ws	Wrap around top or bottom on filename search",
@@ -1583,10 +1586,10 @@ action(
 			goto ret;
 		}
 
-		if (ign_ext || (S_ISREG(ltyp) && S_ISREG(rtyp)))
+		if (ign_ext || (S_ISREG(ltyp) && S_ISREG(rtyp))) {
 			tool(lnam, rnam, tree, ign_ext || raw_cont);
 
-		else if (S_ISDIR(ltyp) || S_ISDIR(rtyp)) {
+		} else if (S_ISDIR(ltyp) || S_ISDIR(rtyp)) {
 			if (bmode) {
 				t2 = NULL;
 				enter_dir(rnam, NULL, FALSE, FALSE);
@@ -1610,6 +1613,7 @@ action(
 				 * It must not be removed before it is left
 				 * with "cd .." later. */
 				t1 = t2 = NULL;
+				one_scan = TRUE;
 				enter_dir(lnam, rnam, z1 ? TRUE : FALSE,
 				    z2 ? TRUE : FALSE);
 			}

@@ -101,10 +101,10 @@ gq_init(char *s)
 
 	if (!gq_buf) {
 		gq_buf = malloc(GQBUFSIZ + 1);
-		file_pattern = TRUE;
-		gq_pattern = TRUE;
 	}
 
+	file_pattern = TRUE;
+	gq_pattern = TRUE;
 	return 0;
 }
 

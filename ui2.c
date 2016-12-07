@@ -45,6 +45,7 @@ struct str_uint {
 
 static int srchcmp(const void *, const void *);
 static char *getnextarg(char *);
+static void set_all(void);
 
 long mark_idx[2] = { -1, -1 };
 static wchar_t wcbuf[BUF_SIZE];
@@ -408,10 +409,10 @@ parsopt(char *buf)
 {
 	char *opt;
 	short not;
-	static char noic_str[]    = "noic\n";
-	static char nomagic_str[] = "nomagic\n";
-	static char nows_str[]    = "nows\n";
 
+#if defined(TRACE)
+	fprintf(debug, "<->parsopt(%s)\n", buf);
+#endif
 	if (!strcmp(buf, "cd")) {
 		char *s;
 
@@ -449,6 +450,7 @@ parsopt(char *buf)
 		}
 
 		if (!fn_init(buf)) {
+			one_scan = TRUE;
 			rebuild_db(1);
 		}
 
@@ -461,6 +463,7 @@ parsopt(char *buf)
 		}
 
 		if (!gq_init(buf)) {
+			one_scan = TRUE;
 			rebuild_db(1);
 		}
 
@@ -488,13 +491,19 @@ parsopt(char *buf)
 	}
 
 	if (!strcmp(buf, "set")) {
-		werase(wlist);
-		wmove(wlist, 0, 0);
-		waddstr(wlist, noic  ? noic_str : noic_str + 2);
-		waddstr(wlist, magic ? nomagic_str + 2 : nomagic_str);
-		waddstr(wlist, nows  ? nows_str : nows_str + 2);
-		anykey();
+		set_all();
 		return 0;
+	}
+
+	if (!strncmp(buf, "set ", 4)) {
+		if (!(buf = getnextarg(buf + 4))) {
+			return 0;
+		}
+
+		if (!strcmp(buf, "all")) {
+			set_all();
+			return 0;
+		}
 	}
 
 	if (!strncmp(buf, "no", 2)) {
@@ -509,6 +518,8 @@ parsopt(char *buf)
 		noic = not;
 	} else if (!strcmp(opt, "magic")) {
 		magic = not ? 0 : 1;
+	} else if (!strcmp(opt, "recursive")) {
+		recursive = not ? 0 : 1;
 	} else if (!strcmp(opt, "ws")) {
 		nows = not;
 	} else {
@@ -531,6 +542,24 @@ getnextarg(char *buf)
 	}
 
 	return buf;
+}
+
+static void
+set_all(void)
+{
+	static char noic_str[] = "noic\n";
+	static char nomagic_str[] = "nomagic\n";
+	static char norecurs_str[] = "norecursive\n";
+	static char nows_str[] = "nows\n";
+
+	werase(wlist);
+	wattrset(wlist, A_NORMAL);
+	wmove(wlist, 0, 0);
+	waddstr(wlist, noic ? noic_str : noic_str + 2);
+	waddstr(wlist, magic ? nomagic_str + 2 : nomagic_str);
+	waddstr(wlist, recursive ? norecurs_str + 2 : norecurs_str);
+	waddstr(wlist, nows ? nows_str : nows_str + 2);
+	anykey();
 }
 
 void

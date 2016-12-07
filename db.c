@@ -243,6 +243,27 @@ str_db_srch(void **db, char *s)
 }
 #endif
 
+void
+str_db_del(void **db, void *node)
+{
+#ifdef HAVE_LIBAVLBST
+	avl_del_node(*db, node);
+#else
+	tdelete(node, db, name_cmp);
+	free(node);
+#endif
+}
+
+void *
+str_db_get_node(void *db)
+{
+#ifdef HAVE_LIBAVLBST
+	return ((struct bst *)db)->root;
+#else
+	return db ? *(char **)db : NULL;
+#endif
+}
+
 static int
 name_cmp(
 #ifdef HAVE_LIBAVLBST

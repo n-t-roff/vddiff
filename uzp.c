@@ -314,7 +314,11 @@ tar(char *opt, struct filediff *f, int tree, int i)
 	av[1] = opt;
 	av[2] = lbuf;
 	av[4] = rbuf;
-	exec_cmd(av, 0, NULL, NULL);
+	exec_cmd(av,
+	    /* Causes a endwin() before the command. NetBSD tar has a lot of
+	     * terminal output which is removed with this endwin(). See also
+	     * ^L */
+	    TOOL_TTY, NULL, NULL);
 	return z;
 }
 
