@@ -13,7 +13,7 @@ LOSS OF USE, DATA OR PROFITS, WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE OR
 OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
 PERFORMANCE OF THIS SOFTWARE.
 ..
-.Dd December 7, 2016
+.Dd December 8, 2016
 .Dt VDDIFF 1
 .Sh NAME
 .Nm vddiff
@@ -182,6 +182,9 @@ Key
 .Sq Li E
 toggles display of all files and directories or
 matching files only.
+The pattern can be removed with the
+.Dq Li :nofind
+command.
 .It Fl f
 Normally directories are displayed on top.
 With this option files are displayed first.
@@ -247,6 +250,12 @@ can be used again before each
 option to specify the kind of regular expression
 and the case sensitivity for the
 .Ar pattern .
+Further patterns can be added with the
+.Dq Li :grep Ar pattern
+command,
+all patterns can be removed with the
+.Dq Li :nogrep
+command.
 .It Fl g
 Use
 .Nm gvim
@@ -1186,6 +1195,20 @@ Searching for a filename with
 .Dq Li //
 normally wraps around top and bottom of the file list.
 This behaviour is disabled with this option.
+.It Li include Ar string
+Include RC file
+.Ar string .
+If
+.Ar string
+does not start with
+.Sq Li / ,
+.Li $HOME
+is prepended.
+.Sq Li ~
+and
+environment variables are
+.Em not
+expanded.
 .It Li filesfirst
 Display directories at the end instead on top.
 .It Li mixed

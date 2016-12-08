@@ -52,7 +52,7 @@ FILE *debug;
 #endif
 
 static void check_args(int, char **);
-static int read_rc(const char *);
+static int read_rc(char *);
 static void ttcharoff(void);
 static void usage(void);
 
@@ -292,42 +292,30 @@ main(int argc, char **argv)
 }
 
 static int
-read_rc(const char *upath)
+read_rc(char *upath)
 {
-	static char rc_name[] = "/.vddiffrc";
-	char *s, *m;
-	const char *rc_path;
-	size_t l;
+	static char rc_name[] = ".vddiffrc";
+	char *rc_path;
 	int rv = 0;
 	extern FILE *yyin;
 
-	if (upath)
+	if (upath) {
 		rc_path = upath;
-	else {
-		if (!(s = getenv("HOME"))) {
-			printf("HOME not set\n");
-			return 1;
-		} else {
-			l = strlen(s);
-			m = malloc(l + sizeof rc_name);
-			memcpy(m, s, l);
-			memcpy(m + l, rc_name, sizeof rc_name);
-		}
-
-		rc_path = m;
+	} else if (!(rc_path = add_home_pth(rc_name))) {
+		return 1;
 	}
 
 	if (stat(rc_path, &stat1) == -1) {
 		if (errno == ENOENT)
 			goto free;
-		printf("stat \"%s\" failed: %s\n", rc_path,
+		printf("stat \"%s\": %s\n", rc_path,
 		    strerror(errno));
 		rv = 1;
 		goto free;
 	}
 
 	if (!(yyin = fopen(rc_path, "r"))) {
-		printf("fopen \"%s\" failed: %s\n", rc_path,
+		printf("fopen \"%s\": %s\n", rc_path,
 		    strerror(errno));
 		rv = 1;
 		goto free;
@@ -336,14 +324,40 @@ read_rc(const char *upath)
 	rv = yyparse();
 
 	if (fclose(yyin) == EOF) {
-		printf("fclose \"%s\" failed: %s\n", rc_path,
+		printf("fclose \"%s\": %s\n", rc_path,
 		    strerror(errno));
 	}
 free:
 	if (!upath)
-		free(m);
+		free(rc_path);
 
 	return rv;
+}
+
+char *
+add_home_pth(char *s)
+{
+	char *h, *m = NULL;
+	size_t lh, ls;
+
+#if defined(TRACE)
+	fprintf(debug, "->add_home_pth(%s)\n", s);
+#endif
+	if (!(h = getenv("HOME"))) {
+		printf("HOME not set\n");
+		goto ret;
+	}
+
+	lh = strlen(h);
+	ls = strlen(s);
+	m = malloc(lh + 1 + ls + 1);
+	pthcat(m,  0, h);
+	pthcat(m, lh, s);
+ret:
+#if defined(TRACE)
+	fprintf(debug, "<-add_home_pth(%s)\n", m);
+#endif
+	return m;
 }
 
 static void

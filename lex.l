@@ -14,11 +14,28 @@ LOSS OF USE, DATA OR PROFITS, WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE OR
 OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
 PERFORMANCE OF THIS SOFTWARE.
 */
+
 #include <string.h>
+#include <regex.h>
+#include "compat.h"
+#include "main.h"
 #include "y.tab.h"
 #include "lex.h"
+
+struct incl_file {
+	char *name;
+	unsigned long line;
+	YY_BUFFER_STATE buf;
+	struct incl_file *next;
+};
+
+void include(char *);
+
+static struct incl_file *incstack;
 unsigned rc_nline = 1;
 unsigned rc_col = 1;
+static short incl;
+static char *filename = "-- stdin --";
 %}
 S [ \t]
 NS [^ \t\n]
@@ -58,22 +75,83 @@ shell			{ rc_col += yyleng; return SHELL        ; }
 sh			{ rc_col += yyleng; return SH           ; }
 alias			{ rc_col += yyleng; return ALIAS        ; }
 twocolumn		{ rc_col += yyleng; return TWOCOLUMN    ; }
+include			{ rc_col += yyleng; incl = 1            ; }
 [0-9]+			{ rc_col += yyleng;
 			  yylval.integer = atoi(yytext);
 			  return INTEGER; }
 \"[^\"]*\"		{ rc_col += yyleng;
 			  yytext[yyleng-1] = 0;
-			  yylval.str = strdup(yytext+1);
-			  return STRING; }
+			  if (incl) {
+				include(yytext+1);
+			  } else {
+				yylval.str = strdup(yytext+1);
+				return STRING;
+			  } }
 {NS}+			{ rc_col += yyleng;
-			  yylval.str = strdup(yytext);
-			  return STRING; }
+			  if (incl) {
+				include(yytext);
+			  } else {
+				yylval.str = strdup(yytext);
+				return STRING;
+			  } }
 {S}+			{ rc_col += yyleng; }
 \n			{ rc_nline++;
 			  rc_col = 1; }
 %%
+
 int
 yywrap(void)
 {
-	return 1;
+	struct incl_file *inc;
+
+	if (!incstack) {
+		return 1;
+	}
+
+	if (fclose(yyin) == EOF) {
+		printf("fclose \"%s\": %s\n", filename, strerror(errno));
+	}
+
+	free(filename);
+	filename = incstack->name;
+	rc_nline = incstack->line;
+	yy_delete_buffer(YY_CURRENT_BUFFER);
+	yy_switch_to_buffer(incstack->buf);
+	inc = incstack;
+	incstack = incstack->next;
+	free(inc);
+	return 0;
+}
+
+void
+include(char *s)
+{
+	struct incl_file *inc;
+
+	incl = 0;
+
+	if (*s == '/') {
+		s = strdup(s);
+	} else if (!(s = add_home_pth(s))) {
+		return;
+	}
+
+#if defined(TRACE)
+	fprintf(debug, "<->include(%s)\n", s);
+#endif
+
+	if (!(yyin = fopen(s, "r"))){
+		printf("include \"%s\": %s\n", s, strerror(errno));
+		exit(1);
+	}
+
+	inc = malloc(sizeof(struct incl_file));
+	inc->name = filename;
+	filename = s;
+	inc->line = rc_nline;
+	rc_nline = 1;
+	inc->buf = YY_CURRENT_BUFFER;
+	inc->next = incstack;
+	incstack = inc;
+	yy_switch_to_buffer(yy_create_buffer(yyin, YY_BUF_SIZE));
 }

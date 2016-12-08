@@ -40,3 +40,5 @@ extern bool qdiff;
 extern bool find_name;
 extern bool dontcmp;
 extern bool force_exec, force_fs, force_multi;
+
+char *add_home_pth(char *);
