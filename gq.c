@@ -43,13 +43,15 @@ static struct gq_re *gq_re;
 bool gq_pattern;
 static bool ign_errs;
 
+/* If called multiple times only the last pattern is applied */
+
 int
 fn_init(char *s)
 {
 	int fl;
 
 	if (find_name) {
-		regfree(&fn_re);
+		fn_free();
 	}
 
 	fl = REG_NOSUB;
@@ -72,16 +74,15 @@ fn_init(char *s)
 	return 0;
 }
 
+/* This function can be called multiple times with different patterns.
+ * All these patterns are then AND combined. A OR combination can be
+ * expressed with the regex operator | inside the pattern. */
+
 int
 gq_init(char *s)
 {
 	int fl;
 	struct gq_re *re;
-
-	if (gq_pattern) {
-		regfree(&gq_re->re);
-		free(gq_re);
-	}
 
 	fl = REG_NOSUB | REG_NEWLINE;
 
@@ -125,15 +126,24 @@ fn_free(void)
 	return 0;
 }
 
+/* Remove all patterns from list. */
+
 int
 gq_free(void)
 {
+	struct gq_re *p;
+
 	if (!gq_pattern) {
 		return 1;
 	}
 
-	regfree(&gq_re->re);
-	free(gq_re);
+	while (gq_re) {
+		p = gq_re->next;
+		regfree(&gq_re->re);
+		free(gq_re);
+		gq_re = p;
+	}
+
 	gq_pattern = FALSE;
 
 	if (!find_name) {
