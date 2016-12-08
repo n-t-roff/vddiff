@@ -163,6 +163,15 @@ gq_proc(struct filediff *f)
 	int rv = 1; /* not found */
 	struct gq_re *re;
 
+	if (dontcmp) {
+		return 0;
+	}
+
+	if (getch() == '%') {
+		dontcmp = TRUE;
+		return 0;
+	}
+
 #if defined(TRACE) && 0
 	fprintf(debug, "gq_proc(%s)", f->name);
 #endif

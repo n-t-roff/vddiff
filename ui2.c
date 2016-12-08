@@ -778,6 +778,8 @@ re_sort_list(void)
 {
 	char *name;
 
+	nodelay(stdscr, TRUE);
+
 	if (fmode) {
 		right_col = right_col ? 0 : 1;
 		diff_db_sort(right_col);
@@ -796,6 +798,8 @@ re_sort_list(void)
 		curs[right_col] = 0;
 		disp_list(1);
 	}
+
+	nodelay(stdscr, FALSE);
 }
 
 void

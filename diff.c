@@ -46,6 +46,7 @@ static struct filediff *alloc_diff(char *);
 static void add_diff_dir(short);
 static char *read_link(char *, off_t);
 static size_t pthcut(char *, size_t);
+static void ini_int(void);
 
 static struct filediff *diff;
 static off_t lsiz1, lsiz2;
@@ -101,11 +102,7 @@ build_diff_db(
 		}
 	}
 
-	if (!(bmode || fmode) || scan) {
-		mvwaddstr(wstat, 0, 0, "Type '%' to disable file compare");
-		wrefresh(wstat);
-		nodelay(stdscr, TRUE);
-	}
+	ini_int();
 
 #if defined(TRACE)
 	fprintf(debug, "->build_diff_db tree(%d) opendir lp(%s)%s\n", tree,
@@ -442,6 +439,8 @@ right_tree:
 		}
 	}
 
+	ini_int();
+
 #if defined(TRACE)
 	fprintf(debug, "opendir rp(%s)%s\n", rpath, scan ? " scan" : "");
 #endif
@@ -632,6 +631,14 @@ exit:
 	fprintf(debug, "<-build_diff_db%s\n", scan ? " scan" : "");
 #endif
 	return retval;
+}
+
+static void
+ini_int(void)
+{
+	mvwaddstr(wstat, 0, 0, "Type '%' to disable file compare");
+	wrefresh(wstat);
+	nodelay(stdscr, TRUE);
 }
 
 int
