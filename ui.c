@@ -2180,7 +2180,6 @@ prtc2:
 		}
 
 		standoutc(w);
-		wattron(w, A_BOLD);
 		mvwaddch(w, y, llstw, diff);
 		standendc(w);
 	}

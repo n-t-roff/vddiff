@@ -856,10 +856,11 @@ chgat_mark(WINDOW *w, int y)
 void
 standoutc(WINDOW *w)
 {
-	if (color)
+	if (color) {
 		wattrset(w, COLOR_PAIR(PAIR_CURSOR));
-	else
-		wstandout(w);
+	} else {
+		wattrset(w, A_REVERSE);
+	}
 }
 
 void
@@ -873,10 +874,11 @@ chgat_curs(WINDOW *w, int y)
 void
 standendc(WINDOW *w)
 {
-	if (color)
+	if (color) {
 		wattrset(w, COLOR_PAIR(PAIR_NORMAL));
-	else
-		wstandend(w);
+	} else {
+		wattrset(w, A_NORMAL);
+	}
 }
 
 void

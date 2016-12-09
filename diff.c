@@ -623,10 +623,7 @@ dir_scan_end:
 	}
 
 exit:
-	if (!(bmode || fmode) || scan) {
-		nodelay(stdscr, FALSE);
-	}
-
+	nodelay(stdscr, FALSE);
 #if defined(TRACE)
 	fprintf(debug, "<-build_diff_db%s\n", scan ? " scan" : "");
 #endif
