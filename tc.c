@@ -46,16 +46,25 @@ bool from_fmode;
 void
 open2cwins(void)
 {
-	if (!(wllst = new_scrl_win(listh, llstw, 0, 0)))
+	if (!(wllst = new_scrl_win(listh, llstw, 0, 0))) {
 		return;
+	}
 
 	if (!(wmid = newwin(listh, 1, 0, llstw))) {
 		printf("newwin failed\n");
 		return;
 	}
 
-	if (!(wrlst = new_scrl_win(listh, rlstw, 0, rlstx)))
+	if (!(wrlst = new_scrl_win(listh, rlstw, 0, rlstx))) {
 		return;
+	}
+
+	if (color) {
+		wbkgd(   wllst, COLOR_PAIR(PAIR_NORMAL));
+		wbkgdset(wllst, COLOR_PAIR(PAIR_NORMAL));
+		wbkgd(   wrlst, COLOR_PAIR(PAIR_NORMAL));
+		wbkgdset(wrlst, COLOR_PAIR(PAIR_NORMAL));
+	}
 
 	set_mb_bg();
 	wnoutrefresh(wmid);

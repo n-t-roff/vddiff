@@ -884,7 +884,7 @@ standendc(WINDOW *w)
 void
 chgat_off(WINDOW *w, int y)
 {
-	mvwchgat(w, y, 0, -1, 0, 0, NULL);
+	mvwchgat(w, y, 0, -1, 0, color ? PAIR_NORMAL : 0, NULL);
 }
 
 void

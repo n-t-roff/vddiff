@@ -140,7 +140,8 @@ build_ui(void)
 		init_pair(PAIR_CURSOR   , color_cursor_fg, color_cursor_bg);
 		init_pair(PAIR_ERROR    , color_error_fg , color_error_bg );
 		init_pair(PAIR_MARK     , color_mark_fg  , color_mark_bg  );
-		bkgd(COLOR_PAIR(PAIR_NORMAL));
+		bkgd(   COLOR_PAIR(PAIR_NORMAL));
+		bkgdset(COLOR_PAIR(PAIR_NORMAL));
 	}
 
 	cbreak();
@@ -151,14 +152,24 @@ build_ui(void)
 	refresh();
 	set_win_dim();
 
-	if (!(wlist = new_scrl_win(listh, listw, 0, 0)))
+	if (!(wlist = new_scrl_win(listh, listw, 0, 0))) {
 		return;
+	}
 
-	if (!(wstat = new_scrl_win(2, statw, LINES-2, 0)))
+	if (!(wstat = new_scrl_win(2, statw, LINES-2, 0))) {
 		return;
+	}
 
-	if (fmode)
+	if (color) {
+		wbkgd(   wlist, COLOR_PAIR(PAIR_NORMAL));
+		wbkgdset(wlist, COLOR_PAIR(PAIR_NORMAL));
+		wbkgd(   wstat, COLOR_PAIR(PAIR_NORMAL));
+		wbkgdset(wstat, COLOR_PAIR(PAIR_NORMAL));
+	}
+
+	if (fmode) {
 		open2cwins();
+	}
 
 do_diff:
 	/* Not in main since build_diff_db() uses printerr() */
