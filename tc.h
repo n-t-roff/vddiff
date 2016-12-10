@@ -23,6 +23,7 @@ void dmode_fmode(unsigned);
 void stmove(int);
 void stmbsra(char *, char *);
 void fmode_chdir(void);
+void mk_abs_pth(char *, size_t *);
 #ifdef NCURSES_MOUSE_VERSION
 void movemb(int);
 void doresizecols(void);

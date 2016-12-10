@@ -94,12 +94,20 @@ fmode_dmode(void)
 	if (!fmode)
 		return;
 
+#if defined(TRACE)
+	fprintf(debug, "->fmode_dmode lp(%s) rp(%s) bm=%u fm=%u 2c=%u\n",
+	    lpath, rpath, bmode ? 1 : 0, fmode ? 1 : 0, twocols ? 1 : 0);
+#endif
 	fmode = FALSE;
 	/*diff_db_free(?);*/
 	old_col = right_col;
 	right_col = 0;
 	from_fmode = TRUE;
 	close2cwins();
+#if defined(TRACE)
+	fprintf(debug, "<-fmode_dmode lp(%s) rp(%s) bm=%u fm=%u 2c=%u\n",
+	    lpath, rpath, bmode ? 1 : 0, fmode ? 1 : 0, twocols ? 1 : 0);
+#endif
 }
 
 void
@@ -111,6 +119,10 @@ dmode_fmode(
 	if (fmode)
 		return;
 
+#if defined(TRACE)
+	fprintf(debug, "->dmode_fmode(%u) lp(%s) rp(%s) bm=%u fm=%u 2c=%u\n",
+	    mode, lpath, rpath, bmode ? 1 : 0, fmode ? 1 : 0, twocols ? 1 : 0);
+#endif
 	while (!bmode && ui_stack)
 		pop_state(0);
 
@@ -125,11 +137,36 @@ dmode_fmode(
 		bmode = TRUE;
 	}
 
+	mk_abs_pth(lpath, &llen);
+	mk_abs_pth(rpath, &rlen);
 	rebuild_db((mode & 1) ? 1 : 0);
 
 	if (!(mode & 2)) {
 		disp_fmode();
 	}
+#if defined(TRACE)
+	fprintf(debug, "<-dmode_fmode(%u) lp(%s) rp(%s) bm=%u fm=%u 2c=%u\n",
+	    mode, lpath, rpath, bmode ? 1 : 0, fmode ? 1 : 0, twocols ? 1 : 0);
+#endif
+}
+
+void
+mk_abs_pth(char *p, size_t *l)
+{
+	char *s;
+
+	if (*p == '/') {
+		return;
+	}
+
+	if (!(s = realpath(p, NULL))) {
+		printerr(strerror(errno), "realpath \"%s\"", p);
+		return;
+	}
+
+	*l = strlen(s);
+	memcpy(p, s, *l + 1);
+	free(s);
 }
 
 void
@@ -171,6 +208,10 @@ tgl2c(
 	size_t l1, l2;
 	char *s;
 
+#if defined(TRACE)
+	fprintf(debug, "->tgl2c(%u) lp(%s) rp(%s) bm=%u fm=%u 2c=%u\n",
+	    md, lpath, rpath, bmode ? 1 : 0, fmode ? 1 : 0, twocols ? 1 : 0);
+#endif
 	if (bmode) { /* -> fmode */
 		clr_mark();
 		s = !(md & 1) && fpath ? fpath : rpath;
@@ -245,6 +286,10 @@ tgl2c(
 		twocols = twocols ? FALSE : TRUE;
 		disp_fmode();
 	}
+#if defined(TRACE)
+	fprintf(debug, "<-tgl2c(%u) lp(%s) rp(%s) bm=%u fm=%u 2c=%u\n",
+	    md, lpath, rpath, bmode ? 1 : 0, fmode ? 1 : 0, twocols ? 1 : 0);
+#endif
 }
 
 void

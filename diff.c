@@ -75,6 +75,14 @@ build_diff_db(
 	bool file_err = FALSE;
 	static time_t lpt, lpt2;
 
+	if ((bmode || fmode) && !file_pattern) {
+		if (scan) {
+			return retval; /* scan useless in this case */
+		}
+
+		one_scan = FALSE;
+	}
+
 	if (one_scan) {
 		one_scan = FALSE;
 
