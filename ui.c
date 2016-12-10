@@ -1701,17 +1701,24 @@ out:
 static void
 page_down(void)
 {
+#if defined(TRACE)
+	fprintf(debug, "->page_down\n");
+#endif
 	if (last_line_is_disp()) {
 		printerr(NULL, "At bottom");
-		return;
+		goto ret;
 	}
 
-#if defined(TRACE) && 0
-	fprintf(debug, "<->page_down\n");
-#endif
+	disp_curs(0);
 	top_idx[right_col] += listh;
 	curs[right_col] = 0;
 	disp_list(1);
+
+ret:
+#if defined(TRACE)
+	fprintf(debug, "<-page_down\n");
+#endif
+	return;
 }
 
 static void
@@ -1729,10 +1736,15 @@ curs_last(void)
 static void
 page_up(void)
 {
+#if defined(TRACE)
+	fprintf(debug, "->page_up\n");
+#endif
 	if (first_line_is_top()) {
 		printerr(NULL, "At top");
-		return;
+		goto ret;
 	}
+
+	disp_curs(0);
 
 	if (top_idx[right_col] < listh) {
 		top_idx[right_col] = 0;
@@ -1743,6 +1755,12 @@ page_up(void)
 	}
 
 	disp_list(1);
+
+ret:
+#if defined(TRACE)
+	fprintf(debug, "->page_up\n");
+#endif
+	return;
 }
 
 static void
@@ -1758,6 +1776,10 @@ curs_first(void)
 static int
 last_line_is_disp(void)
 {
+	int r = 0;
+#if defined(TRACE)
+	fprintf(debug, "->last_line_is_disp\n");
+#endif
 	if (db_num[right_col] - top_idx[right_col] <= listh) {
 		/* last line is currently displayed */
 		if (curs[right_col] != db_num[right_col] -
@@ -1769,15 +1791,25 @@ last_line_is_disp(void)
 			disp_curs(1);
 			refr_scr();
 		}
-		return 1;
+
+		r = 1;
+		goto ret;
 	}
 
-	return 0;
+ret:
+#if defined(TRACE)
+	fprintf(debug, "<-last_line_is_disp\n");
+#endif
+	return r;
 }
 
 static int
 first_line_is_top(void)
 {
+	int r = 0;
+#if defined(TRACE)
+	fprintf(debug, "->first_line_is_top\n");
+#endif
 	if (!top_idx[right_col]) {
 		if (curs[right_col]) {
 			disp_curs(0);
@@ -1786,10 +1818,15 @@ first_line_is_top(void)
 			refr_scr();
 		}
 
-		return 1;
+		r = 1;
+		goto ret;
 	}
 
-	return 0;
+ret:
+#if defined(TRACE)
+	fprintf(debug, "<-first_line_is_top\n");
+#endif
+	return r;
 }
 
 static void
@@ -2009,6 +2046,10 @@ disp_curs(
 	i = top_idx[right_col] + y;
 	m = mark_idx[right_col];
 
+#if defined(TRACE)
+	fprintf(debug, "->disp_curs(%i) i=%u y=%u \"%s\"\n",
+	    a, i, y, db_list[right_col][i]->name);
+#endif
 	if (fmode) {
 		if (!a) {
 			chgat_off(w, y);
@@ -2037,6 +2078,9 @@ disp_curs(
 			chgat_mark(w, y);
 		}
 	}
+#if defined(TRACE)
+	fprintf(debug, "<-disp_curs\n");
+#endif
 }
 
 void
@@ -2048,8 +2092,8 @@ disp_list(
 	unsigned y, i;
 	WINDOW *w;
 
-#if defined(TRACE) && 0
-	fprintf(debug, "<->disp_list\n");
+#if defined(TRACE)
+	fprintf(debug, "->disp_list\n");
 #endif
 	w = getlstwin();
 
@@ -2102,6 +2146,10 @@ disp_list(
 
 exit:
 	refr_scr();
+#if defined(TRACE)
+	fprintf(debug, "->disp_list\n");
+#endif
+	return;
 }
 
 static void
