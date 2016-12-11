@@ -170,9 +170,12 @@ mk_abs_pth(char *p, size_t *l)
 }
 
 void
-prt2chead(unsigned md)
+prt2chead(
+    /* 2: mark && !fmode */
+    /* 1: Show path */
+    unsigned md)
 {
-	if (md) {
+	if (md & 1) {
 		wmove(wstat, 1, 0);
 		wclrtoeol(wstat);
 		lpath[llen] = 0;
@@ -181,12 +184,16 @@ prt2chead(unsigned md)
 
 	standoutc(wstat);
 	mvwaddch(wstat, 0, llstw, ' ');
-	mvwaddch(wstat, 1, llstw, ' ');
+
+	if (!(md & 2)) {
+		mvwaddch(wstat, 1, llstw, ' ');
+	}
+
 	standendc(wstat);
 
 	/* Splitted to save one wmove */
 
-	if (md) {
+	if (md & 1) {
 		rpath[rlen] = 0;
 		putmbsra(wstat, rpath, 0);
 	}

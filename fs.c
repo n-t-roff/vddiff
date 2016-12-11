@@ -564,18 +564,25 @@ rebuild_db(
 {
 	char *name;
 
+#if defined(TRACE)
+	fprintf(debug, "->rebuild_db(%d)\n", mode);
+#endif
 	lpath[llen] = 0;
 
-	if (!bmode)
+	if (!bmode) {
 		rpath[rlen] = 0;
+	}
 
-	if (mode)
+	if (mode) {
 		name = saveselname();
+	}
 
 	/* pointer is freed in next line */
-	if (mark && !gl_mark)
+	if (mark && !gl_mark) {
 		mark_global();
+	}
 
+	disp_curs(0);
 	diff_db_free(0);
 	build_diff_db(bmode || fmode ? 1 : subtree);
 
@@ -587,8 +594,12 @@ rebuild_db(
 	if (mode && name) {
 		center(findlistname(name));
 		free(name);
-	} else
+	} else {
 		disp_fmode();
+	}
+#if defined(TRACE)
+	fprintf(debug, "<-rebuild_db\n");
+#endif
 }
 
 static int
