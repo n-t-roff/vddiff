@@ -40,7 +40,6 @@ const char *const diffless = "diff -- $1 $2 | less";
 static size_t add_path(char *, size_t, char *, char *);
 static struct strlst *addarg(char *);
 static void exec_tool(struct tool *, char *, char *, int);
-static void sig_child(int);
 static int shell_char(int);
 static int tmpbasecmp(const char *);
 
@@ -577,23 +576,28 @@ open_sh(int tree)
 }
 
 void
-exec_sighdl(void)
+inst_sighdl(int sig, void (*hdl)(int))
 {
 	struct sigaction act;
 
-	act.sa_handler = sig_child;
+	act.sa_handler = hdl;
 	sigemptyset(&act.sa_mask);
 	act.sa_flags = 0;
 
-	if (sigaction(SIGCHLD, &act, NULL) == -1) {
-		printf("sigaction SIGCHLD failed: %s\n", strerror(errno));
+	if (sigaction(sig, &act, NULL) == -1) {
+		printf("sigaction %d: %s\n", sig, strerror(errno));
 		exit(1);
 	}
 }
 
-static void
+/* Signal handler */
+
+void
 sig_child(int signo)
 {
+	int e = errno;
+
 	(void)signo;
 	wait(NULL);
+	errno = e;
 }

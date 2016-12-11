@@ -209,16 +209,7 @@ do_diff:
 	disp_fmode();
 	ui_ctrl();
 
-	/* Change out of tmpdirs before deleting them. */
-	if (chdir("/") == -1)
-		printerr(strerror(errno), "chdir \"/\" failed");
-
-	/* if !bmode: remove tmp_dirs */
-	while (ui_stack)
-		pop_state(0);
-
-	/* if bmode: remove tmp_dirs */
-	uz_exit();
+	sig_term(0); /* remove tmp dirs */
 
 exit:
 	erase();

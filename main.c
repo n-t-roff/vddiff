@@ -24,6 +24,7 @@ PERFORMANCE OF THIS SOFTWARE.
 #include <regex.h>
 #include <termios.h>
 #include <unistd.h>
+#include <signal.h>
 #include "compat.h"
 #include "main.h"
 #include "y.tab.h"
@@ -285,7 +286,9 @@ main(int argc, char **argv)
 
 	pwd  = lpath + llen;
 	rpwd = rpath + rlen;
-	exec_sighdl();
+	inst_sighdl(SIGCHLD, sig_child);
+	inst_sighdl(SIGINT , sig_term);
+	inst_sighdl(SIGTERM, sig_term);
 	ttcharoff();
 	build_ui();
 	return 0;
@@ -495,4 +498,26 @@ usage(void)
 {
 	printf(usage_txt, prog);
 	exit(1);
+}
+
+void
+sig_term(int sig)
+{
+	/* Change out of tmpdirs before deleting them. */
+	if (chdir("/") == -1) {
+		printerr(strerror(errno), "chdir \"/\" failed");
+	}
+
+	/* if !bmode: remove tmp_dirs */
+	while (ui_stack) {
+		pop_state(0);
+	}
+
+	/* if bmode: remove tmp_dirs */
+	uz_exit();
+
+	if (sig) {
+		endwin();
+		exit(1);
+	}
 }

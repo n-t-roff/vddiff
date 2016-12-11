@@ -42,3 +42,4 @@ extern bool dontcmp;
 extern bool force_exec, force_fs, force_multi;
 
 char *add_home_pth(char *);
+void sig_term(int);
