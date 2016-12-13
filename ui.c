@@ -251,6 +251,10 @@ next_key:
 		}
 
 		if (test_fkey(c, num)) {
+			if (nofkeys) {
+				goto next_key;
+			}
+
 			goto save_st;
 		}
 
@@ -919,7 +923,7 @@ next_key:
 		case ':':
 			c = 0;
 
-			if (!ed_dialog("Enter option:",
+			if (!ed_dialog("Enter command:",
 			    NULL /* must be NULL !!! */, NULL, 0, &opt_hist)) {
 				if (parsopt(rbuf) == 1)
 					return;
@@ -1046,14 +1050,15 @@ next_key:
 
 			/* fall through */
 		default:
-			if (isgraph(c))
+			if (isascii(c) && !iscntrl(c)) {
 				printerr(NULL,
 				    "Invalid input '%c' (type 'h' for help).",
 				    c);
-			else
+			} else {
 				printerr(NULL,
 				    "Invalid character code 0x%x"
 				    " (type 'h' for help).", c);
+			}
 
 			c = 0;
 		}
@@ -1183,34 +1188,30 @@ static char *helptxt[] = {
        "v		View raw file contents",
        "vl		View raw left file contents",
        "vr		View raw right file contents",
-       ":		Enter command or configuration option:",
-       "	cd	bmode, fmode: Change to home directory",
-       "	cd <path>",
-       "		bmode, fmode: Change to directory <path>",
-       "	find <pattern>",
+       ":cd		bmode, fmode: Change to home directory",
+       ":cd <path>	bmode, fmode: Change to directory <path>",
+       ":e, :edit	Enable write operations and function keys",
+       ":find <pattern>",
        "		Display only filenames which match <pattern>",
-       "	nofind",
-       "		Remove filename pattern",
-       "	grep <pattern>",
+       ":nofind		Remove filename pattern",
+       ":grep <pattern>",
        "		Display only file which contain <pattern>",
-       "	nogrep",
-       "		Remove file content pattern",
-       "	ic	Case-insensitive match",
-       "	noic	Case-sensitive match",
-       "	magic",
-       "		Use extended regular expressions",
-       "	nomaigc",
-       "		Use basic regular expressions",
-       "	q, qa",
-       "		Quit vddiff",
-       "	recursive",
+       ":nogrep		Remove file content pattern",
+       ":q, :qa		Quit vddiff",
+       ":set all	Display option values",
+       ":set fkeys	Enable function keys",
+       ":set nofkeys	Disable function keys",
+       ":set ic		Case-insensitive match",
+       ":set noic	Case-sensitive match",
+       ":set magic	Use extended regular expressions",
+       ":set nomaigc	Use basic regular expressions",
+       ":set recursive",
        "		Use recursive diff, find or grep",
-       "	norecursive",
+       ":set norecursive",
        "		Use non-recursive diff, find or grep",
-       "	set",
-       "		Display option values",
-       "	ws	Wrap around top or bottom on filename search",
-       "	nows	Don't wrap around top or bottom on filename search",
+       ":set ws		Wrap around top or bottom on filename search",
+       ":set nows	Don't wrap around top or bottom on filename search",
+       ":vie, :view	Set read-only mode, disable function keys",
        "#		Toggle between diff mode and fmode",
        "=		In fmode: Copy current path from other column",
        "%		Toggle compare file contents",

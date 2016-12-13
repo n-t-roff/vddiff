@@ -75,6 +75,7 @@ shell			{ rc_col += yyleng; return SHELL        ; }
 sh			{ rc_col += yyleng; return SH           ; }
 alias			{ rc_col += yyleng; return ALIAS        ; }
 twocolumn		{ rc_col += yyleng; return TWOCOLUMN    ; }
+readonly		{ rc_col += yyleng; return READONLY     ; }
 include			{ rc_col += yyleng; incl = 1            ; }
 [0-9]+			{ rc_col += yyleng;
 			  yylval.integer = atoi(yytext);

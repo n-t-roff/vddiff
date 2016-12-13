@@ -58,10 +58,10 @@ static void ttcharoff(void);
 static void usage(void);
 
 static char *usage_txt =
-"Usage: %s [-u [<RC file>]] [-BbCcdEefgIiklMmnoqrVWXy] [-F <pattern>]\n"
+"Usage: %s [-u [<RC file>]] [-BbCcdEefgIiklMmnoqRrVWXy] [-F <pattern>]\n"
 "	[-G <pattern>] [-t <diff_tool>] [-v <view_tool>] [<directory_1>\n"
 "	[<directory_2>]]\n";
-static char *getopt_arg = "BbCcdEeF:fG:gIiklMmnoqrt:Vv:WXy";
+static char *getopt_arg = "BbCcdEeF:fG:gIiklMmnoqRrt:Vv:WXy";
 
 bool bmode;
 bool qdiff;
@@ -69,6 +69,8 @@ bool find_name;
 static bool dontdiff;
 bool dontcmp;
 bool force_exec, force_fs, force_multi;
+bool readonly;
+bool nofkeys;
 
 int
 main(int argc, char **argv)
@@ -199,6 +201,12 @@ main(int argc, char **argv)
 		case 'q':
 			qdiff = TRUE;
 			break;
+
+		case 'R':
+			readonly = TRUE;
+			nofkeys = TRUE;
+			break;
+
 		case 'r':
 			recursive = 1;
 			break;

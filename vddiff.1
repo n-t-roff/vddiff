@@ -13,7 +13,7 @@ LOSS OF USE, DATA OR PROFITS, WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE OR
 OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
 PERFORMANCE OF THIS SOFTWARE.
 ..
-.Dd December 10, 2016
+.Dd December 13, 2016
 .Dt VDDIFF 1
 .Sh NAME
 .Nm vddiff
@@ -21,7 +21,7 @@ PERFORMANCE OF THIS SOFTWARE.
 .Sh SYNOPSYS
 .Nm
 .Op Fl u Op Ar "RC file"
-.Op Fl BbCcdEefgIiklMmnoqrVWXy
+.Op Fl BbCcdEefgIiklMmnoqRrVWXy
 .Op Fl F Ar file name pattern
 .Op Fl G Ar file content pattern
 .Op Fl t Ar diff_tool
@@ -290,6 +290,17 @@ Debug option:
 Print differing files and exit (similar to
 .Dq Li diff \-q ,
 but output is unsorted).
+.It Fl R
+Read-only mode:
+All file change operations
+(change name, permissions, owner, group; copy, move, delete)
+and function keys are disabled.
+To enable write mode, input
+.Dq Li ":e"
+or
+.Dq Li ":edit" .
+To only enable function keys, input
+.Dq Li ":set fkeys" .
 .It Fl r
 Recursively scan directories to detect differences in subdirectories.
 This allows to mark directories which contain differences.
@@ -484,10 +495,8 @@ Toggle following symbolic links.
 .It Sq Li E
 Toggle file name
 .Pq Fl F
-.ig
 or file content
 .Pq Fl G
-..
 filter.
 .It Sq Li p
 Show current relative work directory.
@@ -901,16 +910,7 @@ View raw left file contents.
 .It Dq Li vr
 View raw right file contents.
 .It Sq Li \&:
-Enter command or configuration option.
-Entering
-.Cm set
-displays the current setting of the changable options.
-Currently the options
-.Po Cm no Pc Ns Cm ic ,
-.Po Cm no Pc Ns Cm magic ,
-.Po Cm no Pc Ns Cm recursive ,
-.Po Cm no Pc Ns Cm ws
-and the following commands are supported:
+Enter command:
 .Bl -tag -width 12n
 .It Li cd
 bmode and fmode only:
@@ -923,6 +923,8 @@ Change to directory
 may be absolute or relative.
 .Sq Li ~
 and environment variables are not (yet) expanded.
+.It Li e Ns Op Li dit
+Allow file change operations and function keys.
 .It Li find Ar pattern
 Display only filenames which match
 .Ar pattern .
@@ -935,9 +937,34 @@ Display only files which contain
 Remove file content pattern.
 .It Li q , Li qa
 Quit vddiff.
+.It Li set all
+Display the current setting of the changable options.
+.It Li set fkeys
+Enable function keys.
+.It Li set nofkeys
+Disable function keys.
+.It Li set ic
+Set case-insensitive match.
+.It Li set noic
+Set case-sensitive match.
+.It Li set magic
+Use extended regular expressions.
+.It Li set nomagic
+Use basic regular expressions.
+.It Li set recursive
+Use recursive diff, find and grep operations.
+.It Li set norecursive
+Use directory local diff, find and grep.
+.It Li set ws
+File name searches wrap around top and bottom.
+.It Li set nows
+File name searches don't wrap around top and bottom.
+.It Li vie Ns Op Li w
+Read-only mode:
+Disable file change operations and function keys.
 .El
 .Pp
-Previously entered options are saved in a history,
+Previously entered commands are saved in a history,
 which can be accessed with the
 .Aq Cm UP
 and
@@ -969,7 +996,10 @@ This can be useful for debugging purposes.
 .El
 .Sh CONFIGURATION FILE ~/.vddiffrc
 Permanent non-default options can be set in the file
-.Pa ~/.vddiffrc .
+.Pa ~/.vddiffrc ,
+which has a very simple
+.Em ( not
+\&.exrc like) syntax.
 The elements in this file may be separated with
 spaces, tabs or line breaks.
 Line breaks are not required, everything can be written
@@ -1307,6 +1337,18 @@ may be a full path or just the shell name.
 In the latter case
 .Li $PATH
 is searched to determine the full path.
+.It Li readonly
+Read-only mode:
+All file change operations
+(change name, permissions, owner, group; copy, move, delete)
+and function keys are disabled.
+Function keys get enabled if a
+.Cm fkey
+keyword is read after
+.Cm readonly .
+To avoid this,
+.Cm readonly
+can be placed at the end of the RC file.
 .El
 .Sh VDDIFF MODES
 .Nm

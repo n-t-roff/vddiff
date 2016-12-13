@@ -1,15 +1,16 @@
 #include "ver.h"
 
-/* pre-alpha: Developmemt phase, implementation, feature changes.
+/* pre-alpha: Developmemt phase, implementation, feature changes,
+ *            done on a limited set of operating systems.
  *            Major changes in this phase may cause malfunction of many
  *            features.  This may not be detected before alpha test phase.
  *
  *     |      All planned features are implemented, changes are done,
  *     v      TODO list is empty.
  *
- * alpha:     Test phase.  All features are tested.  This may result in
- *            new feature requirements (or significant changes) and hence
- *            a transition back to pre-alpha phase.
+ * alpha:     Test phase.  All features are tested on all target operating
+ *            systems.  This may result in new feature requirements or
+ *            significant changes.
  *     |
  *     v      Feature freeze
  *
@@ -22,5 +23,5 @@
  *            failes, this will become the release version. */
 
 const char version[] = "version 1.3.0-pre-alpha  "
-    "2016-12-11 10:10"
+    "2016-12-13 10:14"
     ;

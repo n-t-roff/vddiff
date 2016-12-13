@@ -52,6 +52,7 @@ static int creatdir(void);
 static void cp_link(void);
 static void cp_reg(void);
 static int ask_for_perms(mode_t *);
+static int fs_ro(void);
 
 static char *pth1, *pth2;
 static size_t len1, len2;
@@ -61,6 +62,10 @@ static bool ign_rm_errs;
 void
 fs_mkdir(short tree)
 {
+	if (fs_ro()) {
+		return;
+	}
+
 	if (ed_dialog("Enter name of directory to create (<ESC> to cancel):",
 	    "", NULL, 0, NULL))
 		return;
@@ -93,8 +98,9 @@ fs_rename(int tree)
 	char *s;
 	size_t l;
 
-	if (!db_num[right_col])
+	if (fs_ro() || !db_num[right_col]) {
 		return;
+	}
 
 	f = db_list[right_col][top_idx[right_col] + curs[right_col]];
 
@@ -160,8 +166,9 @@ fs_chmod(int tree, long u, int num)
 	mode_t m;
 	bool have_mode = FALSE;
 
-	if (!db_num[right_col])
+	if (fs_ro() || !db_num[right_col]) {
 		return;
+	}
 
 	if (!force_multi && num > 1 && dialog(y_n_txt, NULL,
 	    "Change mode of %d files?", num) != 'y')
@@ -278,8 +285,9 @@ fs_chown(int tree, int op, long u, int num)
 	gid_t gid;
 	bool have_owner = FALSE;
 
-	if (!db_num[right_col])
+	if (fs_ro() || !db_num[right_col]) {
 		return;
+	}
 
 	if (!force_multi && num > 1 && dialog(y_n_txt, NULL,
 	    "Change %s of %d files?", op ? "group" : "owner", num) != 'y')
@@ -367,8 +375,9 @@ fs_rm(int tree, char *txt, long u, int n,
 	int rv = 0;
 	bool chg = FALSE;
 
-	if (!db_num[right_col])
+	if (fs_ro() || !db_num[right_col]) {
 		return 0;
+	}
 
 	m = n > 1;
 
@@ -453,7 +462,7 @@ fs_cp(int to, long u, int n,
 	struct stat st;
 	bool m;
 
-	if (!db_num[right_col]) {
+	if (fs_ro() || !db_num[right_col]) {
 		return 1;
 	}
 
@@ -550,6 +559,17 @@ fs_cp(int to, long u, int n,
 	}
 
 	return 0;
+}
+
+static int
+fs_ro(void)
+{
+	if (!readonly) {
+		return 0;
+	}
+
+	printerr(NULL, "Type \":e\" to disable read-only mode");
+	return 1;
 }
 
 /* top_idx and curs must kept unchanged for "//" */

@@ -40,6 +40,8 @@ extern bool qdiff;
 extern bool find_name;
 extern bool dontcmp;
 extern bool force_exec, force_fs, force_multi;
+extern bool readonly;
+extern bool nofkeys;
 
 char *add_home_pth(char *);
 void sig_term(int);

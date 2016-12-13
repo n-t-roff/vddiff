@@ -70,6 +70,12 @@ test_fkey(int c, unsigned short num)
 		if (c != KEY_F(i + 1))
 			continue;
 
+		if (nofkeys) {
+			printerr(NULL,
+			    "Type \":set fkeys\" to enable function keys");
+			return 1;
+		}
+
 		if (fkey_cmd[i]) {
 			struct tool t;
 			unsigned ti;
@@ -83,7 +89,10 @@ test_fkey(int c, unsigned short num)
 			/* set_tool() reused here to process
 			 * embedded "$1" */
 			set_tool(&viewtool, strdup(fkey_cmd[i]),
-			    fkey_flags[i] & FKEY_WAIT ? TOOL_WAIT : 0);
+			    /* A rebuild_db() is done, so the list need not
+			     * to be updated by the command itself */
+			    TOOL_NOLIST |
+			    (fkey_flags[i] & FKEY_WAIT ? TOOL_WAIT : 0));
 			act = num > 1 ? 0 : 1;
 
 			if ((force_exec || (fkey_flags[i] & FKEY_FORCE)) &&
@@ -111,10 +120,18 @@ test_fkey(int c, unsigned short num)
 exec:
 				ti = top_idx[right_col];
 
+#if defined(TRACE)
+				fprintf(debug, "test_fkey: ->%u x \"%s\"\n",
+				    num, fkey_cmd[i]);
+#endif
 				while (num--) {
 					action(1, 3, act, FALSE);
 					top_idx[right_col]++; /* kludge */
 				}
+#if defined(TRACE)
+				fprintf(debug, "test_fkey: <-\"%s\"\n",
+				    fkey_cmd[i]);
+#endif
 
 				top_idx[right_col] = ti;
 				/* action() did likely create or delete files.
@@ -409,6 +426,7 @@ parsopt(char *buf)
 {
 	char *opt;
 	short not;
+	short skip;
 
 #if defined(TRACE)
 	fprintf(debug, "<->parsopt(%s)\n", buf);
@@ -441,6 +459,12 @@ parsopt(char *buf)
 		}
 
 		enter_dir(buf, NULL, FALSE, FALSE);
+		return 0;
+	}
+
+	if (*buf == 'e' && (!buf[1] || !strcmp(buf+1, "dit"))) {
+		readonly = FALSE;
+		nofkeys = FALSE;
 		return 0;
 	}
 
@@ -490,13 +514,23 @@ parsopt(char *buf)
 		return 1;
 	}
 
-	if (!strcmp(buf, "set")) {
+	if (!strncmp(buf, "se", 2) && (!buf[2] || (buf[2] == 't' && !buf[3]))) {
 		set_all();
 		return 0;
 	}
 
-	if (!strncmp(buf, "set ", 4)) {
-		if (!(buf = getnextarg(buf + 4))) {
+	if (!strncmp(buf, "vie", 3) && (!buf[3] ||
+	    (buf[3] == 'w' && !buf[4]))) {
+		readonly = TRUE;
+		nofkeys = TRUE;
+		return 0;
+	}
+
+	/* only bool options below */
+
+	if (!strncmp(buf, "se " , (skip = 3)) ||
+	    !strncmp(buf, "set ", (skip = 4))) {
+		if (!(buf = getnextarg(buf + skip))) {
 			return 0;
 		}
 
@@ -514,7 +548,9 @@ parsopt(char *buf)
 		not = 0;
 	}
 
-	if (!strcmp(opt, "ic")) {
+	if (!strcmp(opt, "fkeys")) {
+		nofkeys = not ? TRUE : FALSE;
+	} else if (!strcmp(opt, "ic")) {
 		noic = not;
 	} else if (!strcmp(opt, "magic")) {
 		magic = not ? 0 : 1;

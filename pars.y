@@ -41,7 +41,7 @@ extern char *yytext;
 %token DIFF_COLOR DIR_COLOR UNKNOWN_COLOR LINK_COLOR REAL_DIFF RECURSIVE
 %token VIEWTOOL EXT BG FKEY BMODE HISTSIZE SKIPEXT NOIC MAGIC NOWS SCALE
 %token SHELL SH NORMAL_COLOR CURSOR_COLOR ERROR_COLOR MARK_COLOR BG_COLOR
-%token ALIAS TWOCOLUMN
+%token ALIAS TWOCOLUMN READONLY
 %token <str>     STRING
 %token <integer> INTEGER
 %%
@@ -63,7 +63,7 @@ option:
 	                              , 0, NULL
 #endif
 	                              ); }
-	| FKEY INTEGER STRING          { set_fkey($2, $3)                 ; }
+	| FKEY INTEGER STRING          { nofkeys = FALSE; set_fkey($2, $3); }
 	| FILES                        { sorting = FILESFIRST             ; }
 	| MIXED                        { sorting = SORTMIXED              ; }
 	| FOLLOW                       { followlinks = 1;                 ; }
@@ -90,11 +90,11 @@ option:
 	| MAGIC                        { magic = 1                        ; }
 	| NOWS                         { nows  = 1                        ; }
 	| SCALE                        { scale = 1                        ; }
-	| BMODE                        {                                  ; }
 	| SHELL STRING                 { ishell = $2                      ; }
 	| SH STRING                    { nishell = $2                     ; }
 	| ALIAS STRING STRING          { add_alias($2, $3)                ; }
-	| TWOCOLUMN                    { twocols = 1                      ; }
+	| TWOCOLUMN                    { twocols = TRUE                   ; }
+	| READONLY                     { readonly = TRUE; nofkeys = TRUE  ; }
 	;
 %%
 void
