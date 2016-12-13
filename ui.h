@@ -22,7 +22,7 @@ struct ui_state {
 };
 
 void build_ui(void);
-void printerr(char *, char *, ...);
+void printerr(const char *, const char *, ...);
 int dialog(const char *, char *, char *, ...);
 void disp_list(unsigned);
 void center(unsigned);

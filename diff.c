@@ -278,7 +278,7 @@ no_tree2:
 			if (S_ISREG(stat1.st_mode) &&
 			    S_ISREG(stat2.st_mode)) {
 				if (cmp_file(lpath, stat1.st_size, rpath,
-				    stat2.st_size) == 1) {
+				    stat2.st_size, 0) == 1) {
 					if (qdiff) {
 						printf(
 						    "Files %s and %s differ\n",
@@ -384,7 +384,7 @@ free_a:
 		} else if (S_ISREG(stat1.st_mode)) {
 
 			switch (cmp_file(lpath, stat1.st_size, rpath,
-			    stat2.st_size)) {
+			    stat2.st_size, 0)) {
 			case -1:
 				diff->diff = '-';
 				goto db_add_file;
@@ -833,18 +833,22 @@ read_link(char *path, off_t size)
  *  1  Diff */
 
 int
-cmp_file(char *lpth, off_t lsiz, char *rpth, off_t rsiz)
+cmp_file(char *lpth, off_t lsiz, char *rpth, off_t rsiz,
+    /* 1 (!0): force compare, no getch */
+    unsigned md)
 {
 	int rv = 0, f1, f2;
 	ssize_t l1, l2;
 
-	if (dontcmp) {
-		return 0;
-	}
+	if (!md) {
+		if (dontcmp) {
+			return 0;
+		}
 
-	if (getch() == '%') {
-		dontcmp = TRUE;
-		return 0;
+		if (getch() == '%') {
+			dontcmp = TRUE;
+			return 0;
+		}
 	}
 
 	if (lsiz != rsiz)

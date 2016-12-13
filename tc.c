@@ -59,13 +59,6 @@ open2cwins(void)
 		return;
 	}
 
-	if (color) {
-		wbkgd(   wllst, COLOR_PAIR(PAIR_NORMAL));
-		wbkgdset(wllst, COLOR_PAIR(PAIR_NORMAL));
-		wbkgd(   wrlst, COLOR_PAIR(PAIR_NORMAL));
-		wbkgdset(wrlst, COLOR_PAIR(PAIR_NORMAL));
-	}
-
 	set_mb_bg();
 	wnoutrefresh(wmid);
 }

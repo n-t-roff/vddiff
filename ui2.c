@@ -37,6 +37,7 @@ PERFORMANCE OF THIS SOFTWARE.
 
 const char y_n_txt[] = "'y' yes, 'n' no";
 const char ign_txt[] = "'i' ignore all errors, <ENTER> continue";
+const char any_txt[] = "Press any key to continue";
 
 struct str_uint {
 	char *s;
@@ -608,80 +609,99 @@ bindiff(void)
 	char *lnam, *rnam, *olnam, *ornam;
 	off_t lsiz, rsiz;
 	int val = -1;
-	short sd;
+	bool ml;
 
 	if (!db_num[right_col] || !mark)
 		return;
 
 	f = db_list[right_col][top_idx[right_col] + curs[right_col]];
 
-	if (m->name) {
-		olnam = m->name;
-		sd = m->ltype ? 1 : 2;
-	} else if (bmode) {
-		olnam = gl_mark;
-		sd = 0;
-	} else if (mark_lnam) {
-		olnam = mark_lnam;
-		sd = 1;
-	} else {
-		olnam = mark_rnam;
-		sd = 2;
+	/* check if mark needs to be unzipped */
+	ml = m->ltype && (f->rtype || !m->rtype);
+
+	if ((z1 = unpack(m, ml ? 1 : 2, &t1, 0))) {
+		m = z1;
 	}
 
-	if (chk_mark(olnam, sd))
-		return;
-
-	ornam = f->name;
-
-	/* check if mark needs to be unzipped */
-	if ((z1 = unpack(m, m->ltype ? 1 : 2, &t1, 0)))
-		m = z1;
-
-	/* check if other file needs to be unchecked */
-	if ((z2 = unpack(f, m->ltype ? 2 : 1, &t2, 0)))
+	/* check if other file needs to be unzipped */
+	if ((z2 = unpack(f, f->rtype ? 2 : 1, &t2, 0))) {
 		f = z2;
+	}
 
-	if (m->ltype) {
+	if (ml) {
+		olnam =
 		lnam = m->name ? m->name   :
 		       bmode   ? gl_mark   :
 		                 mark_lnam ;
 
-		if (chk_mark(lnam, 1))
+		if (*lnam != '/') {
+			pthcat(lpath, llen, lnam);
+			lnam = lpath;
+		}
+
+		if (chk_mark(lnam, 0))
 			goto ret;
 
 		ltyp = m->ltype;
 		lsiz = m->lsiz;
-		rnam = f->name;
+		ornam = rnam = f->name;
 
 		if (f->rtype) {
 			rtyp = f->rtype;
 			rsiz = f->rsiz;
+
+			if (*rnam != '/') {
+				pthcat(rpath, rlen, rnam);
+				rnam = rpath;
+			}
 		} else {
 			rtyp = f->ltype;
 			rsiz = f->lsiz;
+
+			if (*rnam != '/') {
+				pthcat(lpath, llen, rnam);
+				rnam = lpath;
+			}
 		}
 
 	} else if (m->rtype) {
-		lnam = f->name;
+		olnam = lnam = f->name;
 
 		if (f->ltype) {
 			ltyp = f->ltype;
 			lsiz = f->lsiz;
+
+			if (*lnam != '/') {
+				pthcat(lpath, llen, lnam);
+				lnam = lpath;
+			}
 		} else {
 			ltyp = f->rtype;
 			lsiz = f->rsiz;
+
+			if (*lnam != '/') {
+				pthcat(rpath, rlen, lnam);
+				lnam = rpath;
+			}
 		}
 
+		ornam =
 		rnam = m->name ? m->name   :
 		       bmode   ? gl_mark   :
 		                 mark_rnam ;
 
-		if (chk_mark(rnam, 2))
+		if (*rnam != '/') {
+			pthcat(rpath, rlen, rnam);
+			rnam = rpath;
+		}
+
+		if (chk_mark(rnam, 0))
 			goto ret;
 
 		rtyp = m->rtype;
 		rsiz = m->rsiz;
+	} else {
+		goto ret;
 	}
 
 	if (!S_ISREG(ltyp) || !S_ISREG(rtyp)) {
@@ -690,40 +710,38 @@ bindiff(void)
 		goto ret;
 	}
 
-	if (!bmode) {
-		if (*lnam != '/') {
-			pthcat(lpath, llen, lnam);
-			lnam = lpath;
-		}
-
-		if (*rnam != '/') {
-			pthcat(rpath, rlen, rnam);
-			rnam = rpath;
-		}
-	}
-
-	nodelay(stdscr, TRUE);
-	val = cmp_file(lnam, lsiz, rnam, rsiz);
-	nodelay(stdscr, FALSE);
+	val = cmp_file(lnam, lsiz, rnam, rsiz, 1);
 
 ret:
-	if (z1)
-		free_zdir(z1, t1);
-
-	if (z2)
-		free_zdir(z2, t2);
-
 	switch (val) {
 	case 0:
-		printerr(NULL, "Equal: %s and %s", olnam, ornam);
+		printerr(any_txt, "Equal: %s and %s",
+#if defined(DEBUG)
+		    lnam, rnam);
+		(void)olnam;
+		(void)ornam;
+#else
+		    olnam, ornam);
+#endif
 		break;
 	case 1:
-		printerr(NULL, "Different: %s and %s", olnam, ornam);
+		printerr(any_txt, "Different: %s and %s",
+#if defined(DEBUG)
+		    lnam, rnam);
+#else
+		    olnam, ornam);
+#endif
 		break;
 	default:
 		/* Error message is already output by cmp_file() */
 		;
 	}
+
+	if (z1)
+		free_zdir(z1, t1);
+
+	if (z2)
+		free_zdir(z2, t2);
 }
 
 int
@@ -736,8 +754,7 @@ chk_mark(char *file,
 	bool rp;
 
 #if defined(TRACE)
-	lpath[llen] = 0;
-	if (tree & 2) rpath[rlen] = 0;
+	/* Don't trim paths! (bindiff()) */
 	fprintf(debug, "<->chk_mark(%s,%d) lp(%s) rp(%s)\n",
 	    file, tree, lpath, rpath);
 #endif
@@ -927,7 +944,7 @@ void
 anykey(void)
 {
 	wrefresh(wlist);
-	printerr(NULL, "Press any key to continue");
+	printerr(NULL, any_txt);
 	getch();
 	disp_fmode();
 }
@@ -1088,6 +1105,11 @@ new_scrl_win(int h, int w, int y, int x)
 	if (scrollen) {
 		idlok(win, TRUE);
 		scrollok(win, TRUE);
+	}
+
+	if (color) {
+		wbkgd(   win, COLOR_PAIR(PAIR_NORMAL));
+		wbkgdset(win, COLOR_PAIR(PAIR_NORMAL));
 	}
 
 	touchwin(win);

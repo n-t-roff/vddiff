@@ -212,14 +212,9 @@ openwins(void)
 	}
 
 	if (!(wstat = new_scrl_win(2, statw, LINES-2, 0))) {
+		idlok(wstat, FALSE);
+		scrollok(wstat, FALSE);
 		return -1;
-	}
-
-	if (color) {
-		wbkgd(   wlist, COLOR_PAIR(PAIR_NORMAL));
-		wbkgdset(wlist, COLOR_PAIR(PAIR_NORMAL));
-		wbkgd(   wstat, COLOR_PAIR(PAIR_NORMAL));
-		wbkgdset(wstat, COLOR_PAIR(PAIR_NORMAL));
 	}
 
 	if (fmode) {
@@ -1536,11 +1531,13 @@ action(
 
 		if (!ign_ext) {
 			/* check if mark needs to be unzipped */
-			if ((z1 = unpack(m, m->ltype ? 1 : 2, &t1, 1)))
+			if ((z1 = unpack(m,
+			    m->ltype && (f1->rtype || !m->rtype) ? 1 : 2,
+			    &t1, 1)))
 				m = z1;
 
-			/* check if other file needs to be unchecked */
-			if ((z2 = unpack(f1, m->ltype ? 2 : 1, &t2, 1)))
+			/* check if other file needs to be unzipped */
+			if ((z2 = unpack(f1, f1->rtype ? 2 : 1, &t2, 1)))
 				f1 = z2;
 		}
 
@@ -3226,7 +3223,7 @@ disp:
 }
 
 void
-printerr(char *s2, char *s1, ...)
+printerr(const char *s2, const char *s1, ...)
 {
 	va_list ap;
 
