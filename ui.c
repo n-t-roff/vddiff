@@ -991,6 +991,10 @@ next_key:
 				 * when the cursor is left at some other
 				 * unrelated file. So now the cursor is left
 				 * at the first not deleted file. */
+				if (u < top_idx[right_col]) {
+					top_idx[right_col] = u;
+				}
+
 				curs[right_col] = u - top_idx[right_col];
 			}
 
@@ -1713,7 +1717,7 @@ static void
 page_down(void)
 {
 #if defined(TRACE)
-	fprintf(debug, "->page_down\n");
+	fprintf(debug, "->page_down c=%u\n", curs[right_col]);
 #endif
 	if (last_line_is_disp()) {
 		printerr(NULL, "At bottom");
@@ -1727,7 +1731,7 @@ page_down(void)
 
 ret:
 #if defined(TRACE)
-	fprintf(debug, "<-page_down\n");
+	fprintf(debug, "<-page_down c=%u\n", curs[right_col]);
 #endif
 	return;
 }
@@ -1749,7 +1753,7 @@ static void
 page_up(void)
 {
 #if defined(TRACE)
-	fprintf(debug, "->page_up\n");
+	fprintf(debug, "->page_up c=%u\n", curs[right_col]);
 #endif
 	if (first_line_is_top()) {
 		printerr(NULL, "At top");
@@ -1770,7 +1774,7 @@ page_up(void)
 
 ret:
 #if defined(TRACE)
-	fprintf(debug, "->page_up\n");
+	fprintf(debug, "->page_up c=%u\n", curs[right_col]);
 #endif
 	return;
 }
@@ -1844,9 +1848,12 @@ ret:
 static void
 curs_down(void)
 {
+#if defined(TRACE)
+	fprintf(debug, "->curs_down c=%u\n", curs[right_col]);
+#endif
 	if (top_idx[right_col] + curs[right_col] + 1 >= db_num[right_col]) {
 		printerr(NULL, "At bottom");
-		return;
+		goto ret;
 	}
 
 	if (curs[right_col] + 1 >= listh) {
@@ -1859,22 +1866,31 @@ curs_down(void)
 		} else
 			page_down();
 
-		return;
+		goto ret;
 	}
 
 	disp_curs(0);
 	curs[right_col]++;
 	disp_curs(1);
 	refr_scr();
+
+ret:
+#if defined(TRACE)
+	fprintf(debug, "<-curs_down c=%u\n", curs[right_col]);
+#endif
+	return;
 }
 
 static void
 curs_up(void)
 {
+#if defined(TRACE)
+	fprintf(debug, "->curs_up c=%u\n", curs[right_col]);
+#endif
 	if (!curs[right_col]) {
 		if (!top_idx[right_col]) {
 			printerr(NULL, "At top");
-			return;
+			goto ret;
 		}
 
 		if (scrollen) {
@@ -1886,13 +1902,19 @@ curs_up(void)
 		} else
 			page_up();
 
-		return;
+		goto ret;
 	}
 
 	disp_curs(0);
 	curs[right_col]--;
 	disp_curs(1);
 	refr_scr();
+
+ret:
+#if defined(TRACE)
+	fprintf(debug, "<-curs_up c=%u\n", curs[right_col]);
+#endif
+	return;
 }
 
 static void
@@ -2059,7 +2081,7 @@ disp_curs(
 	m = mark_idx[right_col];
 
 #if defined(TRACE)
-	fprintf(debug, "->disp_curs(%i) i=%u y=%u \"%s\"\n",
+	fprintf(debug, "->disp_curs(%i) i=%u c=%u \"%s\"\n",
 	    a, i, y, i < db_num[right_col] ? db_list[right_col][i]->name :
 	    "index out of bounds");
 #endif
@@ -2092,7 +2114,7 @@ disp_curs(
 		}
 	}
 #if defined(TRACE)
-	fprintf(debug, "<-disp_curs\n");
+	fprintf(debug, "<-disp_curs c=%u\n", curs[right_col]);
 #endif
 }
 
@@ -2733,6 +2755,9 @@ clr_mark(void)
 {
 	int rc;
 
+#if defined(TRACE)
+	fprintf(debug, "->clr_mark\n");
+#endif
 	rc = right_col;
 
 	if (gl_mark) {
@@ -2774,6 +2799,9 @@ clr_mark(void)
 	filt_stat();
 	wnoutrefresh(wstat);
 	doupdate();
+#if defined(TRACE)
+	fprintf(debug, "->clr_mark\n");
+#endif
 }
 
 void
@@ -2782,7 +2810,8 @@ mark_global(void)
 	struct filediff *m;
 
 #if defined(TRACE)
-	fprintf(debug, "->mark_global(%s)\n", mark->name);
+	fprintf(debug, "->mark_global(%s) c=%u\n",
+	    mark->name, curs[right_col]);
 #endif
 	if (fmode) {
 		clr_mark();
@@ -2845,7 +2874,7 @@ error:
 	clr_mark();
 ret:
 #if defined(TRACE)
-	fprintf(debug, "<-mark_global(%s)\n", gl_mark);
+	fprintf(debug, "<-mark_global(%s) c=%u\n", gl_mark, curs[right_col]);
 #endif
 	return;
 }

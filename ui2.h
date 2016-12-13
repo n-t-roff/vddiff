@@ -11,6 +11,7 @@ extern short regex;
 extern unsigned short subtree;
 extern const char y_n_txt[];
 extern const char ign_txt[];
+extern const char any_txt[];
 extern bool file_pattern;
 
 int test_fkey(int, unsigned short);

@@ -166,13 +166,17 @@ fs_chmod(int tree, long u, int num)
 	mode_t m;
 	bool have_mode = FALSE;
 
+#if defined(TRACE)
+	fprintf(debug, "->fs_chmod(t=%i u=%li n=%i) c=%u\n",
+	    tree, u, num, curs[right_col]);
+#endif
 	if (fs_ro() || !db_num[right_col]) {
-		return;
+		goto ret;
 	}
 
 	if (!force_multi && num > 1 && dialog(y_n_txt, NULL,
 	    "Change mode of %d files?", num) != 'y')
-		return;
+		goto ret;
 
 	while (num-- && u < db_num[right_col]) {
 		f = db_list[right_col][u++];
@@ -205,7 +209,7 @@ fs_chmod(int tree, long u, int num)
 
 		if (!have_mode) {
 			if (ask_for_perms(&m))
-				return;
+				goto ret;
 
 			have_mode = TRUE;
 		}
@@ -224,6 +228,12 @@ exit:
 
 	if (!bmode)
 		rpath[rlen] = 0;
+
+ret:
+#if defined(TRACE)
+	fprintf(debug, "<-fs_chmod c=%u\n", curs[right_col]);
+#endif
+	return;
 }
 
 static int
@@ -585,7 +595,7 @@ rebuild_db(
 	char *name;
 
 #if defined(TRACE)
-	fprintf(debug, "->rebuild_db(%d)\n", mode);
+	fprintf(debug, "->rebuild_db(%d) c=%u\n", mode, curs[right_col]);
 #endif
 	lpath[llen] = 0;
 
