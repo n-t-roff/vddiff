@@ -73,6 +73,7 @@ static void disp_mark(void);
 static void yank_name(int);
 static void scroll_up(unsigned, bool, int);
 static void scroll_down(unsigned, bool, int);
+static int openwins(void);
 
 short color = 1;
 short color_leftonly  = COLOR_CYAN   ,
@@ -150,25 +151,9 @@ build_ui(void)
 	curs_set(0);
 	set_def_mouse_msk();
 	refresh();
-	set_win_dim();
 
-	if (!(wlist = new_scrl_win(listh, listw, 0, 0))) {
+	if (openwins()) {
 		return;
-	}
-
-	if (!(wstat = new_scrl_win(2, statw, LINES-2, 0))) {
-		return;
-	}
-
-	if (color) {
-		wbkgd(   wlist, COLOR_PAIR(PAIR_NORMAL));
-		wbkgdset(wlist, COLOR_PAIR(PAIR_NORMAL));
-		wbkgd(   wstat, COLOR_PAIR(PAIR_NORMAL));
-		wbkgdset(wstat, COLOR_PAIR(PAIR_NORMAL));
-	}
-
-	if (fmode) {
-		open2cwins();
 	}
 
 do_diff:
@@ -217,6 +202,33 @@ exit:
 	endwin();
 }
 
+static int
+openwins(void)
+{
+	set_win_dim();
+
+	if (!(wlist = new_scrl_win(listh, listw, 0, 0))) {
+		return -1;
+	}
+
+	if (!(wstat = new_scrl_win(2, statw, LINES-2, 0))) {
+		return -1;
+	}
+
+	if (color) {
+		wbkgd(   wlist, COLOR_PAIR(PAIR_NORMAL));
+		wbkgdset(wlist, COLOR_PAIR(PAIR_NORMAL));
+		wbkgd(   wstat, COLOR_PAIR(PAIR_NORMAL));
+		wbkgdset(wstat, COLOR_PAIR(PAIR_NORMAL));
+	}
+
+	if (fmode) {
+		open2cwins();
+	}
+
+	return 0;
+}
+
 static void
 ui_ctrl(void)
 {
@@ -239,7 +251,7 @@ next_key:
 		if ((c = getch()) == ERR)
 			goto next_key;
 
-		if (c == '.') {
+		if (c == '.' && c2 && !*key) {
 			if (!c2) {
 				goto next_key;
 			}
@@ -297,14 +309,17 @@ next_key:
 			c = 0;
 
 			if (*key == 'z') {
-				if (!top_idx[right_col])
+				if (!top_idx[right_col]) {
 					break;
-				else if (top_idx[right_col] >=
+				} else if (top_idx[right_col] >=
 				    listh - 1 - curs[right_col]) {
+
+					disp_curs(0);
 					top_idx[right_col] -=
 					    listh - 1 - curs[right_col];
 					curs[right_col] = listh - 1;
 				} else {
+					disp_curs(0);
 					curs[right_col] += top_idx[right_col];
 					top_idx[right_col] = 0;
 				}
@@ -342,6 +357,7 @@ next_key:
 					break;
 				}
 
+				disp_curs(0);
 				top_idx[right_col] += curs[right_col];
 				curs[right_col] = 0;
 				disp_list(1);
@@ -875,13 +891,16 @@ next_key:
 			if (!curs[right_col])
 				break;
 
+			disp_curs(0);
 			curs[right_col] = 0;
 			disp_list(1);
 			break;
 		case 'M':
 			c = 0;
+			disp_curs(0);
 
 			if (db_num[right_col] < top_idx[right_col] + listh)
+
 				curs[right_col] = (db_num[right_col] -
 				    top_idx[right_col]) / 2;
 			else
@@ -891,8 +910,10 @@ next_key:
 			break;
 		case 'L':
 			c = 0;
+			disp_curs(0);
 
 			if (db_num[right_col] < top_idx[right_col] + listh)
+
 				curs[right_col] = db_num[right_col] -
 				    top_idx[right_col] - 1;
 			else
@@ -968,6 +989,7 @@ next_key:
 			if (u <= mark_idx[right_col]) {
 				num = mark_idx[right_col] - u + 1;
 			} else {
+				disp_curs(0);
 				num = u - mark_idx[right_col] + 1;
 				u = mark_idx[right_col];
 				/* After deleting files it is distracting
@@ -1720,6 +1742,7 @@ curs_last(void)
 		return;
 	}
 
+	disp_curs(0);
 	top_idx[right_col] = db_num[right_col] - listh;
 	curs[right_col] = listh - 1;
 	disp_list(1);
@@ -2040,7 +2063,8 @@ disp_curs(
 
 #if defined(TRACE)
 	fprintf(debug, "->disp_curs(%i) i=%u y=%u \"%s\"\n",
-	    a, i, y, db_list[right_col][i]->name);
+	    a, i, y, i < db_num[right_col] ? db_list[right_col][i]->name :
+	    "index out of bounds");
 #endif
 	if (fmode) {
 		if (!a) {
@@ -2885,6 +2909,8 @@ no_file(void)
 void
 center(unsigned idx)
 {
+	disp_curs(0);
+
 	if (db_num[right_col] <= listh || idx <= listh / 2) {
 		top_idx[right_col] = 0;
 	} else if (db_num[right_col] - idx < listh / 2) {
@@ -3281,26 +3307,21 @@ dialog(const char *quest, char *answ, char *fmt, ...)
 static void
 ui_resize(void)
 {
-	set_win_dim();
-
-	if (curs[right_col] >= listh)
-		curs[right_col] = listh - 1;
-
 	if (fmode) {
 		close2cwins();
-		open2cwins();
-	} else {
-		wresize(wlist, listh, listw);
 	}
 
 	delwin(wstat);
+	delwin(wlist);
+	refresh();
+	openwins();
 
-	if (!(wstat = newwin(2, statw, LINES-2, 0))) {
-		printf("newwin failed\n");
-		return;
+	if (curs[right_col] >= listh) {
+		/* calls disp_fmode() */
+		center(top_idx[right_col] + curs[right_col]);
+	} else {
+		disp_fmode();
 	}
-
-	disp_fmode();
 }
 
 void
@@ -3311,10 +3332,11 @@ set_win_dim(void)
 	listw = COLS;
 	rlstx = COLS / 2 + midoffs;
 
-	if (rlstx < 2)
+	if (rlstx < 2) {
 		rlstx = 2;
-	else if (rlstx > COLS - 1)
+	} else if (rlstx > COLS - 1) {
 		rlstx = COLS - 1;
+	}
 
 	rlstw = COLS - rlstx;
 	llstw = rlstx - 1;

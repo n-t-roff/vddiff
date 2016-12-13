@@ -1090,6 +1090,8 @@ new_scrl_win(int h, int w, int y, int x)
 		scrollok(win, TRUE);
 	}
 
+	touchwin(win);
+	wnoutrefresh(win);
 	return win;
 }
 
