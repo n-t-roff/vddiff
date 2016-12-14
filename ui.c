@@ -1445,8 +1445,12 @@ proc_mevent(void)
 	if (mevent.bstate & BUTTON1_CLICKED ||
 	    mevent.bstate & BUTTON1_DOUBLE_CLICKED ||
 	    mevent.bstate & BUTTON1_PRESSED) {
+
 		if (mevent.y >= (int)listh ||
-		    mevent.y >= (int)(db_num[right_col] - top_idx[right_col]))
+		    ((!fmode || mevent.x < llstw) &&
+		     mevent.y >= (int)(db_num[0] - top_idx[0])) ||
+		    (fmode && mevent.x >= rlstx &&
+		     mevent.y >= (int)(db_num[1] - top_idx[1])))
 			return;
 
 		disp_curs(0);

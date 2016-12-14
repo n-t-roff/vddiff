@@ -117,6 +117,7 @@ test_fkey(int c, unsigned short num)
 				free_tool(&viewtool);
 				viewtool = t;
 				goto edit_fkey;
+
 			case '\n':
 exec:
 				ti = top_idx[right_col];
@@ -146,7 +147,10 @@ exec:
 					chk_mark(gl_mark, 0);
 				}
 
-				/* fall through */
+				break;
+
+			default:
+				disp_fmode(); /* since curs pos did chg */
 			}
 
 			free_tool(&viewtool);
