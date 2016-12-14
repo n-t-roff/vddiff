@@ -3,6 +3,8 @@ struct bpth {
 	int col;
 };
 
+extern char *fpath;
+extern int old_col;
 extern int llstw, rlstw, rlstx, midoffs;
 extern WINDOW *wllst, *wmid, *wrlst;
 extern bool twocols;

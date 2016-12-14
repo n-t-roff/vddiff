@@ -449,7 +449,7 @@ parsopt(char *buf)
 			return 0;
 		}
 
-		enter_dir(s, NULL, FALSE, FALSE);
+		enter_dir(s, NULL, FALSE, FALSE, 0);
 		return 0;
 	}
 
@@ -463,7 +463,7 @@ parsopt(char *buf)
 			return 0;
 		}
 
-		enter_dir(buf, NULL, FALSE, FALSE);
+		enter_dir(buf, NULL, FALSE, FALSE, 0);
 		return 0;
 	}
 

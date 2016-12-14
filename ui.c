@@ -340,7 +340,7 @@ next_key:
 			c = 0;
 
 			if (bmode || fmode)
-				enter_dir("..", NULL, FALSE, FALSE);
+				enter_dir("..", NULL, FALSE, FALSE, 0);
 			else
 				pop_state(1);
 
@@ -1036,7 +1036,7 @@ next_key:
 				}
 
 				/* Use "", not NULL here! */
-				enter_dir("", "", FALSE, FALSE);
+				enter_dir("", "", FALSE, FALSE, 0);
 			} else { /* diff -> FM */
 				if (twocols) {
 					dmode_fmode(1);
@@ -1520,7 +1520,8 @@ action(
 	static char *typdif = "Different file type";
 
 #if defined(TRACE)
-	fprintf(debug, "->action(%d %d %u)\n", ign_ext, tree, act);
+	fprintf(debug, "->action(ignext=%d t=%d act=%u raw=%d)\n",
+	    ign_ext, tree, act, raw_cont);
 #endif
 	if (!db_num[right_col])
 		goto out;
@@ -1528,7 +1529,7 @@ action(
 	f1 = f2 = db_list[right_col][top_idx[right_col] + curs[right_col]];
 
 #if defined(TRACE)
-	fprintf(debug, "name(%s)\n", f1->name);
+	fprintf(debug, "f1->name(%s)\n", f1->name);
 #endif
 	if (mark && act) {
 		struct filediff *m;
@@ -1616,13 +1617,17 @@ action(
 			goto ret;
 		}
 
+#if defined(TRACE)
+		fprintf(debug, "mark: lnam(%s) rnam(%s) t=%d\n",
+		    lnam, rnam, tree);
+#endif
 		if (ign_ext || (S_ISREG(ltyp) && S_ISREG(rtyp))) {
 			tool(lnam, rnam, tree, ign_ext || raw_cont);
 
 		} else if (S_ISDIR(ltyp) || S_ISDIR(rtyp)) {
 			if (bmode) {
 				t2 = NULL;
-				enter_dir(rnam, NULL, FALSE, FALSE);
+				enter_dir(rnam, NULL, FALSE, FALSE, tree);
 
 				/* In bmode the unpacked dir is in z2.
 				 * Hence z1 is useless and can be removed. */
@@ -1633,11 +1638,13 @@ action(
 				}
 			} else if (!S_ISDIR(ltyp)) {
 				t2 = NULL;
-				enter_dir(NULL, rnam, FALSE, z2 ? TRUE : FALSE);
+				enter_dir(NULL, rnam, FALSE, z2 ? TRUE : FALSE,
+				    tree);
 
 			} else if (!S_ISDIR(rtyp)) {
 				t1 = NULL;
-				enter_dir(lnam, NULL, z1 ? TRUE : FALSE, FALSE);
+				enter_dir(lnam, NULL, z1 ? TRUE : FALSE, FALSE,
+				    tree);
 			} else {
 				/* If t<n> == NULL tmpdir is not removed.
 				 * It must not be removed before it is left
@@ -1645,7 +1652,7 @@ action(
 				t1 = t2 = NULL;
 				one_scan = TRUE;
 				enter_dir(lnam, rnam, z1 ? TRUE : FALSE,
-				    z2 ? TRUE : FALSE);
+				    z2 ? TRUE : FALSE, tree);
 			}
 		}
 
@@ -1667,7 +1674,7 @@ action(
 			tool(f2->name, NULL, 2, ign_ext || raw_cont);
 		else if (S_ISDIR(f2->rtype)) {
 			t1 = t2 = NULL;
-			enter_dir(NULL, f2->name, FALSE, z2 ? TRUE : FALSE);
+			enter_dir(NULL, f2->name, FALSE, z2 ? TRUE : FALSE, 0);
 		} else {
 			err = typerr;
 			goto ret;
@@ -1677,7 +1684,7 @@ action(
 			tool(f1->name, NULL, 1, ign_ext || raw_cont);
 		else if (S_ISDIR(f1->ltype)) {
 			t1 = t2 = NULL;
-			enter_dir(f1->name, NULL, z1 ? TRUE : FALSE, FALSE);
+			enter_dir(f1->name, NULL, z1 ? TRUE : FALSE, FALSE, 0);
 		} else {
 			err = typerr;
 			goto ret;
@@ -1693,7 +1700,7 @@ action(
 		} else if (S_ISDIR(f1->ltype)) {
 			t1 = t2 = NULL;
 			enter_dir(f1->name, f2->name, z1 ? TRUE : FALSE,
-				    z2 ? TRUE : FALSE);
+				    z2 ? TRUE : FALSE, 0);
 		} else {
 			err = typerr;
 			goto ret;
@@ -3005,10 +3012,26 @@ pop_state(
 	struct ui_state *st = ui_stack;
 
 	if (!st) {
-		if (from_fmode)
+		if (from_fmode) {
+			if (fpath) {
+				size_t l = strlen(fpath);
+
+				if (old_col) {
+					memcpy(lpath, fpath, l+1);
+					llen = l;
+				} else {
+					memcpy(rpath, fpath, l+1);
+					rlen = l;
+				}
+
+				free(fpath);
+				fpath = NULL;
+			}
+
 			dmode_fmode(1);
-		else
+		} else {
 			printerr(NULL, "At top directory");
+		}
 
 		return;
 	}
@@ -3082,7 +3105,7 @@ pop_state(
 }
 
 void
-enter_dir(char *name, char *rnam, bool lzip, bool rzip)
+enter_dir(char *name, char *rnam, bool lzip, bool rzip, short tree)
 {
 	int i;
 	unsigned *uv;
@@ -3095,12 +3118,22 @@ enter_dir(char *name, char *rnam, bool lzip, bool rzip)
 	struct ptr_db_ent *n;
 #endif
 #ifdef TRACE
-	fprintf(debug, "->enter_dir(%s,%s) lp(%s) rp(%s)\n",
-	    name, rnam, lpath, rpath);
+	fprintf(debug, "->enter_dir(ln(%s) rn(%s) t=%d) lp(%s) rp(%s)\n",
+	    name, rnam, tree, lpath, rpath);
 #endif
 	dir_change = TRUE;
 
 	if (fmode && name && rnam) {
+		if (tree == 1) {
+			fpath = strdup(rpath);
+			memcpy(rpath, lpath, llen+1);
+			rlen = llen;
+		} else if (tree == 2) {
+			fpath = strdup(lpath);
+			memcpy(lpath, rpath, rlen+1);
+			llen = rlen;
+		}
+
 		fmode_dmode();
 	}
 

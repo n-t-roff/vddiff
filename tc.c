@@ -33,10 +33,10 @@ static void set_mb_bg(void);
 
 int llstw, rlstw, rlstx, midoffs;
 /* Used for bmode <-> fmode transitions the remember fmode column */
-static int old_col;
+int old_col;
 static unsigned old_top_idx, old_curs;
 /* fmode <-> bmode: Path of other column */
-static char *fpath;
+char *fpath;
 WINDOW *wllst, *wmid, *wrlst;
 bool twocols;
 bool fmode;
@@ -333,7 +333,7 @@ fmode_cp_pth(void)
 		llen = rlen;
 	}
 
-	enter_dir(NULL, NULL, FALSE, FALSE);
+	enter_dir(NULL, NULL, FALSE, FALSE, 0);
 }
 
 void
