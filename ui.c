@@ -197,6 +197,7 @@ do_diff:
 	sig_term(0); /* remove tmp dirs */
 
 exit:
+	bkgd(A_NORMAL);
 	erase();
 	refresh();
 	endwin();
@@ -991,7 +992,7 @@ next_key:
 				 * when the cursor is left at some other
 				 * unrelated file. So now the cursor is left
 				 * at the first not deleted file. */
-				if (u < top_idx[right_col]) {
+				if (u < (long)top_idx[right_col]) {
 					top_idx[right_col] = u;
 				}
 
@@ -2175,7 +2176,8 @@ disp_list(
 			mvwaddch(w, y, llstw, ' ');
 		} else if (md && y == curs[right_col]) {
 			disp_curs(1);
-		} else if (top_idx[right_col] + y == mark_idx[right_col]) {
+		} else if ((long)(top_idx[right_col] + y) ==
+		    mark_idx[right_col]) {
 			if (!fmode) {
 				markc(w);
 			}
@@ -2779,9 +2781,9 @@ clr_mark(void)
 		gl_mark = NULL;
 
 	} else if (
-	    mark_idx[0] >= top_idx[0] &&
-	    mark_idx[0] <  top_idx[0] + listh &&
-	    mark_idx[0] != top_idx[0] + curs[0]) {
+	    mark_idx[0] >= (long)(top_idx[0]) &&
+	    mark_idx[0] <  (long)(top_idx[0] + listh) &&
+	    mark_idx[0] != (long)(top_idx[0] + curs[0])) {
 
 		if (fmode)
 			chgat_off(wllst, mark_idx[0] - top_idx[0]);
@@ -2791,9 +2793,9 @@ clr_mark(void)
 		wnoutrefresh(fmode ? wllst : wlist);
 
 	} else if (fmode &&
-	    mark_idx[1] >= top_idx[1] &&
-	    mark_idx[1] <  top_idx[1] + listh &&
-	    mark_idx[1] != top_idx[1] + curs[1]) {
+	    mark_idx[1] >= (long)(top_idx[1]) &&
+	    mark_idx[1] <  (long)(top_idx[1] + listh) &&
+	    mark_idx[1] != (long)(top_idx[1] + curs[1])) {
 
 		chgat_off(wrlst, mark_idx[1] - top_idx[1]);
 

@@ -17,6 +17,7 @@ PERFORMANCE OF THIS SOFTWARE.
 
 #include <string.h>
 #include <regex.h>
+#include <errno.h>
 #include "compat.h"
 #include "main.h"
 #include "y.tab.h"

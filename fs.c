@@ -178,7 +178,7 @@ fs_chmod(int tree, long u, int num)
 	    "Change mode of %d files?", num) != 'y')
 		goto ret;
 
-	while (num-- && u < db_num[right_col]) {
+	while (num-- && u < (long)db_num[right_col]) {
 		f = db_list[right_col][u++];
 
 		/* "en" is not allowed if both files are present */
@@ -303,7 +303,7 @@ fs_chown(int tree, int op, long u, int num)
 	    "Change %s of %d files?", op ? "group" : "owner", num) != 'y')
 		return;
 
-	while (num-- && u < db_num[right_col]) {
+	while (num-- && u < (long)db_num[right_col]) {
 		f = db_list[right_col][u++];
 
 		/* "en" is not allowed if both files are present */
@@ -395,7 +395,7 @@ fs_rm(int tree, char *txt, long u, int n,
 	    NULL, "Really %s %d files?", txt ? txt : "delete", n) != 'y')
 		return 1;
 
-	while (n-- && u < db_num[right_col]) {
+	while (n-- && u < (long)db_num[right_col]) {
 		f = db_list[right_col][u++];
 
 		/* "dd" is not allowed if both files are present */
@@ -484,7 +484,7 @@ fs_cp(int to, long u, int n,
 		return 1;
 	}
 
-	for (; n-- && u < db_num[right_col]; u++) {
+	for (; n-- && u < (long)db_num[right_col]; u++) {
 		if (to == 1) {
 			pth1 = rpath;
 			len1 = rlen;
