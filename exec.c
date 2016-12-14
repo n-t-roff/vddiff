@@ -428,6 +428,9 @@ exec_cmd(char **av, tool_flags_t flags, char *path, char *msg)
 	int status = 0;
 	char prompt[] = "Type <ENTER> to continue ";
 
+#if defined(TRACE)
+	fprintf(debug, "->exec_cmd(%s)\n", *av);
+#endif
 	erase();
 	refresh();
 	def_prog_mode();
@@ -486,6 +489,9 @@ exec_cmd(char **av, tool_flags_t flags, char *path, char *msg)
 	if (!(flags & TOOL_NOLIST))
 		disp_fmode();
 
+#if defined(TRACE)
+	fprintf(debug, "<-exec_cmd\n");
+#endif
 	return status;
 }
 

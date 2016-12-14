@@ -2965,7 +2965,13 @@ center(unsigned idx)
 static void
 push_state(char *name, char *rnam, bool lzip, bool rzip)
 {
-	struct ui_state *st = malloc(sizeof(struct ui_state));
+	struct ui_state *st;
+
+#if defined(TRACE)
+	fprintf(debug, "->push_state(ln(%s) rn(%s)) lp(%s) rp(%s)\n",
+	    name, rnam, lpath, rpath);
+#endif
+	st = malloc(sizeof(struct ui_state));
 	diff_db_store(st);
 	st->llen = llen;
 	st->rlen = rlen;
@@ -3003,6 +3009,9 @@ push_state(char *name, char *rnam, bool lzip, bool rzip)
 	st->tree = subtree;
 	st->next = ui_stack;
 	ui_stack = st;
+#if defined(TRACE)
+	fprintf(debug, "<-push_state lp(%s) rp(%s)\n", lpath, rpath);
+#endif
 }
 
 void
@@ -3013,6 +3022,10 @@ pop_state(
 {
 	struct ui_state *st = ui_stack;
 
+#if defined(TRACE)
+	fprintf(debug, "->pop_state(m=%d) lp(%s) rp(%s) fp(%s)\n",
+	    mode, lpath, rpath, fpath);
+#endif
 	if (!st) {
 		if (from_fmode) {
 			if (fpath) {
@@ -3035,7 +3048,7 @@ pop_state(
 			printerr(NULL, "At top directory");
 		}
 
-		return;
+		goto ret;
 	}
 
 	if (st->lzip) {
@@ -3104,6 +3117,13 @@ pop_state(
 		dir_change = TRUE;
 		disp_list(1);
 	}
+
+ret:
+#if defined(TRACE)
+	fprintf(debug, "<-pop_state lp(%s) rp(%s) fp(%s)\n",
+	    lpath, rpath, fpath);
+#endif
+	return;
 }
 
 void

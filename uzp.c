@@ -163,11 +163,17 @@ rmtmpdirs(char *s)
 	static char *cm[] = { "chmod", "-R" , "700", NULL, NULL };
 	static char *rm[] = { "rm"   , "-rf", NULL , NULL };
 
+#if defined(TRACE)
+	fprintf(debug, "->rmtmpdirs(%s)\n", s);
+#endif
 	cm[3] = s;
 	exec_cmd(cm, 0, NULL, NULL);
 	rm[2] = s;
 	exec_cmd(rm, 0, NULL, NULL);
 	free(s); /* either tmp_dir or a DB entry */
+#if defined(TRACE)
+	fprintf(debug, "<-rmtmpdirs\n");
+#endif
 }
 
 struct filediff *

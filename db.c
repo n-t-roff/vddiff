@@ -736,6 +736,7 @@ diff_db_free(int i)
 #if defined(TRACE)
 	fprintf(debug, "<->diff_db_free(%d)\n", i);
 #endif
+	disp_curs(0);
 #ifdef HAVE_LIBAVLBST
 	diff_db_delete(diff_db[i].root);
 	diff_db[i].root = NULL;
