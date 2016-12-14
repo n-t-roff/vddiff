@@ -2107,10 +2107,6 @@ disp_curs(
 	} else if (i == m) {
 		a = 1;
 		markc(w);
-	} else {
-		/* Did fix bug in mono mode. For whatever reason standout
-		 * was active. */
-		standendc(w);
 	}
 
 	if (i < db_num[right_col]) {
@@ -2174,6 +2170,7 @@ disp_list(
 		if (i >= db_num[right_col]) {
 			standoutc(w);
 			mvwaddch(w, y, llstw, ' ');
+			standendc(w);
 		} else if (md && y == curs[right_col]) {
 			disp_curs(1);
 		} else if ((long)(top_idx[right_col] + y) ==
@@ -2225,16 +2222,23 @@ disp_line(
 		return;
 	}
 #endif
-#if defined(TRACE) && 0
-	fprintf(debug, "<->disp_line(%u,%u,%i)\n", y, i, info);
-#endif
 
 	w = getlstwin();
 	f = db_list[right_col][i];
 	mx = twocols ? llstw : 0;
 
-	if (twocols && !fmode)
+	if (twocols && !fmode) {
 		(wattr_get)(w, &a, &cp, NULL);
+	}
+#if defined(TRACE) && 0
+	else {
+		a = 0; cp = 0;
+	}
+
+	fprintf(debug,
+	    "->disp_line(y=%u i=%u is_curs=%i) attr=0x%x color=%d\n",
+	    y, i, info, a, cp);
+#endif
 
 	if (fmode || bmode) {
 		goto no_diff;
@@ -2292,7 +2296,7 @@ prtc2:
 	}
 
 	if (!info) {
-		return;
+		goto ret;
 	}
 
 	werase(wstat);
@@ -2309,11 +2313,11 @@ prtc2:
 	} else if (edit) {
 		if (wstat_dirty)
 			disp_edit();
-		return;
+		goto ret;
 	} else if (regex) {
 		if (wstat_dirty)
 			disp_regex();
-		return;
+		goto ret;
 	}
 
 	statcol(mark && !fmode ? 2 : 1);
@@ -2345,6 +2349,13 @@ prtc2:
 
 	filt_stat();
 	dir_change = FALSE;
+
+ret:
+#if defined(TRACE) && 0
+	(wattr_get)(w, &a, &cp, NULL);
+	fprintf(debug, "<-disp_line attr=0x%x color=%d\n", a, cp);
+#endif
+	return;
 }
 
 static void
