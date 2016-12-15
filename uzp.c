@@ -66,7 +66,8 @@ uz_init(void)
 		tmpdirbase = "/var/tmp";
 
 	if (!(tmpdirbase = realpath(tmpdirbase, NULL))) {
-		printerr(strerror(errno), "realpath \"%s\" failed", tmpdirbase);
+		printerr(strerror(errno), LOCFMT
+		    "realpath \"%s\"" LOCVAR, tmpdirbase);
 		return 1;
 	}
 

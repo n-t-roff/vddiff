@@ -734,9 +734,8 @@ void
 diff_db_free(int i)
 {
 #if defined(TRACE)
-	fprintf(debug, "<->diff_db_free(%d)\n", i);
+	fprintf(debug, "->diff_db_free(%d)\n", i);
 #endif
-	disp_curs(0);
 #ifdef HAVE_LIBAVLBST
 	diff_db_delete(diff_db[i].root);
 	diff_db[i].root = NULL;
@@ -752,6 +751,9 @@ diff_db_free(int i)
 	free(db_list[i]);
 	db_list[i] = NULL;
 	db_num[i] = 0;
+#if defined(TRACE)
+	fprintf(debug, "<-diff_db_free\n");
+#endif
 }
 
 /* In the libavlbst case the nodes are not really deleted, just the memory

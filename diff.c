@@ -696,7 +696,8 @@ add_diff_dir(
 #endif
 
 	if (!(rp = realpath(path, NULL))) {
-		printerr(strerror(errno), "realpath \"%s\"", path);
+		printerr(strerror(errno), LOCFMT "realpath \"%s\""
+		    LOCVAR, path);
 		return;
 	}
 
@@ -755,9 +756,8 @@ is_diff_dir(struct filediff *f)
 		goto ret0; /* No debug print */
 	}
 #if defined(TRACE)
-	fprintf(debug, "is_diff_dir(%s)", f->name);
+	fprintf(debug, "->is_diff_dir(%s)\n", f->name);
 #endif
-
 	if (bmode) {
 		pth = rpath;
 		l = strlen(pth);
@@ -777,18 +777,19 @@ is_diff_dir(struct filediff *f)
 	}
 
 	pthcat(pth, l, f->name);
-
+#if defined(TRACE)
+	fprintf(debug, "  pthcat: \"%s\"\n", pth);
+#endif
 	/* Here since both path and name can be symlink */
 	if (!(rp = realpath(pth, NULL))) {
-		printerr(strerror(errno), "realpath \"%s\"", pth);
+		printerr(strerror(errno), LOCFMT "realpath \"%s\""
+		    LOCVAR, pth);
 		goto ret;
 	}
-
-	pth = rp;
-
 #if defined(TRACE)
-	fprintf(debug, " \"%s\"", pth);
+	fprintf(debug, "  realpath: \"%s\"\n", pth);
 #endif
+	pth = rp;
 	v = str_db_srch(&scan_db, pth
 #ifdef HAVE_LIBAVLBST
 	    , NULL
@@ -800,10 +801,10 @@ ret:
 	if (bp) {
 		free(bp);
 	}
-#if defined(TRACE)
-	fprintf(debug, " %d\n", v);
-#endif
 ret0:
+#if defined(TRACE)
+	fprintf(debug, "<-is_diff_dir: %d\n", v);
+#endif
 	return v;
 }
 

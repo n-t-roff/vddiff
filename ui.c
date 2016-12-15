@@ -2856,7 +2856,7 @@ mark_global(void)
 			/* Ignore error if file had just been deleted */
 			if (errno != ENOENT)
 				printerr(strerror(errno),
-				    "realpath \"%s\"", lpath);
+				    LOCFMT "realpath \"%s\"" LOCVAR, lpath);
 			lpath[llen] = 0;
 			goto error;
 		}
@@ -3327,7 +3327,7 @@ printerr(const char *s2, const char *s1, ...)
 	va_list ap;
 
 #if defined(TRACE)
-	fputs("<->printerr: ", debug);
+	fputs("<>printerr: ", debug);
 	va_start(ap, s1);
 	vfprintf(debug, s1, ap);
 	va_end(ap);

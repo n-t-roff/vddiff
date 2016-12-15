@@ -96,6 +96,8 @@ fmode_dmode(void)
 	old_col = right_col;
 	right_col = 0;
 	from_fmode = TRUE;
+	pwd  = lpath + llen;
+	rpwd = rpath + rlen;
 	close2cwins();
 #if defined(TRACE)
 	fprintf(debug, "<-fmode_dmode lp(%s) rp(%s) bm=%u fm=%u 2c=%u\n",
@@ -153,7 +155,7 @@ mk_abs_pth(char *p, size_t *l)
 	}
 
 	if (!(s = realpath(p, NULL))) {
-		printerr(strerror(errno), "realpath \"%s\"", p);
+		printerr(strerror(errno), LOCFMT "realpath \"%s\"" LOCVAR, p);
 		return;
 	}
 

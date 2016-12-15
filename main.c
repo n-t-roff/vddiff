@@ -387,7 +387,7 @@ check_args(int argc, char **argv)
 	arg[0] = s;
 
 	if (stat(s, &stat1) == -1) {
-		printf("stat \"%s\" failed: %s\n", s, strerror(errno));
+		printf(LOCFMT "stat \"%s\": %s\n" LOCVAR, s, strerror(errno));
 		exit(1);
 	}
 
@@ -398,7 +398,7 @@ check_args(int argc, char **argv)
 
 	if (fmode && *s != '/') {
 		if (!(s2 = realpath(s, NULL))) {
-			printf("realpath \"%s\" failed: %s\n", s,
+			printf(LOCFMT "realpath \"%s\": %s\n" LOCVAR, s,
 			    strerror(errno));
 			exit(1);
 		}
@@ -429,7 +429,7 @@ check_args(int argc, char **argv)
 	arg[1] = s;
 
 	if (stat(s, &stat2) == -1) {
-		printf("stat \"%s\" failed: %s\n", s, strerror(errno));
+		printf(LOCFMT "stat \"%s\": %s\n" LOCVAR, s, strerror(errno));
 		exit(1);
 	}
 
@@ -448,7 +448,7 @@ check_args(int argc, char **argv)
 
 	if (fmode && *s != '/') {
 		if (!(s2 = realpath(s, NULL))) {
-			printf("realpath \"%s\" failed: %s\n", s,
+			printf(LOCFMT "realpath \"%s\": %s\n" LOCVAR, s,
 			    strerror(errno));
 			exit(1);
 		}
