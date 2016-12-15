@@ -10,7 +10,9 @@
 #define PAIR_MARK      10
 
 struct ui_state {
+	/* Path before going to temp dir for returning when leaving temp dir */
 	char *lpth, *rpth;
+	/* Path to temp dir for removing it later */
 	char *lzip, *rzip;
 	size_t llen, rlen;
 	void *bst;

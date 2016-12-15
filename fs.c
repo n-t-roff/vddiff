@@ -626,7 +626,6 @@ rebuild_db(
 		mark_global();
 	}
 
-	disp_curs(0);
 	diff_db_free(0);
 	build_diff_db(bmode || fmode ? 1 : subtree);
 

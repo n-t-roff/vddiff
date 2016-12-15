@@ -246,7 +246,13 @@ next_key:
 
 		if ((c = getch()) == ERR)
 			goto next_key;
-
+#if defined(TRACE)
+		if (isascii(c) && !iscntrl(c)) {
+			fprintf(debug, "<>getch: '%c'\n", c);
+		} else {
+			fprintf(debug, "<>getch: 0x%x\n", c);
+		}
+#endif
 		if (c == '.' && c2 && !*key) {
 			if (!c2) {
 				goto next_key;
@@ -1628,7 +1634,8 @@ action(
 		} else if (S_ISDIR(ltyp) || S_ISDIR(rtyp)) {
 			if (bmode) {
 				t2 = NULL;
-				enter_dir(rnam, NULL, FALSE, FALSE, tree);
+				enter_dir(rnam , NULL,
+				          FALSE, FALSE, tree);
 
 				/* In bmode the unpacked dir is in z2.
 				 * Hence z1 is useless and can be removed. */
@@ -1639,21 +1646,24 @@ action(
 				}
 			} else if (!S_ISDIR(ltyp)) {
 				t2 = NULL;
-				enter_dir(NULL, rnam, FALSE, z2 ? TRUE : FALSE,
-				    tree);
+				enter_dir(NULL , rnam,
+				          FALSE, z2 ? TRUE : FALSE,
+				          tree);
 
 			} else if (!S_ISDIR(rtyp)) {
 				t1 = NULL;
-				enter_dir(lnam, NULL, z1 ? TRUE : FALSE, FALSE,
-				    tree);
+				enter_dir(lnam             , NULL,
+				          z1 ? TRUE : FALSE, FALSE,
+				          tree);
 			} else {
 				/* If t<n> == NULL tmpdir is not removed.
 				 * It must not be removed before it is left
 				 * with "cd .." later. */
 				t1 = t2 = NULL;
 				one_scan = TRUE;
-				enter_dir(lnam, rnam, z1 ? TRUE : FALSE,
-				    z2 ? TRUE : FALSE, tree);
+				enter_dir(lnam             , rnam,
+				          z1 ? TRUE : FALSE, z2 ? TRUE : FALSE,
+					  tree);
 			}
 		}
 
@@ -1675,7 +1685,8 @@ action(
 			tool(f2->name, NULL, 2, ign_ext || raw_cont);
 		else if (S_ISDIR(f2->rtype)) {
 			t1 = t2 = NULL;
-			enter_dir(NULL, f2->name, FALSE, z2 ? TRUE : FALSE, 0);
+			enter_dir(NULL , f2->name,
+			          FALSE, z2 ? TRUE : FALSE, 0);
 		} else {
 			err = typerr;
 			goto ret;
@@ -1685,7 +1696,8 @@ action(
 			tool(f1->name, NULL, 1, ign_ext || raw_cont);
 		else if (S_ISDIR(f1->ltype)) {
 			t1 = t2 = NULL;
-			enter_dir(f1->name, NULL, z1 ? TRUE : FALSE, FALSE, 0);
+			enter_dir(f1->name         , NULL,
+			          z1 ? TRUE : FALSE, FALSE, 0);
 		} else {
 			err = typerr;
 			goto ret;
@@ -1700,8 +1712,8 @@ action(
 				tool(f1->name, NULL, 1, 0);
 		} else if (S_ISDIR(f1->ltype)) {
 			t1 = t2 = NULL;
-			enter_dir(f1->name, f2->name, z1 ? TRUE : FALSE,
-				    z2 ? TRUE : FALSE, 0);
+			enter_dir(f1->name         , f2->name,
+			          z1 ? TRUE : FALSE, z2 ? TRUE : FALSE, 0);
 		} else {
 			err = typerr;
 			goto ret;
@@ -3186,6 +3198,7 @@ enter_dir(char *name, char *rnam, bool lzip, bool rzip, short tree)
 
 	if (!name) {
 		name = rnam;
+		lzip = rzip;
 	}
 
 	if (bmode) {
@@ -3207,7 +3220,13 @@ enter_dir(char *name, char *rnam, bool lzip, bool rzip, short tree)
 	db_set_curs(cp, top_idx[right_col], curs[right_col]);
 	n = NULL; /* flag */
 
-	if (name && *name == '/') {
+	/* Not in bmode since lpath is always "." there */
+	if (!bmode && name && *name == '/') {
+		*lp = 0;
+		*cp = 0;
+	}
+
+	if (lzip) {
 		if (bmode) {
 			if (!getcwd(rpath, sizeof rpath))
 				printerr(strerror(errno),
@@ -3221,8 +3240,6 @@ enter_dir(char *name, char *rnam, bool lzip, bool rzip, short tree)
 
 		if (!bmode) {
 			bpth->col = right_col;
-			*lp = 0;
-			*cp = 0;
 		}
 
 		ptr_db_add(&uz_path_db, strdup(name), bpth);
@@ -3257,9 +3274,10 @@ enter_dir(char *name, char *rnam, bool lzip, bool rzip, short tree)
 		rnam = n->key;
 #endif
 		ptr_db_del(&uz_path_db, n);
-	} else
+	} else {
 		/* DON'T REMOVE! (Cause currently unclear) */
 		n = NULL;
+	}
 
 	if (bmode && chdir(name) == -1) {
 		printerr(strerror(errno), "chdir \"%s\":", name);
