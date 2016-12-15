@@ -14,6 +14,7 @@ OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
 PERFORMANCE OF THIS SOFTWARE.
 */
 
+#include <stdarg.h>
 #include <stdlib.h>
 #include <string.h>
 #include <errno.h>
@@ -25,6 +26,7 @@ PERFORMANCE OF THIS SOFTWARE.
 #include <fcntl.h>
 #include <unistd.h>
 #include <regex.h>
+#include <time.h>
 #ifndef HAVE_FUTIMENS
 # include <utime.h>
 #endif
@@ -45,23 +47,29 @@ struct str_list {
 	struct str_list *next;
 };
 
-static int proc_dir(void);
-static int rm_file(void);
+static void proc_dir(void);
+static void rm_file(void);
 static void cp_file(void);
 static int creatdir(void);
 static void cp_link(void);
 static void cp_reg(void);
 static int ask_for_perms(mode_t *);
 static int fs_ro(void);
+static void fs_fwrap(const char *, ...);
 
+static time_t fs_t1, fs_t2;
 static char *pth1, *pth2;
 static size_t len1, len2;
 static enum { TREE_RM, TREE_CP } tree_op;
-static bool ign_rm_errs;
+static bool fs_ign_errs;
+static bool fs_error;
 
 void
 fs_mkdir(short tree)
 {
+	fs_error = FALSE;
+	fs_ign_errs = FALSE;
+
 	if (fs_ro()) {
 		return;
 	}
@@ -97,6 +105,9 @@ fs_rename(int tree)
 	struct filediff *f;
 	char *s;
 	size_t l;
+
+	fs_error = FALSE;
+	fs_ign_errs = FALSE;
 
 	if (fs_ro() || !db_num[right_col]) {
 		return;
@@ -165,6 +176,9 @@ fs_chmod(int tree, long u, int num)
 	struct filediff *f;
 	mode_t m;
 	bool have_mode = FALSE;
+
+	fs_error = FALSE;
+	fs_ign_errs = FALSE;
 
 #if defined(TRACE)
 	fprintf(debug, "->fs_chmod(t=%i u=%li n=%i) c=%u\n",
@@ -295,6 +309,9 @@ fs_chown(int tree, int op, long u, int num)
 	gid_t gid;
 	bool have_owner = FALSE;
 
+	fs_error = FALSE;
+	fs_ign_errs = FALSE;
+
 	if (fs_ro() || !db_num[right_col]) {
 		return;
 	}
@@ -385,6 +402,9 @@ fs_rm(int tree, char *txt, long u, int n,
 	int rv = 0;
 	bool chg = FALSE;
 
+	fs_error = FALSE;
+	fs_ign_errs = FALSE;
+
 	if (fs_ro() || !db_num[right_col]) {
 		return 0;
 	}
@@ -433,8 +453,6 @@ fs_rm(int tree, char *txt, long u, int n,
 			goto cancel;
 		}
 
-		printerr(NULL, "Deleting %s\"%s\"", S_ISDIR(stat1.st_mode) ?
-		    "directory " : "", pth1);
 		chg = TRUE;
 
 		if (S_ISDIR(stat1.st_mode)) {
@@ -449,7 +467,6 @@ fs_rm(int tree, char *txt, long u, int n,
 		goto cancel;
 	}
 
-	ign_rm_errs = FALSE;
 	rebuild_db(0);
 	return 0;
 
@@ -471,6 +488,9 @@ fs_cp(int to, long u, int n,
 	struct filediff *f;
 	struct stat st;
 	bool m;
+
+	fs_error = FALSE;
+	fs_ign_errs = FALSE;
 
 	if (fs_ro() || !db_num[right_col]) {
 		return 1;
@@ -544,12 +564,6 @@ fs_cp(int to, long u, int n,
 		len1 = pthcat(pth1, len1, f->name);
 		len2 = pthcat(pth2, len2, f->name);
 		stat1 = st;
-
-		if (!(md & 2)) {
-			printerr(NULL, "Copy %s%s -> %s",
-			    S_ISDIR(stat1.st_mode) ?  "directory " : "", pth1,
-			    pth2);
-		}
 
 		if (md & 2) {
 			if (symlink(pth1, pth2) == -1) {
@@ -632,24 +646,23 @@ rebuild_db(
 #endif
 }
 
-static int
+static void
 proc_dir(void)
 {
 	DIR *d;
 	struct dirent *ent;
 	char *name;
 	struct str_list *dirs = NULL;
-	short err = 0;
 
 	if (tree_op == TREE_CP && creatdir())
-		return err;
+		return;
 
 	if (!(d = opendir(pth1))) {
 		printerr(strerror(errno), "opendir %s failed", pth1);
-		return err;
+		return;
 	}
 
-	while (!err) {
+	while (!fs_error) {
 		int i;
 
 		errno = 0;
@@ -661,7 +674,7 @@ proc_dir(void)
 			pth1[len1] = 0;
 			printerr(strerror(errno), "readdir %s failed", pth1);
 			closedir(d);
-			return err;
+			return;
 		}
 
 		name = ent->d_name;
@@ -692,7 +705,7 @@ proc_dir(void)
 			se->next = dirs ? dirs : NULL;
 			dirs = se;
 		} else if (tree_op == TREE_RM)
-			err |= rm_file();
+			rm_file();
 		else {
 			pthcat(pth2, len2, name);
 			cp_file();
@@ -710,7 +723,7 @@ closedir:
 		size_t l1, l2 = 0 /* silence warning */;
 		struct str_list *p;
 
-		if (!err) {
+		if (!fs_error) {
 			l1 = len1;
 			len1 = pthcat(pth1, len1, dirs->s);
 
@@ -719,8 +732,7 @@ closedir:
 				len2 = pthcat(pth2, len2, dirs->s);
 			}
 
-			err |= proc_dir();
-
+			proc_dir();
 			pth1[len1 = l1] = 0;
 
 			if (tree_op == TREE_CP)
@@ -733,43 +745,34 @@ closedir:
 		free(p);
 	}
 
-	if (!err && tree_op == TREE_RM && rmdir(pth1) == -1 && !ign_rm_errs)
-		switch (dialog(
-		    "<ENTER> continue, <ESC> cancel, 'i' ignore errors",
-		    "\ni", "rmdir \"%s\" failed: %s", pth1,
-		    strerror(errno))) {
-		case '':
-			err = 1;
-			break;
-		case 'i':
-			ign_rm_errs = TRUE;
-			break;
-		}
+	if (!fs_error && tree_op == TREE_RM &&
+	    rmdir(pth1) == -1 && !fs_ign_errs) {
 
-	return err;
+		fs_fwrap("rmdir \"%s\": %s", pth1, strerror(errno));
+	}
 }
 
-static int
+static void
 rm_file(void)
 {
-	if (unlink(pth1) == -1 && !ign_rm_errs)
-		switch (dialog(
-		    "<ENTER> continue, <ESC> cancel, 'i' ignore errors",
-		    "\ni", "unlink \"%s\" failed: %s", pth1,
-		    strerror(errno))) {
-		case '':
-			return 1;
-		case 'i':
-			ign_rm_errs = TRUE;
-			break;
-		}
+	if ((fs_t2 = time(NULL)) - fs_t1) {
+		printerr(NULL, "Delete \"%s\"", pth1);
+		fs_t1 = fs_t2;
+	}
 
-	return 0;
+	if (!fs_error && unlink(pth1) == -1 && !fs_ign_errs) {
+		fs_fwrap("unlink \"%s\": %s", pth1, strerror(errno));
+	}
 }
 
 static void
 cp_file(void)
 {
+	if ((fs_t2 = time(NULL)) - fs_t1) {
+		printerr(NULL, "Copy \"%s\" -> \"%s\"", pth1, pth2);
+		fs_t1 = fs_t2;
+	}
+
 	if (S_ISREG(stat1.st_mode))
 		cp_reg();
 	else if (S_ISLNK(stat1.st_mode))
@@ -790,7 +793,7 @@ creatdir(void)
 	}
 
 	if (mkdir(pth2, stat1.st_mode & 07777) == -1 && errno != EEXIST) {
-		printerr(strerror(errno), "mkdir %s failed", pth2);
+		printerr(strerror(errno), "mkdir %s", pth2);
 		return -1;
 	}
 
@@ -804,19 +807,19 @@ cp_link(void)
 	char *buf = malloc(stat1.st_size + 1);
 
 	if ((l = readlink(pth1, buf, stat1.st_size)) == -1) {
-		printerr(strerror(errno), "readlink %s failed", pth1);
+		printerr(strerror(errno), "readlink %s", pth1);
 		goto exit;
 	}
 
 	if (l != stat1.st_size) {
-		printerr("Unexpected link lenght", "readlink %s failed", pth1);
+		printerr("Unexpected link lenght", "readlink %s", pth1);
 		goto exit;
 	}
 
 	buf[l] = 0;
 
 	if (symlink(buf, pth2) == -1) {
-		printerr(strerror(errno), "symlink %s failed", pth2);
+		printerr(strerror(errno), "symlink %s", pth2);
 		goto exit;
 	}
 
@@ -843,7 +846,7 @@ cp_reg(void)
 				goto copy;
 
 			printerr(strerror(errno),
-			    "lstat \"%s\" failed", pth2);
+			    "lstat \"%s\"", pth2);
 			goto copy;
 		}
 
@@ -857,10 +860,10 @@ cp_reg(void)
 			goto copy;
 
 		if (errno != EACCES)
-			printerr(strerror(errno), "access \"%s\" failed", pth2);
+			printerr(strerror(errno), "access \"%s\"", pth2);
 
 		if (unlink(pth2) == -1) {
-			printerr(strerror(errno), "unlink \"%s\" failed",
+			printerr(strerror(errno), "unlink \"%s\"",
 			    pth2);
 		}
 	}
@@ -868,7 +871,7 @@ cp_reg(void)
 copy:
 	if ((f2 = open(pth2, O_CREAT | O_TRUNC | O_WRONLY,
 	    stat1.st_mode & 07777)) == -1) {
-		printerr(strerror(errno), "create %s failed", pth2);
+		printerr(strerror(errno), "create %s", pth2);
 		return;
 	}
 
@@ -876,21 +879,21 @@ copy:
 		goto setattr;
 
 	if ((f1 = open(pth1, O_RDONLY)) == -1) {
-		printerr(strerror(errno), "open %s failed", pth1);
+		printerr(strerror(errno), "open %s", pth1);
 		goto close2;
 	}
 
 	while (1) {
 		if ((l1 = read(f1, lbuf, sizeof lbuf)) == -1) {
-			printerr(strerror(errno), "read %s failed", pth1);
+			printerr(strerror(errno), "read %s", pth1);
 			break;
 		}
 
 		if (!l1)
 			break;
 
-		if ((l2 = write(f2, lbuf, l1)) == -1) {
-			printerr(strerror(errno), "write %s failed", pth2);
+		if ((l2 = write(f2, lbuf, l1)) == -1 && !fs_ign_errs) {
+			fs_fwrap("write %s", pth2, strerror(errno));
 			break;
 		}
 
@@ -916,4 +919,23 @@ setattr:
 
 close2:
 	close(f2);
+}
+
+static void
+fs_fwrap(const char *f, ...)
+{
+	va_list a;
+
+	va_start(a, f);
+
+	switch (vdialog(ign_esc_txt, "\ni", f, a)) {
+	case '':
+		fs_error = 1;
+		break;
+	case 'i':
+		fs_ign_errs = TRUE;
+		break;
+	}
+
+	va_end(a);
 }

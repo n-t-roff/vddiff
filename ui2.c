@@ -36,7 +36,8 @@ PERFORMANCE OF THIS SOFTWARE.
 #include "gq.h"
 
 const char y_n_txt[] = "'y' yes, 'n' no";
-const char ign_txt[] = "'i' ignore all errors, <ENTER> continue";
+const char ign_txt[] = "'i' ignore errors, <ENTER> continue";
+const char ign_esc_txt[] = "<ENTER> continue, <ESC> cancel, 'i' ignore errors";
 const char any_txt[] = "Press any key to continue";
 
 struct str_uint {
@@ -242,14 +243,14 @@ ui_srch(void)
 	if (regex)
 		clr_regex();
 
-	ed_dialog("Type first characters of filename:",
+	ed_dialog("Type first characters of filename (<ESC> to cancel):",
 	    "" /* remove existing */, srch_file, 0, NULL);
 	free(srchmap);
 
 	if (!regex)
 		return;
 
-	if (ed_dialog("Enter regular expression:",
+	if (ed_dialog("Enter regular expression (<ESC> to cancel):",
 	    "" /* remove existing */, NULL, 0, &regex_hist) ||
 	    !*rbuf)
 		regex = 0;

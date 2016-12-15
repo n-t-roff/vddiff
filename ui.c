@@ -3332,8 +3332,9 @@ printerr(const char *s2, const char *s1, ...)
 	vfprintf(debug, s1, ap);
 	va_end(ap);
 
-	if (s2)
+	if (s2) {
 		fprintf(debug, ": %s", s2);
+	}
 
 	fputc('\n', debug);
 #endif
@@ -3342,8 +3343,9 @@ printerr(const char *s2, const char *s1, ...)
 		vfprintf(stderr, s1, ap);
 		va_end(ap);
 
-		if (s2)
+		if (s2) {
 			fprintf(stderr, ": %s", s2);
+		}
 
 		fputc('\n', stderr);
 		return;
@@ -3357,7 +3359,9 @@ printerr(const char *s2, const char *s1, ...)
 	va_end(ap);
 
 	if (s2) {
-		mvwprintw(wstat, 1, 0, "%s", s2);
+		wmove(wstat, 1, 0);
+		wclrtoeol(wstat);
+		wprintw(wstat, "%s", s2);
 		wrefresh(wstat);
 		getch();
 		werase(wstat);
@@ -3368,20 +3372,36 @@ printerr(const char *s2, const char *s1, ...)
 }
 
 int
-dialog(const char *quest, char *answ, char *fmt, ...)
+dialog(const char *quest, const char *answ, const char *fmt, ...)
 {
 	va_list ap;
+	int r;
+
+	if (fmt) {
+		va_start(ap, fmt);
+	}
+
+	r = vdialog(quest, answ, fmt, ap);
+
+	if (fmt) {
+		va_end(ap);
+	}
+
+	return r;
+}
+
+int
+vdialog(const char *quest, const char *answ, const char *fmt, va_list ap)
+{
 	int c, c2;
-	char *s;
+	const char *s;
 
 	wstat_dirty = TRUE;
 
 	if (fmt) {
 		werase(wstat);
 		wmove(wstat, 0, 0);
-		va_start(ap, fmt);
 		vwprintw(wstat, fmt, ap);
-		va_end(ap);
 	}
 
 	mvwprintw(wstat, 1, 0, "%s", quest);

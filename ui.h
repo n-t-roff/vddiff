@@ -23,7 +23,8 @@ struct ui_state {
 
 void build_ui(void);
 void printerr(const char *, const char *, ...);
-int dialog(const char *, char *, char *, ...);
+int dialog(const char *, const char *, const char *, ...);
+int vdialog(const char *, const char *, const char *, va_list);
 void disp_list(unsigned);
 void center(unsigned);
 void no_file(void);

@@ -118,7 +118,7 @@ build_diff_db(
 #endif
 	if (!(d = opendir(lpath))) {
 		if (!ign_diff_errs && dialog(ign_txt, NULL,
-		    "opendir \"%s\" failed: %s", lpath,
+		    "opendir \"%s\": %s", lpath,
 		    strerror(errno)) == 'i')
 			ign_diff_errs = TRUE;
 
