@@ -1040,6 +1040,7 @@ next_key:
 					tgl2c(1);
 				} else {
 					fmode_dmode();
+					one_scan = TRUE;
 				}
 
 				/* Use "", not NULL here! */
@@ -2836,7 +2837,7 @@ clr_mark(void)
 	wnoutrefresh(wstat);
 	doupdate();
 #if defined(TRACE)
-	fprintf(debug, "->clr_mark\n");
+	fprintf(debug, "<-clr_mark\n");
 #endif
 }
 
