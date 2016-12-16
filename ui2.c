@@ -26,11 +26,11 @@ PERFORMANCE OF THIS SOFTWARE.
 #include "ed.h"
 #include "ui.h"
 #include "ui2.h"
+#include "exec.h"
 #include "uzp.h"
 #include "diff.h"
 #include "fs.h"
 #include "main.h"
-#include "exec.h"
 #include "db.h"
 #include "tc.h"
 #include "gq.h"
@@ -964,7 +964,7 @@ free_zdir(struct filediff *z, char *t)
 	free(z);
 
 	if (t)
-		rmtmpdirs(t);
+		rmtmpdirs(t, TOOL_NOLIST);
 }
 
 void

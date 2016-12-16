@@ -512,6 +512,9 @@ usage(void)
 void
 sig_term(int sig)
 {
+#if defined(TRACE)
+	fprintf(debug, "->sig_term(%d)\n", sig);
+#endif
 	/* Change out of tmpdirs before deleting them. */
 	if (chdir("/") == -1) {
 		printerr(strerror(errno), "chdir \"/\" failed");
@@ -525,6 +528,9 @@ sig_term(int sig)
 	/* if bmode: remove tmp_dirs */
 	uz_exit();
 
+#if defined(TRACE)
+	fprintf(debug, "<-sig_term\n");
+#endif
 	if (sig) {
 		endwin();
 		exit(1);

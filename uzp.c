@@ -97,7 +97,7 @@ uz_exit(void)
 		 * in rmtmpdirs() */
 		ptr_db_del(&uz_path_db, n);
 		key[strlen(key) - 2] = 0;
-		rmtmpdirs(key);
+		rmtmpdirs(key, TOOL_NOLIST);
 		free(dat->pth);
 		free(dat);
 	}
@@ -140,7 +140,7 @@ mktmpdirs(void)
 	if (mkdir(d1, 0700) == -1) {
 		printerr(strerror(errno),
 		    "mkdir %s failed", tmp_dir);
-		rmtmpdirs(tmp_dir);
+		rmtmpdirs(tmp_dir, TOOL_NOLIST);
 		return 1;
 	}
 
@@ -149,7 +149,7 @@ mktmpdirs(void)
 	if (mkdir(d1, 0700) == -1) {
 		printerr(strerror(errno),
 		    "mkdir %s failed", tmp_dir);
-		rmtmpdirs(tmp_dir);
+		rmtmpdirs(tmp_dir, TOOL_NOLIST);
 		return 1;
 	}
 
@@ -159,7 +159,7 @@ mktmpdirs(void)
 }
 
 void
-rmtmpdirs(char *s)
+rmtmpdirs(char *s, tool_flags_t tf)
 {
 	static char *cm[] = { "chmod", "-R" , "700", NULL, NULL };
 	static char *rm[] = { "rm"   , "-rf", NULL , NULL };
@@ -168,9 +168,9 @@ rmtmpdirs(char *s)
 	fprintf(debug, "->rmtmpdirs(%s)\n", s);
 #endif
 	cm[3] = s;
-	exec_cmd(cm, 0, NULL, NULL);
+	exec_cmd(cm, tf, NULL, NULL);
 	rm[2] = s;
-	exec_cmd(rm, 0, NULL, NULL);
+	exec_cmd(rm, tf, NULL, NULL);
 	free(s); /* either tmp_dir or a DB entry */
 #if defined(TRACE)
 	fprintf(debug, "<-rmtmpdirs\n");
@@ -231,7 +231,7 @@ unpack(struct filediff *f, int tree, char **tmp, int type)
 		z = unzip(f, tree, i);
 		break;
 	default:
-		rmtmpdirs(tmp_dir);
+		rmtmpdirs(tmp_dir, TOOL_NOLIST);
 		return NULL;
 	}
 

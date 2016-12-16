@@ -34,8 +34,8 @@ PERFORMANCE OF THIS SOFTWARE.
 #include "diff.h"
 #include "main.h"
 #include "ui.h"
-#include "uzp.h"
 #include "exec.h"
+#include "uzp.h"
 #include "db.h"
 #include "fs.h"
 #include "ed.h"
@@ -3087,7 +3087,7 @@ pop_state(
 			clr_mark();
 
 		st->lzip[strlen(st->lzip) - 2] = 0;
-		rmtmpdirs(st->lzip);
+		rmtmpdirs(st->lzip, TOOL_NOLIST);
 	}
 
 	if (st->rzip) {
@@ -3099,7 +3099,7 @@ pop_state(
 			clr_mark();
 
 		st->rzip[strlen(st->rzip) - 2] = 0;
-		rmtmpdirs(st->rzip);
+		rmtmpdirs(st->rzip, TOOL_NOLIST);
 	}
 
 	if (mark) {
@@ -3319,7 +3319,7 @@ enter_dir(char *name, char *rnam, bool lzip, bool rzip, short tree)
 			clr_mark();
 
 		rnam[l - 2] = 0; /* remove "/[lr]" */
-		rmtmpdirs(rnam); /* does a free() */
+		rmtmpdirs(rnam, TOOL_NOLIST); /* does a free() */
 
 		if (bmode)
 			free(name); /* dat */

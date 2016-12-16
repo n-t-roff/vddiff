@@ -9,7 +9,7 @@ struct uz_ext {
 extern char *tmp_dir;
 
 struct filediff *unpack(struct filediff *, int, char **, int);
-void rmtmpdirs(char *);
+void rmtmpdirs(char *, tool_flags_t);
 int uz_init(void);
 void uz_exit(void);
 const char *gettmpdirbase(void);
