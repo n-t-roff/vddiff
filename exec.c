@@ -27,6 +27,7 @@ PERFORMANCE OF THIS SOFTWARE.
 #include "compat.h"
 #include "main.h"
 #include "ui.h"
+#include "ui2.h"
 #include "exec.h"
 #include "uzp.h"
 #include "db.h"
@@ -429,7 +430,9 @@ exec_cmd(char **av, tool_flags_t flags, char *path, char *msg)
 	char prompt[] = "Type <ENTER> to continue ";
 
 #if defined(TRACE)
-	fprintf(debug, "->exec_cmd(%s)\n", *av);
+	fprintf(debug, "->exec_cmd(\"%s\"%s%s)\n", *av,
+	    flags & TOOL_NOLIST ? " TOOL_NOLIST" : "",
+	    flags & TOOL_UDSCR ? " TOOL_UDSCR" : "");
 #endif
 	erase();
 	refresh();
@@ -486,8 +489,11 @@ exec_cmd(char **av, tool_flags_t flags, char *path, char *msg)
 	if (pid == -1)
 		printerr(strerror(errno), "fork failed");
 
-	if (!(flags & TOOL_NOLIST))
+	if (!(flags & TOOL_UDSCR)) {
+		rebuild_scr();
+	} else if (!(flags & TOOL_NOLIST)) {
 		disp_fmode();
+	}
 
 #if defined(TRACE)
 	fprintf(debug, "<-exec_cmd\n");

@@ -39,6 +39,7 @@ void chgat_off(WINDOW *, int);
 void anykey(void);
 void free_zdir(struct filediff *, char *);
 void refr_scr(void);
+void rebuild_scr(void);
 ssize_t mbstowchs(WINDOW *, char *);
 void wcs2ccs(WINDOW *, wchar_t *);
 void putwcs(WINDOW *, wchar_t *, int);

@@ -2,8 +2,9 @@
 #define TOOL_NOARG   2
 #define TOOL_SHELL   4 /* Run command with "sh -c ..." */
 #define TOOL_WAIT    8 /* Wait for <ENTER> after command */
-#define TOOL_NOLIST 16
+#define TOOL_NOLIST 16 /* Don't call disp_fmode() */
 #define TOOL_TTY    32 /* For commands for which output is expected */
+#define TOOL_UDSCR  64 /* Implies TOOL_NOLIST, calls rebuild_scr() */
 
 typedef unsigned tool_flags_t;
 

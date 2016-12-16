@@ -963,8 +963,11 @@ free_zdir(struct filediff *z, char *t)
 	free(z->name);
 	free(z);
 
-	if (t)
-		rmtmpdirs(t, TOOL_NOLIST);
+	if (t) {
+		/* Not called for archives, only for compressed files.
+		 * Hence don't use TOOL_NOLIST since */
+		rmtmpdirs(t, TOOL_UDSCR);
+	}
 }
 
 void
@@ -979,6 +982,24 @@ refr_scr(void)
 
 	wnoutrefresh(wstat);
 	doupdate();
+}
+
+void
+rebuild_scr(void)
+{
+	endwin();
+	refresh();
+
+	if (fmode) {
+		touchwin(wllst);
+		touchwin(wmid);
+		touchwin(wrlst);
+	} else {
+		touchwin(wlist);
+	}
+
+	touchwin(wstat);
+	refr_scr();
 }
 
 ssize_t

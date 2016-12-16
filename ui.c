@@ -955,19 +955,7 @@ next_key:
 			break;
 		case CTRL('l'):
 			c = 0;
-			endwin();
-			refresh();
-
-			if (fmode) {
-				touchwin(wllst);
-				touchwin(wmid);
-				touchwin(wrlst);
-			} else {
-				touchwin(wlist);
-			}
-
-			touchwin(wstat);
-			refr_scr();
+			rebuild_scr();
 			break;
 		case 'W':
 			c = 0;
