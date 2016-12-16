@@ -3170,6 +3170,8 @@ enter_dir(char *name, char *rnam, bool lzip, bool rzip, short tree)
 	dir_change = TRUE;
 
 	if (fmode && name && rnam) {
+		clr_mark();
+
 		if (tree == 1) {
 			fpath = strdup(rpath);
 			memcpy(rpath, lpath, llen+1);

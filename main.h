@@ -20,6 +20,14 @@
 # define LOCVAR
 #endif
 
+#ifdef TRACE
+# define TPTH \
+	do { \
+		memcpy(tlpth, lpath, llen); tlpth[llen] = 0; \
+		memcpy(trpth, rpath, rlen); trpth[rlen] = 0; \
+	} while (0)
+#endif
+
 struct strlst {
 	char *str;
 	struct strlst *next;
@@ -34,6 +42,7 @@ extern short recursive, scan;
 extern short nosingle;
 #ifdef TRACE
 extern FILE *debug;
+extern char tlpth[PATHSIZ], trpth[PATHSIZ];
 #endif
 extern bool bmode;
 extern bool qdiff;

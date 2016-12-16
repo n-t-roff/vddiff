@@ -50,6 +50,7 @@ short recursive, scan;
 short nosingle;
 #ifdef TRACE
 FILE *debug;
+char tlpth[PATHSIZ], trpth[PATHSIZ];
 #endif
 
 static void check_args(int, char **);

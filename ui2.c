@@ -589,6 +589,7 @@ getnextarg(char *buf)
 static void
 set_all(void)
 {
+	static char nofkeys_str[] = "nofkeys\n";
 	static char noic_str[] = "noic\n";
 	static char nomagic_str[] = "nomagic\n";
 	static char norecurs_str[] = "norecursive\n";
@@ -597,6 +598,7 @@ set_all(void)
 	werase(wlist);
 	wattrset(wlist, A_NORMAL);
 	wmove(wlist, 0, 0);
+	waddstr(wlist, nofkeys ? nofkeys_str : nofkeys_str + 2);
 	waddstr(wlist, noic ? noic_str : noic_str + 2);
 	waddstr(wlist, magic ? nomagic_str + 2 : nomagic_str);
 	waddstr(wlist, recursive ? norecurs_str + 2 : norecurs_str);
@@ -760,8 +762,9 @@ chk_mark(char *file,
 
 #if defined(TRACE)
 	/* Don't trim paths! (bindiff()) */
-	fprintf(debug, "<->chk_mark(%s,%d) lp(%s) rp(%s)\n",
-	    file, tree, lpath, rpath);
+	TPTH;
+	fprintf(debug, "<>chk_mark(%s,%d) lp(%s) rp(%s)\n",
+	    file, tree, tlpth, trpth);
 #endif
 	rp = tree && /* f-key command */
 	    !bmode && !strchr(file, '/');

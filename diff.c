@@ -47,6 +47,7 @@ static void add_diff_dir(short);
 static char *read_link(char *, off_t);
 static size_t pthcut(char *, size_t);
 static void ini_int(void);
+static int is_diff_pth(const char *);
 
 static struct filediff *diff;
 static off_t lsiz1, lsiz2;
@@ -249,9 +250,6 @@ no_tree2:
 				continue;
 			}
 
-			if (!qdiff && (!*pwd || dir_diff))
-				continue;
-
 			if (find_name) {
 				if (regexec(&fn_re, name, 0, NULL, 0)) {
 					continue;
@@ -450,7 +448,7 @@ right_tree:
 	ini_int();
 
 #if defined(TRACE)
-	fprintf(debug, "opendir rp(%s)%s\n", rpath, scan ? " scan" : "");
+	fprintf(debug, "  opendir rp(%s)%s\n", rpath, scan ? " scan" : "");
 #endif
 	if (!(d = opendir(rpath))) {
 		if (!ign_diff_errs && dialog(ign_txt, NULL,
@@ -533,15 +531,9 @@ right_tree:
 		}
 
 		if (scan) {
-#if defined(TRACE)
-	fprintf(debug, "1(%s)\n", name);
-#endif
 			if (S_ISDIR(stat2.st_mode)) {
 				struct scan_dir *se;
 
-#if defined(TRACE)
-	fprintf(debug, "subdir(%s)\n", name);
-#endif
 				se = malloc(sizeof(struct scan_dir));
 				se->s = strdup(name);
 				se->tree = 2;
@@ -691,14 +683,14 @@ add_diff_dir(
 	rpath[rlen] = 0;
 	path = side ? rpath : lpath;
 #if defined(TRACE)
-	fprintf(debug, "add_diff_dir(%d:%s) lp(%s) rp(%s)\n",
-	    side, path, lpath, rpath);
+	fprintf(debug, "->add_diff_dir(%s:%s) lp(%s) rp(%s)\n",
+	    side ? "right" : "left", path, lpath, rpath);
 #endif
 
 	if (!(rp = realpath(path, NULL))) {
 		printerr(strerror(errno), LOCFMT "realpath \"%s\""
 		    LOCVAR, path);
-		return;
+		goto ret0;
 	}
 
 	path = rp;
@@ -726,7 +718,7 @@ add_diff_dir(
 #endif
 
 #if defined(TRACE)
-		fprintf(debug, "add_diff_dir \"%s\" added\n", path);
+		fprintf(debug, "  \"%s\" added\n", path);
 #endif
 		do {
 			if (--end < path)
@@ -742,12 +734,17 @@ add_diff_dir(
 
 ret:
 	free(rp);
+ret0:
+#if defined(TRACE)
+	fprintf(debug, "<-add_diff_dir\n");
+#endif
+	return;
 }
 
 int
 is_diff_dir(struct filediff *f)
 {
-	char *bp = NULL, *pth, *rp = NULL;
+	char *bp = NULL, *pth;
 	size_t l;
 	int v = 0;
 
@@ -764,46 +761,60 @@ is_diff_dir(struct filediff *f)
 		bp = malloc(l + strlen(f->name) + 2);
 		memcpy(bp, pth, l);
 		pth = bp;
+		pthcat(pth, l, f->name);
+		v = is_diff_pth(pth);
+		free(bp);
 	} else {
 		if (f->ltype) {
 			pth = lpath;
 			l = llen;
-		} else {
+			pthcat(pth, l, f->name);
+			v = is_diff_pth(pth);
+		}
+
+		if (!v && f->rtype) {
 			pth = rpath;
 			l = rlen;
+			pthcat(pth, l, f->name);
+			v = is_diff_pth(pth);
 		}
 
 		pth[l] = 0;
 	}
 
-	pthcat(pth, l, f->name);
 #if defined(TRACE)
-	fprintf(debug, "  pthcat: \"%s\"\n", pth);
+	fprintf(debug, "<-is_diff_dir: %d\n", v);
+#endif
+ret0:
+	return v;
+}
+
+static int
+is_diff_pth(const char *p)
+{
+	char *rp = NULL;
+	int v = 0;
+#if defined(TRACE)
+	fprintf(debug, "->is_diff_pth(%s)\n", p);
 #endif
 	/* Here since both path and name can be symlink */
-	if (!(rp = realpath(pth, NULL))) {
+	if (!(rp = realpath(p, NULL))) {
 		printerr(strerror(errno), LOCFMT "realpath \"%s\""
-		    LOCVAR, pth);
+		    LOCVAR, p);
 		goto ret;
 	}
 #if defined(TRACE)
-	fprintf(debug, "  realpath: \"%s\"\n", pth);
+	fprintf(debug, "  realpath: \"%s\"\n", p);
 #endif
-	pth = rp;
-	v = str_db_srch(&scan_db, pth
+	v = str_db_srch(&scan_db, rp
 #ifdef HAVE_LIBAVLBST
 	    , NULL
 #endif
 	    ) ? 0 : 1;
-
 	free(rp);
 ret:
-	if (bp) {
-		free(bp);
-	}
-ret0:
 #if defined(TRACE)
-	fprintf(debug, "<-is_diff_dir: %d\n", v);
+	fprintf(debug, "<-is_diff_pth: %d\n", v);
 #endif
 	return v;
 }
