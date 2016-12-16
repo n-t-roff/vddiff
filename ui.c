@@ -642,6 +642,7 @@ next_key:
 				fs_mkdir(1);
 				goto save_st;
 
+#ifdef DEBUG
 			case 'T':
 				if (!fs_cp(1, u, num, 1)) {
 					fs_rm(2, NULL, u, num, 1);
@@ -652,6 +653,7 @@ next_key:
 			case '@':
 				fs_cp(1, u, num, 2);
 				goto save_st;
+#endif
 
 			default:
 				;
@@ -704,6 +706,7 @@ next_key:
 				fs_mkdir(2);
 				goto save_st;
 
+#ifdef DEBUG
 			case 'T':
 				if (!fs_cp(2, u, num, 1)) {
 					fs_rm(1, NULL, u, num, 1);
@@ -715,6 +718,7 @@ next_key:
 			case '@':
 				fs_cp(2, u, num, 2);
 				goto save_st;
+#endif
 
 			default:
 				;
@@ -732,6 +736,7 @@ next_key:
 			}
 
 			break;
+#ifdef DEBUG
 		case '<':
 			if (*key != '<')
 				break;
@@ -764,6 +769,7 @@ next_key:
 
 			fs_cp(right_col ? 1 : 2, u, num, 2);
 			goto save_st;
+#endif
 
 		case KEY_HOME:
 			c = 0;
@@ -1045,12 +1051,9 @@ next_key:
 
 		case '%':
 			c = 0;
+			dontcmp = dontcmp ? FALSE : TRUE;
 
-			if (bmode || fmode) {
-				break;
-			}
-
-			if (!(dontcmp = dontcmp ? FALSE : TRUE)) {
+			if (!(bmode || fmode || dontcmp)) {
 				rebuild_db(0);
 			}
 
@@ -1700,6 +1703,10 @@ action(
 			else
 				tool(f1->name, NULL, 1, 0);
 		} else if (S_ISDIR(f1->ltype)) {
+			if (z1 || z2) {
+				one_scan = TRUE;
+			}
+
 			t1 = t2 = NULL;
 			enter_dir(f1->name         , f2->name,
 			          z1 ? TRUE : FALSE, z2 ? TRUE : FALSE, 0);
@@ -3337,9 +3344,11 @@ printerr(const char *s2, const char *s1, ...)
 
 #if defined(TRACE)
 	fputs("<>printerr: ", debug);
-	va_start(ap, s1);
-	vfprintf(debug, s1, ap);
-	va_end(ap);
+	if (s1) {
+		va_start(ap, s1);
+		vfprintf(debug, s1, ap);
+		va_end(ap);
+	}
 
 	if (s2) {
 		fprintf(debug, ": %s", s2);
@@ -3348,9 +3357,11 @@ printerr(const char *s2, const char *s1, ...)
 	fputc('\n', debug);
 #endif
 	if (!wstat) { /* curses not opened */
-		va_start(ap, s1);
-		vfprintf(stderr, s1, ap);
-		va_end(ap);
+		if (s1) {
+			va_start(ap, s1);
+			vfprintf(stderr, s1, ap);
+			va_end(ap);
+		}
 
 		if (s2) {
 			fprintf(stderr, ": %s", s2);
@@ -3363,9 +3374,12 @@ printerr(const char *s2, const char *s1, ...)
 	wstat_dirty = TRUE;
 	werase(wstat);
 	wmove(wstat, s2 ? 0 : 1, 0);
-	va_start(ap, s1);
-	vwprintw(wstat, s1, ap);
-	va_end(ap);
+
+	if (s1) {
+		va_start(ap, s1);
+		vwprintw(wstat, s1, ap);
+		va_end(ap);
+	}
 
 	if (s2) {
 		wmove(wstat, 1, 0);

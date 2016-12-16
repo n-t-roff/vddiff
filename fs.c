@@ -405,37 +405,100 @@ fs_rm(int tree, char *txt, long u, int n,
 	fs_error = FALSE;
 	fs_ign_errs = FALSE;
 
-	if (fs_ro() || !db_num[right_col]) {
+	if (fs_ro()) {
 		return 0;
 	}
 
 	m = n > 1;
 
-	if (!(force_fs && force_multi) && !(md & 1) && m && dialog(y_n_txt,
-	    NULL, "Really %s %d files?", txt ? txt : "delete", n) != 'y')
-		return 1;
+	if (!(force_fs && force_multi) && !(md & 1) && m) {
+		if (bmode) {
+			pth1 = rpath;
 
-	while (n-- && u < (long)db_num[right_col]) {
-		f = db_list[right_col][u++];
+		} else if ((fmode && tree == 3 && !right_col)
+		    || tree == 1) {
 
-		/* "dd" is not allowed if both files are present */
-		if (tree == 3 && f->ltype && f->rtype)
-			continue;
+			lpath[llen] = 0;
+			pth1 = lpath;
 
-		if (!f->ltype)
-			tree &= ~1;
+		} else if ((fmode && tree == 3 && right_col)
+		    ||tree == 2) {
 
-		if (!f->rtype)
-			tree &= ~2;
+			rpath[rlen] = 0;
+			pth1 = rpath;
+		} else {
+			pth1 = NULL;
+		}
 
-		if (tree & 1) {
+		if (pth1) {
+			if (dialog(y_n_txt,
+			    NULL, "Really %s %d files in \"%s\"?",
+			    txt ? txt : "delete", n, pth1) != 'y') {
+				return 1;
+			}
+		} else if (dialog(y_n_txt, NULL, "Really %s %d files?",
+		    txt ? txt : "delete", n) != 'y') {
+			return 1;
+		}
+	}
+
+	for (; n--; u++) {
+
+		if (!fmode) {
+			if (u >= db_num[0]) {
+				continue;
+			}
+
+			f = db_list[0][u];
+		}
+
+		if (tree == 3) {
+			if (bmode) {
+				tree = 1;
+			} else if (fmode) {
+				if (u >= db_num[right_col]) {
+					continue;
+				}
+
+				f = db_list[right_col][u];
+				tree = right_col ? 2 : 1;
+			} else {
+				/* "dd" is not allowed
+				 * if both files are present */
+				if (f->ltype && f->rtype) {
+					continue;
+				}
+
+				if (!f->ltype) {
+					tree &= ~1;
+				}
+
+				if (!f->rtype) {
+					tree &= ~2;
+				}
+			}
+		} else if (fmode) {
+			int col = tree == 1 ? 0 : 1;
+
+			if (u >= db_num[col]) {
+				continue;
+			}
+
+			f = db_list[col][u];
+		}
+
+		if (tree == 1) {
 			pth1 = lpath;
 			len1 = llen;
-		} else if (tree & 2) {
+		} else if (tree == 2) {
 			pth1 = rpath;
 			len1 = rlen;
-		} else
+		} else {
+#ifdef DEBUG
+			printerr("", "fs_rm: tree not 1 or 2 but %d", tree);
+#endif
 			continue;
+		}
 
 		len1 = pthcat(pth1, len1, f->name);
 
@@ -446,6 +509,10 @@ fs_rm(int tree, char *txt, long u, int n,
 			continue;
 		}
 
+#if defined(TRACE)
+		fprintf(debug, "<>fs_rm force_fs=%d md=%u m=%u \"%s\"\n",
+		    force_fs ? 1 : 0, md, m, pth1);
+#endif
 		if (!force_fs && !(md & 1) && !m && dialog(y_n_txt, NULL,
 		    "Really %s %s\"%s\"?", txt ? txt : "delete",
 		    S_ISDIR(stat1.st_mode) ? "directory " : "", pth1) != 'y') {
@@ -471,11 +538,11 @@ fs_rm(int tree, char *txt, long u, int n,
 	return 0;
 
 cancel:
-	lpath[llen] = 0;
-
-	if (!bmode)
+	if (!bmode) {
 		rpath[rlen] = 0;
+	}
 
+	lpath[llen] = 0;
 	return rv;
 }
 
@@ -492,16 +559,29 @@ fs_cp(int to, long u, int n,
 	fs_error = FALSE;
 	fs_ign_errs = FALSE;
 
-	if (fs_ro() || !db_num[right_col]) {
+	if (bmode || fs_ro() || !db_num[right_col]) {
 		return 1;
 	}
 
 	m = n > 1;
 
-	if (!(force_fs && force_multi) && m && dialog(y_n_txt, NULL,
-	    "Really %s %d files?", (md & 2) ? "create symlink to" :
-	    (md & 1) ? "move" : "copy", n) != 'y') {
-		return 1;
+	if (!(force_fs && force_multi) && m) {
+		if (to == 1) {
+			lpath[llen] = 0;
+			pth1 = lpath;
+		} else {
+			rpath[rlen] = 0;
+			pth1 = rpath;
+		}
+
+		if (dialog(y_n_txt, NULL,
+		    "Really %s %d files %s \"%s\"?",
+		    (md & 2) ? "create symlink to" :
+		    (md & 1) ? "move" : "copy", n,
+		    (md & 2) ? "in" : "to", pth1) != 'y') {
+
+			return 1;
+		}
 	}
 
 	for (; n-- && u < (long)db_num[right_col]; u++) {
@@ -543,7 +623,8 @@ fs_cp(int to, long u, int n,
 			    "Really overwrite \"%s\"?", pth2) != 'y') {
 				return 1;
 			}
-		} else if (fs_rm(to, "overwrite", u, 1, 0) == 1) {
+		} else if (fs_rm(to /* tree */, "overwrite", u, 1 /* n */,
+		    0 /* md */) == 1) {
 			return 1;
 		}
 
@@ -839,6 +920,9 @@ cp_reg(void)
 	struct utimbuf tb;
 #endif
 
+#if defined(TRACE)
+	fprintf(debug, "<>cp_reg \"%s\" -> \"%s\"\n", pth1, pth2);
+#endif
 	if (followlinks) {
 		if (lstat(pth2, &stat2) == -1) {
 			if (errno == ENOENT)
