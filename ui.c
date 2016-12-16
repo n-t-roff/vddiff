@@ -584,7 +584,7 @@ next_key:
 			}
 
 			/* allowed for single sided only */
-			fs_rm(3, NULL, u, num, 0);
+			fs_rm(3, NULL, NULL, u, num, 0);
 			goto save_st;
 		case 't':
 			if (*key == 'S') {
@@ -622,7 +622,7 @@ next_key:
 		case 'l':
 			switch (*key) {
 			case 'd':
-				fs_rm(1, NULL, u, num, 0);
+				fs_rm(1, NULL, NULL, u, num, 0);
 				goto save_st;
 			case 's':
 				c = 0;
@@ -642,10 +642,9 @@ next_key:
 				fs_mkdir(1);
 				goto save_st;
 
-#ifdef DEBUG
 			case 'T':
 				if (!fs_cp(1, u, num, 1)) {
-					fs_rm(2, NULL, u, num, 1);
+					fs_rm(2, NULL, NULL, u, num, 1);
 				}
 
 				goto save_st;
@@ -653,7 +652,6 @@ next_key:
 			case '@':
 				fs_cp(1, u, num, 2);
 				goto save_st;
-#endif
 
 			default:
 				;
@@ -686,7 +684,7 @@ next_key:
 		case 'r':
 			switch (*key) {
 			case 'd':
-				fs_rm(2, NULL, u, num, 0);
+				fs_rm(2, NULL, NULL, u, num, 0);
 				goto save_st;
 			case 's':
 				c = 0;
@@ -706,19 +704,16 @@ next_key:
 				fs_mkdir(2);
 				goto save_st;
 
-#ifdef DEBUG
 			case 'T':
 				if (!fs_cp(2, u, num, 1)) {
-					fs_rm(1, NULL, u, num, 1);
+					fs_rm(1, NULL, NULL, u, num, 1);
 				}
 
 				goto save_st;
 
-
 			case '@':
 				fs_cp(2, u, num, 2);
 				goto save_st;
-#endif
 
 			default:
 				;
@@ -736,17 +731,25 @@ next_key:
 			}
 
 			break;
-#ifdef DEBUG
 		case '<':
 			if (*key != '<')
 				break;
 
 			c = 0;
+
+			if (fmode && !right_col) {
+				break;
+			}
+
 			fs_cp(1, u, num, 0);
 			break;
 		case '>':
 			if (*key != '>')
 				break;
+
+			if (fmode && right_col) {
+				break;
+			}
 
 			fs_cp(2, u, num, 0);
 			goto save_st;
@@ -757,7 +760,7 @@ next_key:
 			}
 
 			if (!fs_cp(right_col ? 1 : 2, u, num, 1)) {
-				fs_rm(right_col ? 2 : 1, NULL, u, num, 1);
+				fs_rm(right_col ? 2 : 1, NULL, NULL, u, num, 1);
 			}
 
 			goto save_st;
@@ -769,7 +772,6 @@ next_key:
 
 			fs_cp(right_col ? 1 : 2, u, num, 2);
 			goto save_st;
-#endif
 
 		case KEY_HOME:
 			c = 0;

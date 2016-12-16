@@ -393,7 +393,9 @@ exit:
  * 1: Cancel */
 
 int
-fs_rm(int tree, char *txt, long u, int n,
+fs_rm(int tree, char *txt,
+    /* File name. If {nam} is given, {u} is not used. {n} should be 1. */
+    char *nam, long u, int n,
     /* 1: Force */
     unsigned md)
 {
@@ -450,6 +452,7 @@ fs_rm(int tree, char *txt, long u, int n,
 			}
 
 			f = db_list[0][u];
+			nam = f->name;
 		}
 
 		if (tree == 3) {
@@ -461,6 +464,7 @@ fs_rm(int tree, char *txt, long u, int n,
 				}
 
 				f = db_list[right_col][u];
+				nam = f->name;
 				tree = right_col ? 2 : 1;
 			} else {
 				/* "dd" is not allowed
@@ -477,7 +481,7 @@ fs_rm(int tree, char *txt, long u, int n,
 					tree &= ~2;
 				}
 			}
-		} else if (fmode) {
+		} else if (fmode && !nam) {
 			int col = tree == 1 ? 0 : 1;
 
 			if (u >= db_num[col]) {
@@ -485,6 +489,7 @@ fs_rm(int tree, char *txt, long u, int n,
 			}
 
 			f = db_list[col][u];
+			nam = f->name;
 		}
 
 		if (tree == 1) {
@@ -500,7 +505,7 @@ fs_rm(int tree, char *txt, long u, int n,
 			continue;
 		}
 
-		len1 = pthcat(pth1, len1, f->name);
+		len1 = pthcat(pth1, len1, nam);
 
 		if (lstat(pth1, &stat1) == -1) {
 			if (errno != ENOENT)
@@ -554,6 +559,7 @@ fs_cp(int to, long u, int n,
 {
 	struct filediff *f;
 	struct stat st;
+	int i;
 	bool m;
 
 	fs_error = FALSE;
@@ -611,20 +617,32 @@ fs_cp(int to, long u, int n,
 			continue;
 		}
 
+		if (( followlinks && (i =  stat(pth2, &stat2)) == -1) ||
+		    (!followlinks && (i = lstat(pth2, &stat2)) == -1)) {
+			if (errno != ENOENT) {
+				printerr(strerror(errno), LOCFMT "stat \"%s\""
+				    LOCVAR, pth2);
+			}
+		}
+
+		if (!i && /* from stat */
+		    st.st_ino == stat2.st_ino &&
+		    stat1.st_dev == stat2.st_dev) {
+			printerr("are the same file", "\"%s\" and \"%s\"",
+			    pth1, pth2);
+			continue;
+		}
+
 		/* After stat src to avoid removing dest if there is a problem
 		 * with src */
 		if (followlinks) {
-			if (stat(pth2, &stat2) == -1) {
-				if (errno != ENOENT) {
-					printerr(strerror(errno), LOCFMT
-					    "stat \"%s\"" LOCVAR, pth2);
-				}
-			} else if (!force_fs && !m && dialog(y_n_txt, NULL,
+			if (!i && /* from stat */
+			    !force_fs && !m && dialog(y_n_txt, NULL,
 			    "Really overwrite \"%s\"?", pth2) != 'y') {
 				return 1;
 			}
-		} else if (fs_rm(to /* tree */, "overwrite", u, 1 /* n */,
-		    0 /* md */) == 1) {
+		} else if (fs_rm(to /* tree */, "overwrite", f->name,
+		    u, 1 /* n */, 0 /* md */) == 1) {
 			return 1;
 		}
 
