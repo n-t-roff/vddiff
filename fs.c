@@ -402,6 +402,7 @@ fs_rm(int tree, char *txt,
 	struct filediff *f;
 	unsigned short m;
 	int rv = 0;
+	char *fn;
 	bool chg = FALSE;
 
 	fs_error = FALSE;
@@ -411,6 +412,11 @@ fs_rm(int tree, char *txt,
 		return 0;
 	}
 
+#if defined(TRACE)
+	TPTH;
+	fprintf(debug, "->fs_rm(tree=%d txt(%s) nam(%s) u=%ld n=%d md=%u) "
+	    "lp(%s) rp(%s)\n", tree, txt, nam, u, n, md, tlpth, trpth);
+#endif
 	m = n > 1;
 
 	if (!(force_fs && force_multi) && !(md & 1) && m) {
@@ -436,15 +442,19 @@ fs_rm(int tree, char *txt,
 			if (dialog(y_n_txt,
 			    NULL, "Really %s %d files in \"%s\"?",
 			    txt ? txt : "delete", n, pth1) != 'y') {
-				return 1;
+
+				rv = 1;
+				goto ret;
 			}
 		} else if (dialog(y_n_txt, NULL, "Really %s %d files?",
 		    txt ? txt : "delete", n) != 'y') {
-			return 1;
+
+			rv = 1;
+			goto ret;
 		}
 	}
 
-	for (; n--; u++) {
+	for (; n; n--, u++) {
 
 		if (!fmode) {
 			if (u >= db_num[0]) {
@@ -452,7 +462,7 @@ fs_rm(int tree, char *txt,
 			}
 
 			f = db_list[0][u];
-			nam = f->name;
+			fn = f->name;
 		}
 
 		if (tree == 3) {
@@ -464,7 +474,7 @@ fs_rm(int tree, char *txt,
 				}
 
 				f = db_list[right_col][u];
-				nam = f->name;
+				fn = f->name;
 				tree = right_col ? 2 : 1;
 			} else {
 				/* "dd" is not allowed
@@ -481,15 +491,19 @@ fs_rm(int tree, char *txt,
 					tree &= ~2;
 				}
 			}
-		} else if (fmode && !nam) {
-			int col = tree == 1 ? 0 : 1;
+		} else if (fmode) {
+			if (nam) {
+				fn = nam;
+			} else {
+				int col = tree == 1 ? 0 : 1;
 
-			if (u >= db_num[col]) {
-				continue;
+				if (u >= db_num[col]) {
+					continue;
+				}
+
+				f = db_list[col][u];
+				fn = f->name;
 			}
-
-			f = db_list[col][u];
-			nam = f->name;
 		}
 
 		if (tree == 1) {
@@ -505,8 +519,12 @@ fs_rm(int tree, char *txt,
 			continue;
 		}
 
-		len1 = pthcat(pth1, len1, nam);
+		len1 = pthcat(pth1, len1, fn);
 
+#if defined(TRACE)
+		fprintf(debug, "  force_fs=%d md=%u m=%u n=%d \"%s\"\n",
+		    force_fs ? 1 : 0, md, m, n, pth1);
+#endif
 		if (lstat(pth1, &stat1) == -1) {
 			if (errno != ENOENT)
 				printerr(strerror(errno), "lstat %s failed",
@@ -514,10 +532,6 @@ fs_rm(int tree, char *txt,
 			continue;
 		}
 
-#if defined(TRACE)
-		fprintf(debug, "<>fs_rm force_fs=%d md=%u m=%u \"%s\"\n",
-		    force_fs ? 1 : 0, md, m, pth1);
-#endif
 		if (!force_fs && !(md & 1) && !m && dialog(y_n_txt, NULL,
 		    "Really %s %s\"%s\"?", txt ? txt : "delete",
 		    S_ISDIR(stat1.st_mode) ? "directory " : "", pth1) != 'y') {
@@ -530,8 +544,9 @@ fs_rm(int tree, char *txt,
 		if (S_ISDIR(stat1.st_mode)) {
 			tree_op = TREE_RM;
 			proc_dir();
-		} else
+		} else {
 			rm_file();
+		}
 	}
 
 	if (txt || /* rebuild is done by others */
@@ -540,7 +555,7 @@ fs_rm(int tree, char *txt,
 	}
 
 	rebuild_db(0);
-	return 0;
+	goto ret;
 
 cancel:
 	if (!bmode) {
@@ -548,6 +563,10 @@ cancel:
 	}
 
 	lpath[llen] = 0;
+ret:
+#if defined(TRACE)
+	fprintf(debug, "<-fs_rm\n");
+#endif
 	return rv;
 }
 
