@@ -594,7 +594,12 @@ inst_sighdl(int sig, void (*hdl)(int))
 
 	act.sa_handler = hdl;
 	sigemptyset(&act.sa_mask);
-	act.sa_flags = 0;
+	act.sa_flags =
+#ifdef SA_RESTART
+	    SA_RESTART;
+#else
+	    0;
+#endif
 
 	if (sigaction(sig, &act, NULL) == -1) {
 		printf("sigaction %d: %s\n", sig, strerror(errno));

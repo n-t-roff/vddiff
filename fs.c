@@ -63,6 +63,7 @@ static size_t len1, len2;
 static enum { TREE_RM, TREE_CP } tree_op;
 static bool fs_ign_errs;
 static bool fs_error;
+static bool fs_all;
 
 void
 fs_mkdir(short tree)
@@ -408,6 +409,10 @@ fs_rm(int tree, char *txt,
 	fs_error = FALSE;
 	fs_ign_errs = FALSE;
 
+	if (!txt) {
+		fs_all = FALSE;
+	}
+
 	if (fs_ro()) {
 		return 0;
 	}
@@ -532,11 +537,21 @@ fs_rm(int tree, char *txt,
 			continue;
 		}
 
-		if (!force_fs && !(md & 1) && !m && dialog(y_n_txt, NULL,
-		    "Really %s %s\"%s\"?", txt ? txt : "delete",
-		    S_ISDIR(stat1.st_mode) ? "directory " : "", pth1) != 'y') {
-			rv = 1;
-			goto cancel;
+		if (!(force_fs || fs_all) && !(md & 1) && !m) {
+			switch (dialog(nam ? y_a_n_txt : y_n_txt, NULL,
+			    "Really %s %s\"%s\"?", txt ? txt : "delete",
+			    S_ISDIR(stat1.st_mode) ? "directory " : "", pth1)) {
+			case 'a':
+				fs_all = TRUE;
+				/* fall through */
+
+			case 'y':
+				break;
+
+			default:
+				rv = 1;
+				goto cancel;
+			}
 		}
 
 		chg = TRUE;
@@ -583,6 +598,7 @@ fs_cp(int to, long u, int n,
 
 	fs_error = FALSE;
 	fs_ign_errs = FALSE;
+	fs_all = FALSE;
 
 	if (bmode || fs_ro() || !db_num[right_col]) {
 		return 1;

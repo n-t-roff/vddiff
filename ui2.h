@@ -10,6 +10,7 @@ extern short noic, magic, nows, scale;
 extern short regex;
 extern unsigned short subtree;
 extern const char y_n_txt[];
+extern const char y_a_n_txt[];
 extern const char ign_txt[];
 extern const char ign_esc_txt[];
 extern const char any_txt[];
