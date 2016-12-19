@@ -30,6 +30,7 @@ PERFORMANCE OF THIS SOFTWARE.
 #include "uzp.h"
 #include "db.h"
 #include "gq.h"
+#include "tc.h"
 
 #ifdef HAVE_LIBAVLBST
 static void *db_new(int (*)(union bst_val, union bst_val));
@@ -599,7 +600,7 @@ exit:
 	     ((!find_name || !regexec(&fn_re, f->name, 0, NULL, 0)) && \
 	      (!gq_pattern || !gq_proc(f)))) && \
 	    \
-	    (bmode || \
+	    (bmode || fmode || \
 	     ((!noequal || \
 	       f->diff == '!' || S_ISDIR(f->ltype) || \
 	       (f->ltype & S_IFMT) != (f->rtype & S_IFMT)) && \

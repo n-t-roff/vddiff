@@ -875,23 +875,31 @@ filt_stat(void)
 	if (file_pattern) {
 		mvwaddch(wstat, 0, x--, 'E');
 	}
+
 	if (wait_after_exec) {
 		mvwaddch(wstat, 0, x--, 'W');
 	}
+
 	if (followlinks) {
 		mvwaddch(wstat, 0, x--, 'F');
 	}
+
 	if (dontcmp) {
 		mvwaddch(wstat, 0, x--, '%');
 	}
-	if (nosingle) {
-		mvwaddch(wstat, 0, x--, '&');
-	}
-	if (noequal) {
-		mvwaddch(wstat, 0, x--, '!');
-	}
-	if (real_diff) {
-		mvwaddch(wstat, 0, x--, 'c');
+
+	if (!(bmode || fmode)) {
+		if (nosingle) {
+			mvwaddch(wstat, 0, x--, '&');
+		}
+
+		if (noequal) {
+			mvwaddch(wstat, 0, x--, '!');
+		}
+
+		if (real_diff) {
+			mvwaddch(wstat, 0, x--, 'c');
+		}
 	}
 
 	standendc(wstat);

@@ -535,18 +535,33 @@ next_key:
 
 		case '!':
 			c = 0;
+
+			if (bmode || fmode) {
+				break;
+			}
+
 			noequal = noequal ? 0 : 1;
 			re_sort_list();
 			break;
 
 		case 'c':
 			c = 0;
+
+			if (bmode || fmode) {
+				break;
+			}
+
 			real_diff = real_diff ? 0 : 1;
 			re_sort_list();
 			break;
 
 		case '&':
 			c = 0;
+
+			if (bmode || fmode) {
+				break;
+			}
+
 			nosingle = nosingle ? 0 : 1;
 			re_sort_list();
 			break;
@@ -682,6 +697,11 @@ next_key:
 			anykey();
 			break;
 		case 'r':
+#if defined(TRACE)
+			fprintf(debug,
+			    "  'r': *key(%c) mark=%p edit=%d regex=%d\n",
+			    *key, mark, edit, regex);
+#endif
 			switch (*key) {
 			case 'd':
 				fs_rm(2, NULL, NULL, u, num, 0);
@@ -2757,25 +2777,26 @@ gettimestr(char *buf, size_t bufsiz, time_t *t)
 static void
 set_mark(void)
 {
-	struct filediff *f;
-
-	if (!db_num[right_col])
-		return;
-
-	if (mark)
-		clr_mark();
-
-	mark_idx[right_col] = top_idx[right_col] + curs[right_col];
-	f = db_list[right_col][mark_idx[right_col]];
-	mode_t mode = f->ltype ? f->ltype : f->rtype;
-
-	if (!S_ISDIR(mode) && !(S_ISREG(mode))) {
-		printerr(NULL, "Not a directory or regular file");
-		return;
+#if defined(TRACE)
+	fprintf(debug, "->set_mark\n");
+#endif
+	if (!db_num[right_col]) {
+		goto ret;
 	}
 
-	mark = f;
+	if (mark) {
+		clr_mark();
+	}
+
+	mark_idx[right_col] = top_idx[right_col] + curs[right_col];
+	mark = db_list[right_col][mark_idx[right_col]];
 	disp_mark();
+
+ret:
+#if defined(TRACE)
+	fprintf(debug, "<-set_mark\n");
+#endif
+	return;
 }
 
 static void
