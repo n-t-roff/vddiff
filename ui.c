@@ -642,7 +642,7 @@ next_key:
 				fs_mkdir(1);
 				goto save_st;
 
-			case 'T':
+			case 'T': /* "Tl" */
 				if (!fs_cp(1, u, num, 1)) {
 					fs_rm(2, NULL, NULL, u, num, 1);
 				}
@@ -704,7 +704,7 @@ next_key:
 				fs_mkdir(2);
 				goto save_st;
 
-			case 'T':
+			case 'T': /* "Tr" */
 				if (!fs_cp(2, u, num, 1)) {
 					fs_rm(1, NULL, NULL, u, num, 1);
 				}
@@ -754,24 +754,32 @@ next_key:
 			fs_cp(2, u, num, 0);
 			goto save_st;
 
-		case 'T':
-			if (!fmode) {
+		case 'T': {
+			int src, dst;
+
+			if (!(dst = fs_get_dst(u))) {
 				break;
 			}
 
-			if (!fs_cp(right_col ? 1 : 2, u, num, 1)) {
-				fs_rm(right_col ? 2 : 1, NULL, NULL, u, num, 1);
+			src = dst == 1 ? 2 : 1;
+
+			if (!fs_cp(dst, u, num, 1)) {
+				fs_rm(src, NULL, NULL, u, num, 1);
 			}
 
 			goto save_st;
+		}
 
-		case '@':
-			if (!fmode) {
+		case '@': {
+			int dst;
+
+			if (!(dst = fs_get_dst(u))) {
 				break;
 			}
 
-			fs_cp(right_col ? 1 : 2, u, num, 2);
+			fs_cp(dst, u, num, 2);
 			goto save_st;
+		}
 
 		case KEY_HOME:
 			c = 0;

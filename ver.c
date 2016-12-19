@@ -8,9 +8,9 @@
  *     |      All planned features are implemented, changes are done,
  *     v      TODO list is empty.
  *
- * alpha:     Test phase.  All features are tested on all target operating
- *            systems.  This may result in new feature requirements or
- *            significant changes.
+ * alpha:     Test phase.  Tool usability and all features are tested on
+ *            all target operating systems.  This may result in new
+ *            feature requirements or significant changes.
  *     |
  *     v      Feature freeze
  *
@@ -23,5 +23,5 @@
  *            failes, this will become the release version. */
 
 const char version[] = "1.3.0-alpha  "
-    "2016-12-18 22:46"
+    "2016-12-19 11:06"
     ;

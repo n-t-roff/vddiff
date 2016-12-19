@@ -462,7 +462,7 @@ fs_rm(int tree, char *txt,
 	for (; n; n--, u++) {
 
 		if (!fmode) {
-			if (u >= db_num[0]) {
+			if (u >= (long)db_num[0]) {
 				continue;
 			}
 
@@ -474,7 +474,7 @@ fs_rm(int tree, char *txt,
 			if (bmode) {
 				tree = 1;
 			} else if (fmode) {
-				if (u >= db_num[right_col]) {
+				if (u >= (long)db_num[right_col]) {
 					continue;
 				}
 
@@ -485,6 +485,8 @@ fs_rm(int tree, char *txt,
 				/* "dd" is not allowed
 				 * if both files are present */
 				if (f->ltype && f->rtype) {
+					printerr(NULL, "File on both sides, "
+					    "use \"dl\" or \"dr\" instead");
 					continue;
 				}
 
@@ -502,7 +504,7 @@ fs_rm(int tree, char *txt,
 			} else {
 				int col = tree == 1 ? 0 : 1;
 
-				if (u >= db_num[col]) {
+				if (u >= (long)db_num[col]) {
 					continue;
 				}
 
@@ -1074,4 +1076,38 @@ fs_fwrap(const char *f, ...)
 	}
 
 	va_end(a);
+}
+
+/* 0: Error
+ * 1: Left tree
+ * 2: Right tree */
+
+int
+fs_get_dst(long u)
+{
+	struct filediff *f;
+	int dst;
+
+	if (bmode) {
+	} else if (fmode) {
+		dst = right_col ? 1 : 2;
+	} else {
+		if (u >= (long)db_num[0]) {
+			return 0;
+		}
+
+		f = db_list[0][u];
+
+		if (f->ltype) {
+			if (f->rtype) {
+				return 0;
+			}
+
+			dst = 2;
+		} else {
+			dst = 1;
+		}
+	}
+
+	return dst;
 }
