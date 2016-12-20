@@ -2819,7 +2819,8 @@ clr_mark(void)
 	int rc;
 
 #if defined(TRACE)
-	fprintf(debug, "->clr_mark\n");
+	fprintf(debug, "->clr_mark mi0=%ld mi1=%ld\n",
+	    mark_idx[0], mark_idx[1]);
 #endif
 	rc = right_col;
 
@@ -2833,10 +2834,17 @@ clr_mark(void)
 	} else if (
 	    mark_idx[0] >= (long)(top_idx[0]) &&
 	    mark_idx[0] <  (long)(top_idx[0] + listh) &&
-	    mark_idx[0] != (long)(top_idx[0] + curs[0])) {
+	    (mark_idx[0] != (long)(top_idx[0] + curs[0]) || rc)) {
 
-		if (fmode)
+#if defined(TRACE)
+			fprintf(debug, "  left side mark\n");
+#endif
+		if (fmode) {
+#if defined(TRACE)
+			fprintf(debug, "  chgat wllst\n");
+#endif
 			chgat_off(wllst, mark_idx[0] - top_idx[0]);
+		}
 
 		right_col = 0;
 		disp_line(mark_idx[0] - top_idx[0], mark_idx[0], 0);
@@ -2845,7 +2853,7 @@ clr_mark(void)
 	} else if (fmode &&
 	    mark_idx[1] >= (long)(top_idx[1]) &&
 	    mark_idx[1] <  (long)(top_idx[1] + listh) &&
-	    mark_idx[1] != (long)(top_idx[1] + curs[1])) {
+	    (mark_idx[1] != (long)(top_idx[1] + curs[1]) || !rc)) {
 
 		chgat_off(wrlst, mark_idx[1] - top_idx[1]);
 
