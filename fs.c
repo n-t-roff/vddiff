@@ -572,6 +572,11 @@ fs_rm(int tree, char *txt,
 	}
 
 	rebuild_db(0);
+
+	if (gl_mark) {
+		chk_mark(gl_mark, 0);
+	}
+
 	goto ret;
 
 cancel:
@@ -1089,6 +1094,7 @@ fs_get_dst(long u)
 	int dst;
 
 	if (bmode) {
+		return 0;
 	} else if (fmode) {
 		dst = right_col ? 1 : 2;
 	} else {

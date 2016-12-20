@@ -23,6 +23,7 @@ PERFORMANCE OF THIS SOFTWARE.
 #include "y.tab.h"
 #include "lex.h"
 
+#ifdef LEX_HAS_BUFS
 struct incl_file {
 	char *name;
 	unsigned long line;
@@ -30,13 +31,15 @@ struct incl_file {
 	struct incl_file *next;
 };
 
+static struct incl_file *incstack;
+static char *filename = "-- stdin --";
+#endif
+
 void include(char *);
 
-static struct incl_file *incstack;
 unsigned rc_nline = 1;
 unsigned rc_col = 1;
 static short incl;
-static char *filename = "-- stdin --";
 %}
 S [ \t]
 NS [^ \t\n]
@@ -104,10 +107,13 @@ include			{ rc_col += yyleng; incl = 1            ; }
 int
 yywrap(void)
 {
+#ifdef LEX_HAS_BUFS
 	struct incl_file *inc;
 
 	if (!incstack) {
+#endif
 		return 1;
+#ifdef LEX_HAS_BUFS
 	}
 
 	if (fclose(yyin) == EOF) {
@@ -123,11 +129,15 @@ yywrap(void)
 	incstack = incstack->next;
 	free(inc);
 	return 0;
+#endif
 }
 
 void
 include(char *s)
 {
+#ifndef LEX_HAS_BUFS
+	(void)s;
+#else
 	struct incl_file *inc;
 
 	incl = 0;
@@ -138,9 +148,9 @@ include(char *s)
 		return;
 	}
 
-#if defined(TRACE)
+# if defined(TRACE)
 	fprintf(debug, "<->include(%s)\n", s);
-#endif
+# endif
 
 	if (!(yyin = fopen(s, "r"))){
 		printf("include \"%s\": %s\n", s, strerror(errno));
@@ -156,4 +166,5 @@ include(char *s)
 	inc->next = incstack;
 	incstack = inc;
 	yy_switch_to_buffer(yy_create_buffer(yyin, YY_BUF_SIZE));
+#endif
 }

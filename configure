@@ -487,6 +487,49 @@ EOT
 	compile
 	test_result && DEFS="$DEFS -DUSE_SYS_MKDEV_H"
 }
+check_lex_buffer () {
+	check_for 'lex buffers'
+
+	cat <<EOT >$TMPL
+%{
+static void include(void);
+
+YY_BUFFER_STATE buffer;
+%}
+%%
+\n	{ include(); }
+%%
+
+int
+yywrap(void)
+{
+	yy_delete_buffer(YY_CURRENT_BUFFER);
+	yy_switch_to_buffer(buffer);
+	return 0;
+}
+
+static void
+include(void)
+{
+	buffer = YY_CURRENT_BUFFER;
+	yy_switch_to_buffer(yy_create_buffer(yyin, YY_BUF_SIZE));
+}
+
+int
+main()
+{
+	return 0;
+}
+EOT
+	gen_mk
+	cat <<EOT >>$OUTMK
+$TMPNAM: ${TMPNAM}.o
+	\$(CC) \$(_CFLAGS) \$(_LDFLAGS) -o \$@ ${TMPNAM}.o
+EOT
+	compile
+	test_result || return
+	DEFS="$DEFS -DLEX_HAS_BUFS"
+}
 	[ ! -s compat.h ] && rm compat.h
 OUTMK=Makefile
 INMK=${OUTMK}.in
@@ -494,6 +537,7 @@ CFG=config
 TMPNAM=.$CFG
 TMPMK=${TMPNAM}.mk
 TMPC=${TMPNAM}.c
+TMPL=${TMPNAM}.l # For lex tests only ...
 OUT=${TMPNAM}.out
 ERR=${TMPNAM}.err
 LOG=${CFG}.log
@@ -508,6 +552,7 @@ check_netbsd_curses
 check_mkdtemp
 check_libavlbst
 check_major_minor
+check_lex_buffer
 
 gen_mk
 rm -f $TMPNAM*

@@ -3,12 +3,12 @@ BINDIR=	$(PREFIX)/bin
 MANDIR=	$(PREFIX)/share/man
 INCDIR=	$(PREFIX)/include
 LIBDIR=	$(PREFIX)/lib
+BIN=	vddiff
 
-TRACE=	#-DTRACE='"/tmp/.vddiff_trace_"'
+TRACE=	#-DTRACE='"/tmp/.$(BIN)_trace_"'
 DEBUG=	#-DDEBUG
 STRP=	-s
 
-BIN=	vddiff
 OBJ=	main.o pars.o lex.o diff.o ui.o db.o exec.o fs.o ed.o uzp.o ver.o \
 	ui2.o gq.o tc.o
 YFLAGS=	-d
@@ -28,7 +28,7 @@ install:
 
 clean:
 	rm -f $(BIN) $(OBJ) y.tab.? $(BIN).1.html $(BIN).1.pdf \
-	    /tmp/.$(BIN).err /tmp/.$(BIN).toc *.gc?? $(BIN).1.out
+	    /tmp/.$(BIN).err /tmp/.$(BIN).toc *.gc?? $(BIN).1.out lex.yy.c
 
 distclean: clean
 	rm -f Makefile config.log compat.h
