@@ -21,6 +21,7 @@ PERFORMANCE OF THIS SOFTWARE.
 #include <ctype.h>
 #include <search.h>
 #include <regex.h>
+#include <stdarg.h>
 #include "compat.h"
 #include "diff.h"
 #include "main.h"

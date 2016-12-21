@@ -25,6 +25,7 @@ PERFORMANCE OF THIS SOFTWARE.
 #include <termios.h>
 #include <unistd.h>
 #include <signal.h>
+#include <stdarg.h>
 #include "compat.h"
 #include "main.h"
 #include "y.tab.h"

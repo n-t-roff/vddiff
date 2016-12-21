@@ -25,6 +25,7 @@ PERFORMANCE OF THIS SOFTWARE.
 #include <sys/stat.h>
 #include <fcntl.h>
 #include <regex.h>
+#include <stdarg.h>
 #include "compat.h"
 #include "diff.h"
 #include "main.h"

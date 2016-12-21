@@ -18,6 +18,7 @@ PERFORMANCE OF THIS SOFTWARE.
 #include <ctype.h>
 #include <stdlib.h>
 #include <regex.h>
+#include <stdarg.h>
 #include "compat.h"
 #include <wctype.h>
 #include "ui.h"

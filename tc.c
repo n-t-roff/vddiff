@@ -19,6 +19,7 @@ PERFORMANCE OF THIS SOFTWARE.
 #include <stdlib.h>
 #include <string.h>
 #include <regex.h>
+#include <stdarg.h>
 #include "compat.h"
 #include "ui.h"
 #include "tc.h"

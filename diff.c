@@ -25,6 +25,7 @@ PERFORMANCE OF THIS SOFTWARE.
 #include <string.h>
 #include <regex.h>
 #include <time.h>
+#include <stdarg.h>
 #include "compat.h"
 #include "main.h"
 #include "ui.h"
