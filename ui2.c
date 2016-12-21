@@ -566,7 +566,7 @@ parsopt(char *buf)
 		recursive = not ? 0 : 1;
 	} else if (!strcmp(opt, "ws")) {
 		nows = not;
-	} else {
+	} else if (*buf) {
 		printerr(NULL, "Unknown option \"%s\"", buf);
 	}
 
