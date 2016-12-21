@@ -136,7 +136,11 @@ void
 include(char *s)
 {
 #ifndef LEX_HAS_BUFS
-	(void)s;
+# warning lex(1) on this system does not support buffer switching. \
+	The include statement will not work.
+	incl = 0;
+	printf("lex(1) on this system does not support buffer switching.\n"
+	    "The statement \"include %s\" will not work.\n", s);
 #else
 	struct incl_file *inc;
 
@@ -166,5 +170,5 @@ include(char *s)
 	inc->next = incstack;
 	incstack = inc;
 	yy_switch_to_buffer(yy_create_buffer(yyin, YY_BUF_SIZE));
-#endif
+#endif /* LEX_HAS_BUFS */
 }

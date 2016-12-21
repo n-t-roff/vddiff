@@ -12,6 +12,8 @@ INDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES WHATSOEVER RESULTING FROM
 LOSS OF USE, DATA OR PROFITS, WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE OR
 OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
 PERFORMANCE OF THIS SOFTWARE.
+
+Uses system() signal code by W. Richard Stevens.
 */
 
 #include <stdlib.h>
@@ -427,6 +429,9 @@ exec_cmd(char **av, tool_flags_t flags, char *path, char *msg)
 {
 	pid_t pid;
 	int status = 0;
+	/* Signal code (c) W. Richard Stevens */
+	struct sigaction ign, intr, quit;
+	sigset_t cmsk, smsk;
 	char prompt[] = "Type <ENTER> to continue ";
 
 #if defined(TRACE)
@@ -441,30 +446,71 @@ exec_cmd(char **av, tool_flags_t flags, char *path, char *msg)
 	if (flags & TOOL_TTY)
 		endwin();
 
+	ign.sa_handler = SIG_IGN;
+
+	if (sigemptyset(&ign.sa_mask) == -1) {
+		printerr(strerror(errno), "sigemptyset");
+	}
+
+	ign.sa_flags = 0;
+
+	if (sigaction(SIGINT, &ign, &intr) == -1) {
+		printerr(strerror(errno), "sigaction SIGINT");
+	}
+
+	if (sigaction(SIGQUIT, &ign, &quit) == -1) {
+		printerr(strerror(errno), "sigaction SIGQUIT");
+	}
+
+	if (sigemptyset(&cmsk) == -1) {
+		printerr(strerror(errno), "sigemptyset");
+	}
+
+	if (sigaddset(&cmsk, SIGCHLD) == -1) {
+		printerr(strerror(errno), "sigaddset SIGCHLD");
+	}
+
+	if (sigprocmask(SIG_BLOCK, &cmsk, &smsk) == -1) {
+		printerr(strerror(errno), "sigprocmask SIG_BLOCK");
+	}
+
 	switch ((pid = fork())) {
 	case -1:
 		break;
 	case 0:
+		if (sigaction(SIGINT, &intr, NULL) == -1) {
+			printerr(strerror(errno), "sigaction SIGINT");
+		}
+
+		if (sigaction(SIGQUIT, &quit, NULL) == -1) {
+			printerr(strerror(errno), "sigaction SIGQUIT");
+		}
+
+		if (sigprocmask(SIG_SETMASK, &smsk, NULL) == -1) {
+			printerr(strerror(errno), "sigprocmask SIG_SETMASK");
+		}
+
 		if (path && chdir(path) == -1) {
-			printf("chdir \"%s\" failed: %s\n", path,
+			printf("chdir \"%s\": %s\n", path,
 			    strerror(errno));
 			exit(1);
 		}
 
-		if (msg)
+		if (msg) {
 			puts(msg);
+		}
 
 		if (flags & TOOL_SHELL) {
 			char *shell = nishell ? nishell : "sh";
 
 			if (execlp(shell, shell, "-c", *av, NULL) == -1) {
 				/* only seen when vddiff exits later */
-				printf("exec %s -c \"%s\" failed: %s\n",
+				printf("exec %s -c \"%s\": %s\n",
 				    shell, *av, strerror(errno));
 			}
 		} else if (execvp(*av, av) == -1) {
 			/* only seen when vddiff exits later */
-			printf("exec \"%s\" failed: %s\n", *av,
+			printf("exec \"%s\": %s\n", *av,
 			    strerror(errno));
 		}
 
@@ -472,8 +518,9 @@ exec_cmd(char **av, tool_flags_t flags, char *path, char *msg)
 		fgetc(stdin);
 		_exit(77);
 	default:
-		if (!wait_after_exec && (flags & TOOL_BG))
+		if (!wait_after_exec && (flags & TOOL_BG)) {
 			break;
+		}
 
 		/* did always return "interrupted sys call" on OI */
 		waitpid(pid, &status, 0);
@@ -486,8 +533,21 @@ exec_cmd(char **av, tool_flags_t flags, char *path, char *msg)
 
 	doupdate();
 
-	if (pid == -1)
-		printerr(strerror(errno), "fork failed");
+	if (pid == -1) {
+		printerr(strerror(errno), "fork");
+	}
+
+	if (sigaction(SIGINT, &intr, NULL) == -1) {
+		printerr(strerror(errno), "sigaction SIGINT");
+	}
+
+	if (sigaction(SIGQUIT, &quit, NULL) == -1) {
+		printerr(strerror(errno), "sigaction SIGQUIT");
+	}
+
+	if (sigprocmask(SIG_SETMASK, &smsk, NULL) == -1) {
+		printerr(strerror(errno), "sigprocmask SIG_SETMASK");
+	}
 
 	if (!(flags & TOOL_UDSCR)) {
 		rebuild_scr();
