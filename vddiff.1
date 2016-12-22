@@ -13,7 +13,7 @@ LOSS OF USE, DATA OR PROFITS, WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE OR
 OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
 PERFORMANCE OF THIS SOFTWARE.
 ..
-.Dd December 20, 2016
+.Dd December 22, 2016
 .Dt VDDIFF 1
 .Sh NAME
 .Nm vddiff
@@ -1368,6 +1368,7 @@ and key
 .Sq Li #
 toggles between diff mode and browse mode:
 .Bd -literal -offset indent
+.if t .ne 11
                [1-column]        [2-column]
 
 [Diff mode]          <---- \(oq^W\(cq ---->
@@ -1388,7 +1389,7 @@ This is relevant if shell commands are applied
 which create files.
 Marks are cleared on any mode change except switching
 between one-column and two-column diff mode.
-.Ss One-column diff mode
+.Ss "One-column diff mode"
 Diff mode is entered when two arguments are used.
 Key
 .Aq Cm CTRL-w
@@ -1396,7 +1397,7 @@ switches to two-column diff mode,
 key
 .Sq Li #
 switches to two-column browse mode.
-.Ss Two-column diff mode
+.Ss "Two-column diff mode"
 Two-column diff mode is equal to diff mode
 except for a different data presentation.
 Key
@@ -1405,7 +1406,7 @@ switches to single-column diff mode,
 key
 .Sq Li #
 switches to two-column browse mode.
-.Ss One-column browse mode (bmode)
+.Ss "One-column browse mode (bmode)"
 Bmode is a simply file browser mode.
 It allows file comparison by use or marks,
 but directory comparison is not possible.
@@ -1416,7 +1417,7 @@ it needs to resolve paths with symbolic links.
 Key
 .Aq Cm CTRL-w
 switches to two-column browse mode.
-.Ss Two-column browse mode (fmode)
+.Ss "Two-column browse mode (fmode)"
 Fmode is a simple two-column file manager mode.
 It allows comparison of files and directories
 by use of local marks.
@@ -1469,6 +1470,52 @@ the resize).
 .It Pa ~/.vddiffrc
 Read on start-up to set non-default options.
 .El
+.Sh EXAMPLES
+To display only differing files and subdirectories which contain
+differing files in two-column mode enter
+.Pp
+.D1 Li vddiff -cry Ar directory_1 directory_2
+.Pp
+where
+.Fl c
+hides equal files, files which exist in one directory only and directories
+which don't contain differing files.
+Pressing
+.Sq Li c
+toggles showing all files.
+.Fl r
+enables recursive mode.
+This option increases the start time,
+if huge directories are compared.
+If this takes too long,
+.Sq Li %
+can be pressed to disable further file content comparison.
+.Fl y
+enables two-column mode.
+.Pp
+To only hide equal files enter
+.Pp
+.D1 Li vddiff -nry Ar directory_1 directory_2
+.Pp
+Pressing
+.Sq Li n
+toggles showing all files.
+.Pp
+If a recursive diff is not required,
+.Pp
+.D1 Li vddiff -y Ar directory_1 directory_2
+.Pp
+(optionally with option
+.Fl c
+or
+.Fl n )
+is much faster,
+since a diff is only done,
+when a directory is entered.
+The only disadvantage is,
+that also directories may be shown,
+which contain no differences
+(since the tool had not visited them yet).
 .\".Sh BUGS
 .\"TODO issue:
 .\"Pp
