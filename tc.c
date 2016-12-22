@@ -90,19 +90,19 @@ fmode_dmode(void)
 
 #if defined(TRACE)
 	fprintf(debug, "->fmode_dmode lp(%s) rp(%s) bm=%u fm=%u 2c=%u\n",
-	    lpath, rpath, bmode ? 1 : 0, fmode ? 1 : 0, twocols ? 1 : 0);
+	    syspth[0], syspth[1], bmode ? 1 : 0, fmode ? 1 : 0, twocols ? 1 : 0);
 #endif
 	fmode = FALSE;
 	/*diff_db_free(?);*/
 	old_col = right_col;
 	right_col = 0;
 	from_fmode = TRUE;
-	pwd  = lpath + llen;
-	rpwd = rpath + rlen;
+	pwd  = syspth[0] + pthlen[0];
+	rpwd = syspth[1] + pthlen[1];
 	close2cwins();
 #if defined(TRACE)
 	fprintf(debug, "<-fmode_dmode lp(%s) rp(%s) bm=%u fm=%u 2c=%u\n",
-	    lpath, rpath, bmode ? 1 : 0, fmode ? 1 : 0, twocols ? 1 : 0);
+	    syspth[0], syspth[1], bmode ? 1 : 0, fmode ? 1 : 0, twocols ? 1 : 0);
 #endif
 }
 
@@ -117,7 +117,7 @@ dmode_fmode(
 
 #if defined(TRACE)
 	fprintf(debug, "->dmode_fmode(%u) lp(%s) rp(%s) bm=%u fm=%u 2c=%u\n",
-	    mode, lpath, rpath, bmode ? 1 : 0, fmode ? 1 : 0, twocols ? 1 : 0);
+	    mode, syspth[0], syspth[1], bmode ? 1 : 0, fmode ? 1 : 0, twocols ? 1 : 0);
 #endif
 	while (!bmode && ui_stack)
 		pop_state(0);
@@ -133,8 +133,8 @@ dmode_fmode(
 		bmode = TRUE;
 	}
 
-	mk_abs_pth(lpath, &llen);
-	mk_abs_pth(rpath, &rlen);
+	mk_abs_pth(syspth[0], &pthlen[0]);
+	mk_abs_pth(syspth[1], &pthlen[1]);
 	rebuild_db((mode & 1) ? 1 : 0);
 
 	if (!(mode & 2)) {
@@ -142,7 +142,7 @@ dmode_fmode(
 	}
 #if defined(TRACE)
 	fprintf(debug, "<-dmode_fmode(%u) lp(%s) rp(%s) bm=%u fm=%u 2c=%u\n",
-	    mode, lpath, rpath, bmode ? 1 : 0, fmode ? 1 : 0, twocols ? 1 : 0);
+	    mode, syspth[0], syspth[1], bmode ? 1 : 0, fmode ? 1 : 0, twocols ? 1 : 0);
 #endif
 }
 
@@ -174,8 +174,8 @@ prt2chead(
 	if (md & 1) {
 		wmove(wstat, 1, 0);
 		wclrtoeol(wstat);
-		lpath[llen] = 0;
-		putmbsra(wstat, lpath, llstw);
+		syspth[0][pthlen[0]] = 0;
+		putmbsra(wstat, syspth[0], llstw);
 	}
 
 	standoutc(wstat);
@@ -190,8 +190,8 @@ prt2chead(
 	/* Splitted to save one wmove */
 
 	if (md & 1) {
-		rpath[rlen] = 0;
-		putmbsra(wstat, rpath, 0);
+		syspth[1][pthlen[1]] = 0;
+		putmbsra(wstat, syspth[1], 0);
 	}
 }
 
@@ -213,23 +213,23 @@ tgl2c(
 
 #if defined(TRACE)
 	fprintf(debug, "->tgl2c(%u) lp(%s) rp(%s) bm=%u fm=%u 2c=%u\n",
-	    md, lpath, rpath, bmode ? 1 : 0, fmode ? 1 : 0, twocols ? 1 : 0);
+	    md, syspth[0], syspth[1], bmode ? 1 : 0, fmode ? 1 : 0, twocols ? 1 : 0);
 #endif
 	if (bmode) { /* -> fmode */
 		clr_mark();
-		s = !(md & 1) && fpath ? fpath : rpath;
-		l1 = strlen(rpath);
+		s = !(md & 1) && fpath ? fpath : syspth[1];
+		l1 = strlen(syspth[1]);
 		l2 = strlen(s);
 
 		if (old_col) {
-			llen = l2;
-			rlen = l1;
-			memcpy(lpath, s, llen + 1);
+			pthlen[0] = l2;
+			pthlen[1] = l1;
+			memcpy(syspth[0], s, pthlen[0] + 1);
 		} else {
-			llen = l1;
-			rlen = l2;
-			memcpy(lpath, rpath, llen + 1);
-			memcpy(rpath, s    , rlen + 1);
+			pthlen[0] = l1;
+			pthlen[1] = l2;
+			memcpy(syspth[0], syspth[1], pthlen[0] + 1);
+			memcpy(syspth[1], s    , pthlen[1] + 1);
 		}
 
 		if (md & 1) {
@@ -254,25 +254,25 @@ tgl2c(
 	} else if (fmode || /* fmode -> bmode */
 	    (md & 1)) { /* 1C diff -> bmode */
 		clr_mark();
-		lpath[llen] = 0;
-		rpath[rlen] = 0;
+		syspth[0][pthlen[0]] = 0;
+		syspth[1][pthlen[1]] = 0;
 
 		if (right_col) {
-			fpath = strdup(lpath);
+			fpath = strdup(syspth[0]);
 			old_top_idx = top_idx[0];
 			old_curs = curs[0];
 		} else {
-			fpath = strdup(rpath);
-			memcpy(rpath, lpath, llen + 1);
+			fpath = strdup(syspth[1]);
+			memcpy(syspth[1], syspth[0], pthlen[0] + 1);
 		}
 
-		if (chdir(rpath) == -1) {
-			printerr(strerror(errno), "chdir \"%s\":", rpath);
+		if (chdir(syspth[1]) == -1) {
+			printerr(strerror(errno), "chdir \"%s\":", syspth[1]);
 		}
 
-		*lpath = '.';
-		lpath[1] = 0;
-		llen = 1;
+		*syspth[0] = '.';
+		syspth[0][1] = 0;
+		pthlen[0] = 1;
 		fmode_dmode();
 		bmode = TRUE;
 		twocols = FALSE;
@@ -291,7 +291,7 @@ tgl2c(
 	}
 #if defined(TRACE)
 	fprintf(debug, "<-tgl2c(%u) lp(%s) rp(%s) bm=%u fm=%u 2c=%u\n",
-	    md, lpath, rpath, bmode ? 1 : 0, fmode ? 1 : 0, twocols ? 1 : 0);
+	    md, syspth[0], syspth[1], bmode ? 1 : 0, fmode ? 1 : 0, twocols ? 1 : 0);
 #endif
 }
 
@@ -327,13 +327,13 @@ void
 fmode_cp_pth(void)
 {
 	if (right_col) {
-		lpath[llen] = 0;
-		memcpy(rpath, lpath, llen + 1);
-		rlen = llen;
+		syspth[0][pthlen[0]] = 0;
+		memcpy(syspth[1], syspth[0], pthlen[0] + 1);
+		pthlen[1] = pthlen[0];
 	} else {
-		rpath[rlen] = 0;
-		memcpy(lpath, rpath, rlen + 1);
-		llen = rlen;
+		syspth[1][pthlen[1]] = 0;
+		memcpy(syspth[0], syspth[1], pthlen[1] + 1);
+		pthlen[0] = pthlen[1];
 	}
 
 	enter_dir(NULL, NULL, FALSE, FALSE, 0);
@@ -369,9 +369,9 @@ fmode_chdir(void)
 {
 	char *s;
 
-	lpath[llen] = 0;
-	rpath[rlen] = 0;
-	s = right_col ? rpath : lpath;
+	syspth[0][pthlen[0]] = 0;
+	syspth[1][pthlen[1]] = 0;
+	s = right_col ? syspth[1] : syspth[0];
 
 	if (chdir(s) == -1) {
 		printerr(strerror(errno), "chdir \"%s\":", s);

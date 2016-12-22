@@ -1,8 +1,8 @@
 #define PATHSIZ  (1024*16)
 #define BUF_SIZE PATHSIZ
 
-#define PWD  ((pwd  != lpath && *pwd  == '/') ? pwd  + 1 : pwd )
-#define RPWD ((rpwd != rpath && *rpwd == '/') ? rpwd + 1 : rpwd)
+#define PWD  ((pwd  != syspth[0] && *pwd  == '/') ? pwd  + 1 : pwd )
+#define RPWD ((rpwd != syspth[1] && *rpwd == '/') ? rpwd + 1 : rpwd)
 
 #ifndef CTRL
 # define CTRL(c) ((c) & 037)
@@ -23,8 +23,8 @@
 #ifdef TRACE
 # define TPTH \
 	do { \
-		memcpy(tlpth, lpath, llen); tlpth[llen] = 0; \
-		memcpy(trpth, rpath, rlen); trpth[rlen] = 0; \
+		memcpy(tlpth, syspth[0], pthlen[0]); tlpth[pthlen[0]] = 0; \
+		memcpy(trpth, syspth[1], pthlen[1]); trpth[pthlen[1]] = 0; \
 	} while (0)
 #endif
 
@@ -34,9 +34,9 @@ struct strlst {
 };
 
 extern struct stat stat1, stat2;
-extern size_t llen, rlen;
+extern size_t pthlen[2];
 extern char *pwd, *rpwd, *arg[];
-extern char lpath[PATHSIZ], rpath[PATHSIZ], lbuf[BUF_SIZE], rbuf[BUF_SIZE];
+extern char syspth[2][PATHSIZ], lbuf[BUF_SIZE], rbuf[BUF_SIZE];
 extern regex_t fn_re;
 extern short recursive, scan;
 extern short nosingle;

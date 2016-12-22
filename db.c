@@ -596,22 +596,22 @@ exit:
 #define PROC_DIFF_NODE() \
 	do { \
 	if ((!file_pattern || \
-	     ((S_ISDIR(f->ltype) || S_ISDIR(f->rtype)) && \
+	     ((S_ISDIR(f->type[0]) || S_ISDIR(f->type[1])) && \
 	      (!recursive || is_diff_dir(f))) || \
 	     ((!find_name || !regexec(&fn_re, f->name, 0, NULL, 0)) && \
 	      (!gq_pattern || !gq_proc(f)))) && \
 	    \
 	    (bmode || fmode || \
 	     ((!noequal || \
-	       f->diff == '!' || S_ISDIR(f->ltype) || \
-	       (f->ltype & S_IFMT) != (f->rtype & S_IFMT)) && \
+	       f->diff == '!' || S_ISDIR(f->type[0]) || \
+	       (f->type[0] & S_IFMT) != (f->type[1] & S_IFMT)) && \
 	      \
 	      (!real_diff || \
-	       f->diff == '!' || (S_ISDIR(f->ltype) && S_ISDIR(f->rtype) && \
+	       f->diff == '!' || (S_ISDIR(f->type[0]) && S_ISDIR(f->type[1]) && \
 	       is_diff_dir(f))) && \
 	      \
 	      (!nosingle || \
-	       (f->ltype && f->rtype))))) \
+	       (f->type[0] && f->type[1]))))) \
 	{ \
 		cur_list[db_idx++] = f; \
 	} \
@@ -654,11 +654,11 @@ mk_list(const void *n, const VISIT which, const int depth)
 
 #define IS_F_DIR(n) \
     /* both are dirs */ \
-    (S_ISDIR(f##n->ltype) && S_ISDIR(f##n->rtype)) || \
+    (S_ISDIR(f##n->type[0]) && S_ISDIR(f##n->type[1])) || \
     /* only left dir present */ \
-    (S_ISDIR(f##n->ltype) && !f##n->rtype) || \
+    (S_ISDIR(f##n->type[0]) && !f##n->type[1]) || \
     /* only right dir present */ \
-    (S_ISDIR(f##n->rtype) && !f##n->ltype)
+    (S_ISDIR(f##n->type[1]) && !f##n->type[0])
 
 static int
 diff_cmp(
@@ -681,8 +681,8 @@ diff_cmp(
 	if (sorting == SORTMTIME) {
 		time_t t1, t2;
 
-		t1 = f1->ltype ? f1->lmtim : f1->rmtim;
-		t2 = f2->ltype ? f2->lmtim : f2->rmtim;
+		t1 = f1->type[0] ? f1->lmtim : f1->rmtim;
+		t2 = f2->type[0] ? f2->lmtim : f2->rmtim;
 
 		if      (t1 < t2) return -1;
 		else if (t1 > t2) return  1;
@@ -697,8 +697,8 @@ diff_cmp(
 		if (dirsort)
 			return dirsort;
 
-		t1 = f1->ltype ? f1->lsiz : f1->rsiz;
-		t2 = f2->ltype ? f2->lsiz : f2->rsiz;
+		t1 = f1->type[0] ? f1->lsiz : f1->rsiz;
+		t2 = f2->type[0] ? f2->lsiz : f2->rsiz;
 
 		if      (t1 < t2) return -1;
 		else if (t1 > t2) return  1;

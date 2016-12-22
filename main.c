@@ -43,8 +43,8 @@ int yyparse(void);
 
 static char *prog;
 char *pwd, *rpwd, *arg[2];
-size_t llen, rlen;
-char lpath[PATHSIZ], rpath[PATHSIZ], lbuf[BUF_SIZE], rbuf[BUF_SIZE];
+size_t pthlen[2];
+char syspth[2][PATHSIZ], lbuf[BUF_SIZE], rbuf[BUF_SIZE];
 struct stat stat1, stat2;
 regex_t fn_re;
 short recursive, scan;
@@ -104,8 +104,9 @@ main(int argc, char **argv)
 #ifdef HAVE_LIBAVLBST
 	db_init();
 #endif
-	if (uz_init())
+	if (uz_init()) {
 		return 1;
+	}
 
 	set_tool(&difftool, strdup(vimdiff), 0);
 	set_tool(&viewtool, strdup("less --"), 0);
@@ -285,17 +286,17 @@ main(int argc, char **argv)
 		/* Since bmode does not work with paths it need to
 		 * resolve the absolute path. */
 
-		if (!getcwd(lpath, sizeof lpath)) {
+		if (!getcwd(syspth[0], sizeof syspth[0])) {
 			printf("getcwd failed: %s\n",
 			    strerror(errno));
 			exit(1);
 		}
 
-		llen = strlen(lpath);
+		pthlen[0] = strlen(syspth[0]);
 	}
 
-	pwd  = lpath + llen;
-	rpwd = rpath + rlen;
+	pwd  = syspth[0] + pthlen[0];
+	rpwd = syspth[1] + pthlen[1];
 	inst_sighdl(SIGCHLD, sig_child);
 	inst_sighdl(SIGINT , sig_term);
 	inst_sighdl(SIGTERM, sig_term);
@@ -408,16 +409,16 @@ check_args(int argc, char **argv)
 		s2 = s;
 	}
 
-	if ((llen = strlen(s2)) >= PATHSIZ - 1) {
+	if ((pthlen[0] = strlen(s2)) >= PATHSIZ - 1) {
 		printf("Path too long: %s\n", s2);
 		exit(1);
 	}
 
-	while (llen > 1 && s2[llen - 1] == '/') {
-		s2[--llen] = 0;
+	while (pthlen[0] > 1 && s2[pthlen[0] - 1] == '/') {
+		s2[--pthlen[0]] = 0;
 	}
 
-	memcpy(lpath, s2, llen + 1);
+	memcpy(syspth[0], s2, pthlen[0] + 1);
 
 	if (fmode && *s != '/')
 		free(s2);
@@ -439,7 +440,7 @@ check_args(int argc, char **argv)
 	    stat1.st_ino == stat2.st_ino &&
 	    stat1.st_dev == stat2.st_dev) {
 		printf("\"%s\" and \"%s\" are the same directory\n",
-		    lpath, s);
+		    syspth[0], s);
 		exit(0);
 	}
 
@@ -458,16 +459,16 @@ check_args(int argc, char **argv)
 		s2 = s;
 	}
 
-	if ((rlen = strlen(s2)) >= PATHSIZ - 1) {
+	if ((pthlen[1] = strlen(s2)) >= PATHSIZ - 1) {
 		printf("Path too long: %s\n", s2);
 		exit(1);
 	}
 
-	while (rlen > 1 && s2[rlen - 1] == '/') {
-		s2[--rlen] = 0;
+	while (pthlen[1] > 1 && s2[pthlen[1] - 1] == '/') {
+		s2[--pthlen[1]] = 0;
 	}
 
-	memcpy(rpath, s2, rlen + 1);
+	memcpy(syspth[1], s2, pthlen[1] + 1);
 
 	if (fmode && *s != '/')
 		free(s2);

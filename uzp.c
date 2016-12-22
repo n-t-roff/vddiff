@@ -42,6 +42,16 @@ static char *zpths(struct filediff *, struct filediff **, int, size_t *,
     int, int);
 
 char *tmp_dir;
+/* Path names used bei the UI. syspth[0] and syspth[1] are only used for file
+ * system access. */
+char *pthnam[2];
+/* View path buffer size. Initially set by uz_init(). */
+size_t pthsiz[2];
+/* Number of bytes in syspth[0]/syspth[1], which belong to the temporary directory
+ * only. */
+size_t tpthlen[2];
+/* Offset in view path to where real path + tpthlen is copied. */
+size_t vpthofs[2];
 static const char *tmpdirbase;
 
 static struct uz_ext exttab[] = {
@@ -72,6 +82,8 @@ uz_init(void)
 		return 1;
 	}
 
+	pthnam[0] = malloc((pthsiz[0] = 4096));
+	pthnam[1] = malloc((pthsiz[1] = 4096));
 	return 0;
 }
 
@@ -186,8 +198,8 @@ unpack(struct filediff *f, int tree, char **tmp, int type)
 	int i;
 	char *s;
 
-	if ((tree == 1 && !S_ISREG(f->ltype)) ||
-	    (tree == 2 && !S_ISREG(bmode ? f->ltype : f->rtype)))
+	if ((tree == 1 && !S_ISREG(f->type[0])) ||
+	    (tree == 2 && !S_ISREG(bmode ? f->type[0] : f->type[1])))
 		return NULL;
 
 	s = f->name ? f->name : bmode ? gl_mark : tree == 1 ? mark_lnam :
@@ -386,22 +398,22 @@ zpths(struct filediff *f, struct filediff **z2, int tree, size_t *l2, int i,
 
 	if (tree == 1 ||
 	    /* In case of bmode separate unpacked files in directories "l"
-	     * and "r", but use lpath/ltype */
+	     * and "r", but use syspth[0]/type[0] */
 	    bmode) {
-		s = lpath;
-		l = llen;
+		s = syspth[0];
+		l = pthlen[0];
 
 		if (!fn)
-			z->ltype = S_IFDIR | S_IRWXU;
+			z->type[0] = S_IFDIR | S_IRWXU;
 
-		z->rtype = 0;
+		z->type[1] = 0;
 	} else {
-		s = rpath;
-		l = rlen;
-		z->ltype = 0;
+		s = syspth[1];
+		l = pthlen[1];
+		z->type[0] = 0;
 
 		if (!fn)
-			z->rtype = S_IFDIR | S_IRWXU;
+			z->type[1] = S_IFDIR | S_IRWXU;
 	}
 
 	if (*s2 == '/')
@@ -421,4 +433,9 @@ zpths(struct filediff *f, struct filediff **z2, int tree, size_t *l2, int i,
 		memcpy(rbuf, z->name, strlen(z->name) + 1);
 		return NULL;
 	}
+}
+
+void
+setvpth(int i)
+{
 }

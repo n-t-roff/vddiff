@@ -1,7 +1,7 @@
 struct filediff {
 	char   *name;
 	char   *llink, *rlink;
-	mode_t  ltype,  rtype;
+	mode_t  type[2];
 	uid_t   luid,   ruid;
 	gid_t   lgid,   rgid;
 	off_t   lsiz,   rsiz;

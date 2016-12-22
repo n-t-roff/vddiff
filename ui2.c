@@ -626,14 +626,14 @@ bindiff(void)
 	f = db_list[right_col][top_idx[right_col] + curs[right_col]];
 
 	/* check if mark needs to be unzipped */
-	ml = m->ltype && (f->rtype || !m->rtype);
+	ml = m->type[0] && (f->type[1] || !m->type[1]);
 
 	if ((z1 = unpack(m, ml ? 1 : 2, &t1, 0))) {
 		m = z1;
 	}
 
 	/* check if other file needs to be unzipped */
-	if ((z2 = unpack(f, f->rtype ? 2 : 1, &t2, 0))) {
+	if ((z2 = unpack(f, f->type[1] ? 2 : 1, &t2, 0))) {
 		f = z2;
 	}
 
@@ -644,53 +644,53 @@ bindiff(void)
 		                 mark_lnam ;
 
 		if (*lnam != '/') {
-			pthcat(lpath, llen, lnam);
-			lnam = lpath;
+			pthcat(syspth[0], pthlen[0], lnam);
+			lnam = syspth[0];
 		}
 
 		if (chk_mark(lnam, 0))
 			goto ret;
 
-		ltyp = m->ltype;
+		ltyp = m->type[0];
 		lsiz = m->lsiz;
 		ornam = rnam = f->name;
 
-		if (f->rtype) {
-			rtyp = f->rtype;
+		if (f->type[1]) {
+			rtyp = f->type[1];
 			rsiz = f->rsiz;
 
 			if (*rnam != '/') {
-				pthcat(rpath, rlen, rnam);
-				rnam = rpath;
+				pthcat(syspth[1], pthlen[1], rnam);
+				rnam = syspth[1];
 			}
 		} else {
-			rtyp = f->ltype;
+			rtyp = f->type[0];
 			rsiz = f->lsiz;
 
 			if (*rnam != '/') {
-				pthcat(lpath, llen, rnam);
-				rnam = lpath;
+				pthcat(syspth[0], pthlen[0], rnam);
+				rnam = syspth[0];
 			}
 		}
 
-	} else if (m->rtype) {
+	} else if (m->type[1]) {
 		olnam = lnam = f->name;
 
-		if (f->ltype) {
-			ltyp = f->ltype;
+		if (f->type[0]) {
+			ltyp = f->type[0];
 			lsiz = f->lsiz;
 
 			if (*lnam != '/') {
-				pthcat(lpath, llen, lnam);
-				lnam = lpath;
+				pthcat(syspth[0], pthlen[0], lnam);
+				lnam = syspth[0];
 			}
 		} else {
-			ltyp = f->rtype;
+			ltyp = f->type[1];
 			lsiz = f->rsiz;
 
 			if (*lnam != '/') {
-				pthcat(rpath, rlen, lnam);
-				lnam = rpath;
+				pthcat(syspth[1], pthlen[1], lnam);
+				lnam = syspth[1];
 			}
 		}
 
@@ -700,14 +700,14 @@ bindiff(void)
 		                 mark_rnam ;
 
 		if (*rnam != '/') {
-			pthcat(rpath, rlen, rnam);
-			rnam = rpath;
+			pthcat(syspth[1], pthlen[1], rnam);
+			rnam = syspth[1];
 		}
 
 		if (chk_mark(rnam, 0))
 			goto ret;
 
-		rtyp = m->rtype;
+		rtyp = m->type[1];
 		rsiz = m->rsiz;
 	} else {
 		goto ret;
@@ -773,11 +773,11 @@ chk_mark(char *file,
 
 	if (rp) {
 		if (tree & 1) {
-			pthcat(lpath, llen, file);
-			file = lpath;
+			pthcat(syspth[0], pthlen[0], file);
+			file = syspth[0];
 		} else if (tree & 2) {
-			pthcat(rpath, rlen, file);
-			file = rpath;
+			pthcat(syspth[1], pthlen[1], file);
+			file = syspth[1];
 		}
 	}
 
@@ -789,9 +789,9 @@ chk_mark(char *file,
 
 	if (rp) {
 		if (tree & 1) {
-			lpath[llen] = 0;
+			syspth[0][pthlen[0]] = 0;
 		} else if (tree & 2) {
-			rpath[rlen] = 0;
+			syspth[1][pthlen[1]] = 0;
 		}
 	}
 

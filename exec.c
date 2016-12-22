@@ -68,7 +68,7 @@ tool(char *name, char *rnam, int tree, int ign_ext)
 
 #ifdef TRACE
 	fprintf(debug, "->tool(%s,%s,%d) lp(%s) rp(%s)\n",
-	    name, rnam, tree, lpath, rpath);
+	    name, rnam, tree, syspth[0], syspth[1]);
 #endif
 	l = strlen(name);
 	cmd = lbuf + sizeof lbuf;
@@ -144,10 +144,10 @@ exec_mk_cmd(struct tool *tmptool, char *name, char *rnam, int tree)
 	cmd = malloc(csiz);
 	clen = strlen(s = tmptool->tool);
 	memcpy(cmd, s, clen);
-	lpath[llen] = 0; /* in add_path() used without len */
+	syspth[0][pthlen[0]] = 0; /* in add_path() used without len */
 
 	if (!bmode)
-		rpath[rlen] = 0;
+		syspth[1][pthlen[1]] = 0;
 
 	if (tmptool->flags & TOOL_NOARG) {
 	} else if ((args = tmptool->args)) {
@@ -159,12 +159,12 @@ exec_mk_cmd(struct tool *tmptool, char *name, char *rnam, int tree)
 			if ((!right_col && c == '1') ||
 			    ( right_col && c == '2')) {
 
-				clen = add_path(cmd, clen, lpath, name);
+				clen = add_path(cmd, clen, syspth[0], name);
 
 			} else if ((!right_col && c == '2') ||
 			           ( right_col && c == '1')) {
 
-				clen = add_path(cmd, clen, rpath, nam2);
+				clen = add_path(cmd, clen, syspth[1], nam2);
 			}
 
 			if ((l = strlen(s) - 1)) {
@@ -177,19 +177,19 @@ exec_mk_cmd(struct tool *tmptool, char *name, char *rnam, int tree)
 		if (tree != 3 && name && rnam) {
 			GRWCMD;
 			clen = add_path(cmd, clen,
-			    tree == 1 ? lpath : rpath, name);
+			    tree == 1 ? syspth[0] : syspth[1], name);
 			GRWCMD;
 			clen = add_path(cmd, clen,
-			    tree == 1 ? lpath : rpath, rnam);
+			    tree == 1 ? syspth[0] : syspth[1], rnam);
 		} else {
 			if (tree & 1) {
 				GRWCMD;
-				clen = add_path(cmd, clen, lpath, name);
+				clen = add_path(cmd, clen, syspth[0], name);
 			}
 
 			if (tree & 2) {
 				GRWCMD;
-				clen = add_path(cmd, clen, rpath, nam2);
+				clen = add_path(cmd, clen, syspth[1], nam2);
 			}
 		}
 	}
@@ -353,12 +353,12 @@ exec_tool(struct tool *t, char *name, char *rnam, int tree)
 			*a++ = name;
 
 		} else if (tree & 1) {
-			pthcat(lpath, llen, name);
-			*a++ = s1 = strdup(lpath);
+			pthcat(syspth[0], pthlen[0], name);
+			*a++ = s1 = strdup(syspth[0]);
 
 		} else if (tree == 2) {
-			pthcat(rpath, rlen, name);
-			*a++ = s1 = strdup(rpath);
+			pthcat(syspth[1], pthlen[1], name);
+			*a++ = s1 = strdup(syspth[1]);
 		}
 	}
 
@@ -367,21 +367,21 @@ exec_tool(struct tool *t, char *name, char *rnam, int tree)
 			*a++ = nam2;
 
 		} else if (tree & 2) {
-			pthcat(rpath, rlen, nam2);
-			*a++ = s2 = strdup(rpath);
+			pthcat(syspth[1], pthlen[1], nam2);
+			*a++ = s2 = strdup(syspth[1]);
 
 		} else if (tree == 1) {
-			pthcat(lpath, llen, nam2);
-			*a++ = s2 = strdup(lpath);
+			pthcat(syspth[0], pthlen[0], nam2);
+			*a++ = s2 = strdup(syspth[0]);
 		}
 	}
 
 	*a = NULL;
 	status = exec_cmd(av, flags, NULL, NULL);
-	lpath[llen] = 0;
+	syspth[0][pthlen[0]] = 0;
 
 	if (tree & 2) {
-		rpath[rlen] = 0;
+		syspth[1][pthlen[1]] = 0;
 	}
 
 	free(s1);
@@ -613,20 +613,20 @@ open_sh(int tree)
 	if (db_num[right_col]) {
 		f = db_list[right_col][top_idx[right_col] + curs[right_col]];
 
-		if ((tree == 3 && f->ltype && f->rtype) ||
-		    (tree == 1 && !f->ltype) ||
-		    (tree == 2 && !f->rtype))
+		if ((tree == 3 && f->type[0] && f->type[1]) ||
+		    (tree == 1 && !f->type[0]) ||
+		    (tree == 2 && !f->type[1]))
 			return;
 	}
 
 	if (bmode)
-		s = rpath;
-	else if (tree == 2 || ((tree & 2) && db_num[right_col] && f->rtype)) {
-		rpath[rlen] = 0;
-		s = rpath;
+		s = syspth[1];
+	else if (tree == 2 || ((tree & 2) && db_num[right_col] && f->type[1])) {
+		syspth[1][pthlen[1]] = 0;
+		s = syspth[1];
 	} else {
-		lpath[llen] = 0;
-		s = lpath;
+		syspth[0][pthlen[0]] = 0;
+		s = syspth[0];
 	}
 
 	if (ishell)

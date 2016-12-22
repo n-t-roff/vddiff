@@ -167,15 +167,15 @@ do_diff:
 	}
 
 	if (bmode || fmode) {
-		if (chdir(lpath) == -1) {
-			printerr(strerror(errno), "chdir \"%s\":", lpath);
+		if (chdir(syspth[0]) == -1) {
+			printerr(strerror(errno), "chdir \"%s\":", syspth[0]);
 			goto exit;
 		}
 
 		if (bmode) {
-			*lpath = '.';
-			lpath[1] = 0;
-			llen = 1;
+			*syspth[0] = '.';
+			syspth[0][1] = 0;
+			pthlen[0] = 1;
 		}
 	}
 
@@ -458,8 +458,8 @@ next_key:
 
 			if (!bmode) {
 				c = 0;
-				lpath[llen] = 0;
-				rpath[rlen] = 0;
+				syspth[0][pthlen[0]] = 0;
+				syspth[1][pthlen[1]] = 0;
 
 				if (!*pwd && !*rpwd)
 					printerr(NULL, "At top directory");
@@ -480,11 +480,11 @@ next_key:
 		case 'f':
 			if (!bmode) {
 				c = 0;
-				lpath[llen] = 0;
-				rpath[rlen] = 0;
+				syspth[0][pthlen[0]] = 0;
+				syspth[1][pthlen[1]] = 0;
 				werase(wstat);
 				statcol(0);
-				stmbsra(lpath, rpath);
+				stmbsra(syspth[0], syspth[1]);
 				wrefresh(wstat);
 				break;
 			}
@@ -494,7 +494,7 @@ next_key:
 			c = 0;
 
 			if (bmode) {
-				if (!getcwd(rpath, sizeof rpath)) {
+				if (!getcwd(syspth[1], sizeof syspth[1])) {
 					printerr(strerror(errno),
 					    "getcwd failed");
 					break;
@@ -502,7 +502,7 @@ next_key:
 
 				werase(wstat);
 				wmove(wstat, 1, 0);
-				putmbsra(wstat, rpath, 0);
+				putmbsra(wstat, syspth[1], 0);
 				wrefresh(wstat);
 				break;
 			}
@@ -621,13 +621,13 @@ next_key:
 			f = db_list[right_col][top_idx[right_col] +
 			    curs[right_col]];
 
-			if (S_ISREG(f->ltype) && !S_ISREG(f->rtype)) {
+			if (S_ISREG(f->type[0]) && !S_ISREG(f->type[1])) {
 				c = 0;
 				action(0, 1, 0, TRUE);
 				break;
 			}
 
-			if (S_ISREG(f->rtype) && !S_ISREG(f->ltype)) {
+			if (S_ISREG(f->type[1]) && !S_ISREG(f->type[0])) {
 				c = 0;
 				action(0, 2, 0, TRUE);
 				break;
@@ -966,13 +966,13 @@ next_key:
 			f = db_list[right_col][top_idx[right_col] +
 			    curs[right_col]];
 
-			if (S_ISREG(f->ltype) && !S_ISREG(f->rtype)) {
+			if (S_ISREG(f->type[0]) && !S_ISREG(f->type[1])) {
 				c = 0;
 				action(0, 1, 0, FALSE);
 				break;
 			}
 
-			if (S_ISREG(f->rtype) && !S_ISREG(f->ltype)) {
+			if (S_ISREG(f->type[1]) && !S_ISREG(f->type[0])) {
 				c = 0;
 				action(0, 2, 0, FALSE);
 				break;
@@ -1570,12 +1570,12 @@ action(
 		if (!ign_ext) {
 			/* check if mark needs to be unzipped */
 			if ((z1 = unpack(m,
-			    m->ltype && (f1->rtype || !m->rtype) ? 1 : 2,
+			    m->type[0] && (f1->type[1] || !m->type[1]) ? 1 : 2,
 			    &t1, 1)))
 				m = z1;
 
 			/* check if other file needs to be unzipped */
-			if ((z2 = unpack(f1, f1->rtype ? 2 : 1, &t2, 1)))
+			if ((z2 = unpack(f1, f1->type[1] ? 2 : 1, &t2, 1)))
 				f1 = z2;
 		}
 
@@ -1586,52 +1586,52 @@ action(
 			if (chk_mark(lnam, 1))
 				goto ret;
 
-			ltyp = m->ltype;
+			ltyp = m->type[0];
 			rnam = f1->name;
-			rtyp = f1->ltype;
+			rtyp = f1->type[0];
 
-		} else if (m->ltype && f1->rtype && (tree & 2)) {
+		} else if (m->type[0] && f1->type[1] && (tree & 2)) {
 			lnam = m->name ? m->name : mark_lnam;
 
 			if (chk_mark(lnam, 1))
 				goto ret;
 
-			ltyp = m->ltype;
+			ltyp = m->type[0];
 			rnam = f1->name;
-			rtyp = f1->rtype;
+			rtyp = f1->type[1];
 
-		} else if (f1->ltype && m->rtype && (tree & 1)) {
+		} else if (f1->type[0] && m->type[1] && (tree & 1)) {
 			lnam = f1->name;
-			ltyp = f1->ltype;
+			ltyp = f1->type[0];
 			rnam = m->name ? m->name : mark_rnam;
 
 			if (chk_mark(rnam, 2))
 				goto ret;
 
-			rtyp = m->rtype;
+			rtyp = m->type[1];
 
 		/* for fmode: Both files on one side */
 
-		} else if (m->ltype && f1->ltype) {
+		} else if (m->type[0] && f1->type[0]) {
 			lnam = m->name;
 
 			if (chk_mark(lnam, 1))
 				goto ret;
 
-			ltyp = m->ltype;
+			ltyp = m->type[0];
 			rnam = f1->name;
-			rtyp = f1->ltype;
+			rtyp = f1->type[0];
 			tree = 1;
 
-		} else if (m->rtype && f1->rtype) {
+		} else if (m->type[1] && f1->type[1]) {
 			lnam = m->name;
 
 			if (chk_mark(lnam, 2))
 				goto ret;
 
-			ltyp = m->rtype;
+			ltyp = m->type[1];
 			rnam = f1->name;
-			rtyp = f1->rtype;
+			rtyp = f1->type[1];
 			tree = 2;
 
 		} else {
@@ -1693,19 +1693,19 @@ action(
 	}
 
 	if (!ign_ext) {
-		if (f1->ltype && (z1 = unpack(f1, 1, &t1, 1)))
+		if (f1->type[0] && (z1 = unpack(f1, 1, &t1, 1)))
 			f1 = z1;
 
-		if (f2->rtype && (z2 = unpack(f2, 2, &t2, 1)))
+		if (f2->type[1] && (z2 = unpack(f2, 2, &t2, 1)))
 			f2 = z2;
 	}
 
-	if (!f1->ltype ||
+	if (!f1->type[0] ||
 	    /* Tested here to support "or" */
 	    tree == 2) {
-		if (S_ISREG(f2->rtype) || ign_ext)
+		if (S_ISREG(f2->type[1]) || ign_ext)
 			tool(f2->name, NULL, 2, ign_ext || raw_cont);
-		else if (S_ISDIR(f2->rtype)) {
+		else if (S_ISDIR(f2->type[1])) {
 			t1 = t2 = NULL;
 			enter_dir(NULL , f2->name,
 			          FALSE, z2 ? TRUE : FALSE, 0);
@@ -1713,10 +1713,10 @@ action(
 			err = typerr;
 			goto ret;
 		}
-	} else if (!f2->rtype || tree == 1) {
-		if (S_ISREG(f1->ltype) || ign_ext)
+	} else if (!f2->type[1] || tree == 1) {
+		if (S_ISREG(f1->type[0]) || ign_ext)
 			tool(f1->name, NULL, 1, ign_ext || raw_cont);
-		else if (S_ISDIR(f1->ltype)) {
+		else if (S_ISDIR(f1->type[0])) {
 			t1 = t2 = NULL;
 			enter_dir(f1->name         , NULL,
 			          z1 ? TRUE : FALSE, FALSE, 0);
@@ -1724,15 +1724,15 @@ action(
 			err = typerr;
 			goto ret;
 		}
-	} else if ((f1->ltype & S_IFMT) == (f2->rtype & S_IFMT)) {
+	} else if ((f1->type[0] & S_IFMT) == (f2->type[1] & S_IFMT)) {
 		if (ign_ext || raw_cont)
 			tool(f1->name, f2->name, 3, 1);
-		else if (S_ISREG(f1->ltype)) {
+		else if (S_ISREG(f1->type[0])) {
 			if (f1->diff == '!')
 				tool(f1->name, f2->name, 3, 0);
 			else
 				tool(f1->name, NULL, 1, 0);
-		} else if (S_ISDIR(f1->ltype)) {
+		} else if (S_ISDIR(f1->type[0])) {
 			if (z1 || z2) {
 				one_scan = TRUE;
 			}
@@ -2280,15 +2280,15 @@ disp_line(
 
 	if (fmode || bmode) {
 		goto no_diff;
-	} else if (!f->ltype) {
+	} else if (!f->type[0]) {
 		diff = '>';
-		*mode = f->rtype;
+		*mode = f->type[1];
 		color_id = PAIR_RIGHTONLY;
-	} else if (!f->rtype) {
+	} else if (!f->type[1]) {
 		diff = '<';
-		*mode = f->ltype;
+		*mode = f->type[0];
 		color_id = PAIR_LEFTONLY;
-	} else if ((f->ltype & S_IFMT) != (f->rtype & S_IFMT)) {
+	} else if ((f->type[0] & S_IFMT) != (f->type[1] & S_IFMT)) {
 		if (twocols && !fmode)
 			diff = 'X';
 		else {
@@ -2301,7 +2301,7 @@ disp_line(
 	} else {
 no_diff:
 		diff = f->diff;
-		*mode = right_col ? f->rtype : f->ltype;
+		*mode = right_col ? f->type[1] : f->type[0];
 
 		if (diff == '!')
 			color_id = PAIR_DIFF;
@@ -2312,7 +2312,7 @@ no_diff:
 	if (twocols && !fmode && diff == '>')
 			goto prtc2;
 
-	set_file_info(f, twocols && !fmode ? f->ltype : *mode, type, &color_id,
+	set_file_info(f, twocols && !fmode ? f->type[0] : *mode, type, &color_id,
 	    &diff);
 	disp_name(w, y, 0, mx, info, f, *type, color_id,
 	    right_col           ? f->rlink :
@@ -2323,7 +2323,7 @@ no_diff:
 prtc2:
 		if (diff != '<') {
 			(wattr_set)(w, a, cp, NULL);
-			set_file_info(f, f->rtype, type+1, &color_id, &diff);
+			set_file_info(f, f->type[1], type+1, &color_id, &diff);
 			disp_name(w, y, rlstx, 0, info, f, type[1], color_id,
 			    f->rlink, diff);
 		}
@@ -2363,7 +2363,7 @@ prtc2:
 	if (type[0] == '!' || diff == 'X') {
 		bool tc = twocols || mark;
 
-		mvwaddstr(wstat, 0, tc ? 0 : 2, type_name(f->ltype));
+		mvwaddstr(wstat, 0, tc ? 0 : 2, type_name(f->type[0]));
 
 		if (f->llink) {
 			addmbs(wstat, " -> ", mx);
@@ -2371,7 +2371,7 @@ prtc2:
 		}
 
 		mvwaddstr(wstat, tc ? 0 : 1, tc ? rlstx : 2,
-		    type_name(f->rtype));
+		    type_name(f->type[1]));
 
 		if (f->rlink) {
 			addmbs(wstat, " -> ", 0);
@@ -2518,17 +2518,17 @@ file_stat(struct filediff *f, struct filediff *f2)
 	     bmode   ? 0     : 2;
 	yl = 0;
 	yr = tc ? 0 : 1;
-	ltyp = f  ? f->ltype  : 0;
-	rtyp = f2 ? f2->rtype : 0;
+	ltyp = f  ? f->type[0]  : 0;
+	rtyp = f2 ? f2->type[1] : 0;
 	mx1 = tc ? llstw : 0;
 
 	if (tc) {
 	} else if (bmode) {
 		wmove(wstat, 1, 0);
-		putmbsra(wstat, rpath, 0);
+		putmbsra(wstat, syspth[1], 0);
 	} else if (dir_change) {
-		lpath[llen] = 0;
-		rpath[rlen] = 0;
+		syspth[0][pthlen[0]] = 0;
+		syspth[1][pthlen[1]] = 0;
 		mvwaddstr(wstat, 1, 0, *pwd ? PWD : RPWD);
 		return;
 	}
@@ -2897,43 +2897,43 @@ mark_global(void)
 	mark_rnam = NULL;
 
 	if (bmode) {
-		pthcat(lpath, llen, m->name);
+		pthcat(syspth[0], pthlen[0], m->name);
 
-		if (!(gl_mark = realpath(lpath, NULL))) {
+		if (!(gl_mark = realpath(syspth[0], NULL))) {
 			/* Ignore error if file had just been deleted */
 			if (errno != ENOENT)
 				printerr(strerror(errno),
-				    LOCFMT "realpath \"%s\"" LOCVAR, lpath);
-			lpath[llen] = 0;
+				    LOCFMT "realpath \"%s\"" LOCVAR, syspth[0]);
+			syspth[0][pthlen[0]] = 0;
 			goto error;
 		}
 
-		lpath[llen] = 0;
+		syspth[0][pthlen[0]] = 0;
 	} else {
-		if (!*lpath)
-			m->ltype = 0; /* tmp dir left */
+		if (!*syspth[0])
+			m->type[0] = 0; /* tmp dir left */
 
-		if (!*rpath)
-			m->rtype = 0;
+		if (!*syspth[1])
+			m->type[1] = 0;
 
-		if (!m->ltype && !m->rtype)
+		if (!m->type[0] && !m->type[1])
 			goto error;
 
-		if (m->ltype) {
-			pthcat(lpath, llen, m->name);
-			gl_mark = strdup(lpath);
-			mark_lnam = strdup(lpath);
-			lpath[llen] = 0;
+		if (m->type[0]) {
+			pthcat(syspth[0], pthlen[0], m->name);
+			gl_mark = strdup(syspth[0]);
+			mark_lnam = strdup(syspth[0]);
+			syspth[0][pthlen[0]] = 0;
 		}
 
-		if (m->rtype) {
-			pthcat(rpath, rlen, m->name);
+		if (m->type[1]) {
+			pthcat(syspth[1], pthlen[1], m->name);
 
-			if (!m->ltype)
-				gl_mark = strdup(rpath);
+			if (!m->type[0])
+				gl_mark = strdup(syspth[1]);
 
-			mark_rnam = strdup(rpath);
-			rpath[rlen] = 0;
+			mark_rnam = strdup(syspth[1]);
+			syspth[1][pthlen[1]] = 0;
 		}
 	}
 
@@ -2952,10 +2952,10 @@ ret:
 
 #define YANK(x) \
 	do { \
-		if (f->x##type) { \
+		if (f->type[x]) { \
 			ed_append(" "); \
 			/* here because 1st ed_append deletes lbuf */ \
-			shell_quote(lbuf, x##path, sizeof lbuf); \
+			shell_quote(lbuf, syspth[x], sizeof lbuf); \
 			ed_append(lbuf); \
 			*lbuf = 0; \
 		} \
@@ -2971,19 +2971,19 @@ yank_name(int reverse)
 
 	f = db_list[right_col][top_idx[right_col] + curs[right_col]];
 
-	if (f->ltype)
-		pthcat(lpath, llen, f->name);
+	if (f->type[0])
+		pthcat(syspth[0], pthlen[0], f->name);
 
-	if (f->rtype)
-		pthcat(rpath, rlen, f->name);
+	if (f->type[1])
+		pthcat(syspth[1], pthlen[1], f->name);
 
 	if (reverse)
-		YANK(r);
+		YANK(1);
 
-	YANK(l);
+	YANK(0);
 
 	if (!reverse)
-		YANK(r);
+		YANK(1);
 
 	disp_edit();
 }
@@ -3027,12 +3027,12 @@ push_state(char *name, char *rnam, bool lzip, bool rzip)
 
 #if defined(TRACE)
 	fprintf(debug, "->push_state(ln(%s) rn(%s)) lp(%s) rp(%s)\n",
-	    name, rnam, lpath, rpath);
+	    name, rnam, syspth[0], syspth[1]);
 #endif
 	st = malloc(sizeof(struct ui_state));
 	diff_db_store(st);
-	st->llen = llen;
-	st->rlen = rlen;
+	st->llen = pthlen[0];
+	st->rlen = pthlen[1];
 
 	/* If an absolute path is given, save the current path for the
 	 * time when this absolute path is left later */
@@ -3040,19 +3040,19 @@ push_state(char *name, char *rnam, bool lzip, bool rzip)
 	if (!(name && *name == '/'))
 		st->lpth = NULL;
 	else {
-		st->lpth = strdup(lpath);
-		*lpath = 0;
-		llen = 0;
-		pwd = lpath;
+		st->lpth = strdup(syspth[0]);
+		*syspth[0] = 0;
+		pthlen[0] = 0;
+		pwd = syspth[0];
 	}
 
 	if (!(rnam && *rnam == '/'))
 		st->rpth = NULL;
 	else {
-		st->rpth = strdup(rpath);
-		*rpath = 0;
-		rlen = 0;
-		rpwd = rpath;
+		st->rpth = strdup(syspth[1]);
+		*syspth[1] = 0;
+		pthlen[1] = 0;
+		rpwd = syspth[1];
 	}
 
 	/* Save name if temporary directory for removing it later */
@@ -3068,7 +3068,7 @@ push_state(char *name, char *rnam, bool lzip, bool rzip)
 	st->next = ui_stack;
 	ui_stack = st;
 #if defined(TRACE)
-	fprintf(debug, "<-push_state lp(%s) rp(%s)\n", lpath, rpath);
+	fprintf(debug, "<-push_state lp(%s) rp(%s)\n", syspth[0], syspth[1]);
 #endif
 }
 
@@ -3082,7 +3082,7 @@ pop_state(
 
 #if defined(TRACE)
 	fprintf(debug, "->pop_state(m=%d) lp(%s) rp(%s) fp(%s)\n",
-	    mode, lpath, rpath, fpath);
+	    mode, syspth[0], syspth[1], fpath);
 #endif
 	if (!st) {
 		if (from_fmode) {
@@ -3090,11 +3090,11 @@ pop_state(
 				size_t l = strlen(fpath);
 
 				if (old_col) {
-					memcpy(lpath, fpath, l+1);
-					llen = l;
+					memcpy(syspth[0], fpath, l+1);
+					pthlen[0] = l;
 				} else {
-					memcpy(rpath, fpath, l+1);
-					rlen = l;
+					memcpy(syspth[1], fpath, l+1);
+					pthlen[1] = l;
 				}
 
 				free(fpath);
@@ -3113,7 +3113,7 @@ pop_state(
 		if (mode && (
 		      /* A global mark inside the archive */
 		      (gl_mark && mark_lnam &&
-		       !strncmp(lpath, mark_lnam, llen)) ||
+		       !strncmp(syspth[0], mark_lnam, pthlen[0])) ||
 		      /* A local mark -> can only be in archive
 		       * since we are just leaving a archive */
 		      (mark && !gl_mark)
@@ -3127,7 +3127,7 @@ pop_state(
 	if (st->rzip) {
 		if (mode && (
 		      (gl_mark && mark_rnam &&
-		       !strncmp(rpath, mark_rnam, rlen)) ||
+		       !strncmp(syspth[1], mark_rnam, pthlen[1])) ||
 		      (mark && !gl_mark)
 		    ))
 			clr_mark();
@@ -3144,22 +3144,22 @@ pop_state(
 			clr_mark();
 	}
 
-	llen = st->llen;
-	rlen = st->rlen;
+	pthlen[0] = st->llen;
+	pthlen[1] = st->rlen;
 
 	if (st->lpth) {
 		if (mode)
-			memcpy(lpath, st->lpth, llen);
+			memcpy(syspth[0], st->lpth, pthlen[0]);
 
-		lpath[llen] = 0;
+		syspth[0][pthlen[0]] = 0;
 		free(st->lpth);
 	}
 
 	if (st->rpth) {
 		if (mode)
-			memcpy(rpath, st->rpth, rlen);
+			memcpy(syspth[1], st->rpth, pthlen[1]);
 
-		rpath[rlen] = 0;
+		syspth[1][pthlen[1]] = 0;
 		free(st->rpth);
 	}
 
@@ -3167,7 +3167,7 @@ pop_state(
 	*curs    = st->curs;
 	subtree  = st->tree;
 	ui_stack = st->next;
-	lpath[llen] = 0; /* For 'p' (pwd) */
+	syspth[0][pthlen[0]] = 0; /* For 'p' (pwd) */
 	diff_db_restore(st);
 	free(st);
 
@@ -3179,7 +3179,7 @@ pop_state(
 ret:
 #if defined(TRACE)
 	fprintf(debug, "<-pop_state lp(%s) rp(%s) fp(%s)\n",
-	    lpath, rpath, fpath);
+	    syspth[0], syspth[1], fpath);
 #endif
 	return;
 }
@@ -3199,7 +3199,7 @@ enter_dir(char *name, char *rnam, bool lzip, bool rzip, short tree)
 #endif
 #ifdef TRACE
 	fprintf(debug, "->enter_dir(ln(%s) rn(%s) t=%d) lp(%s) rp(%s)\n",
-	    name, rnam, tree, lpath, rpath);
+	    name, rnam, tree, syspth[0], syspth[1]);
 #endif
 	dir_change = TRUE;
 
@@ -3207,21 +3207,21 @@ enter_dir(char *name, char *rnam, bool lzip, bool rzip, short tree)
 		clr_mark();
 
 		if (tree == 1) {
-			fpath = strdup(rpath);
-			memcpy(rpath, lpath, llen+1);
-			rlen = llen;
+			fpath = strdup(syspth[1]);
+			memcpy(syspth[1], syspth[0], pthlen[0]+1);
+			pthlen[1] = pthlen[0];
 		} else if (tree == 2) {
-			fpath = strdup(lpath);
-			memcpy(lpath, rpath, rlen+1);
-			llen = rlen;
+			fpath = strdup(syspth[0]);
+			memcpy(syspth[0], syspth[1], pthlen[1]+1);
+			pthlen[0] = pthlen[1];
 		}
 
 		fmode_dmode();
 	}
 
 	if (mark && !gl_mark && (!fmode ||
-	    (!right_col && mark->ltype) ||
-	    ( right_col && mark->rtype))) {
+	    (!right_col && mark->type[0]) ||
+	    ( right_col && mark->type[1]))) {
 
 		mark_global();
 	}
@@ -3239,16 +3239,16 @@ enter_dir(char *name, char *rnam, bool lzip, bool rzip, short tree)
 	}
 
 	if (bmode) {
-		cp = rpath;
+		cp = syspth[1];
 	} else {
 		if (right_col) {
-			rpath[rlen] = 0;
-			cp = rpath;
-			lp = &rlen;
+			syspth[1][pthlen[1]] = 0;
+			cp = syspth[1];
+			lp = &pthlen[1];
 		} else {
-			lpath[llen] = 0;
-			cp = lpath;
-			lp = &llen;
+			syspth[0][pthlen[0]] = 0;
+			cp = syspth[0];
+			lp = &pthlen[0];
 		}
 
 		sp = strdup(cp);
@@ -3257,7 +3257,7 @@ enter_dir(char *name, char *rnam, bool lzip, bool rzip, short tree)
 	db_set_curs(cp, top_idx[right_col], curs[right_col]);
 	n = NULL; /* flag */
 
-	/* Not in bmode since lpath is always "." there */
+	/* Not in bmode since syspth[0] is always "." there */
 	if (!bmode && name && *name == '/') {
 		*lp = 0;
 		*cp = 0;
@@ -3265,11 +3265,11 @@ enter_dir(char *name, char *rnam, bool lzip, bool rzip, short tree)
 
 	if (lzip) {
 		if (bmode) {
-			if (!getcwd(rpath, sizeof rpath))
+			if (!getcwd(syspth[1], sizeof syspth[1]))
 				printerr(strerror(errno),
 				    "getcwd failed");
 
-			cp = rpath;
+			cp = syspth[1];
 		}
 
 		bpth = malloc(sizeof(struct bpth));
@@ -3293,11 +3293,11 @@ enter_dir(char *name, char *rnam, bool lzip, bool rzip, short tree)
 			l = strlen(name);
 
 			if (bpth->col) {
-				memcpy(rpath, name, l+1);
-				rlen = l;
+				memcpy(syspth[1], name, l+1);
+				pthlen[1] = l;
 			} else {
-				memcpy(lpath, name, l+1);
-				llen = l;
+				memcpy(syspth[0], name, l+1);
+				pthlen[0] = l;
 			}
 
 			free(name);
@@ -3360,9 +3360,9 @@ enter_dir(char *name, char *rnam, bool lzip, bool rzip, short tree)
 	}
 
 	if (right_col)
-		rpath[rlen] = 0;
+		syspth[1][pthlen[1]] = 0;
 	else if (fmode)
-		lpath[llen] = 0;
+		syspth[0][pthlen[0]] = 0;
 
 	if ((uv = db_get_curs(cp))) {
 		top_idx[right_col] = *uv++;
@@ -3372,7 +3372,7 @@ enter_dir(char *name, char *rnam, bool lzip, bool rzip, short tree)
 disp:
 	disp_list(1);
 #ifdef TRACE
-	fprintf(debug, "<-enter_dir lp(%s) rp(%s)\n", lpath, rpath);
+	fprintf(debug, "<-enter_dir lp(%s) rp(%s)\n", syspth[0], syspth[1]);
 #endif
 }
 

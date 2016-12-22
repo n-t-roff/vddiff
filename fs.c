@@ -80,11 +80,11 @@ fs_mkdir(short tree)
 		return;
 
 	if (tree & 1) {
-		pth1 = lpath;
-		len1 = llen;
+		pth1 = syspth[0];
+		len1 = pthlen[0];
 	} else {
-		pth1 = rpath;
-		len1 = rlen;
+		pth1 = syspth[1];
+		len1 = pthlen[1];
 	}
 
 	pthcat(pth1, len1, rbuf);
@@ -117,21 +117,21 @@ fs_rename(int tree)
 	f = db_list[right_col][top_idx[right_col] + curs[right_col]];
 
 	/* "en" is not allowed if both files are present */
-	if ((tree == 3 && f->ltype && f->rtype) ||
-	    (tree == 1 && !f->ltype) ||
-	    (tree == 2 && !f->rtype))
+	if ((tree == 3 && f->type[0] && f->type[1]) ||
+	    (tree == 1 && !f->type[0]) ||
+	    (tree == 2 && !f->type[1]))
 		return;
 
 	if (ed_dialog("Enter new name (<ESC> to cancel):", f->name, NULL, 0,
 	    NULL))
 		return;
 
-	if ((tree & 2) && f->rtype) {
-		pth1 = rpath;
-		len1 = rlen;
+	if ((tree & 2) && f->type[1]) {
+		pth1 = syspth[1];
+		len1 = pthlen[1];
 	} else {
-		pth1 = lpath;
-		len1 = llen;
+		pth1 = syspth[0];
+		len1 = pthlen[0];
 	}
 
 	l = len1;
@@ -165,10 +165,10 @@ fs_rename(int tree)
 	rebuild_db(0);
 exit:
 	free(s);
-	lpath[llen] = 0;
+	syspth[0][pthlen[0]] = 0;
 
 	if (!bmode)
-		rpath[rlen] = 0;
+		syspth[1][pthlen[1]] = 0;
 }
 
 void
@@ -197,29 +197,29 @@ fs_chmod(int tree, long u, int num)
 		f = db_list[right_col][u++];
 
 		/* "en" is not allowed if both files are present */
-		if ((tree == 3 && f->ltype && f->rtype) ||
-		    (tree == 1 && !f->ltype) ||
-		    (tree == 2 && !f->rtype))
+		if ((tree == 3 && f->type[0] && f->type[1]) ||
+		    (tree == 1 && !f->type[0]) ||
+		    (tree == 2 && !f->type[1]))
 			continue;
 
-		if ((tree & 2) && f->rtype) {
-			if (S_ISLNK(f->rtype))
+		if ((tree & 2) && f->type[1]) {
+			if (S_ISLNK(f->type[1]))
 				continue;
 
-			pth1 = rpath;
-			len1 = rlen;
+			pth1 = syspth[1];
+			len1 = pthlen[1];
 
 			if (!have_mode)
-				m = f->rtype;
+				m = f->type[1];
 		} else {
-			if (S_ISLNK(f->ltype))
+			if (S_ISLNK(f->type[0]))
 				continue;
 
-			pth1 = lpath;
-			len1 = llen;
+			pth1 = syspth[0];
+			len1 = pthlen[0];
 
 			if (!have_mode)
-				m = f->ltype;
+				m = f->type[0];
 		}
 
 		if (!have_mode) {
@@ -239,10 +239,10 @@ fs_chmod(int tree, long u, int num)
 
 	rebuild_db(0);
 exit:
-	lpath[llen] = 0;
+	syspth[0][pthlen[0]] = 0;
 
 	if (!bmode)
-		rpath[rlen] = 0;
+		syspth[1][pthlen[1]] = 0;
 
 ret:
 #if defined(TRACE)
@@ -325,23 +325,23 @@ fs_chown(int tree, int op, long u, int num)
 		f = db_list[right_col][u++];
 
 		/* "en" is not allowed if both files are present */
-		if ((tree == 3 && f->ltype && f->rtype) ||
-		    (tree == 1 && !f->ltype) ||
-		    (tree == 2 && !f->rtype))
+		if ((tree == 3 && f->type[0] && f->type[1]) ||
+		    (tree == 1 && !f->type[0]) ||
+		    (tree == 2 && !f->type[1]))
 			continue;
 
-		if ((tree & 2) && f->rtype) {
-			if (S_ISLNK(f->rtype))
+		if ((tree & 2) && f->type[1]) {
+			if (S_ISLNK(f->type[1]))
 				continue;
 
-			pth1 = rpath;
-			len1 = rlen;
+			pth1 = syspth[1];
+			len1 = pthlen[1];
 		} else {
-			if (S_ISLNK(f->ltype))
+			if (S_ISLNK(f->type[0]))
 				continue;
 
-			pth1 = lpath;
-			len1 = llen;
+			pth1 = syspth[0];
+			len1 = pthlen[0];
 		}
 
 		pthcat(pth1, len1, f->name);
@@ -384,10 +384,10 @@ fs_chown(int tree, int op, long u, int num)
 
 	rebuild_db(0);
 exit:
-	lpath[llen] = 0;
+	syspth[0][pthlen[0]] = 0;
 
 	if (!bmode)
-		rpath[rlen] = 0;
+		syspth[1][pthlen[1]] = 0;
 }
 
 /* 0: Ok
@@ -426,19 +426,19 @@ fs_rm(int tree, char *txt,
 
 	if (!(force_fs && force_multi) && !(md & 1) && m) {
 		if (bmode) {
-			pth1 = rpath;
+			pth1 = syspth[1];
 
 		} else if ((fmode && tree == 3 && !right_col)
 		    || tree == 1) {
 
-			lpath[llen] = 0;
-			pth1 = lpath;
+			syspth[0][pthlen[0]] = 0;
+			pth1 = syspth[0];
 
 		} else if ((fmode && tree == 3 && right_col)
 		    ||tree == 2) {
 
-			rpath[rlen] = 0;
-			pth1 = rpath;
+			syspth[1][pthlen[1]] = 0;
+			pth1 = syspth[1];
 		} else {
 			pth1 = NULL;
 		}
@@ -484,17 +484,17 @@ fs_rm(int tree, char *txt,
 			} else {
 				/* "dd" is not allowed
 				 * if both files are present */
-				if (f->ltype && f->rtype) {
+				if (f->type[0] && f->type[1]) {
 					printerr(NULL, "File on both sides, "
 					    "use \"dl\" or \"dr\" instead");
 					continue;
 				}
 
-				if (!f->ltype) {
+				if (!f->type[0]) {
 					tree &= ~1;
 				}
 
-				if (!f->rtype) {
+				if (!f->type[1]) {
 					tree &= ~2;
 				}
 			}
@@ -514,11 +514,11 @@ fs_rm(int tree, char *txt,
 		}
 
 		if (tree == 1) {
-			pth1 = lpath;
-			len1 = llen;
+			pth1 = syspth[0];
+			len1 = pthlen[0];
 		} else if (tree == 2) {
-			pth1 = rpath;
-			len1 = rlen;
+			pth1 = syspth[1];
+			len1 = pthlen[1];
 		} else {
 #ifdef DEBUG
 			printerr("", "fs_rm: tree not 1 or 2 but %d", tree);
@@ -581,10 +581,10 @@ fs_rm(int tree, char *txt,
 
 cancel:
 	if (!bmode) {
-		rpath[rlen] = 0;
+		syspth[1][pthlen[1]] = 0;
 	}
 
-	lpath[llen] = 0;
+	syspth[0][pthlen[0]] = 0;
 ret:
 #if defined(TRACE)
 	fprintf(debug, "<-fs_rm\n");
@@ -615,11 +615,11 @@ fs_cp(int to, long u, int n,
 
 	if (!(force_fs && force_multi) && m) {
 		if (to == 1) {
-			lpath[llen] = 0;
-			pth1 = lpath;
+			syspth[0][pthlen[0]] = 0;
+			pth1 = syspth[0];
 		} else {
-			rpath[rlen] = 0;
-			pth1 = rpath;
+			syspth[1][pthlen[1]] = 0;
+			pth1 = syspth[1];
 		}
 
 		if (dialog(y_n_txt, NULL,
@@ -634,15 +634,15 @@ fs_cp(int to, long u, int n,
 
 	for (; n-- && u < (long)db_num[right_col]; u++) {
 		if (to == 1) {
-			pth1 = rpath;
-			len1 = rlen;
-			pth2 = lpath;
-			len2 = llen;
+			pth1 = syspth[1];
+			len1 = pthlen[1];
+			pth2 = syspth[0];
+			len2 = pthlen[0];
 		} else {
-			pth1 = lpath;
-			len1 = llen;
-			pth2 = rpath;
-			len2 = rlen;
+			pth1 = syspth[0];
+			len1 = pthlen[0];
+			pth2 = syspth[1];
+			len2 = pthlen[1];
 		}
 
 		f = db_list[right_col][u];
@@ -691,15 +691,15 @@ fs_cp(int to, long u, int n,
 		/* fs_rm() did change pths and stat1 */
 
 		if (to == 1) {
-			pth1 = rpath;
-			len1 = rlen;
-			pth2 = lpath;
-			len2 = llen;
+			pth1 = syspth[1];
+			len1 = pthlen[1];
+			pth2 = syspth[0];
+			len2 = pthlen[0];
 		} else {
-			pth1 = lpath;
-			len1 = llen;
-			pth2 = rpath;
-			len2 = rlen;
+			pth1 = syspth[0];
+			len1 = pthlen[0];
+			pth2 = syspth[1];
+			len2 = pthlen[1];
 		}
 
 		len1 = pthcat(pth1, len1, f->name);
@@ -752,10 +752,10 @@ rebuild_db(
 #if defined(TRACE)
 	fprintf(debug, "->rebuild_db(%d) c=%u\n", mode, curs[right_col]);
 #endif
-	lpath[llen] = 0;
+	syspth[0][pthlen[0]] = 0;
 
 	if (!bmode) {
-		rpath[rlen] = 0;
+		syspth[1][pthlen[1]] = 0;
 	}
 
 	if (mode) {
@@ -1104,8 +1104,8 @@ fs_get_dst(long u)
 
 		f = db_list[0][u];
 
-		if (f->ltype) {
-			if (f->rtype) {
+		if (f->type[0]) {
+			if (f->type[1]) {
 				return 0;
 			}
 
