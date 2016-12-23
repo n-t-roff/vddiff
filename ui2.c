@@ -452,7 +452,7 @@ parsopt(char *buf)
 			return 0;
 		}
 
-		enter_dir(s, NULL, FALSE, FALSE, 0);
+		enter_dir(s, NULL, FALSE, FALSE, 0 LOCVAR);
 		return 0;
 	}
 
@@ -466,7 +466,7 @@ parsopt(char *buf)
 			return 0;
 		}
 
-		enter_dir(buf, NULL, FALSE, FALSE, 0);
+		enter_dir(buf, NULL, FALSE, FALSE, 0 LOCVAR);
 		return 0;
 	}
 
@@ -764,9 +764,9 @@ chk_mark(char *file,
 
 #if defined(TRACE)
 	/* Don't trim paths! (bindiff()) */
-	TPTH;
+	TRCPTH;
 	fprintf(debug, "<>chk_mark(%s,%d) lp(%s) rp(%s)\n",
-	    file, tree, tlpth, trpth);
+	    file, tree, trcpth[0], trcpth[1]);
 #endif
 	rp = tree && /* f-key command */
 	    !bmode && !strchr(file, '/');

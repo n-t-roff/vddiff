@@ -21,10 +21,12 @@
 #endif
 
 #ifdef TRACE
-# define TPTH \
+# define TRCPTH \
 	do { \
-		memcpy(tlpth, syspth[0], pthlen[0]); tlpth[pthlen[0]] = 0; \
-		memcpy(trpth, syspth[1], pthlen[1]); trpth[pthlen[1]] = 0; \
+		memcpy(trcpth[0], syspth[0], pthlen[0]); \
+		trcpth[0][pthlen[0]] = 0; \
+		memcpy(trcpth[1], syspth[1], pthlen[1]); \
+		trcpth[1][pthlen[1]] = 0; \
 	} while (0)
 #endif
 
@@ -42,7 +44,7 @@ extern short recursive, scan;
 extern short nosingle;
 #ifdef TRACE
 extern FILE *debug;
-extern char tlpth[PATHSIZ], trpth[PATHSIZ];
+extern char trcpth[2][PATHSIZ];
 #endif
 extern bool bmode;
 extern bool qdiff;

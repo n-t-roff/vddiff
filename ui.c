@@ -347,7 +347,8 @@ next_key:
 			c = 0;
 
 			if (bmode || fmode)
-				enter_dir("..", NULL, FALSE, FALSE, 0);
+				enter_dir("..", NULL, FALSE, FALSE, 0
+				    LOCVAR);
 			else
 				pop_state(1);
 
@@ -1068,7 +1069,7 @@ next_key:
 				}
 
 				/* Use "", not NULL here! */
-				enter_dir("", "", FALSE, FALSE, 0);
+				enter_dir("", "", FALSE, FALSE, 0 LOCVAR);
 			} else { /* diff -> FM */
 				if (twocols) {
 					dmode_fmode(1);
@@ -1657,7 +1658,7 @@ action(
 			if (bmode) {
 				t2 = NULL;
 				enter_dir(rnam , NULL,
-				          FALSE, FALSE, tree);
+				          FALSE, FALSE, tree LOCVAR);
 
 				/* In bmode the unpacked dir is in z2.
 				 * Hence z1 is useless and can be removed. */
@@ -1670,13 +1671,13 @@ action(
 				t2 = NULL;
 				enter_dir(NULL , rnam,
 				          FALSE, z2 ? TRUE : FALSE,
-				          tree);
+				          tree LOCVAR);
 
 			} else if (!S_ISDIR(rtyp)) {
 				t1 = NULL;
 				enter_dir(lnam             , NULL,
 				          z1 ? TRUE : FALSE, FALSE,
-				          tree);
+				          tree LOCVAR);
 			} else {
 				/* If t<n> == NULL tmpdir is not removed.
 				 * It must not be removed before it is left
@@ -1685,7 +1686,7 @@ action(
 				one_scan = TRUE;
 				enter_dir(lnam             , rnam,
 				          z1 ? TRUE : FALSE, z2 ? TRUE : FALSE,
-					  tree);
+					  tree LOCVAR);
 			}
 		}
 
@@ -1708,18 +1709,20 @@ action(
 		else if (S_ISDIR(f2->type[1])) {
 			t1 = t2 = NULL;
 			enter_dir(NULL , f2->name,
-			          FALSE, z2 ? TRUE : FALSE, 0);
+			          FALSE, z2 ? TRUE : FALSE, 0 LOCVAR);
 		} else {
 			err = typerr;
 			goto ret;
 		}
 	} else if (!f2->type[1] || tree == 1) {
+		/* Used by bmode */
+
 		if (S_ISREG(f1->type[0]) || ign_ext)
 			tool(f1->name, NULL, 1, ign_ext || raw_cont);
 		else if (S_ISDIR(f1->type[0])) {
 			t1 = t2 = NULL;
 			enter_dir(f1->name         , NULL,
-			          z1 ? TRUE : FALSE, FALSE, 0);
+			          z1 ? TRUE : FALSE, FALSE, 0 LOCVAR);
 		} else {
 			err = typerr;
 			goto ret;
@@ -1739,7 +1742,8 @@ action(
 
 			t1 = t2 = NULL;
 			enter_dir(f1->name         , f2->name,
-			          z1 ? TRUE : FALSE, z2 ? TRUE : FALSE, 0);
+			          z1 ? TRUE : FALSE, z2 ? TRUE : FALSE, 0
+				  LOCVAR);
 		} else {
 			err = typerr;
 			goto ret;
@@ -3185,7 +3189,11 @@ ret:
 }
 
 void
-enter_dir(char *name, char *rnam, bool lzip, bool rzip, short tree)
+enter_dir(char *name, char *rnam, bool lzip, bool rzip, short tree
+#ifdef DEBUG
+    , char *_file, unsigned _line
+#endif
+    )
 {
 	int i;
 	unsigned *uv;
@@ -3198,8 +3206,12 @@ enter_dir(char *name, char *rnam, bool lzip, bool rzip, short tree)
 	struct ptr_db_ent *n;
 #endif
 #ifdef TRACE
-	fprintf(debug, "->enter_dir(ln(%s) rn(%s) t=%d) lp(%s) rp(%s)\n",
-	    name, rnam, tree, syspth[0], syspth[1]);
+	fprintf(debug, "->" LOCFMT
+	    "enter_dir(ln(%s) rn(%s) lz=%d rz=%d t=%d) lp(%s) rp(%s)\n",
+# ifdef DEBUG
+	    _file, _line,
+# endif
+	    name, rnam, lzip, rzip, tree, syspth[0], syspth[1]);
 #endif
 	dir_change = TRUE;
 
@@ -3359,10 +3371,11 @@ enter_dir(char *name, char *rnam, bool lzip, bool rzip, short tree)
 			free(name); /* dat */
 	}
 
-	if (right_col)
+	if (right_col) {
 		syspth[1][pthlen[1]] = 0;
-	else if (fmode)
+	} else if (fmode) {
 		syspth[0][pthlen[0]] = 0;
+	}
 
 	if ((uv = db_get_curs(cp))) {
 		top_idx[right_col] = *uv++;

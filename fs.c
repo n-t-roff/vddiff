@@ -418,9 +418,9 @@ fs_rm(int tree, char *txt,
 	}
 
 #if defined(TRACE)
-	TPTH;
+	TRCPTH;
 	fprintf(debug, "->fs_rm(tree=%d txt(%s) nam(%s) u=%ld n=%d md=%u) "
-	    "lp(%s) rp(%s)\n", tree, txt, nam, u, n, md, tlpth, trpth);
+	    "lp(%s) rp(%s)\n", tree, txt, nam, u, n, md, trcpth[0], trcpth[1]);
 #endif
 	m = n > 1;
 

@@ -34,7 +34,11 @@ void action(short, short, unsigned short, bool);
 void mark_global(void);
 void clr_mark(void);
 void disp_curs(int);
-void enter_dir(char *, char *, bool, bool, short);
+void enter_dir(char *, char *, bool, bool, short
+#ifdef DEBUG
+    , char *, unsigned
+#endif
+    );
 void set_win_dim(void);
 void pop_state(short);
 

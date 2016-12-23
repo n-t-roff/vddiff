@@ -90,7 +90,8 @@ fmode_dmode(void)
 
 #if defined(TRACE)
 	fprintf(debug, "->fmode_dmode lp(%s) rp(%s) bm=%u fm=%u 2c=%u\n",
-	    syspth[0], syspth[1], bmode ? 1 : 0, fmode ? 1 : 0, twocols ? 1 : 0);
+	    syspth[0], syspth[1], bmode ? 1 : 0, fmode ? 1 : 0,
+	    twocols ? 1 : 0);
 #endif
 	fmode = FALSE;
 	/*diff_db_free(?);*/
@@ -102,7 +103,8 @@ fmode_dmode(void)
 	close2cwins();
 #if defined(TRACE)
 	fprintf(debug, "<-fmode_dmode lp(%s) rp(%s) bm=%u fm=%u 2c=%u\n",
-	    syspth[0], syspth[1], bmode ? 1 : 0, fmode ? 1 : 0, twocols ? 1 : 0);
+	    syspth[0], syspth[1], bmode ? 1 : 0, fmode ? 1 : 0,
+	    twocols ? 1 : 0);
 #endif
 }
 
@@ -117,7 +119,8 @@ dmode_fmode(
 
 #if defined(TRACE)
 	fprintf(debug, "->dmode_fmode(%u) lp(%s) rp(%s) bm=%u fm=%u 2c=%u\n",
-	    mode, syspth[0], syspth[1], bmode ? 1 : 0, fmode ? 1 : 0, twocols ? 1 : 0);
+	    mode, syspth[0], syspth[1], bmode ? 1 : 0, fmode ? 1 : 0,
+	    twocols ? 1 : 0);
 #endif
 	while (!bmode && ui_stack)
 		pop_state(0);
@@ -142,7 +145,8 @@ dmode_fmode(
 	}
 #if defined(TRACE)
 	fprintf(debug, "<-dmode_fmode(%u) lp(%s) rp(%s) bm=%u fm=%u 2c=%u\n",
-	    mode, syspth[0], syspth[1], bmode ? 1 : 0, fmode ? 1 : 0, twocols ? 1 : 0);
+	    mode, syspth[0], syspth[1], bmode ? 1 : 0, fmode ? 1 : 0,
+	    twocols ? 1 : 0);
 #endif
 }
 
@@ -174,8 +178,8 @@ prt2chead(
 	if (md & 1) {
 		wmove(wstat, 1, 0);
 		wclrtoeol(wstat);
-		syspth[0][pthlen[0]] = 0;
-		putmbsra(wstat, syspth[0], llstw);
+		setvpth(0);
+		putmbsra(wstat, vpath[0], llstw);
 	}
 
 	standoutc(wstat);
@@ -190,8 +194,8 @@ prt2chead(
 	/* Splitted to save one wmove */
 
 	if (md & 1) {
-		syspth[1][pthlen[1]] = 0;
-		putmbsra(wstat, syspth[1], 0);
+		setvpth(1);
+		putmbsra(wstat, vpath[1], 0);
 	}
 }
 

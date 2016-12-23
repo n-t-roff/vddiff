@@ -42,14 +42,14 @@ static char *zpths(struct filediff *, struct filediff **, int, size_t *,
     int, int);
 
 char *tmp_dir;
-/* Path names used bei the UI. syspth[0] and syspth[1] are only used for file
- * system access. */
-char *pthnam[2];
+/* View path names used bei the UI.
+ * syspth[0] and syspth[1] are only used for file system access. */
+char *vpath[2];
 /* View path buffer size. Initially set by uz_init(). */
-size_t pthsiz[2];
-/* Number of bytes in syspth[0]/syspth[1], which belong to the temporary directory
- * only. */
-size_t tpthlen[2];
+size_t vpthsz[2];
+/* Number of bytes in syspth[0]/syspth[1], which belong to the temporary
+ * directory only. */
+size_t spthofs[2];
 /* Offset in view path to where real path + tpthlen is copied. */
 size_t vpthofs[2];
 static const char *tmpdirbase;
@@ -82,8 +82,8 @@ uz_init(void)
 		return 1;
 	}
 
-	pthnam[0] = malloc((pthsiz[0] = 4096));
-	pthnam[1] = malloc((pthsiz[1] = 4096));
+	vpath[0] = malloc((vpthsz[0] = 4096));
+	vpath[1] = malloc((vpthsz[1] = 4096));
 	return 0;
 }
 
@@ -436,6 +436,31 @@ zpths(struct filediff *f, struct filediff **z2, int tree, size_t *l2, int i,
 }
 
 void
-setvpth(int i)
+setvpth(
+    /* 0: syspth[0], 1: syspth[1], 2: both paths */
+    int i)
 {
+	size_t l;
+
+	if (i > 1) {
+		setvpth(0);
+		setvpth(1);
+		return;
+	}
+
+	if (spthofs[i] > pthlen[i] || vpthofs[i] > vpthsz[i]) {
+#ifdef DEBUG
+		printerr("Path offset error", "setvpth()");
+#endif
+		return;
+	}
+
+	l = pthlen[i] - spthofs[i];
+
+	while (l >= vpthsz[i] - vpthofs[i]) {
+		vpath[i] = realloc(vpath[i], vpthsz[i] <<= 1);
+	}
+
+	memcpy(vpath[i] + vpthofs[i], syspth[i] + spthofs[i], l);
+	vpath[i][vpthofs[i] + l] = 0;
 }
