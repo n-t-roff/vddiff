@@ -332,6 +332,7 @@ next_key:
 
 			curs_up();
 			break;
+
 		case KEY_LEFT:
 			if (*key == '|') {
 				c = *key;
@@ -353,6 +354,7 @@ next_key:
 				pop_state(1);
 
 			break;
+
 		case '\n':
 			if (*key == 'z') {
 				if (!curs[right_col]) {
@@ -1543,7 +1545,7 @@ action(
      * Unzip file but then view raw file using standard view tool. */
     bool raw_cont)
 {
-	struct filediff *f1, *f2, *z1 = NULL, *z2 = NULL;
+	struct filediff *f, *f1, *f2, *z1 = NULL, *z2 = NULL;
 	char *t1 = NULL, *t2 = NULL;
 	char *err = NULL;
 	static char *typerr = "Not a directory or regular file";
@@ -1556,7 +1558,7 @@ action(
 	if (!db_num[right_col])
 		goto out;
 
-	f1 = f2 = db_list[right_col][top_idx[right_col] + curs[right_col]];
+	f = f1 = f2 = db_list[right_col][top_idx[right_col] + curs[right_col]];
 
 #if defined(TRACE)
 	fprintf(debug, "f1->name(%s)\n", f1->name);
@@ -1656,7 +1658,6 @@ action(
 
 		} else if (S_ISDIR(ltyp) || S_ISDIR(rtyp)) {
 			if (bmode) {
-				t2 = NULL;
 				enter_dir(rnam , NULL,
 				          FALSE, FALSE, tree LOCVAR);
 
@@ -1668,13 +1669,11 @@ action(
 					t1[strlen(t1) - 2] = 0;
 				}
 			} else if (!S_ISDIR(ltyp)) {
-				t2 = NULL;
 				enter_dir(NULL , rnam,
 				          FALSE, z2 ? TRUE : FALSE,
 				          tree LOCVAR);
 
 			} else if (!S_ISDIR(rtyp)) {
-				t1 = NULL;
 				enter_dir(lnam             , NULL,
 				          z1 ? TRUE : FALSE, FALSE,
 				          tree LOCVAR);
@@ -1682,7 +1681,6 @@ action(
 				/* If t<n> == NULL tmpdir is not removed.
 				 * It must not be removed before it is left
 				 * with "cd .." later. */
-				t1 = t2 = NULL;
 				one_scan = TRUE;
 				enter_dir(lnam             , rnam,
 				          z1 ? TRUE : FALSE, z2 ? TRUE : FALSE,
@@ -1707,7 +1705,12 @@ action(
 		if (S_ISREG(f2->type[1]) || ign_ext)
 			tool(f2->name, NULL, 2, ign_ext || raw_cont);
 		else if (S_ISDIR(f2->type[1])) {
-			t1 = t2 = NULL;
+			/* Used by fmode */
+
+			if (z2) {
+				setpthofs(1, f->name, z2->name);
+			}
+
 			enter_dir(NULL , f2->name,
 			          FALSE, z2 ? TRUE : FALSE, 0 LOCVAR);
 		} else {
@@ -1715,12 +1718,15 @@ action(
 			goto ret;
 		}
 	} else if (!f2->type[1] || tree == 1) {
-		/* Used by bmode */
-
 		if (S_ISREG(f1->type[0]) || ign_ext)
 			tool(f1->name, NULL, 1, ign_ext || raw_cont);
 		else if (S_ISDIR(f1->type[0])) {
-			t1 = t2 = NULL;
+			/* Used by bmode and fmode */
+
+			if (z1) {
+				setpthofs(0, f->name, z1->name);
+			}
+
 			enter_dir(f1->name         , NULL,
 			          z1 ? TRUE : FALSE, FALSE, 0 LOCVAR);
 		} else {
@@ -1740,7 +1746,14 @@ action(
 				one_scan = TRUE;
 			}
 
-			t1 = t2 = NULL;
+			if (z1) {
+				setpthofs(0, f->name, z1->name);
+			}
+
+			if (z2) {
+				setpthofs(1, f->name, z2->name);
+			}
+
 			enter_dir(f1->name         , f2->name,
 			          z1 ? TRUE : FALSE, z2 ? TRUE : FALSE, 0
 				  LOCVAR);
@@ -2197,7 +2210,13 @@ disp_list(
 		    top_idx[right_col] - 1 : 0;
 	}
 
-	werase(w);
+	if (fmode && right_col) {
+		/* Else glyphs are left in right column with ncursesw */
+		wclear(w);
+	} else {
+		werase(w);
+	}
+
 	/* Else glyphs are left with NetBSD curses */
 	wrefresh(w);
 
@@ -3126,6 +3145,7 @@ pop_state(
 
 		st->lzip[strlen(st->lzip) - 2] = 0;
 		rmtmpdirs(st->lzip, TOOL_NOLIST);
+		respthofs(0);
 	}
 
 	if (st->rzip) {
@@ -3138,6 +3158,7 @@ pop_state(
 
 		st->rzip[strlen(st->rzip) - 2] = 0;
 		rmtmpdirs(st->rzip, TOOL_NOLIST);
+		respthofs(1);
 	}
 
 	if (mark) {
@@ -3206,12 +3227,13 @@ enter_dir(char *name, char *rnam, bool lzip, bool rzip, short tree
 	struct ptr_db_ent *n;
 #endif
 #ifdef TRACE
+	TRCPTH;
 	fprintf(debug, "->" LOCFMT
 	    "enter_dir(ln(%s) rn(%s) lz=%d rz=%d t=%d) lp(%s) rp(%s)\n",
 # ifdef DEBUG
 	    _file, _line,
 # endif
-	    name, rnam, lzip, rzip, tree, syspth[0], syspth[1]);
+	    name, rnam, lzip, rzip, tree, trcpth[0], trcpth[1]);
 #endif
 	dir_change = TRUE;
 
@@ -3366,6 +3388,7 @@ enter_dir(char *name, char *rnam, bool lzip, bool rzip, short tree
 
 		rnam[l - 2] = 0; /* remove "/[lr]" */
 		rmtmpdirs(rnam, TOOL_NOLIST); /* does a free() */
+		respthofs(bmode || right_col ? 1 : 0);
 
 		if (bmode)
 			free(name); /* dat */

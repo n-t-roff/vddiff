@@ -19,3 +19,5 @@ int uz_init(void);
 void uz_exit(void);
 const char *gettmpdirbase(void);
 void setvpth(int);
+void setpthofs(int, char *, char *);
+void respthofs(int);

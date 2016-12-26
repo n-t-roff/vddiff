@@ -647,8 +647,9 @@ scan_subdir(char *name, char *rnam, int tree)
 {
 	int i;
 #if defined(TRACE)
+	TRCPTH;
 	fprintf(debug, "->scan_subdir(%s,%s,%d) lp(%s) rp(%s)\n",
-	    name, rnam, tree, syspth[0], syspth[1]);
+	    name, rnam, tree, trcpth[0], trcpth[1]);
 #endif
 	if (!rnam) {
 		rnam = name;
@@ -941,6 +942,7 @@ alloc_diff(char *name)
 	p->name  = strdup(name);
 	p->llink = NULL; /* to simply use free() later */
 	p->rlink = NULL;
+	p->fl = 0;
 	p->diff  = ' ';
 	return p;
 }

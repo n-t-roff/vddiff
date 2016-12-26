@@ -1,3 +1,6 @@
+/* File marked (for delete, copy, etc.) */
+#define FDFL_MARK 1
+
 struct filediff {
 	char   *name;
 	char   *llink, *rlink;
@@ -7,6 +10,7 @@ struct filediff {
 	off_t   lsiz,   rsiz;
 	time_t  lmtim,  rmtim;
 	dev_t   lrdev,  rrdev;
+	unsigned fl;
 	char    diff;
 };
 

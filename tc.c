@@ -80,6 +80,8 @@ close2cwins(void)
 	delwin(wllst);
 	delwin(wmid);
 	delwin(wrlst);
+	/* Else glyphs are left in right column with ncursesw */
+	wclear(wlist);
 }
 
 void
@@ -340,7 +342,7 @@ fmode_cp_pth(void)
 		pthlen[0] = pthlen[1];
 	}
 
-	enter_dir(NULL, NULL, FALSE, FALSE, 0);
+	enter_dir(NULL, NULL, FALSE, FALSE, 0 LOCVAR);
 }
 
 void

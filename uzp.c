@@ -33,6 +33,12 @@ PERFORMANCE OF THIS SOFTWARE.
 #include "main.h"
 #include "tc.h"
 
+struct pthofs {
+	size_t sys;
+	size_t view;
+	struct pthofs *next;
+};
+
 static int mktmpdirs(void);
 static enum uz_id check_ext(char *, int *);
 static struct filediff *zcat(char *, struct filediff *, int, int);
@@ -52,6 +58,7 @@ size_t vpthsz[2];
 size_t spthofs[2];
 /* Offset in view path to where real path + tpthlen is copied. */
 size_t vpthofs[2];
+static struct pthofs *pthofs[2];
 static const char *tmpdirbase;
 
 static struct uz_ext exttab[] = {
@@ -463,4 +470,62 @@ setvpth(
 
 	memcpy(vpath[i] + vpthofs[i], syspth[i] + spthofs[i], l);
 	vpath[i][vpthofs[i] + l] = 0;
+}
+
+/* Called when archive is entered */
+
+void
+setpthofs(
+    int i, /* 0/1: side */
+    char *fn, /* archive file name */
+    char *tn) /* temp dir name */
+{
+	size_t l;
+	struct pthofs *p;
+#if defined(TRACE)
+	fprintf(debug, "->setpthofs(%d,%s,%s) lv(%s) rv(%s)\n",
+	    i, fn, tn, vpath[0], vpath[1]);
+#endif
+	p = malloc(sizeof(struct pthofs));
+	p->sys = spthofs[i];
+	p->view = vpthofs[i];
+	p->next = pthofs[i];
+	pthofs[i] = p;
+	vpthofs[i] = pthlen[i];
+	spthofs[i] = strlen(tn);
+	l = strlen(fn);
+
+	while (vpthsz[i] < vpthofs[i] + l + 3) {
+		vpath[i] = realloc(vpath[i], vpthsz[i] <<= 1);
+	}
+
+	vpath[i][vpthofs[i]++] = '/';
+	memcpy(vpath[i] + vpthofs[i], fn, l);
+	vpath[i][vpthofs[i] += l] = '/';
+	vpath[i][vpthofs[i]] = 0;
+#if defined(TRACE)
+	setvpth(i);
+	fprintf(debug, "<-setpthofs lv(%s) rv(%s)\n", vpath[0], vpath[1]);
+#endif
+}
+
+/* Called when archive is left */
+
+void
+respthofs(int i)
+{
+	struct pthofs *p;
+
+#if defined(TRACE)
+	fprintf(debug, "->respthofs lv(%s) rv(%s)\n", vpath[0], vpath[1]);
+#endif
+	p = pthofs[i];
+	pthofs[i] = p->next;
+	spthofs[i] = p->sys;
+	vpthofs[i] = p->view;
+	free(p);
+#if defined(TRACE)
+	setvpth(i);
+	fprintf(debug, "<-respthofs lv(%s) rv(%s)\n", vpath[0], vpath[1]);
+#endif
 }
