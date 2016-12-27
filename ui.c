@@ -1658,10 +1658,19 @@ action(
 
 		} else if (S_ISDIR(ltyp) || S_ISDIR(rtyp)) {
 			if (bmode) {
-				enter_dir(rnam , NULL,
-				          FALSE, FALSE, tree LOCVAR);
+				if (z2) {
+					setpthofs(1, f->name, z2->name);
+				}
 
-				/* In bmode the unpacked dir is in z2.
+				enter_dir(rnam             , NULL ,
+				          z2 ? TRUE : FALSE, FALSE,
+				          tree LOCVAR);
+
+				/* In bmode archives cannot be compared, just
+				 * entered. In this case the archive to be
+				 * entered cannot be the mark--it is the
+				 * cursor. The mark is unpacked to z1, the
+				 * cursor to z2. So the unpacked dir is in z2.
 				 * Hence z1 is useless and can be removed. */
 				if (S_ISDIR(ltyp) && z1) {
 					t1 = strdup(lnam);
@@ -1669,11 +1678,19 @@ action(
 					t1[strlen(t1) - 2] = 0;
 				}
 			} else if (!S_ISDIR(ltyp)) {
+				if (z2) {
+					setpthofs(1, f->name, z2->name);
+				}
+
 				enter_dir(NULL , rnam,
 				          FALSE, z2 ? TRUE : FALSE,
 				          tree LOCVAR);
 
 			} else if (!S_ISDIR(rtyp)) {
+				if (z1) {
+					setpthofs(0, f->name, z1->name);
+				}
+
 				enter_dir(lnam             , NULL,
 				          z1 ? TRUE : FALSE, FALSE,
 				          tree LOCVAR);
@@ -1682,6 +1699,15 @@ action(
 				 * It must not be removed before it is left
 				 * with "cd .." later. */
 				one_scan = TRUE;
+
+				if (z1) {
+					setpthofs(0, f->name, z1->name);
+				}
+
+				if (z2) {
+					setpthofs(1, f->name, z2->name);
+				}
+
 				enter_dir(lnam             , rnam,
 				          z1 ? TRUE : FALSE, z2 ? TRUE : FALSE,
 					  tree LOCVAR);
@@ -1724,7 +1750,7 @@ action(
 			/* Used by bmode and fmode */
 
 			if (z1) {
-				setpthofs(0, f->name, z1->name);
+				setpthofs(bmode ? 1 : 0, f->name, z1->name);
 			}
 
 			enter_dir(f1->name         , NULL,
@@ -2503,10 +2529,6 @@ statcol(
 		return;
 	}
 
-	if (dir_change) {
-		return;
-	}
-
 	standoutc(wstat);
 	mvwaddch(wstat, 0, 0, '<');
 	mvwaddch(wstat, 1, 0, '>');
@@ -2548,11 +2570,14 @@ file_stat(struct filediff *f, struct filediff *f2)
 	if (tc) {
 	} else if (bmode) {
 		wmove(wstat, 1, 0);
-		putmbsra(wstat, syspth[1], 0);
+		setvpth(1);
+		putmbsra(wstat, vpath[1], 0);
 	} else if (dir_change) {
-		syspth[0][pthlen[0]] = 0;
-		syspth[1][pthlen[1]] = 0;
-		mvwaddstr(wstat, 1, 0, *pwd ? PWD : RPWD);
+		setvpth(2);
+		wmove(wstat, 0, 2);
+		putmbsra(wstat, vpath[0], 0);
+		wmove(wstat, 1, 2);
+		putmbsra(wstat, vpath[1], 0);
 		return;
 	}
 

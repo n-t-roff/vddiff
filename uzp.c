@@ -483,8 +483,7 @@ setpthofs(
 	size_t l;
 	struct pthofs *p;
 #if defined(TRACE)
-	fprintf(debug, "->setpthofs(%d,%s,%s) lv(%s) rv(%s)\n",
-	    i, fn, tn, vpath[0], vpath[1]);
+	fprintf(debug, "<>setpthofs(%d,%s,%s)\n", i, fn, tn);
 #endif
 	p = malloc(sizeof(struct pthofs));
 	p->sys = spthofs[i];
@@ -503,10 +502,6 @@ setpthofs(
 	memcpy(vpath[i] + vpthofs[i], fn, l);
 	vpath[i][vpthofs[i] += l] = '/';
 	vpath[i][vpthofs[i]] = 0;
-#if defined(TRACE)
-	setvpth(i);
-	fprintf(debug, "<-setpthofs lv(%s) rv(%s)\n", vpath[0], vpath[1]);
-#endif
 }
 
 /* Called when archive is left */
@@ -517,15 +512,11 @@ respthofs(int i)
 	struct pthofs *p;
 
 #if defined(TRACE)
-	fprintf(debug, "->respthofs lv(%s) rv(%s)\n", vpath[0], vpath[1]);
+	fprintf(debug, "<>respthofs(%d)\n", i);
 #endif
 	p = pthofs[i];
 	pthofs[i] = p->next;
 	spthofs[i] = p->sys;
 	vpthofs[i] = p->view;
 	free(p);
-#if defined(TRACE)
-	setvpth(i);
-	fprintf(debug, "<-respthofs lv(%s) rv(%s)\n", vpath[0], vpath[1]);
-#endif
 }
