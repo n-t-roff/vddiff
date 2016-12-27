@@ -3258,7 +3258,7 @@ enter_dir(char *name, char *rnam, bool lzip, bool rzip, short tree)
 	n = NULL; /* flag */
 
 	/* Not in bmode since lpath is always "." there */
-	if (!bmode && name && *name == '/') {
+	if (!lzip && !bmode && name && *name == '/') {
 		*lp = 0;
 		*cp = 0;
 	}
@@ -3277,6 +3277,8 @@ enter_dir(char *name, char *rnam, bool lzip, bool rzip, short tree)
 
 		if (!bmode) {
 			bpth->col = right_col;
+			*lp = 0;
+			*cp = 0;
 		}
 
 		ptr_db_add(&uz_path_db, strdup(name), bpth);
