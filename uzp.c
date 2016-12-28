@@ -323,9 +323,9 @@ zcat(char *cmd, struct filediff *f, int tree, int i)
 			printerr(strerror(errno), LOCFMT "lstat \"%s\""
 			    LOCVAR, s2);
 	} else if (tree == 1 || bmode)
-		z->lsiz = st.st_size;
+		z->siz[0] = st.st_size;
 	else
-		z->rsiz = st.st_size;
+		z->siz[1] = st.st_size;
 
 	free(s2);
 	return z;

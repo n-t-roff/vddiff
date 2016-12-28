@@ -267,8 +267,8 @@ no_tree2:
 				diff = alloc_diff(name);
 				diff->type[0] = stat1.st_mode;
 				diff->type[1] = stat2.st_mode;
-				diff->lsiz  = stat1.st_size;
-				diff->rsiz  = stat2.st_size;
+				diff->siz[0]  = stat1.st_size;
+				diff->siz[1]  = stat2.st_size;
 
 				if (!gq_proc(diff))
 					dir_diff = 1;
@@ -346,7 +346,7 @@ free_a:
 		if ((diff->type[0] = stat1.st_mode)) {
 			diff->luid  = stat1.st_uid;
 			diff->lgid  = stat1.st_gid;
-			diff->lsiz  = stat1.st_size;
+			diff->siz[0]  = stat1.st_size;
 			diff->lmtim = stat1.st_mtim.tv_sec;
 			diff->lrdev = stat1.st_rdev;
 
@@ -360,7 +360,7 @@ free_a:
 		if ((diff->type[1] = stat2.st_mode)) {
 			diff->ruid  = stat2.st_uid;
 			diff->rgid  = stat2.st_gid;
-			diff->rsiz  = stat2.st_size;
+			diff->siz[1]  = stat2.st_size;
 			diff->rmtim = stat2.st_mtim.tv_sec;
 			diff->rrdev = stat2.st_rdev;
 
@@ -568,7 +568,7 @@ right_tree:
 		else {
 			diff->ruid  = stat2.st_uid;
 			diff->rgid  = stat2.st_gid;
-			diff->rsiz  = stat2.st_size;
+			diff->siz[1]  = stat2.st_size;
 			diff->rmtim = stat2.st_mtim.tv_sec;
 			diff->rrdev = stat2.st_rdev;
 

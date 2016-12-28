@@ -652,12 +652,12 @@ bindiff(void)
 			goto ret;
 
 		ltyp = m->type[0];
-		lsiz = m->lsiz;
+		lsiz = m->siz[0];
 		ornam = rnam = f->name;
 
 		if (f->type[1]) {
 			rtyp = f->type[1];
-			rsiz = f->rsiz;
+			rsiz = f->siz[1];
 
 			if (*rnam != '/') {
 				pthcat(syspth[1], pthlen[1], rnam);
@@ -665,7 +665,7 @@ bindiff(void)
 			}
 		} else {
 			rtyp = f->type[0];
-			rsiz = f->lsiz;
+			rsiz = f->siz[0];
 
 			if (*rnam != '/') {
 				pthcat(syspth[0], pthlen[0], rnam);
@@ -678,7 +678,7 @@ bindiff(void)
 
 		if (f->type[0]) {
 			ltyp = f->type[0];
-			lsiz = f->lsiz;
+			lsiz = f->siz[0];
 
 			if (*lnam != '/') {
 				pthcat(syspth[0], pthlen[0], lnam);
@@ -686,7 +686,7 @@ bindiff(void)
 			}
 		} else {
 			ltyp = f->type[1];
-			lsiz = f->rsiz;
+			lsiz = f->siz[1];
 
 			if (*lnam != '/') {
 				pthcat(syspth[1], pthlen[1], lnam);
@@ -708,7 +708,7 @@ bindiff(void)
 			goto ret;
 
 		rtyp = m->type[1];
-		rsiz = m->rsiz;
+		rsiz = m->siz[1];
 	} else {
 		goto ret;
 	}

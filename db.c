@@ -697,8 +697,8 @@ diff_cmp(
 		if (dirsort)
 			return dirsort;
 
-		t1 = f1->type[0] ? f1->lsiz : f1->rsiz;
-		t2 = f2->type[0] ? f2->lsiz : f2->rsiz;
+		t1 = f1->type[0] ? f1->siz[0] : f1->siz[1];
+		t2 = f2->type[0] ? f2->siz[0] : f2->siz[1];
 
 		if      (t1 < t2) return -1;
 		else if (t1 > t2) return  1;

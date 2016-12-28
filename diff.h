@@ -7,7 +7,7 @@ struct filediff {
 	mode_t  type[2];
 	uid_t   luid,   ruid;
 	gid_t   lgid,   rgid;
-	off_t   lsiz,   rsiz;
+	off_t   siz[2];
 	time_t  lmtim,  rmtim;
 	dev_t   lrdev,  rrdev;
 	unsigned fl;

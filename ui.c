@@ -60,8 +60,8 @@ static void statcol(int);
 static void file_stat(struct filediff *, struct filediff *);
 static void set_file_info(struct filediff *, mode_t, int *, short *, int *);
 static int disp_name(WINDOW *, int, int, int, int, struct filediff *, int,
-    short, char *, int);
-static size_t getfilesize(char *, size_t, off_t);
+    short, char *, int, int);
+static size_t getfilesize(char *, size_t, off_t, bool);
 static size_t gettimestr(char *, size_t, time_t *);
 static void disp_help(void);
 static void help_pg_down(void);
@@ -118,6 +118,7 @@ static MEVENT mevent;
 bool scrollen = TRUE;
 static bool wstat_dirty;
 static bool dir_change;
+static bool add_hsize; /* scaled size */
 
 void
 build_ui(void)
@@ -439,7 +440,24 @@ next_key:
 		case CTRL('u'):
 			scroll_up(listh/2, TRUE, -1);
 			break;
+
 		case 'h':
+			switch (*key) {
+			case 'A':
+				c = 0;
+				add_hsize = TRUE;
+				disp_fmode();
+				goto next_key;
+
+			case 'R':
+				c = 0;
+				add_hsize = FALSE;
+				disp_fmode();
+				goto next_key;
+			}
+
+			/* fall through */
+
 		case '?':
 			c = 0;
 			help();
@@ -1094,6 +1112,11 @@ next_key:
 			wrefresh(wstat);
 			break;
 
+		case 'A': /* Add attribute column */
+		case 'D': /* Display directory list */
+		case 'R': /* Remove attribute column */
+			break;
+
 		case 'N':
 			if (regex) {
 				c = 0;
@@ -1171,6 +1194,8 @@ static char *helptxt[] = {
        "&		Toggle display of files which are on one side only",
        "F		Toggle following symbolic links",
        "E		Toggle file name or file content filter",
+       "Ah		Show scaled file size",
+       "Rh		Remove scaled file size column",
        "p		Show current relative work directory",
        "a		Show command line directory arguments",
        "f		Show full path",
@@ -2167,18 +2192,20 @@ disp_curs(
 {
 	WINDOW *w;
 	unsigned i, y, m;
+	bool cg;
 
 	w = getlstwin();
 	y = curs[right_col];
 	i = top_idx[right_col] + y;
 	m = mark_idx[right_col];
+	cg = fmode || add_hsize;
 
 #if defined(TRACE)
 	fprintf(debug, "->disp_curs(%i) i=%u c=%u \"%s\"\n",
 	    a, i, y, i < db_num[right_col] ? db_list[right_col][i]->name :
 	    "index out of bounds");
 #endif
-	if (fmode) {
+	if (cg) {
 		if (!a) {
 			chgat_off(w, y);
 		}
@@ -2194,7 +2221,7 @@ disp_curs(
 		disp_line(y, i, a);
 	}
 
-	if (fmode) {
+	if (cg) {
 		if (a) {
 			chgat_curs(w, y);
 
@@ -2312,7 +2339,7 @@ disp_line(
 
 	w = getlstwin();
 	f = db_list[right_col][i];
-	mx = twocols ? llstw : 0;
+	mx = !fmode ? listw : right_col ? rlstw : llstw;
 
 	if (twocols && !fmode) {
 		(wattr_get)(w, &a, &cp, NULL);
@@ -2361,20 +2388,21 @@ no_diff:
 	if (twocols && !fmode && diff == '>')
 			goto prtc2;
 
-	set_file_info(f, twocols && !fmode ? f->type[0] : *mode, type, &color_id,
-	    &diff);
-	disp_name(w, y, 0, mx, info, f, *type, color_id,
+	set_file_info(f, twocols && !fmode ? f->type[0] : *mode, type,
+	    &color_id, &diff);
+	disp_name(w, y, 0, twocols && !fmode ? llstw : mx, info, f, *type,
+	    color_id,
 	    right_col           ? f->rlink :
 	    twocols || f->llink ? f->llink : f->rlink,
-	    diff);
+	    diff, fmode ? right_col : twocols || f->type[0] ? 0 : 1);
 
 	if (twocols && !fmode) {
 prtc2:
 		if (diff != '<') {
 			(wattr_set)(w, a, cp, NULL);
 			set_file_info(f, f->type[1], type+1, &color_id, &diff);
-			disp_name(w, y, rlstx, 0, info, f, type[1], color_id,
-			    f->rlink, diff);
+			disp_name(w, y, rlstx, mx, info, f, type[1], color_id,
+			    f->rlink, diff, 1);
 		}
 
 		standoutc(w);
@@ -2482,34 +2510,49 @@ set_file_info(struct filediff *f, mode_t m, int *t, short *ct, int *d)
 
 static int
 disp_name(WINDOW *w, int y, int x, int mx, int o, struct filediff *f, int t,
-    short ct, char *l, int d)
+    short ct, char *l, int d, int i)
 {
-	int i;
+	int j;
+
+	if (add_hsize) {
+		mx -= 5;
+	}
 
 	if (color && !o) {
 		wattron(w, A_BOLD);
 
-		if (ct)
+		if (ct) {
 			wattron(w, COLOR_PAIR(ct));
-		else
+		} else {
 			/* not attrset, else bold is off */
 			wattron(w, COLOR_PAIR(PAIR_NORMAL));
+		}
 	}
 
-	if (twocols || bmode)
+	if (twocols || bmode) {
 		mvwprintw(w, y, x, "%c ", t);
-	else
+	} else {
 		mvwprintw(w, y, x, "%c %c ", d, t);
+	}
 
-	i = addmbs(w, f->name, mx);
+	j = addmbs(w, f->name, mx);
 	standendc(w);
 
-	if (i)
+	if (j) {
 		return 1;
+	}
 
 	if (l) {
 		addmbs(w, " -> ", mx);
 		putmbsra(w, l, mx);
+	}
+
+	if (add_hsize) {
+		size_t n;
+
+		n = getfilesize(lbuf, sizeof lbuf, f->siz[i], TRUE);
+		wmove(w, y, mx + 5 - n);
+		addmbs(w, lbuf, 0);
 	}
 
 	return 0;
@@ -2701,7 +2744,8 @@ file_stat(struct filediff *f, struct filediff *f2)
 			    (unsigned long)major(f->lrdev),
 			    (unsigned long)minor(f->lrdev));
 		else
-			w1 = getfilesize(lbuf, sizeof lbuf, f->lsiz);
+			w1 = getfilesize(lbuf, sizeof lbuf, f->siz[0],
+			    scale || twocols);
 
 		w1++;
 	} else
@@ -2713,7 +2757,8 @@ file_stat(struct filediff *f, struct filediff *f2)
 			    (unsigned long)major(f2->rrdev),
 			    (unsigned long)minor(f2->rrdev));
 		else
-			w2 = getfilesize(rbuf, sizeof rbuf, f2->rsiz);
+			w2 = getfilesize(rbuf, sizeof rbuf, f2->siz[1],
+			    scale || twocols);
 
 		w2++;
 	} else
@@ -2776,14 +2821,18 @@ file_stat(struct filediff *f, struct filediff *f2)
 }
 
 static size_t
-getfilesize(char *buf, size_t bufsiz, off_t size)
+getfilesize(char *buf, size_t bufsiz, off_t size, bool scal)
 {
 	char *unit;
 	float f;
 
-	if (!(scale || twocols) || size < 1024)
+	if (!scal) {
 		return snprintf(buf, bufsiz, "%'lld", (long long)size);
-	else {
+
+	} else if (size < 1024) {
+		return snprintf(buf, bufsiz, "%d", (int)size);
+
+	} else {
 		f = size / 1024.0;
 		unit = "K";
 
@@ -2803,7 +2852,11 @@ getfilesize(char *buf, size_t bufsiz, off_t size)
 		}
 	}
 
-	return snprintf(buf, bufsiz, "%.1f%s", f, unit);
+	if (f < 10) {
+		return snprintf(buf, bufsiz, "%.1f%s", f, unit);
+	} else {
+		return snprintf(buf, bufsiz, "%.0f%s", f+.5, unit);
+	}
 }
 
 static size_t

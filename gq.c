@@ -176,10 +176,10 @@ gq_proc(struct filediff *f)
 #if defined(TRACE) && 0
 	fprintf(debug, "gq_proc(%s)", f->name);
 #endif
-	if (S_ISREG(f->type[0]) && f->lsiz) {
+	if (S_ISREG(f->type[0]) && f->siz[0]) {
 		p = syspth[0];
 		l = pthlen[0];
-	} else if (S_ISREG(f->type[1]) && f->rsiz) {
+	} else if (S_ISREG(f->type[1]) && f->siz[1]) {
 		p = syspth[1];
 		l = pthlen[1];
 	} else {
