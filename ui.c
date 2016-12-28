@@ -1656,8 +1656,8 @@ action(
 		} else if (S_ISDIR(ltyp) || S_ISDIR(rtyp)) {
 			if (bmode) {
 				t2 = NULL;
-				enter_dir(rnam , NULL,
-				          FALSE, FALSE, tree);
+				enter_dir(rnam             , NULL,
+				          z2 ? TRUE : FALSE, FALSE, tree);
 
 				/* In bmode the unpacked dir is in z2.
 				 * Hence z1 is useless and can be removed. */
@@ -2193,7 +2193,13 @@ disp_list(
 		    top_idx[right_col] - 1 : 0;
 	}
 
-	werase(w);
+	if (fmode && right_col) {
+		/* Else glyphs are left in right column with ncursesw */
+		wclear(w);
+	} else {
+		werase(w);
+	}
+
 	/* Else glyphs are left with NetBSD curses */
 	wrefresh(w);
 
@@ -2339,7 +2345,7 @@ prtc2:
 
 	werase(wstat);
 
-	if (dir_change) {
+	if (bmode && dir_change) {
 	} else if (mark &&
 	    /* fmode has only local marks which are highlighted anyway.
 	     * Hence it is not necessary to display the mark in the
@@ -2514,22 +2520,32 @@ file_stat(struct filediff *f, struct filediff *f2)
 
 	standendc(wstat);
 	x  = tc || bmode ? 0 : 2;
-	x2 = tc ? rlstx :
-	     bmode   ? 0     : 2;
+	x2 = tc    ? rlstx :
+	     bmode ? 0     : 2;
 	yl = 0;
 	yr = tc ? 0 : 1;
 	ltyp = f  ? f->ltype  : 0;
 	rtyp = f2 ? f2->rtype : 0;
 	mx1 = tc ? llstw : 0;
 
-	if (tc) {
-	} else if (bmode) {
-		wmove(wstat, 1, 0);
-		putmbsra(wstat, rpath, 0);
+	if (bmode) {
+		if (!mark || dir_change) {
+			wmove(wstat, 1, 0);
+			putmbsra(wstat, rpath, 0);
+		}
 	} else if (dir_change) {
 		lpath[llen] = 0;
 		rpath[rlen] = 0;
-		mvwaddstr(wstat, 1, 0, *pwd ? PWD : RPWD);
+
+		if (!mark) {
+			wmove(wstat, 1, 0);
+			putmbsra(wstat, *pwd ? PWD : RPWD, 0);
+		} else {
+			wmove(wstat, 0, 0);
+			putmbsra(wstat, PWD, mx1);
+			wmove(wstat, 0, rlstx);
+			putmbsra(wstat, RPWD, 0);
+		}
 		return;
 	}
 
@@ -3172,7 +3188,9 @@ pop_state(
 	free(st);
 
 	if (mode) {
-		dir_change = TRUE;
+		if (!twocols) {
+			dir_change = TRUE;
+		}
 		disp_list(1);
 	}
 
@@ -3201,7 +3219,9 @@ enter_dir(char *name, char *rnam, bool lzip, bool rzip, short tree)
 	fprintf(debug, "->enter_dir(ln(%s) rn(%s) t=%d) lp(%s) rp(%s)\n",
 	    name, rnam, tree, lpath, rpath);
 #endif
-	dir_change = TRUE;
+	if (!twocols) {
+		dir_change = TRUE;
+	}
 
 	if (fmode && name && rnam) {
 		clr_mark();
