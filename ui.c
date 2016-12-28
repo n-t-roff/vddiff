@@ -2388,7 +2388,7 @@ prtc2:
 
 	werase(wstat);
 
-	if (dir_change) {
+	if (bmode && dir_change) {
 	} else if (mark &&
 	    /* fmode has only local marks which are highlighted anyway.
 	     * Hence it is not necessary to display the mark in the
@@ -2559,24 +2559,25 @@ file_stat(struct filediff *f, struct filediff *f2)
 
 	standendc(wstat);
 	x  = tc || bmode ? 0 : 2;
-	x2 = tc ? rlstx :
-	     bmode   ? 0     : 2;
+	x2 = tc    ? rlstx :
+	     bmode ? 0     : 2;
 	yl = 0;
 	yr = tc ? 0 : 1;
 	ltyp = f  ? f->type[0]  : 0;
 	rtyp = f2 ? f2->type[1] : 0;
 	mx1 = tc ? llstw : 0;
 
-	if (tc) {
-	} else if (bmode) {
-		wmove(wstat, 1, 0);
-		setvpth(1);
-		putmbsra(wstat, vpath[1], 0);
+	if (bmode) {
+		if (!mark || dir_change) {
+			wmove(wstat, 1, 0);
+			setvpth(1);
+			putmbsra(wstat, vpath[1], 0);
+		}
 	} else if (dir_change) {
 		setvpth(2);
-		wmove(wstat, 0, 2);
-		putmbsra(wstat, vpath[0], 0);
-		wmove(wstat, 1, 2);
+		wmove(wstat, 0, mark ? 0 : 2);
+		putmbsra(wstat, vpath[0], mark ? mx1 : 0);
+		wmove(wstat, mark ? 0 : 1, mark ? rlstx : 2);
 		putmbsra(wstat, vpath[1], 0);
 		return;
 	}
@@ -3222,7 +3223,10 @@ pop_state(
 	free(st);
 
 	if (mode) {
-		dir_change = TRUE;
+		if (!twocols) {
+			dir_change = TRUE;
+		}
+
 		disp_list(1);
 	}
 
@@ -3260,7 +3264,9 @@ enter_dir(char *name, char *rnam, bool lzip, bool rzip, short tree
 # endif
 	    name, rnam, lzip, rzip, tree, trcpth[0], trcpth[1]);
 #endif
-	dir_change = TRUE;
+	if (!twocols) {
+		dir_change = TRUE;
+	}
 
 	if (fmode && name && rnam) {
 		clr_mark();
