@@ -172,11 +172,15 @@ exit:
 }
 
 void
-fs_chmod(int tree, long u, int num)
+fs_chmod(int tree, long u, int num,
+    /* 1: Force */
+    /* 2: Don't rebuild DB (for mmrk) */
+    /* 4: Reuse previous mode */
+    unsigned md)
 {
 	struct filediff *f;
-	mode_t m;
-	bool have_mode = FALSE;
+	static mode_t m;
+	bool have_mode;
 
 	fs_error = FALSE;
 	fs_ign_errs = FALSE;
@@ -189,7 +193,9 @@ fs_chmod(int tree, long u, int num)
 		goto ret;
 	}
 
-	if (!force_multi && num > 1 && dialog(y_n_txt, NULL,
+	have_mode = md & 4 ? TRUE : FALSE;
+
+	if (!force_multi && !(md & 1) && num > 1 && dialog(y_n_txt, NULL,
 	    "Change mode of %d files?", num) != 'y')
 		goto ret;
 
@@ -237,7 +243,9 @@ fs_chmod(int tree, long u, int num)
 		}
 	}
 
-	rebuild_db(0);
+	if (!(md & 2)) {
+		rebuild_db(0);
+	}
 exit:
 	syspth[0][pthlen[0]] = 0;
 

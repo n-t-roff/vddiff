@@ -121,6 +121,7 @@ static bool wstat_dirty;
 static bool dir_change;
 static bool add_hsize; /* scaled size */
 static bool add_mode;
+static bool add_mtime;
 
 void
 build_ui(void)
@@ -649,15 +650,29 @@ next_key:
 
 			goto save_st;
 		case 't':
-			if (*key == 'S') {
+			switch (*key) {
+			case 'S':
 				c = 0;
 
-				if (sorting == SORTMTIME)
-					break;
+				if (sorting == SORTMTIME) {
+					goto next_key;
+				}
 
 				sorting = SORTMTIME;
 				rebuild_db(1);
-				break;
+				goto next_key;
+
+			case 'A':
+				c = 0;
+				add_mtime = TRUE;
+				disp_fmode();
+				goto next_key;
+
+			case 'R':
+				c = 0;
+				add_mtime = FALSE;
+				disp_fmode();
+				goto next_key;
 			}
 
 			break;
@@ -1233,8 +1248,10 @@ static char *helptxt[] = {
        "E		Toggle file name or file content filter",
        "Ah		Show scaled file size",
        "Ap		Show file mode",
+       "At		Show modification time",
        "Rh		Remove scaled file size column",
        "Rp		Remove file mode column",
+       "Rt		Remvoe modification time column",
        "p		Show current relative work directory",
        "a		Show command line directory arguments",
        "f		Show full path",
@@ -2006,7 +2023,7 @@ ret:
 void
 curs_down(void)
 {
-#if defined(TRACE)
+#if defined(TRACE) && 0
 	fprintf(debug, "->curs_down c=%u\n", curs[right_col]);
 #endif
 	if (top_idx[right_col] + curs[right_col] + 1 >= db_num[right_col]) {
@@ -2033,7 +2050,7 @@ curs_down(void)
 	refr_scr();
 
 ret:
-#if defined(TRACE)
+#if defined(TRACE) && 0
 	fprintf(debug, "<-curs_down c=%u\n", curs[right_col]);
 #endif
 	return;
@@ -2042,7 +2059,7 @@ ret:
 static void
 curs_up(void)
 {
-#if defined(TRACE)
+#if defined(TRACE) && 0
 	fprintf(debug, "->curs_up c=%u\n", curs[right_col]);
 #endif
 	if (!curs[right_col]) {
@@ -2069,7 +2086,7 @@ curs_up(void)
 	refr_scr();
 
 ret:
-#if defined(TRACE)
+#if defined(TRACE) && 0
 	fprintf(debug, "<-curs_up c=%u\n", curs[right_col]);
 #endif
 	return;
@@ -2239,10 +2256,10 @@ disp_curs(
 	y = curs[right_col];
 	i = top_idx[right_col] + y;
 	m = mark_idx[right_col];
-	cg = fmode || add_hsize || add_mode;
+	cg = fmode || add_mode || add_hsize || add_mtime;
 	f = db_list[right_col][i];
 
-#if defined(TRACE)
+#if defined(TRACE) && 0
 	fprintf(debug, "->disp_curs(%i) i=%u c=%u \"%s\"\n",
 	    a, i, y, i < db_num[right_col] ? db_list[right_col][i]->name :
 	    "index out of bounds");
@@ -2278,7 +2295,7 @@ disp_curs(
 			chgat_mmrk(w, y);
 		}
 	}
-#if defined(TRACE)
+#if defined(TRACE) && 0
 	fprintf(debug, "<-disp_curs c=%u\n", curs[right_col]);
 #endif
 }
@@ -2297,7 +2314,7 @@ disp_list(
 	fprintf(debug, "->disp_list\n");
 #endif
 	w = getlstwin();
-	cg = fmode || add_hsize || add_mode;
+	cg = fmode || add_mode || add_hsize || add_mtime;
 
 	/* For the case that entries had been removed
 	 * and page_down() */
@@ -2578,12 +2595,16 @@ disp_name(WINDOW *w, int y, int x, int mx, int o, struct filediff *f, int t,
 {
 	int j;
 
+	if (add_mode) {
+		mx -= 5;
+	}
+
 	if (add_hsize) {
 		mx -= 5;
 	}
 
-	if (add_mode) {
-		mx -= 5;
+	if (add_mtime) {
+		mx -= 13;
 	}
 
 	if (color && !o) {
@@ -2627,6 +2648,15 @@ disp_name(WINDOW *w, int y, int x, int mx, int o, struct filediff *f, int t,
 
 		mx += 5;
 		n = getfilesize(lbuf, sizeof lbuf, f->siz[i], TRUE);
+		wmove(w, y, mx - n);
+		addmbs(w, lbuf, 0);
+	}
+
+	if (add_mtime) {
+		size_t n;
+
+		mx += 13;
+		n = gettimestr(lbuf, sizeof lbuf, &f->mtim[i]);
 		wmove(w, y, mx - n);
 		addmbs(w, lbuf, 0);
 	}
@@ -2872,13 +2902,13 @@ file_stat(struct filediff *f, struct filediff *f2)
 		rtyp = 0;
 
 	if (ltyp) {
-		lx1 = x + gettimestr(lbuf, sizeof lbuf, &f->lmtim);
+		lx1 = x + gettimestr(lbuf, sizeof lbuf, &f->mtim[0]);
 		wmove(wstat, yl, x);
 		addmbs(wstat, lbuf, mx1);
 	}
 
 	if (rtyp) {
-		lx2 = x2 + gettimestr(rbuf, sizeof rbuf, &f2->rmtim);
+		lx2 = x2 + gettimestr(rbuf, sizeof rbuf, &f2->mtim[1]);
 		wmove(wstat, yr, x2);
 		addmbs(wstat, rbuf, 0);
 	}

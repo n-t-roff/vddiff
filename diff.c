@@ -347,7 +347,7 @@ free_a:
 			diff->luid  = stat1.st_uid;
 			diff->lgid  = stat1.st_gid;
 			diff->siz[0]  = stat1.st_size;
-			diff->lmtim = stat1.st_mtim.tv_sec;
+			diff->mtim[0] = stat1.st_mtim.tv_sec;
 			diff->lrdev = stat1.st_rdev;
 
 			if (S_ISLNK(stat1.st_mode))
@@ -361,7 +361,7 @@ free_a:
 			diff->ruid  = stat2.st_uid;
 			diff->rgid  = stat2.st_gid;
 			diff->siz[1]  = stat2.st_size;
-			diff->rmtim = stat2.st_mtim.tv_sec;
+			diff->mtim[1] = stat2.st_mtim.tv_sec;
 			diff->rrdev = stat2.st_rdev;
 
 			if (S_ISLNK(stat2.st_mode))
@@ -569,7 +569,7 @@ right_tree:
 			diff->ruid  = stat2.st_uid;
 			diff->rgid  = stat2.st_gid;
 			diff->siz[1]  = stat2.st_size;
-			diff->rmtim = stat2.st_mtim.tv_sec;
+			diff->mtim[1] = stat2.st_mtim.tv_sec;
 			diff->rrdev = stat2.st_rdev;
 
 			if (S_ISLNK(stat2.st_mode))

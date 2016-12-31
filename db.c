@@ -684,8 +684,8 @@ diff_cmp(
 	if (sorting == SORTMTIME) {
 		time_t t1, t2;
 
-		t1 = f1->type[0] ? f1->lmtim : f1->rmtim;
-		t2 = f2->type[0] ? f2->lmtim : f2->rmtim;
+		t1 = f1->type[0] ? f1->mtim[0] : f1->mtim[1];
+		t2 = f2->type[0] ? f2->mtim[0] : f2->mtim[1];
 
 		if      (t1 < t2) return -1;
 		else if (t1 > t2) return  1;

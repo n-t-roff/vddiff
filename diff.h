@@ -8,7 +8,7 @@ struct filediff {
 	uid_t   luid,   ruid;
 	gid_t   lgid,   rgid;
 	off_t   siz[2];
-	time_t  lmtim,  rmtim;
+	time_t  mtim[2];
 	dev_t   lrdev,  rrdev;
 	unsigned fl;
 	char    diff;

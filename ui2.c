@@ -1292,6 +1292,8 @@ ui_dd(int t, long u, unsigned short num)
 int
 ui_chmod(int t, long u, unsigned short num)
 {
+	unsigned i;
+
 	if (mmrkd[right_col]) {
 		if (dialog(y_n_txt, NULL,
 		    "Really change permissions of %d files?",
@@ -1299,14 +1301,14 @@ ui_chmod(int t, long u, unsigned short num)
 			return 1;
 		}
 
-		while ((u = get_mmrk()) >= 0) {
-			fs_chmod(t, u, 1);
+		for (i = 0; (u = get_mmrk()) >= 0; i = 4) {
+			fs_chmod(t, u, 1, i | 3);
 		}
 
 		rebuild_db(0);
 		return 1;
 	}
 
-	fs_chmod(t, u, num);
+	fs_chmod(t, u, num, 0);
 	return 0;
 }
