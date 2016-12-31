@@ -8,6 +8,10 @@
 #define PAIR_ERROR     8
 #define PAIR_NORMAL    9
 #define PAIR_MARK      10
+#define PAIR_MMRK      11
+
+#define DB_LST_IDX (top_idx[right_col] + curs[right_col])
+#define DB_LST_ITM (db_list[right_col][DB_LST_IDX])
 
 struct ui_state {
 	/* Path before going to temp dir for returning when leaving temp dir */
@@ -18,7 +22,7 @@ struct ui_state {
 	void *bst;
 	unsigned num;
 	struct filediff **list;
-	unsigned top_idx, curs;
+	unsigned top_idx, curs, mmrkd;
 	unsigned short tree;
 	struct ui_state *next;
 };
@@ -41,6 +45,7 @@ void enter_dir(char *, char *, bool, bool, short
     );
 void set_win_dim(void);
 void pop_state(short);
+void curs_down(void);
 
 extern short color;
 extern short color_leftonly ,
@@ -56,6 +61,8 @@ extern short color_leftonly ,
              color_error_bg ,
              color_mark_fg  ,
              color_mark_bg  ,
+             color_mmrk_fg  ,
+             color_mmrk_bg  ,
              color_bg       ;
 extern unsigned top_idx[2], curs[2], statw;
 extern unsigned listh;

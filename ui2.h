@@ -6,6 +6,7 @@
 	fkey_flags[i] & FKEY_FORCE ? '#' : '$'
 
 extern long mark_idx[2];
+extern long mmrkd[2];
 extern short noic, magic, nows, scale;
 extern short regex;
 extern unsigned short subtree;
@@ -32,9 +33,11 @@ unsigned findlistname(char *);
 void re_sort_list(void);
 void filt_stat(void);
 void markc(WINDOW *);
+void mmrkc(WINDOW *);
 void standoutc(WINDOW *);
 void standendc(WINDOW *);
 void chgat_mark(WINDOW *, int);
+void chgat_mmrk(WINDOW *, int);
 void chgat_curs(WINDOW *, int);
 void chgat_off(WINDOW *, int);
 void anykey(void);
@@ -49,3 +52,6 @@ int addmbs(WINDOW *, char *, int);
 ssize_t putmbsra(WINDOW *, char *, int);
 WINDOW *new_scrl_win(int, int, int, int);
 void set_def_mouse_msk(void);
+void key_mmrk(void);
+long get_mmrk(void);
+int ui_dd(int, long, unsigned short);

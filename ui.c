@@ -49,7 +49,6 @@ static void curs_last(void);
 static void curs_first(void);
 static int last_line_is_disp(void);
 static int first_line_is_top(void);
-static void curs_down(void);
 static void curs_up(void);
 static void disp_line(unsigned, unsigned, int);
 static void push_state(char *, char *, bool, bool);
@@ -89,6 +88,8 @@ short color_leftonly  = COLOR_CYAN   ,
       color_error_bg  = COLOR_RED    ,
       color_mark_fg   = COLOR_WHITE  ,
       color_mark_bg   = COLOR_BLUE   ,
+      color_mmrk_fg   = COLOR_BLACK  ,
+      color_mmrk_bg   = COLOR_YELLOW ,
       color_bg        = COLOR_BLACK  ;
 unsigned top_idx[2], curs[2], statw;
 
@@ -142,6 +143,7 @@ build_ui(void)
 		init_pair(PAIR_CURSOR   , color_cursor_fg, color_cursor_bg);
 		init_pair(PAIR_ERROR    , color_error_fg , color_error_bg );
 		init_pair(PAIR_MARK     , color_mark_fg  , color_mark_bg  );
+		init_pair(PAIR_MMRK     , color_mmrk_fg  , color_mmrk_bg  );
 		bkgd(   COLOR_PAIR(PAIR_NORMAL));
 		bkgdset(COLOR_PAIR(PAIR_NORMAL));
 	}
@@ -619,8 +621,10 @@ next_key:
 				break;
 			}
 
-			/* allowed for single sided only */
-			fs_rm(3, NULL, NULL, u, num, 0);
+			if (ui_dd(3, u, num)) {
+				break;
+			}
+
 			goto save_st;
 		case 't':
 			if (*key == 'S') {
@@ -658,7 +662,10 @@ next_key:
 		case 'l':
 			switch (*key) {
 			case 'd':
-				fs_rm(1, NULL, NULL, u, num, 0);
+				if (ui_dd(1, u, num)) {
+					goto next_key;
+				}
+
 				goto save_st;
 			case 's':
 				c = 0;
@@ -725,7 +732,10 @@ next_key:
 #endif
 			switch (*key) {
 			case 'd':
-				fs_rm(2, NULL, NULL, u, num, 0);
+				if (ui_dd(2, u, num)) {
+					goto next_key;
+				}
+
 				goto save_st;
 			case 's':
 				c = 0;
@@ -1112,6 +1122,11 @@ next_key:
 			wrefresh(wstat);
 			break;
 
+		case 'V':
+		case KEY_IC:
+			key_mmrk();
+			break;
+
 		case 'A': /* Add attribute column */
 		case 'D': /* Display directory list */
 		case 'R': /* Remove attribute column */
@@ -1247,6 +1262,7 @@ static char *helptxt[] = {
        "Pr		Create directory in right tree",
        ".		Repeat last command",
        "m		Mark file or directory",
+       "V, <INSERT>	Mark multiple files",
        "r		Remove mark, edit line or regex search",
        "b		Binary diff to marked file",
        "y		Copy file path to edit line",
@@ -1586,7 +1602,7 @@ action(
 	f = f1 = f2 = db_list[right_col][top_idx[right_col] + curs[right_col]];
 
 #if defined(TRACE)
-	fprintf(debug, "f1->name(%s)\n", f1->name);
+	fprintf(debug, "  f1->name(%s)\n", f1->name);
 #endif
 	if (mark && act) {
 		struct filediff *m;
@@ -1963,7 +1979,7 @@ ret:
 	return r;
 }
 
-static void
+void
 curs_down(void)
 {
 #if defined(TRACE)
@@ -2192,6 +2208,7 @@ disp_curs(
 {
 	WINDOW *w;
 	unsigned i, y, m;
+	struct filediff *f;
 	bool cg;
 
 	w = getlstwin();
@@ -2199,6 +2216,7 @@ disp_curs(
 	i = top_idx[right_col] + y;
 	m = mark_idx[right_col];
 	cg = fmode || add_hsize;
+	f = db_list[right_col][i];
 
 #if defined(TRACE)
 	fprintf(debug, "->disp_curs(%i) i=%u c=%u \"%s\"\n",
@@ -2215,6 +2233,10 @@ disp_curs(
 	} else if (i == m) {
 		a = 1;
 		markc(w);
+
+	} else if (f->fl & FDFL_MMRK) {
+		a = 1;
+		mmrkc(w);
 	}
 
 	if (i < db_num[right_col]) {
@@ -2227,6 +2249,9 @@ disp_curs(
 
 		} else if (i == m) {
 			chgat_mark(w, y);
+
+		} else if (f->fl & FDFL_MMRK) {
+			chgat_mmrk(w, y);
 		}
 	}
 #if defined(TRACE)
@@ -2242,11 +2267,13 @@ disp_list(
 {
 	unsigned y, i;
 	WINDOW *w;
+	bool cg;
 
 #if defined(TRACE)
 	fprintf(debug, "->disp_list\n");
 #endif
 	w = getlstwin();
+	cg = fmode || add_hsize;
 
 	/* For the case that entries had been removed
 	 * and page_down() */
@@ -2289,14 +2316,25 @@ disp_list(
 			disp_curs(1);
 		} else if ((long)(top_idx[right_col] + y) ==
 		    mark_idx[right_col]) {
-			if (!fmode) {
+			if (!cg) {
 				markc(w);
 			}
 
 			disp_line(y, i, 1);
 
-			if (fmode) {
+			if (cg) {
 				chgat_mark(w, y);
+			}
+		} else if ((db_list[right_col][top_idx[right_col] + y])->fl
+		    & FDFL_MMRK) {
+			if (!cg) {
+				mmrkc(w);
+			}
+
+			disp_line(y, i, 1);
+
+			if (cg) {
+				chgat_mmrk(w, y);
 			}
 		} else {
 			disp_line(y, i, 0);
@@ -2339,7 +2377,9 @@ disp_line(
 
 	w = getlstwin();
 	f = db_list[right_col][i];
-	mx = !fmode ? listw : right_col ? rlstw : llstw;
+	mx = !fmode    ? (int)listw :
+	     right_col ?      rlstw :
+	                      llstw ;
 
 	if (twocols && !fmode) {
 		(wattr_get)(w, &a, &cp, NULL);

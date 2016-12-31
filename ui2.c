@@ -50,14 +50,16 @@ struct str_uint {
 static int srchcmp(const void *, const void *);
 static char *getnextarg(char *);
 static void set_all(void);
+static void tgl_mmrk(struct filediff *);
 
 long mark_idx[2] = { -1, -1 };
+long mmrkd[2];
+static long prev_mmrk[2] = { -1, -1 };
 static wchar_t wcbuf[BUF_SIZE];
 static cchar_t ccbuf[BUF_SIZE];
 short noic, magic, nows, scale;
 short regex;
 unsigned short subtree = 3;
-
 static struct str_uint *srchmap;
 static regex_t re_dat;
 static unsigned srch_idx;
@@ -108,6 +110,10 @@ test_fkey(int c, unsigned short num)
 			mvwprintw(wstat, 0, 0, "Really execute \"%s\"",
 			    fkey_cmd[i]);
 
+			if (mmrkd[right_col]) {
+				num = mmrkd[right_col];
+			}
+
 			if (num > 1) {
 				wprintw(wstat, " for %d files", num);
 			}
@@ -125,6 +131,23 @@ test_fkey(int c, unsigned short num)
 exec:
 				ti = top_idx[right_col];
 
+				if (mmrkd[right_col]) {
+					unsigned cu;
+					long u;
+
+					disp_curs(0);
+					cu = curs[right_col];
+					curs[right_col] = 0;
+
+					while ((u = get_mmrk()) >= 0) {
+						top_idx[right_col] = u;
+						action(1, 3, act, FALSE);
+					}
+
+					curs[right_col] = cu;
+					goto restore;
+				}
+
 #if defined(TRACE)
 				fprintf(debug, "test_fkey: ->%u x \"%s\"\n",
 				    num, fkey_cmd[i]);
@@ -138,6 +161,7 @@ exec:
 				    fkey_cmd[i]);
 #endif
 
+restore:
 				top_idx[right_col] = ti;
 				/* action() did likely create or delete files.
 				 * Calls mark_global() since 'mark' pointer
@@ -866,6 +890,62 @@ re_sort_list(void)
 }
 
 void
+key_mmrk(void)
+{
+	long i1, i2;
+
+	if ((i1 = mark_idx[right_col]) < 0) {
+		tgl_mmrk(DB_LST_ITM);
+		curs_down();
+	} else {
+		i2 = DB_LST_IDX;
+
+		if (i1 > i2) {
+			i1 = i2;
+			i2 = mark_idx[right_col];
+		}
+
+		for (; i1 <= i2; i1++) {
+			tgl_mmrk(db_list[right_col][i1]);
+		}
+
+		clr_mark();
+		disp_list(1);
+	}
+}
+
+static void
+tgl_mmrk(struct filediff *f)
+{
+	if (f->fl & FDFL_MMRK) {
+		f->fl &= ~FDFL_MMRK;
+		mmrkd[right_col]--;
+	} else {
+		f->fl |= FDFL_MMRK;
+		mmrkd[right_col]++;
+	}
+}
+
+long
+get_mmrk(void)
+{
+	while (++prev_mmrk[right_col] < db_num[right_col]) {
+		if ((db_list[right_col][prev_mmrk[right_col]])->fl &
+		    FDFL_MMRK) {
+			goto ret;
+		}
+	}
+
+	prev_mmrk[right_col] = -1;
+ret:
+#if defined(TRACE)
+	fprintf(debug, "<>get_mmrk(%d): %ld\n", right_col,
+	    prev_mmrk[right_col]);
+#endif
+	return prev_mmrk[right_col];
+}
+
+void
 filt_stat(void)
 {
 	unsigned x;
@@ -910,10 +990,21 @@ filt_stat(void)
 void
 markc(WINDOW *w)
 {
-	if (color)
+	if (color) {
 		wattrset(w, COLOR_PAIR(PAIR_MARK));
-	else
+	} else {
 		wattrset(w, A_BOLD | A_UNDERLINE);
+	}
+}
+
+void
+mmrkc(WINDOW *w)
+{
+	if (color) {
+		wattrset(w, COLOR_PAIR(PAIR_MMRK));
+	} else {
+		wattrset(w, A_UNDERLINE);
+	}
 }
 
 void
@@ -922,6 +1013,14 @@ chgat_mark(WINDOW *w, int y)
 	mvwchgat(w, y, 0, -1,
 	    color ? 0 : A_BOLD | A_UNDERLINE,
 	    color ? PAIR_MARK : 0, NULL);
+}
+
+void
+chgat_mmrk(WINDOW *w, int y)
+{
+	mvwchgat(w, y, 0, -1,
+	    color ? 0 : A_UNDERLINE,
+	    color ? PAIR_MMRK : 0, NULL);
 }
 
 void
@@ -1166,4 +1265,26 @@ set_def_mouse_msk(void)
 # endif
 	    , NULL);
 #endif
+}
+
+int
+ui_dd(int t, long u, unsigned short num)
+{
+	if (mmrkd[right_col]) {
+		if (dialog(y_n_txt, NULL,
+		    "Really delete %d files?",
+		    mmrkd[right_col]) != 'y') {
+			return 1;
+		}
+
+		while ((u = get_mmrk()) >= 0) {
+			fs_rm(t, NULL, NULL, u, 1, 3);
+		}
+
+		rebuild_db(0);
+		return 1;
+	}
+
+	fs_rm(t, NULL, NULL, u, num, 0);
+	return 0;
 }

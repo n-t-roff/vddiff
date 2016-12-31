@@ -398,6 +398,7 @@ fs_rm(int tree, char *txt,
     /* File name. If {nam} is given, {u} is not used. {n} should be 1. */
     char *nam, long u, int n,
     /* 1: Force */
+    /* 2: Don't rebuild DB (for mmrk) */
     unsigned md)
 {
 	struct filediff *f;
@@ -571,7 +572,9 @@ fs_rm(int tree, char *txt,
 		goto cancel;
 	}
 
-	rebuild_db(0);
+	if (!(md & 2)) {
+		rebuild_db(0);
+	}
 
 	if (gl_mark) {
 		chk_mark(gl_mark, 0);

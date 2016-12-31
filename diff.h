@@ -1,5 +1,5 @@
 /* File marked (for delete, copy, etc.) */
-#define FDFL_MARK 1
+#define FDFL_MMRK 1
 
 struct filediff {
 	char   *name;

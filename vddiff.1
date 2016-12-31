@@ -755,6 +755,16 @@ can be used to normally view files or change to other directories.
 .Aq Cm ENTER
 startes a diff between the marked and the selected file
 or directory.
+.It So Li V Sc , Aq Cm INSERT
+Set multiple marks.
+If no local mark is set (using
+.Sq Li m ) ,
+.Sq Li V
+toggles the mark of the current line
+and moves the cursor to the next line.
+If a local mark is set,
+the marks of all lines from the line with the local mark
+to the current line are inverted.
 .It Sq Li r
 Remove mark, edit line, or regex search.
 .It Sq Li b

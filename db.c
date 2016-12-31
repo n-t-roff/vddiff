@@ -555,6 +555,8 @@ diff_db_store(struct ui_state *st)
 	*db_num = 0;
 	st->list = *db_list;
 	*db_list = NULL;
+	st->mmrkd = *mmrkd;
+	*mmrkd = 0;
 }
 
 void
@@ -568,6 +570,7 @@ diff_db_restore(struct ui_state *st)
 #endif
 	*db_num = st->num;
 	*db_list = st->list;
+	*mmrkd = st->mmrkd;
 }
 
 void
@@ -752,6 +755,7 @@ diff_db_free(int i)
 #endif
 	free(db_list[i]);
 	db_list[i] = NULL;
+	mmrkd[i] = 0;
 	db_num[i] = 0;
 #if defined(TRACE)
 	fprintf(debug, "<-diff_db_free\n");
