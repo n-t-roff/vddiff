@@ -120,6 +120,7 @@ bool scrollen = TRUE;
 static bool wstat_dirty;
 static bool dir_change;
 static bool add_hsize; /* scaled size */
+static bool add_mode;
 
 void
 build_ui(void)
@@ -466,15 +467,36 @@ next_key:
 			break;
 
 		case 'p':
-			if (*key == 'e') {
-				fs_chmod(3, u, num);
+			if (*key == 'A') {
+				c = 0;
+				add_mode = TRUE;
+				disp_fmode();
+				goto next_key;
+
+			} else if (*key == 'R') {
+				c = 0;
+				add_mode = FALSE;
+				disp_fmode();
+				goto next_key;
+
+			} else if (*key == 'e') {
+				if (ui_chmod(3, u, num)) {
+					goto next_key;
+				}
+
 				goto save_st;
 			} else if (key[1] == 'e') {
 				if (*key == 'l') {
-					fs_chmod(1, u, num);
+					if (ui_chmod(1, u, num)) {
+						goto next_key;
+					}
+
 					goto save_st;
 				} else if (*key == 'r') {
-					fs_chmod(2, u, num);
+					if (ui_chmod(2, u, num)) {
+						goto next_key;
+					}
+
 					goto save_st;
 				}
 			}
@@ -1210,7 +1232,9 @@ static char *helptxt[] = {
        "F		Toggle following symbolic links",
        "E		Toggle file name or file content filter",
        "Ah		Show scaled file size",
+       "Ap		Show file mode",
        "Rh		Remove scaled file size column",
+       "Rp		Remove file mode column",
        "p		Show current relative work directory",
        "a		Show command line directory arguments",
        "f		Show full path",
@@ -2215,7 +2239,7 @@ disp_curs(
 	y = curs[right_col];
 	i = top_idx[right_col] + y;
 	m = mark_idx[right_col];
-	cg = fmode || add_hsize;
+	cg = fmode || add_hsize || add_mode;
 	f = db_list[right_col][i];
 
 #if defined(TRACE)
@@ -2273,7 +2297,7 @@ disp_list(
 	fprintf(debug, "->disp_list\n");
 #endif
 	w = getlstwin();
-	cg = fmode || add_hsize;
+	cg = fmode || add_hsize || add_mode;
 
 	/* For the case that entries had been removed
 	 * and page_down() */
@@ -2558,6 +2582,10 @@ disp_name(WINDOW *w, int y, int x, int mx, int o, struct filediff *f, int t,
 		mx -= 5;
 	}
 
+	if (add_mode) {
+		mx -= 5;
+	}
+
 	if (color && !o) {
 		wattron(w, A_BOLD);
 
@@ -2587,11 +2615,19 @@ disp_name(WINDOW *w, int y, int x, int mx, int o, struct filediff *f, int t,
 		putmbsra(w, l, mx);
 	}
 
+	if (add_mode) {
+		mx += 5;
+		snprintf(lbuf, sizeof lbuf, "%04o", f->type[i] & 07777);
+		wmove(w, y, mx - 4);
+		addmbs(w, lbuf, 0);
+	}
+
 	if (add_hsize) {
 		size_t n;
 
+		mx += 5;
 		n = getfilesize(lbuf, sizeof lbuf, f->siz[i], TRUE);
-		wmove(w, y, mx + 5 - n);
+		wmove(w, y, mx - n);
 		addmbs(w, lbuf, 0);
 	}
 

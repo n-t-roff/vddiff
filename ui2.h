@@ -55,3 +55,4 @@ void set_def_mouse_msk(void);
 void key_mmrk(void);
 long get_mmrk(void);
 int ui_dd(int, long, unsigned short);
+int ui_chmod(int, long, unsigned short);
