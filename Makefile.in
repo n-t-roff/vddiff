@@ -49,8 +49,8 @@ $(BIN): $(OBJ)
 .c.o:
 	$(CC) $(_CFLAGS) -c $<
 
-$(BIN).1.out: $(BIN).1
-	sed '/^\.begin_comment/,/^\.end_comment/d' $(BIN).1 > $@
+$(BIN).1.out: vddiff.1
+	sed '/^\.begin_comment/,/^\.end_comment/d' vddiff.1 > $@
 
 html:
 	make $(BIN).1.html
