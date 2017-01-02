@@ -101,3 +101,20 @@ dl_disp(void)
 
 	wrefresh(wlist);
 }
+
+void
+dl_info_ddl(FILE *fh)
+{
+	if (!fgets(lbuf, BUF_SIZE, fh) ||
+	    !fgets(rbuf, BUF_SIZE, fh)) {
+		printerr("Too few arguments", "\"%s\" in \"%s\"",
+		    info_ddir_txt, info_pth);
+	}
+
+	info_chomp(lbuf);
+	info_chomp(rbuf);
+
+	if (ddl_add(lbuf, rbuf) == 1) {
+		ddl_num++;
+	}
+}

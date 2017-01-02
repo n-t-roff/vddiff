@@ -34,12 +34,52 @@ PERFORMANCE OF THIS SOFTWARE.
 static int info_proc(void);
 static void info_wr_ddl(FILE *);
 
-static const char info_dir_txt[] = "dir";
-static const char info_ddir_txt[] = "diffdir";
+static const char info_name[] = ".vddiffinfo.new";
+const char info_dir_txt[] = "dir";
+const char info_ddir_txt[] = "diffdir";
+
+char *info_pth;
+static char *info_tpth;
 
 void
 info_load(void)
 {
+	FILE *fh;
+
+	if (!(info_tpth = add_home_pth(info_name))) {
+		return;
+	}
+
+	info_pth = strdup(info_tpth);
+	info_pth[strlen(info_pth) - 4] = 0;
+
+	if (stat(info_pth, &stat1) == -1) {
+		if (errno == ENOENT) {
+			return;
+		}
+
+		printerr(strerror(errno), "stat \"%s\"", info_pth);
+		return;
+	}
+
+	if (!(fh = fopen(info_pth, "r"))) {
+		printerr(strerror(errno), "fopen \"%s\"", info_pth);
+		return;
+	}
+
+	while (fgets(lbuf, BUF_SIZE, fh)) {
+		info_chomp(lbuf);
+
+		if (!strcmp(lbuf, info_ddir_txt)) {
+			dl_info_ddl(fh);
+		} else {
+			printerr(lbuf, "Invalid line in \"%s\"", info_pth);
+		}
+	}
+
+	if (fclose(fh) == EOF) {
+		printerr(strerror(errno), "fclose \"%s\"", info_pth);
+	}
 }
 
 void
@@ -48,6 +88,10 @@ info_store(void)
 	struct sigaction intr, quit;
 	sigset_t smsk;
 	pid_t pid;
+
+	if (!info_pth) {
+		return;
+	}
 
 	exec_set_sig(&intr, &quit, &smsk);
 
@@ -67,25 +111,17 @@ static int
 info_proc(void)
 {
 	int rv = 0;
-	static char name[] = ".vddiffinfo.new";
-	char *pth, *tpth;
 	FILE *fh;
 	bool wr;
 
-	if (!(tpth = add_home_pth(name))) {
-		return 1;
-	}
-
-	pth = strdup(tpth);
-	pth[strlen(pth) - 4] = 0;
 	wr = ddl_num ? 1 : 0;
 
 	if (!wr) {
 		goto rm;
-	} else if (!(fh = fopen(tpth, "w"))) {
-		printerr(strerror(errno), "fopen \"%s\"", tpth);
+	} else if (!(fh = fopen(info_tpth, "w"))) {
+		printerr(strerror(errno), "fopen \"%s\"", info_tpth);
 		rv = 1;
-		goto free;
+		goto ret;
 	}
 
 	if (ddl_num) {
@@ -93,35 +129,34 @@ info_proc(void)
 	}
 
 	if (fclose(fh) == EOF) {
-		printerr(strerror(errno), "fclose \"%s\"", tpth);
+		printerr(strerror(errno), "fclose \"%s\"", info_tpth);
 		rv = 1;
 	}
 
 rm:
-	if (stat(pth, &stat1) == -1) {
+	if (stat(info_pth, &stat1) == -1) {
 		if (errno == ENOENT) {
 			goto mv;
 		}
 
-		printerr(strerror(errno), "stat \"%s\"", pth);
+		printerr(strerror(errno), "stat \"%s\"", info_pth);
 		rv = 1;
 		goto mv;
 	}
 
-	if (unlink(pth) == -1) {
-		printerr(strerror(errno), "unlink \"%s\"", pth);
+	if (unlink(info_pth) == -1) {
+		printerr(strerror(errno), "unlink \"%s\"", info_pth);
 		rv = 1;
 	}
 
 mv:
-	if (wr && rename(tpth, pth) == -1) {
-		printerr(strerror(errno), "rename \"%s\", \"%s\"", tpth, pth);
+	if (wr && rename(info_tpth, info_pth) == -1) {
+		printerr(strerror(errno), "rename \"%s\", \"%s\"",
+		    info_tpth, info_pth);
 		rv = 1;
 	}
 
-free:
-	free(pth);
-	free(tpth);
+ret:
 	return rv;
 }
 
@@ -139,4 +174,14 @@ info_wr_ddl(FILE *fh)
 
 	free(ddl_list);
 	ddl_list = NULL;
+}
+
+void
+info_chomp(char *s)
+{
+	size_t l;
+
+	if ((l = strlen(s)) && s[l - 1] == '\n') {
+		s[l - 1] = 0;
+	}
 }

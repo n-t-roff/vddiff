@@ -310,7 +310,7 @@ main(int argc, char **argv)
 static int
 read_rc(char *upath)
 {
-	static char rc_name[] = ".vddiffrc";
+	static const char rc_name[] = ".vddiffrc";
 	char *rc_path;
 	int rv = 0;
 	extern FILE *yyin;
@@ -351,7 +351,7 @@ free:
 }
 
 char *
-add_home_pth(char *s)
+add_home_pth(const char *s)
 {
 	char *h, *m = NULL;
 	size_t lh, ls;

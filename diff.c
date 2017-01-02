@@ -957,7 +957,7 @@ free_diff(struct filediff *f)
 }
 
 size_t
-pthcat(char *p, size_t l, char *n)
+pthcat(char *p, size_t l, const char *n)
 {
 	size_t ln = strlen(n);
 

@@ -54,5 +54,5 @@ extern bool force_exec, force_fs, force_multi;
 extern bool readonly;
 extern bool nofkeys;
 
-char *add_home_pth(char *);
+char *add_home_pth(const char *);
 void sig_term(int);
