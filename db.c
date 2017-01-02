@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2016, Carsten Kunze <carsten.kunze@arcor.de>
+Copyright (c) 2016-2017, Carsten Kunze <carsten.kunze@arcor.de>
 
 Permission to use, copy, modify, and/or distribute this software for any
 purpose with or without fee is hereby granted, provided that the above
@@ -22,6 +22,7 @@ PERFORMANCE OF THIS SOFTWARE.
 #include <search.h>
 #include <regex.h>
 #include <stdarg.h>
+#include <signal.h>
 #include "compat.h"
 #include "diff.h"
 #include "main.h"
@@ -32,14 +33,17 @@ PERFORMANCE OF THIS SOFTWARE.
 #include "db.h"
 #include "gq.h"
 #include "tc.h"
+#include "dl.h"
 
 #ifdef HAVE_LIBAVLBST
 static void *db_new(int (*)(union bst_val, union bst_val));
 static int name_cmp(union bst_val, union bst_val);
 static int diff_cmp(union bst_val, union bst_val);
+static int ddl_cmp(union bst_val, union bst_val);
 static void mk_list(struct bst_node *);
 static void diff_db_delete(struct bst_node *);
 static void del_names(struct bst_node *);
+static void mk_ddl(struct bst_node *);
 #else
 struct curs_pos {
 	char *path;
@@ -52,7 +56,9 @@ static int curs_cmp(const void *, const void *);
 static int ext_cmp(const void *, const void *);
 static int uz_cmp(const void *, const void *);
 static int ptr_db_cmp(const void *, const void *);
+static int ddl_cmp(const void *, const void *);
 static void mk_list(const void *, const VISIT, const int);
+static void mk_ddl(const void *, const VISIT, const int);
 #endif
 
 enum sorting sorting;
@@ -65,6 +71,7 @@ void *name_db;
 void *skipext_db;
 void *uz_path_db;
 void *alias_db;
+void *bdl_db;
 
 static void *curs_db;
 static void *ext_db;
@@ -74,8 +81,10 @@ static unsigned db_idx, tot_db_num[2];
 #ifdef HAVE_LIBAVLBST
 static struct bst diff_db[2] = { { NULL, diff_cmp },
                                  { NULL, diff_cmp } };
+static struct bst ddl_db = { NULL, ddl_cmp };
 #else
 static void *diff_db[2];
+static void *ddl_db;
 #endif
 
 #ifdef HAVE_LIBAVLBST
@@ -90,6 +99,7 @@ db_init(void)
 	skipext_db = db_new(name_cmp);
 	uz_path_db = db_new(name_cmp);
 	alias_db   = db_new(name_cmp);
+	bdl_db     = db_new(name_cmp);
 }
 
 static void *
@@ -783,6 +793,141 @@ diff_db_delete(struct bst_node *n)
 	free(n);
 }
 #endif
+
+/*******************************
+ * Diff mode directory list DB *
+ *******************************/
+
+/* 0: Was in DB, 1: Now added to DB */
+
+int
+ddl_add(char *d1, char *d2)
+{
+	char **da;
+	int rv = 0;
+#ifdef HAVE_LIBAVLBST
+	struct bst_node *n;
+	int br;
+#else
+	void *vp;
+#endif
+
+#if defined(TRACE)
+	fprintf(debug, "->ddl_add(%d:%s,%s)\n", ddl_num, d1, d2);
+#endif
+	da = malloc(sizeof(char *) * 2);
+	*da = strdup(d1);
+	da[1] = strdup(d2);
+#ifdef HAVE_LIBAVLBST
+
+	if (!(br = bst_srch(&ddl_db, (union bst_val)(void *)da, &n))) {
+		goto ret;
+	}
+
+	avl_add_at(&ddl_db, (union bst_val)(void *)da,
+	    (union bst_val)(int)0, br, n);
+	rv = 1;
+	goto ret;
+#else
+	vp = tsearch(da, &ddl_db, ddl_cmp);
+
+	if (*(char ***)vp != da) {
+		goto ret;
+	} else {
+		rv = 1;
+		goto ret;
+	}
+#endif
+ret:
+	if (!rv) {
+		free(*da);
+		free(da[1]);
+		free(da);
+	}
+
+#if defined(TRACE)
+	fprintf(debug, "<-ddl_add:%s added\n", rv ? "" : " not");
+#endif
+	return rv;
+}
+
+void
+ddl_sort(void)
+{
+	if (!ddl_num) {
+		return;
+	}
+
+	ddl_list = malloc(sizeof(char **) * ddl_num);
+	db_idx = 0; /* shared with diff_db */
+#ifdef HAVE_LIBAVLBST
+	mk_ddl(ddl_db.root);
+#else
+	twalk(ddl_db, mk_ddl);
+#endif
+}
+
+#ifdef HAVE_LIBAVLBST
+static void
+mk_ddl(struct bst_node *n)
+{
+	if (!n) {
+		return;
+	}
+
+	mk_ddl(n->left);
+	ddl_list[db_idx++] = n->key.p;
+	mk_ddl(n->right);
+}
+#else
+static void
+mk_ddl(const void *n, const VISIT which, const int depth)
+{
+	(void)depth;
+
+	switch (which) {
+	case postorder:
+	case leaf:
+		ddl_list[db_idx++] = *(char ** const *)n;
+		break;
+	default:
+		;
+	}
+}
+#endif
+
+static int
+ddl_cmp(
+#ifdef HAVE_LIBAVLBST
+    union bst_val a, union bst_val b
+#else
+    const void *a, const void *b
+#endif
+    )
+{
+	int i;
+#ifdef HAVE_LIBAVLBST
+	char **a1 = a.p,
+	     **a2 = b.p;
+#else
+	char *const *a1 = a,
+	     *const *a2 = b;
+#endif
+
+	i = strcmp(*a1, *a2);
+#if defined(TRACE) && 0
+	fprintf(debug, "  ddl_cmp(0:%s,%s): %d\n", *a1, *a2, i);
+#endif
+
+	if (!i) {
+		i = strcmp(a1[1], a2[1]);
+#if defined(TRACE) && 0
+		fprintf(debug, "  ddl_cmp(1:%s,%s): %d\n", a1[1], a2[1], i);
+#endif
+	}
+
+	return i;
+}
 
 /********
  * misc *

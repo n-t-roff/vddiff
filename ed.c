@@ -19,6 +19,7 @@ PERFORMANCE OF THIS SOFTWARE.
 #include <stdlib.h>
 #include <regex.h>
 #include <stdarg.h>
+#include <signal.h>
 #include "compat.h"
 #include <wctype.h>
 #include "ui.h"

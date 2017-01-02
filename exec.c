@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2016, Carsten Kunze <carsten.kunze@arcor.de>
+Copyright (c) 2016-2017, Carsten Kunze <carsten.kunze@arcor.de>
 
 Permission to use, copy, modify, and/or distribute this software for any
 purpose with or without fee is hereby granted, provided that the above
@@ -431,8 +431,8 @@ exec_cmd(char **av, tool_flags_t flags, char *path, char *msg)
 	pid_t pid;
 	int status = 0;
 	/* Signal code (c) W. Richard Stevens */
-	struct sigaction ign, intr, quit;
-	sigset_t cmsk, smsk;
+	struct sigaction intr, quit;
+	sigset_t smsk;
 	char prompt[] = "Type <ENTER> to continue ";
 
 #if defined(TRACE)
@@ -447,49 +447,13 @@ exec_cmd(char **av, tool_flags_t flags, char *path, char *msg)
 	if (flags & TOOL_TTY)
 		endwin();
 
-	ign.sa_handler = SIG_IGN;
-
-	if (sigemptyset(&ign.sa_mask) == -1) {
-		printerr(strerror(errno), "sigemptyset");
-	}
-
-	ign.sa_flags = 0;
-
-	if (sigaction(SIGINT, &ign, &intr) == -1) {
-		printerr(strerror(errno), "sigaction SIGINT");
-	}
-
-	if (sigaction(SIGQUIT, &ign, &quit) == -1) {
-		printerr(strerror(errno), "sigaction SIGQUIT");
-	}
-
-	if (sigemptyset(&cmsk) == -1) {
-		printerr(strerror(errno), "sigemptyset");
-	}
-
-	if (sigaddset(&cmsk, SIGCHLD) == -1) {
-		printerr(strerror(errno), "sigaddset SIGCHLD");
-	}
-
-	if (sigprocmask(SIG_BLOCK, &cmsk, &smsk) == -1) {
-		printerr(strerror(errno), "sigprocmask SIG_BLOCK");
-	}
+	exec_set_sig(&intr, &quit, &smsk);
 
 	switch ((pid = fork())) {
 	case -1:
 		break;
 	case 0:
-		if (sigaction(SIGINT, &intr, NULL) == -1) {
-			printerr(strerror(errno), "sigaction SIGINT");
-		}
-
-		if (sigaction(SIGQUIT, &quit, NULL) == -1) {
-			printerr(strerror(errno), "sigaction SIGQUIT");
-		}
-
-		if (sigprocmask(SIG_SETMASK, &smsk, NULL) == -1) {
-			printerr(strerror(errno), "sigprocmask SIG_SETMASK");
-		}
+		exec_res_sig(&intr, &quit, &smsk);
 
 		if (path && chdir(path) == -1) {
 			printf("chdir \"%s\": %s\n", path,
@@ -538,17 +502,7 @@ exec_cmd(char **av, tool_flags_t flags, char *path, char *msg)
 		printerr(strerror(errno), "fork");
 	}
 
-	if (sigaction(SIGINT, &intr, NULL) == -1) {
-		printerr(strerror(errno), "sigaction SIGINT");
-	}
-
-	if (sigaction(SIGQUIT, &quit, NULL) == -1) {
-		printerr(strerror(errno), "sigaction SIGQUIT");
-	}
-
-	if (sigprocmask(SIG_SETMASK, &smsk, NULL) == -1) {
-		printerr(strerror(errno), "sigprocmask SIG_SETMASK");
-	}
+	exec_res_sig(&intr, &quit, &smsk);
 
 	if (!(flags & TOOL_UDSCR)) {
 		rebuild_scr();
@@ -560,6 +514,57 @@ exec_cmd(char **av, tool_flags_t flags, char *path, char *msg)
 	fprintf(debug, "<-exec_cmd\n");
 #endif
 	return status;
+}
+
+void
+exec_set_sig(struct sigaction *intr, struct sigaction *quit, sigset_t *smsk)
+{
+	struct sigaction ign;
+	sigset_t cmsk;
+
+	ign.sa_handler = SIG_IGN;
+
+	if (sigemptyset(&ign.sa_mask) == -1) {
+		printerr(strerror(errno), "sigemptyset");
+	}
+
+	ign.sa_flags = 0;
+
+	if (sigaction(SIGINT, &ign, intr) == -1) {
+		printerr(strerror(errno), "sigaction SIGINT");
+	}
+
+	if (sigaction(SIGQUIT, &ign, quit) == -1) {
+		printerr(strerror(errno), "sigaction SIGQUIT");
+	}
+
+	if (sigemptyset(&cmsk) == -1) {
+		printerr(strerror(errno), "sigemptyset");
+	}
+
+	if (sigaddset(&cmsk, SIGCHLD) == -1) {
+		printerr(strerror(errno), "sigaddset SIGCHLD");
+	}
+
+	if (sigprocmask(SIG_BLOCK, &cmsk, smsk) == -1) {
+		printerr(strerror(errno), "sigprocmask SIG_BLOCK");
+	}
+}
+
+void
+exec_res_sig(struct sigaction *intr, struct sigaction *quit, sigset_t *smsk)
+{
+	if (sigaction(SIGINT, intr, NULL) == -1) {
+		printerr(strerror(errno), "sigaction SIGINT");
+	}
+
+	if (sigaction(SIGQUIT, quit, NULL) == -1) {
+		printerr(strerror(errno), "sigaction SIGQUIT");
+	}
+
+	if (sigprocmask(SIG_SETMASK, smsk, NULL) == -1) {
+		printerr(strerror(errno), "sigprocmask SIG_SETMASK");
+	}
 }
 
 size_t

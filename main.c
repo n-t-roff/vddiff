@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2016, Carsten Kunze <carsten.kunze@arcor.de>
+Copyright (c) 2016-2017, Carsten Kunze <carsten.kunze@arcor.de>
 
 Permission to use, copy, modify, and/or distribute this software for any
 purpose with or without fee is hereby granted, provided that the above
@@ -38,6 +38,7 @@ PERFORMANCE OF THIS SOFTWARE.
 #include "ui2.h"
 #include "gq.h"
 #include "tc.h"
+#include "info.h"
 
 int yyparse(void);
 
@@ -301,6 +302,7 @@ main(int argc, char **argv)
 	inst_sighdl(SIGINT , sig_term);
 	inst_sighdl(SIGTERM, sig_term);
 	ttcharoff();
+	info_load();
 	build_ui();
 	return 0;
 }

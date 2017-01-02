@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2016, Carsten Kunze <carsten.kunze@arcor.de>
+Copyright (c) 2016-2017, Carsten Kunze <carsten.kunze@arcor.de>
 
 Permission to use, copy, modify, and/or distribute this software for any
 purpose with or without fee is hereby granted, provided that the above
@@ -27,6 +27,7 @@ PERFORMANCE OF THIS SOFTWARE.
 #include <errno.h>
 #include <regex.h>
 #include <time.h>
+#include <signal.h>
 #ifdef USE_SYS_MKDEV_H
 # include <sys/mkdev.h>
 #endif
@@ -41,6 +42,7 @@ PERFORMANCE OF THIS SOFTWARE.
 #include "ed.h"
 #include "ui2.h"
 #include "tc.h"
+#include "dl.h"
 
 static void ui_ctrl(void);
 static void page_down(void);
@@ -539,6 +541,11 @@ next_key:
 		case 'a':
 			c = 0;
 
+			if (*key == 'D') {
+				dl_add();
+				break;
+			}
+
 			if (bmode) {
 				if (!getcwd(syspth[1], sizeof syspth[1])) {
 					printerr(strerror(errno),
@@ -732,6 +739,11 @@ next_key:
 			case '@':
 				fs_cp(1, u, num, 2);
 				goto save_st;
+
+			case 'D':
+				c = 0;
+				dl_list();
+				goto next_key;
 
 			default:
 				;
@@ -1350,6 +1362,8 @@ static char *helptxt[] = {
        "#		Toggle between diff mode and fmode",
        "=		In fmode: Copy current path from other column",
        "%		Toggle compare file contents",
+       "Da		Add current directory to persistent list",
+       "Dl		Show persistent directory list",
        "W		Toggle wait for <ENTER> after running external tool" };
 
 #define HELP_NUM (sizeof(helptxt) / sizeof(*helptxt))
@@ -1360,6 +1374,7 @@ help(void) {
 	int c;
 
 	help_top = 0;
+	standendc(wlist);
 	disp_help();
 
 	while (1) {
@@ -1429,7 +1444,6 @@ disp_help(void)
 {
 	unsigned y, i;
 
-	standendc(wlist);
 	werase(wlist);
 	werase(wstat);
 

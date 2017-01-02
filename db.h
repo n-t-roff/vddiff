@@ -37,6 +37,8 @@ void ptr_db_del(void **, void *);
 void *ptr_db_get_node(void *);
 void str_db_del(void **, void *);
 void *str_db_get_node(void *);
+int ddl_add(char *, char *);
+void ddl_sort(void);
 
 extern enum sorting sorting;
 extern unsigned db_num[2];
@@ -47,3 +49,4 @@ extern void *name_db;
 extern void *skipext_db;
 extern void *uz_path_db;
 extern void *alias_db;
+extern void *bdl_db;

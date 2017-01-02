@@ -18,6 +18,7 @@ PERFORMANCE OF THIS SOFTWARE.
 #include <sys/types.h>
 #include <regex.h>
 #include <stdarg.h>
+#include <signal.h>
 #include "compat.h"
 #include "main.h"
 #include "exec.h"

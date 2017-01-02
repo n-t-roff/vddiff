@@ -1,0 +1,142 @@
+/*
+Copyright (c) 2017, Carsten Kunze <carsten.kunze@arcor.de>
+
+Permission to use, copy, modify, and/or distribute this software for any
+purpose with or without fee is hereby granted, provided that the above
+copyright notice and this permission notice appear in all copies.
+
+THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES WITH
+REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF MERCHANTABILITY
+AND FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR ANY SPECIAL, DIRECT,
+INDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES WHATSOEVER RESULTING FROM
+LOSS OF USE, DATA OR PROFITS, WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE OR
+OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
+PERFORMANCE OF THIS SOFTWARE.
+*/
+
+#include <stdlib.h>
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <signal.h>
+#include <regex.h>
+#include <unistd.h>
+#include <errno.h>
+#include <string.h>
+#include "compat.h"
+#include "ui.h"
+#include "main.h"
+#include "exec.h"
+#include "info.h"
+#include "dl.h"
+#include "uzp.h"
+#include "db.h"
+
+static int info_proc(void);
+static void info_wr_ddl(FILE *);
+
+static const char info_dir_txt[] = "dir";
+static const char info_ddir_txt[] = "diffdir";
+
+void
+info_load(void)
+{
+}
+
+void
+info_store(void)
+{
+	struct sigaction intr, quit;
+	sigset_t smsk;
+	pid_t pid;
+
+	exec_set_sig(&intr, &quit, &smsk);
+
+	switch ((pid = fork())) {
+	case -1:
+		printerr(strerror(errno), "fork");
+
+	case 0:
+		exec_res_sig(&intr, &quit, &smsk);
+		_exit(info_proc());
+	}
+
+	exec_res_sig(&intr, &quit, &smsk);
+}
+
+static int
+info_proc(void)
+{
+	int rv = 0;
+	static char name[] = ".vddiffinfo.new";
+	char *pth, *tpth;
+	FILE *fh;
+	bool wr;
+
+	if (!(tpth = add_home_pth(name))) {
+		return 1;
+	}
+
+	pth = strdup(tpth);
+	pth[strlen(pth) - 4] = 0;
+	wr = ddl_num ? 1 : 0;
+
+	if (!wr) {
+		goto rm;
+	} else if (!(fh = fopen(tpth, "w"))) {
+		printerr(strerror(errno), "fopen \"%s\"", tpth);
+		rv = 1;
+		goto free;
+	}
+
+	if (ddl_num) {
+		info_wr_ddl(fh);
+	}
+
+	if (fclose(fh) == EOF) {
+		printerr(strerror(errno), "fclose \"%s\"", tpth);
+		rv = 1;
+	}
+
+rm:
+	if (stat(pth, &stat1) == -1) {
+		if (errno == ENOENT) {
+			goto mv;
+		}
+
+		printerr(strerror(errno), "stat \"%s\"", pth);
+		rv = 1;
+		goto mv;
+	}
+
+	if (unlink(pth) == -1) {
+		printerr(strerror(errno), "unlink \"%s\"", pth);
+		rv = 1;
+	}
+
+mv:
+	if (wr && rename(tpth, pth) == -1) {
+		printerr(strerror(errno), "rename \"%s\", \"%s\"", tpth, pth);
+		rv = 1;
+	}
+
+free:
+	free(pth);
+	free(tpth);
+	return rv;
+}
+
+static void
+info_wr_ddl(FILE *fh)
+{
+	unsigned i;
+
+	ddl_sort();
+
+	for (i = 0; i < ddl_num; i++) {
+		fprintf(fh, "%s\n%s\n%s\n", info_ddir_txt, ddl_list[i][0],
+		    ddl_list[i][1]);
+	}
+
+	free(ddl_list);
+	ddl_list = NULL;
+}

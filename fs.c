@@ -27,6 +27,7 @@ PERFORMANCE OF THIS SOFTWARE.
 #include <unistd.h>
 #include <regex.h>
 #include <time.h>
+#include <signal.h>
 #ifndef HAVE_FUTIMENS
 # include <utime.h>
 #endif
