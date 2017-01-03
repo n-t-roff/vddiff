@@ -76,4 +76,5 @@ extern wchar_t *sh_str[FKEY_NUM];
 extern char *fkey_cmd[FKEY_NUM];
 extern unsigned fkey_flags[FKEY_NUM];
 extern struct ui_state *ui_stack;
+extern MEVENT mevent;
 extern bool scrollen;

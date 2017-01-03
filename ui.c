@@ -115,7 +115,7 @@ static void proc_mevent(void);
 static void help_mevent(void);
 # endif
 
-static MEVENT mevent;
+MEVENT mevent;
 #endif
 
 bool scrollen = TRUE;

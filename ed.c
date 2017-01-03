@@ -51,8 +51,6 @@ static cchar_t cc;
 
 #ifdef NCURSES_MOUSE_VERSION
 static void proc_mevent(void);
-
-static MEVENT mevent;
 #endif
 
 void
