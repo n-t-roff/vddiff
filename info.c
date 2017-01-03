@@ -33,6 +33,7 @@ PERFORMANCE OF THIS SOFTWARE.
 
 static void info_wait(void);
 static int info_proc(void);
+static void info_wr_bdl(FILE *);
 static void info_wr_ddl(FILE *);
 
 static const char info_name[] = ".vddiffinfo.new";
@@ -72,7 +73,9 @@ info_load(void)
 	while (fgets(lbuf, BUF_SIZE, fh)) {
 		info_chomp(lbuf);
 
-		if (!strcmp(lbuf, info_ddir_txt)) {
+		if (!strcmp(lbuf, info_dir_txt)) {
+			dl_info_bdl(fh);
+		} else if (!strcmp(lbuf, info_ddir_txt)) {
 			dl_info_ddl(fh);
 		} else {
 			printerr(lbuf, "Invalid line in \"%s\"", info_pth);
@@ -155,7 +158,7 @@ info_proc(void)
 	FILE *fh;
 	bool wr;
 
-	wr = ddl_num ? 1 : 0;
+	wr = bdl_num || ddl_num ? 1 : 0;
 
 	if (!wr) {
 		goto rm;
@@ -163,6 +166,10 @@ info_proc(void)
 		printerr(strerror(errno), "fopen \"%s\"", info_tpth);
 		rv = 1;
 		goto ret;
+	}
+
+	if (bdl_num) {
+		info_wr_bdl(fh);
 	}
 
 	if (ddl_num) {
@@ -199,6 +206,21 @@ mv:
 
 ret:
 	return rv;
+}
+
+static void
+info_wr_bdl(FILE *fh)
+{
+	char **a;
+	unsigned i;
+
+	a = str_db_sort(bdl_db, bdl_num);
+
+	for (i = 0; i < bdl_num; i++) {
+		fprintf(fh, "%s\n%s\n", info_dir_txt, a[i]);
+	}
+
+	free(a);
 }
 
 static void

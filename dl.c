@@ -32,6 +32,7 @@ PERFORMANCE OF THIS SOFTWARE.
 #include "info.h"
 
 static void dl_disp(void);
+static int bdl_add(char *);
 
 unsigned bdl_num;
 unsigned ddl_num;
@@ -44,12 +45,6 @@ dl_add(void)
 {
 	if (bmode || fmode) {
 		char *s;
-#ifdef HAVE_LIBAVLBST
-		struct bst_node *n;
-		int i;
-#else
-		char *s2;
-#endif
 
 		if (bmode || right_col) {
 			syspth[1][pthlen[1]] = 0;
@@ -59,23 +54,9 @@ dl_add(void)
 			s = syspth[0];
 		}
 
-#ifdef HAVE_LIBAVLBST
-		if ((i = str_db_srch(&bdl_db, s, &n))) {
-			str_db_add(&bdl_db, strdup(s), i, n);
-			bdl_num++;
+		if (!bdl_add(s)) {
 			info_store();
 		}
-#else
-		s = strdup(s);
-		s2 = str_db_add(&bdl_db, s);
-
-		if (s2 == s) {
-			bdl_num++;
-			info_store();
-		} else {
-			free(s);
-		}
-#endif
 	} else {
 		syspth[1][pthlen[1]] = 0;
 		syspth[0][pthlen[0]] = 0;
@@ -85,6 +66,36 @@ dl_add(void)
 			info_store();
 		}
 	}
+}
+
+static int
+bdl_add(char *s)
+{
+#ifdef HAVE_LIBAVLBST
+	struct bst_node *n;
+	int i;
+
+	if ((i = str_db_srch(&bdl_db, s, &n))) {
+		str_db_add(&bdl_db, strdup(s), i, n);
+		bdl_num++;
+		return 0;
+	}
+
+	return 1;
+#else
+	char *s2;
+
+	s = strdup(s);
+	s2 = str_db_add(&bdl_db, s);
+
+	if (s2 == s) {
+		bdl_num++;
+		return 0;
+	} else {
+		free(s);
+		return 1;
+	}
+#endif
 }
 
 void
@@ -140,6 +151,18 @@ dl_disp(void)
 	}
 
 	wrefresh(wlist);
+}
+
+void
+dl_info_bdl(FILE *fh)
+{
+	if (!fgets(lbuf, BUF_SIZE, fh)) {
+		printerr("Too few arguments", "\"%s\" in \"%s\"",
+		    info_dir_txt, info_pth);
+	}
+
+	info_chomp(lbuf);
+	bdl_add(lbuf);
 }
 
 void
