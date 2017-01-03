@@ -31,6 +31,7 @@ PERFORMANCE OF THIS SOFTWARE.
 #include "uzp.h"
 #include "db.h"
 
+static void info_wait(void);
 static int info_proc(void);
 static void info_wr_ddl(FILE *);
 
@@ -40,6 +41,7 @@ const char info_ddir_txt[] = "diffdir";
 
 char *info_pth;
 static char *info_tpth;
+pid_t info_pid;
 
 void
 info_load(void)
@@ -93,6 +95,7 @@ info_store(void)
 		return;
 	}
 
+	info_wait();
 	exec_set_sig(&intr, &quit, &smsk);
 
 	switch ((pid = fork())) {
@@ -102,9 +105,47 @@ info_store(void)
 	case 0:
 		exec_res_sig(&intr, &quit, &smsk);
 		_exit(info_proc());
+
+	default:
+		info_pid = pid;
 	}
 
 	exec_res_sig(&intr, &quit, &smsk);
+#if defined(TRACE)
+	fprintf(debug, "<>info_store pid=%d\n", (int)pid);
+#endif
+}
+
+static void
+info_wait(void)
+{
+	sigset_t omsk, nmsk;
+
+	if (!info_pid) {
+		return;
+	}
+
+	if (sigemptyset(&nmsk) == -1) {
+		printerr(strerror(errno), "sigemptyset");
+	}
+
+	if (sigaddset(&nmsk, SIGCHLD) == -1) {
+		printerr(strerror(errno), "sigaddset SIGCHLD");
+	}
+
+	if (sigprocmask(SIG_BLOCK, &nmsk, &omsk) == -1) {
+		printerr(strerror(errno), "sigprocmask SIG_BLOCK");
+	}
+
+	while (info_pid) {
+		if (sigsuspend(&omsk) == -1) {
+			printerr(strerror(errno), "sigsuspend");
+		}
+	}
+
+	if (sigprocmask(SIG_SETMASK, &omsk, NULL) == -1) {
+		printerr(strerror(errno), "sigprocmask SIG_UNBLOCK");
+	}
 }
 
 static int

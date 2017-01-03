@@ -37,6 +37,7 @@ Uses system() signal code by W. Richard Stevens.
 #include "diff.h"
 #include "fs.h"
 #include "tc.h"
+#include "info.h"
 
 const char *const vimdiff  = "vim -dR --";
 const char *const diffless = "diff -- $1 $2 | less";
@@ -511,7 +512,7 @@ exec_cmd(char **av, tool_flags_t flags, char *path, char *msg)
 	}
 
 #if defined(TRACE)
-	fprintf(debug, "<-exec_cmd\n");
+	fprintf(debug, "<-exec_cmd pid=%d\n", (int)pid);
 #endif
 	return status;
 }
@@ -678,9 +679,36 @@ inst_sighdl(int sig, void (*hdl)(int))
 void
 sig_child(int signo)
 {
-	int e = errno;
+	int e;
+	int st;
+	pid_t p;
 
 	(void)signo;
-	wait(NULL);
+	e = errno;
+
+	while (1) {
+		switch ((p = waitpid(-1, &st, WNOHANG))) {
+		case -1:
+			/* Normally this test is not necessary. waitpid should
+			 * return 0 if there are no further child processes.
+			 * This is maybe a Linux bug */
+			if (errno != ECHILD) {
+				printerr(strerror(errno), "waitpid");
+			}
+			/* fall through */
+		case 0:
+			goto last;
+
+		default:
+			if (p == info_pid) {
+				info_pid = 0;
+			}
+#if defined(TRACE)
+			fprintf(debug, "  sig_child pid=%d\n", (int)p);
+#endif
+		}
+	}
+last:
+
 	errno = e;
 }

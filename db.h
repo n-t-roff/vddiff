@@ -17,6 +17,7 @@ struct ptr_db_ent {
 char *str_db_add(void **, char *);
 int str_db_srch(void **, char *);
 #endif
+char **str_db_sort(void *, unsigned long);
 void diff_db_add(struct filediff *, int);
 void diff_db_sort(int);
 void diff_db_restore(struct ui_state *);

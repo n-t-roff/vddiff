@@ -44,6 +44,7 @@ static void mk_list(struct bst_node *);
 static void diff_db_delete(struct bst_node *);
 static void del_names(struct bst_node *);
 static void mk_ddl(struct bst_node *);
+static void mk_str_list(struct bst_node *);
 #else
 struct curs_pos {
 	char *path;
@@ -59,6 +60,7 @@ static int ptr_db_cmp(const void *, const void *);
 static int ddl_cmp(const void *, const void *);
 static void mk_list(const void *, const VISIT, const int);
 static void mk_ddl(const void *, const VISIT, const int);
+static void mk_str_list(const void *, const VISIT, const int);
 #endif
 
 enum sorting sorting;
@@ -77,6 +79,7 @@ static void *curs_db;
 static void *ext_db;
 static void *uz_ext_db;
 static unsigned db_idx, tot_db_num[2];
+static char **str_list;
 
 #ifdef HAVE_LIBAVLBST
 static struct bst diff_db[2] = { { NULL, diff_cmp },
@@ -114,9 +117,9 @@ db_new(int (*compare)(union bst_val, union bst_val))
 }
 #endif
 
-/**************
+/**********
  * ptr DB *
- **************/
+ **********/
 
 /* 0: Node found */
 
@@ -241,6 +244,8 @@ str_db_add(void **db, char *s)
 }
 #endif
 
+/* 0: found, !0: not found */
+
 #ifdef HAVE_LIBAVLBST
 int
 str_db_srch(void **db, char *s, struct bst_node **n)
@@ -275,6 +280,52 @@ str_db_get_node(void *db)
 	return db ? *(char **)db : NULL;
 #endif
 }
+
+char **
+str_db_sort(void *db, unsigned long n)
+{
+	if (!n) {
+		return NULL;
+	}
+
+	str_list = malloc(sizeof(char *) * n);
+	db_idx = 0; /* shared with diff_db */
+#ifdef HAVE_LIBAVLBST
+	mk_str_list(((struct bst *)db)->root);
+#else
+	twalk(db, mk_str_list);
+#endif
+	return str_list;
+}
+
+#ifdef HAVE_LIBAVLBST
+static void
+mk_str_list(struct bst_node *n)
+{
+	if (!n) {
+		return;
+	}
+
+	mk_str_list(n->left);
+	str_list[db_idx++] = n->key.p;
+	mk_str_list(n->right);
+}
+#else
+static void
+mk_str_list(const void *n, const VISIT which, const int depth)
+{
+	(void)depth;
+
+	switch (which) {
+	case postorder:
+	case leaf:
+		str_list[db_idx++] = *(char * const *)n;
+		break;
+	default:
+		;
+	}
+}
+#endif
 
 static int
 name_cmp(

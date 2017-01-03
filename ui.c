@@ -2622,10 +2622,8 @@ disp_name(WINDOW *w, int y, int x, int mx, int o, struct filediff *f, int t,
 	}
 
 	if (color && !o) {
-		wattron(w, A_BOLD);
-
 		if (ct) {
-			wattron(w, COLOR_PAIR(ct));
+			wattron(w, COLOR_PAIR(ct) | A_BOLD);
 		} else {
 			/* not attrset, else bold is off */
 			wattron(w, COLOR_PAIR(PAIR_NORMAL));
