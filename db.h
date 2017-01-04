@@ -39,6 +39,7 @@ void *ptr_db_get_node(void *);
 void str_db_del(void **, void *);
 void *str_db_get_node(void *);
 int ddl_add(char *, char *);
+void ddl_del(char **);
 void ddl_sort(void);
 
 extern enum sorting sorting;

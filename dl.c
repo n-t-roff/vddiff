@@ -127,12 +127,13 @@ dl_del(void)
 #ifdef HAVE_LIBAVLBST
 		str_db_srch(&bdl_db, bdl_list[dl_pos], &n);
 #else
-		n = bdl_list[i];
+		n = bdl_list[dl_pos];
 #endif
 		str_db_del(&bdl_db, n);
 		free(bdl_list[dl_pos]);
 		bdl_num--;
 	} else {
+		ddl_del(ddl_list[dl_pos]);
 		ddl_num--;
 	}
 
@@ -255,7 +256,7 @@ dl_list(void)
 
 		default:
 			printerr(NULL,
-	"'q' close, <ENTER> enter directory, \"dd\" delete entry");
+"'q' close, <ENTER> enter directory, \"dd\" delete entry, '/' regex search");
 		}
 	}
 

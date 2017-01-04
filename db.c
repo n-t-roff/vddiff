@@ -903,6 +903,22 @@ ret:
 }
 
 void
+ddl_del(char **k)
+{
+#ifdef HAVE_LIBAVLBST
+	struct bst_node *n;
+
+	bst_srch(&ddl_db, (union bst_val)(void *)k, &n);
+	avl_del_node(&ddl_db, n);
+#else
+	tdelete(k, &ddl_db, ddl_cmp);
+#endif
+	free(*k);
+	free(k[1]);
+	free(k);
+}
+
+void
 ddl_sort(void)
 {
 	if (!ddl_num) {
