@@ -14,6 +14,7 @@ OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
 PERFORMANCE OF THIS SOFTWARE.
 */
 
+#include <errno.h>
 #include <string.h>
 #include <stdlib.h>
 #include <sys/types.h>
@@ -30,6 +31,7 @@ PERFORMANCE OF THIS SOFTWARE.
 #include "ui2.h"
 #include "db.h"
 #include "info.h"
+#include "ed.h"
 
 static void dl_disp(void);
 static void dl_line(unsigned, unsigned);
@@ -43,15 +45,16 @@ static void dl_pg_up(void);
 static void dl_del(void);
 static int bdl_add(char *);
 static void dl_act(void);
+static void dl_regcomp(void);
+static int dl_regexec(int);
+static void dl_center(unsigned);
 #ifdef NCURSES_MOUSE_VERSION
 static int dl_mevent(void);
 #endif
 
-unsigned bdl_num;
-unsigned ddl_num;
-unsigned dl_num;
-static unsigned dl_top;
-static unsigned dl_pos;
+unsigned        bdl_num, ddl_num, dl_num;
+static unsigned bdl_top, ddl_top, dl_top;
+static unsigned bdl_pos, ddl_pos, dl_pos;
 char **bdl_list;
 char ***ddl_list;
 
@@ -171,9 +174,13 @@ dl_list(void)
 	if (bmode || fmode) {
 		bdl_list = str_db_sort(bdl_db, bdl_num);
 		dl_num = bdl_num;
+		dl_top = bdl_top;
+		dl_pos = bdl_pos;
 	} else {
 		ddl_sort();
 		dl_num = ddl_num;
+		dl_top = ddl_top;
+		dl_pos = ddl_pos;
 	}
 
 	if (!dl_num) {
@@ -181,7 +188,6 @@ dl_list(void)
 		return;
 	}
 
-	dl_top = 0;
 	standendc(wlist);
 	dl_disp();
 	c = c1 = 0;
@@ -249,6 +255,31 @@ dl_list(void)
 			act = TRUE;
 			goto ret;
 
+		case '/':
+			dl_regcomp();
+			break;
+
+		case 'N':
+			if (regex) {
+				dl_regexec(-1);
+			}
+
+			break;
+
+		case 'n':
+			if (regex) {
+				dl_regexec(1);
+			}
+
+			break;
+
+		case 'r':
+			if (regex) {
+				clr_regex();
+			}
+
+			break;
+
 		case CTRL('l'):
 			endwin();
 			refresh();
@@ -261,18 +292,34 @@ dl_list(void)
 	}
 
 ret:
+	if (regex) {
+		clr_regex();
+	}
+
 	if (act) {
 		dl_act();
 	} else {
 		disp_fmode();
 	}
 
-	if (bdl_list) {
-		free(bdl_list);
-		bdl_list = NULL;
-	} else if (ddl_list) {
-		free(ddl_list);
-		ddl_list = NULL;
+	if (bmode || fmode) {
+		bdl_num = dl_num;
+		bdl_top = dl_top;
+		bdl_pos = dl_pos;
+
+		if (bdl_list) {
+			free(bdl_list);
+			bdl_list = NULL;
+		}
+	} else {
+		ddl_num = dl_num;
+		ddl_top = dl_top;
+		ddl_pos = dl_pos;
+
+		if (ddl_list) {
+			free(ddl_list);
+			ddl_list = NULL;
+		}
 	}
 
 	if (del) {
@@ -508,6 +555,125 @@ dl_act(void)
 		enter_dir(ddl_list[dl_pos][0],
 		          ddl_list[dl_pos][1], FALSE, FALSE, 0 LOCVAR);
 	}
+}
+
+static void
+dl_regcomp(void)
+{
+	int fl = REG_NOSUB;
+
+	if (dl_num < 2) {
+		return;
+	}
+
+	if (regex) {
+		clr_regex();
+	}
+
+	if (ed_dialog(enter_regex_txt,
+	    "" /* remove existing */, NULL, 0, NULL) ||
+	    !*rbuf) {
+		return;
+	}
+
+	if (magic) {
+		fl |= REG_EXTENDED;
+	}
+
+	if (!noic) {
+		fl |= REG_ICASE;
+	}
+
+	if (regcomp(&re_dat, rbuf, fl)) {
+		printerr(strerror(errno), "regcomp \"%s\"", rbuf);
+		return;
+	}
+
+	regex = 1;
+
+	if (!dl_regexec(0)) {
+		disp_regex();
+	} else {
+		printerr(NULL, no_match_txt);
+	}
+}
+
+/* !0: Not found in *any* file */
+
+static int
+dl_regexec(
+    /* -1: prev
+     *  0: initial search
+     *  1: next */
+    int dir)
+{
+	unsigned i, j, k;
+
+	if (dl_num < 2) {
+		return 1;
+	}
+
+	i = j = dl_pos;
+
+	while (1) {
+		if (dir > 0) {
+			if (++i >= dl_num) {
+				if (nows) {
+					goto no_match;
+				}
+
+				i = 0;
+			}
+		} else if (dir < 0) {
+			if (i) {
+				i--;
+			} else if (nows) {
+				goto no_match;
+			} else {
+				i = dl_num - 1;
+			}
+		}
+
+		if (bmode || fmode) {
+			    k = regexec(&re_dat, bdl_list[i]   , 0, NULL, 0);
+		} else if ((k = regexec(&re_dat, ddl_list[i][0], 0, NULL, 0))) {
+			    k = regexec(&re_dat, ddl_list[i][1], 0, NULL, 0);
+		}
+
+		if (!k) {
+			dl_center(i);
+			return 0;
+		}
+
+		if (!dir) {
+			dir = 1;
+		} else if (i == j) {
+			printerr(NULL, no_match_txt);
+			return 1;
+		}
+	}
+
+	return 0;
+
+no_match:
+	printerr(NULL, no_match_txt);
+	return 0;
+}
+
+static void
+dl_center(unsigned i)
+{
+	dl_pos = i;
+
+	if (dl_num <= listh) {
+		dl_top = 0;
+	} else if (dl_num - i < listh / 2) {
+		dl_top = dl_num - listh;
+	} else {
+		dl_top = dl_pos - listh / 2;
+	}
+
+	dl_disp();
 }
 
 void

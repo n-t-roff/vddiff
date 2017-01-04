@@ -161,7 +161,7 @@ free:
 }
 
 int
-ed_dialog(char *msg,
+ed_dialog(const char *msg,
     /* NULL: leave buffer as-is */
     char *ini, int (*callback)(char *), int keep_buf, struct history *hist)
 {

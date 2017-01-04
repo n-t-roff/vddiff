@@ -42,6 +42,8 @@ const char y_a_n_txt[] = "'y' yes, 'a' all, 'n' no";
 const char ign_txt[] = "'i' ignore errors, <ENTER> continue";
 const char ign_esc_txt[] = "<ENTER> continue, <ESC> cancel, 'i' ignore errors";
 const char any_txt[] = "Press any key to continue";
+const char enter_regex_txt[] = "Enter regular expression (<ESC> to cancel):";
+const char no_match_txt[] = "No match";
 
 struct str_uint {
 	char *s;
@@ -62,7 +64,7 @@ short noic, magic, nows, scale;
 short regex;
 unsigned short subtree = 3;
 static struct str_uint *srchmap;
-static regex_t re_dat;
+regex_t re_dat;
 static unsigned srch_idx;
 
 bool file_pattern; /* TRUE for -F or -G */
@@ -277,7 +279,7 @@ ui_srch(void)
 	if (!regex)
 		return;
 
-	if (ed_dialog("Enter regular expression (<ESC> to cancel):",
+	if (ed_dialog(enter_regex_txt,
 	    "" /* remove existing */, NULL, 0, &regex_hist) ||
 	    !*rbuf)
 		regex = 0;
@@ -357,8 +359,6 @@ disp_regex(void)
 	wrefresh(wstat);
 }
 
-static char no_match_msg[] = "No match";
-
 void
 clr_regex(void)
 {
@@ -385,7 +385,7 @@ start_regex(char *pattern)
 		fl |= REG_ICASE;
 
 	if (regcomp(&re_dat, pattern, fl)) {
-		printerr(strerror(errno), "regcomp \"%s\" failed", pattern);
+		printerr(strerror(errno), "regcomp \"%s\"", pattern);
 		regex = 0;
 		return;
 	}
@@ -393,7 +393,7 @@ start_regex(char *pattern)
 	if (!regex_srch(0))
 		disp_regex();
 	else
-		printerr(NULL, no_match_msg);
+		printerr(NULL, no_match_txt);
 }
 
 /* !0: Not found in *any* file */
@@ -440,7 +440,7 @@ regex_srch(
 		if (!dir)
 			dir = 1;
 		else if (i == j) {
-			printerr(NULL, no_match_msg);
+			printerr(NULL, no_match_txt);
 			return 1;
 		}
 	}
@@ -448,7 +448,7 @@ regex_srch(
 	return 0;
 
 no_match:
-	printerr(NULL, no_match_msg);
+	printerr(NULL, no_match_txt);
 	return 0;
 }
 

@@ -15,7 +15,7 @@ struct history {
 
 void ed_append(char *);
 void disp_edit(void);
-int ed_dialog(char *, char *, int (*)(char *), int, struct history *);
+int ed_dialog(const char *, char *, int (*)(char *), int, struct history *);
 void clr_edit(void);
 void set_fkey(int, char *);
 

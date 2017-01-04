@@ -7,6 +7,7 @@
 
 extern long mark_idx[2];
 extern long mmrkd[2];
+extern regex_t re_dat;
 extern short noic, magic, nows, scale;
 extern short regex;
 extern unsigned short subtree;
@@ -15,6 +16,8 @@ extern const char y_a_n_txt[];
 extern const char ign_txt[];
 extern const char ign_esc_txt[];
 extern const char any_txt[];
+extern const char enter_regex_txt[];
+extern const char no_match_txt[];
 extern bool file_pattern;
 
 int test_fkey(int, unsigned short);

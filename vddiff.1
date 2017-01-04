@@ -13,7 +13,7 @@ LOSS OF USE, DATA OR PROFITS, WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE OR
 OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
 PERFORMANCE OF THIS SOFTWARE.
 ..
-.Dd December 31, 2016
+.Dd January 4, 2017
 .Dt VDDIFF 1
 .Sh NAME
 .Nm vddiff
@@ -1011,6 +1011,23 @@ can be pressed during this directory compare (short and only one time)
 to abort it.
 Note that an active file diff is not interrupted.
 This may take some time in case of a huge file.
+.It Dq Li Da
+Add current directory to a persistent list.
+Items on this list can be selected later using the
+.Dq Li Dl
+command.
+.It Dq Li Dl
+Show persistent directory list.
+.Aq Cm ENTER
+or
+.Aq Cm RIGHT
+on a list item changes into that directory.
+.Dq Li dd
+or
+.Aq Cm DELETE
+removes a item.
+.Sq Li /
+starts a regex search.
 .It Sq Li W
 Toggle to always wait for
 .Aq Cm ENTER
