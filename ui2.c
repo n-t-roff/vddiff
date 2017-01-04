@@ -1171,6 +1171,12 @@ putmbs(WINDOW *w, char *s,
 	ssize_t l;
 
 	l = mbstowchs(w, s);
+
+	/* Because of bug in older ncurses versions */
+	if (n > l) {
+		n = l;
+	}
+
 	wadd_wchnstr(w, ccbuf, n);
 	return l;
 }
