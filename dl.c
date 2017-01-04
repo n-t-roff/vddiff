@@ -40,9 +40,11 @@ static void dl_scrl_down(unsigned short);
 static void dl_scrl_up(unsigned short);
 static void dl_pg_down(void);
 static void dl_pg_up(void);
+static void dl_del(void);
 static int bdl_add(char *);
+static void dl_act(void);
 #ifdef NCURSES_MOUSE_VERSION
-static void dl_mevent(void);
+static int dl_mevent(void);
 #endif
 
 unsigned bdl_num;
@@ -111,9 +113,60 @@ bdl_add(char *s)
 #endif
 }
 
+static void
+dl_del(void)
+{
+#ifdef HAVE_LIBAVLBST
+	struct bst_node *n;
+#else
+	char *n;
+#endif
+	unsigned i;
+
+	if (bmode || fmode) {
+#ifdef HAVE_LIBAVLBST
+		str_db_srch(&bdl_db, bdl_list[dl_pos], &n);
+#else
+		n = bdl_list[i];
+#endif
+		str_db_del(&bdl_db, n);
+		free(bdl_list[dl_pos]);
+		bdl_num--;
+	} else {
+		ddl_num--;
+	}
+
+	dl_num--;
+
+	for (i = dl_pos; i < dl_num; i++) {
+		if (bmode || fmode) {
+			bdl_list[i] = bdl_list[i + 1];
+		} else {
+			ddl_list[i] = ddl_list[i + 1];
+		}
+	}
+
+	wmove(wlist, dl_pos, 0);
+	wdeleteln(wlist);
+
+	if (dl_num) {
+		dl_curs(1);
+
+		if (dl_top + listh - 1 < dl_num) {
+			dl_line(listh - 1, dl_top + listh - 1);
+		}
+	}
+
+	wrefresh(wlist);
+}
+
 void
 dl_list(void)
 {
+	int c, c1;
+	bool del = FALSE;
+	bool act = FALSE;
+
 	if (bmode || fmode) {
 		bdl_list = str_db_sort(bdl_db, bdl_num);
 		dl_num = bdl_num;
@@ -122,17 +175,27 @@ dl_list(void)
 		dl_num = ddl_num;
 	}
 
+	if (!dl_num) {
+		printerr(NULL, "List empty");
+		return;
+	}
+
 	dl_top = 0;
 	standendc(wlist);
 	dl_disp();
+	c = c1 = 0;
 
 	while (1) {
-		int c;
+		c1 = c;
 
 		switch (c = getch()) {
 #ifdef NCURSES_MOUSE_VERSION
 		case KEY_MOUSE:
-			dl_mevent();
+			if (dl_mevent() == 1) {
+				act = TRUE;
+				goto ret;
+			}
+
 			break;
 #endif
 		case KEY_LEFT:
@@ -162,14 +225,47 @@ dl_list(void)
 			dl_pg_up();
 			break;
 
+		case 'd':
+			if (c1 != 'd') {
+				break;
+			}
+
+			c = 0;
+			/* fall through */
+
+		case KEY_DC:
+			del = TRUE;
+			dl_del();
+
+			if (!dl_num) {
+				goto ret;
+			}
+
+			break;
+
+		case KEY_RIGHT:
+		case '\n':
+			act = TRUE;
+			goto ret;
+
 		case CTRL('l'):
 			endwin();
 			refresh();
 			break;
+
+		default:
+			printerr(NULL,
+	"'q' close, <ENTER> enter directory, \"dd\" delete entry");
 		}
 	}
 
 ret:
+	if (act) {
+		dl_act();
+	} else {
+		disp_fmode();
+	}
+
 	if (bdl_list) {
 		free(bdl_list);
 		bdl_list = NULL;
@@ -178,7 +274,9 @@ ret:
 		ddl_list = NULL;
 	}
 
-	disp_fmode();
+	if (del) {
+		info_store();
+	}
 }
 
 static void
@@ -359,11 +457,11 @@ dl_curs(unsigned m)
 }
 
 #ifdef NCURSES_MOUSE_VERSION
-static void
+static int
 dl_mevent(void)
 {
 	if (getmouse(&mevent) != OK)
-		return;
+		return 0;
 
 #if NCURSES_MOUSE_VERSION >= 2
 	if (mevent.bstate & BUTTON4_PRESSED) {
@@ -379,16 +477,37 @@ dl_mevent(void)
 	    mevent.bstate & BUTTON1_PRESSED) {
 
 		if (mevent.y >= (int)listh) {
-			return;
+			return 0;
 		}
 
 		dl_curs(0);
 		dl_pos = mevent.y;
 		dl_curs(1);
 		wrefresh(wlist);
+
+		if (mevent.bstate & BUTTON1_DOUBLE_CLICKED) {
+			return 1;
+		}
 	}
+
+	return 0;
 }
 #endif
+
+static void
+dl_act(void)
+{
+	if (bmode || fmode) {
+		enter_dir(bdl_list[dl_pos], NULL, FALSE, FALSE, 0 LOCVAR);
+	} else {
+		while (ui_stack) {
+			pop_state(0);
+		}
+
+		enter_dir(ddl_list[dl_pos][0],
+		          ddl_list[dl_pos][1], FALSE, FALSE, 0 LOCVAR);
+	}
+}
 
 void
 dl_info_bdl(FILE *fh)
