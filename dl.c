@@ -52,10 +52,11 @@ static void dl_center(unsigned);
 static int dl_mevent(void);
 #endif
 
-unsigned        bdl_num, ddl_num, dl_num;
+unsigned bdl_num, ddl_num;
+static unsigned dl_num;
 static unsigned bdl_top, ddl_top, dl_top;
 static unsigned bdl_pos, ddl_pos, dl_pos;
-char **bdl_list;
+static char **bdl_list;
 char ***ddl_list;
 
 void
@@ -297,8 +298,6 @@ ret:
 
 	if (act) {
 		dl_act();
-	} else {
-		disp_fmode();
 	}
 
 	if (bmode || fmode) {
@@ -324,6 +323,8 @@ ret:
 	if (del) {
 		info_store();
 	}
+
+	disp_fmode();
 }
 
 static void

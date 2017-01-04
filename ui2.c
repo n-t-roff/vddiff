@@ -933,7 +933,7 @@ tgl_mmrk(struct filediff *f)
 long
 get_mmrk(void)
 {
-	while (++prev_mmrk[right_col] < db_num[right_col]) {
+	while (++prev_mmrk[right_col] < (long)db_num[right_col]) {
 		if ((db_list[right_col][prev_mmrk[right_col]])->fl &
 		    FDFL_MMRK) {
 			goto ret;
