@@ -264,6 +264,7 @@ void
 str_db_del(void **db, void *node)
 {
 #ifdef HAVE_LIBAVLBST
+	free(((struct bst_node *)node)->key.p);
 	avl_del_node(*db, node);
 #else
 	tdelete(node, db, name_cmp);

@@ -43,7 +43,7 @@ void chgat_mark(WINDOW *, int);
 void chgat_mmrk(WINDOW *, int);
 void chgat_curs(WINDOW *, int);
 void chgat_off(WINDOW *, int);
-void anykey(void);
+int anykey(void);
 void free_zdir(struct filediff *, char *);
 void refr_scr(void);
 void rebuild_scr(void);

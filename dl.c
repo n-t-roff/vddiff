@@ -133,7 +133,6 @@ dl_del(void)
 		n = bdl_list[dl_pos];
 #endif
 		str_db_del(&bdl_db, n);
-		free(bdl_list[dl_pos]);
 		bdl_num--;
 	} else {
 		ddl_del(ddl_list[dl_pos]);
@@ -552,8 +551,13 @@ dl_act(void)
 			pop_state(0);
 		}
 
-		enter_dir(ddl_list[dl_pos][0],
-		          ddl_list[dl_pos][1], FALSE, FALSE, 0 LOCVAR);
+		one_scan = TRUE;
+		diff_db_free(0);
+		pthlen[0] = 0;
+		pthlen[1] = 0;
+		scan_subdir(ddl_list[dl_pos][0],
+		            ddl_list[dl_pos][1], 3);
+		disp_list(1);
 	}
 }
 

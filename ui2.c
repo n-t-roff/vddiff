@@ -630,7 +630,10 @@ set_all(void)
 	waddstr(wlist, magic ? nomagic_str + 2 : nomagic_str);
 	waddstr(wlist, recursive ? norecurs_str + 2 : norecurs_str);
 	waddstr(wlist, nows ? nows_str : nows_str + 2);
-	anykey();
+
+	if (anykey() == ':') {
+		ungetch(':');
+	}
 }
 
 void
@@ -1058,13 +1061,16 @@ chgat_off(WINDOW *w, int y)
 	mvwchgat(w, y, 0, -1, 0, color ? PAIR_NORMAL : 0, NULL);
 }
 
-void
+int
 anykey(void)
 {
+	int c;
+
 	wrefresh(wlist);
 	printerr(NULL, any_txt);
-	getch();
+	c = getch();
 	disp_fmode();
+	return c;
 }
 
 void
