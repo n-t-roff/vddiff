@@ -23,7 +23,7 @@ extern bool file_pattern;
 int test_fkey(int, unsigned short);
 void set_fkey_cmd(int, char *, int);
 void ui_srch(void);
-int srch_file(char *);
+int srch_file(char *, int);
 void disp_regex(void);
 void clr_regex(void);
 void start_regex(char *);

@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2016, Carsten Kunze <carsten.kunze@arcor.de>
+Copyright (c) 2016-2017, Carsten Kunze <carsten.kunze@arcor.de>
 
 Permission to use, copy, modify, and/or distribute this software for any
 purpose with or without fee is hereby granted, provided that the above
@@ -31,7 +31,7 @@ PERFORMANCE OF THIS SOFTWARE.
 #define LINESIZ (sizeof rbuf)
 
 static void init_edit(void);
-static int edit_line(int (*)(char *), struct history *);
+static int edit_line(int (*)(char *, int), struct history *);
 static void linebuf_delch(void);
 static void linebuf_insch(unsigned);
 static void overful_del(void);
@@ -163,7 +163,7 @@ free:
 int
 ed_dialog(const char *msg,
     /* NULL: leave buffer as-is */
-    char *ini, int (*callback)(char *), int keep_buf, struct history *hist)
+    char *ini, int (*callback)(char *, int), int keep_buf, struct history *hist)
 {
 	if (!edit)
 		init_edit(); /* conditional, else rbuf is cleared! */
@@ -231,7 +231,7 @@ hist_add(struct history *hist)
 }
 
 static int
-edit_line(int (*callback)(char *), struct history *hist)
+edit_line(int (*callback)(char *, int), struct history *hist)
 {
 	wint_t c;
 	int i;
@@ -240,6 +240,12 @@ edit_line(int (*callback)(char *), struct history *hist)
 	while (1) {
 next_key:
 		get_wch(&c);
+
+		if (callback && c == '\t') {
+			wcstombs(rbuf, linebuf, sizeof rbuf);
+			callback(rbuf, (int)c);
+			goto next_key;
+		}
 
 		for (i = 0; i < FKEY_NUM; i++) {
 			if (c != (wint_t)KEY_F(i + 1))
@@ -268,6 +274,7 @@ next_key:
 #endif
 		case 27:
 			return 1;
+
 		case '\n':
 			return 0;
 
@@ -379,7 +386,7 @@ del_char:
 
 			if (callback) {
 				wcstombs(rbuf, linebuf, sizeof rbuf);
-				callback(rbuf);
+				callback(rbuf, 0);
 			}
 
 			break;
@@ -431,7 +438,7 @@ del_char:
 				int i2;
 
 				wcstombs(rbuf, linebuf, sizeof rbuf);
-				i2 = callback(rbuf);
+				i2 = callback(rbuf, 0);
 
 				if (i2 & EDCB_FAIL)
 					return 1;

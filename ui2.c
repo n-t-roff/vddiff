@@ -36,6 +36,7 @@ PERFORMANCE OF THIS SOFTWARE.
 #include "db.h"
 #include "tc.h"
 #include "gq.h"
+#include "cplt.h"
 
 const char y_n_txt[] = "'y' yes, 'n' no";
 const char y_a_n_txt[] = "'y' yes, 'a' all, 'n' no";
@@ -300,13 +301,14 @@ srchcmp(const void *p1, const void *p2)
 }
 
 int
-srch_file(char *pattern)
+srch_file(char *pattern, int c)
 {
 	unsigned idx;
 	int o, oo;
 	size_t l;
 	char *s;
 
+	(void)c;
 
 	if (!*pattern || !db_num[right_col])
 		return 0;
@@ -482,6 +484,8 @@ parsopt(char *buf)
 	}
 
 	if (!strncmp(buf, "cd ", 3)) {
+		char *s;
+
 		if (!(bmode || fmode)) {
 			printerr(NULL, "cd not supported in diff mode");
 			return 0;
@@ -491,7 +495,12 @@ parsopt(char *buf)
 			return 0;
 		}
 
-		enter_dir(buf, NULL, FALSE, FALSE, 0 LOCVAR);
+		if (!(s = pthexp(buf))) {
+			return 0;
+		}
+
+		enter_dir(s, NULL, FALSE, FALSE, 0 LOCVAR);
+		free(s);
 		return 0;
 	}
 

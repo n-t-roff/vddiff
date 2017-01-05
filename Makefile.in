@@ -3,6 +3,8 @@ BINDIR=	$(PREFIX)/bin
 MANDIR=	$(PREFIX)/share/man
 INCDIR=	$(PREFIX)/include
 LIBDIR=	$(PREFIX)/lib
+# Does also set names of ~/.$(BIN)rc and ~/.$(BIN)info to allow parallel
+# installation of different tool versions.
 BIN=	vddiff
 
 TRACE=	#-DTRACE='"/tmp/.$(BIN)_trace_"'
@@ -10,7 +12,7 @@ DEBUG=	#-DDEBUG
 STRP=	-s
 
 OBJ=	main.o pars.o lex.o diff.o ui.o db.o exec.o fs.o ed.o uzp.o ver.o \
-	ui2.o gq.o tc.o info.o dl.o
+	ui2.o gq.o tc.o info.o dl.o cplt.o
 YFLAGS=	-d
 _CFLAGS=$(CFLAGS) $(CPPFLAGS) $(DEFINES) $(INCDIR_CURSES) -I$(INCDIR) \
 	$(__CDBG) $(__CLDBG) $(TRACE) $(DEBUG) -DBIN='"$(BIN)"'

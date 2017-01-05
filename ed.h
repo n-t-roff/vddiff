@@ -1,6 +1,7 @@
 #define EDCB_RM_CB 1 /* remove callback */
 #define EDCB_IGN   2 /* ignore input */
 #define EDCB_FAIL  4 /* return <ESC> value */
+#define EDCB_WR_BK 8 /* callback did change buffer */
 
 struct hist_ent {
 	char *line;
@@ -15,7 +16,8 @@ struct history {
 
 void ed_append(char *);
 void disp_edit(void);
-int ed_dialog(const char *, char *, int (*)(char *), int, struct history *);
+int ed_dialog(const char *, char *, int (*)(char *, int), int,
+    struct history *);
 void clr_edit(void);
 void set_fkey(int, char *);
 

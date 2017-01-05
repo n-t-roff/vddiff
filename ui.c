@@ -43,6 +43,7 @@ PERFORMANCE OF THIS SOFTWARE.
 #include "ui2.h"
 #include "tc.h"
 #include "dl.h"
+#include "cplt.h"
 
 static void ui_ctrl(void);
 static void page_down(void);
@@ -1078,7 +1079,8 @@ next_key:
 			c = 0;
 
 			if (!ed_dialog("Enter command:",
-			    NULL /* must be NULL !!! */, NULL, 0, &opt_hist)) {
+			    NULL /* must be NULL !!! */, complet, 0,
+			    &opt_hist)) {
 				if (parsopt(rbuf) == 1)
 					return;
 			}
