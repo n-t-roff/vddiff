@@ -57,5 +57,7 @@ WINDOW *new_scrl_win(int, int, int, int);
 void set_def_mouse_msk(void);
 void key_mmrk(void);
 long get_mmrk(void);
+int ui_cp(int, long, unsigned short, unsigned);
+int ui_mv(int, int, long, unsigned short);
 int ui_dd(int, long, unsigned short);
 int ui_chmod(int, long, unsigned short);

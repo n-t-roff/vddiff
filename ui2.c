@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2016, Carsten Kunze <carsten.kunze@arcor.de>
+Copyright (c) 2016-2017, Carsten Kunze <carsten.kunze@arcor.de>
 
 Permission to use, copy, modify, and/or distribute this software for any
 purpose with or without fee is hereby granted, provided that the above
@@ -1278,6 +1278,54 @@ set_def_mouse_msk(void)
 # endif
 	    , NULL);
 #endif
+}
+
+int
+ui_cp(int t, long u, unsigned short num, unsigned md)
+{
+	if (mmrkd[right_col]) {
+		if (dialog(y_n_txt, NULL,
+		    "Really copy %d files?",
+		    mmrkd[right_col]) != 'y') {
+			return 1;
+		}
+
+		while ((u = get_mmrk()) >= 0) {
+			fs_cp(t, u, 1, md | 5);
+		}
+
+		rebuild_db(0);
+		return 1;
+	}
+
+	fs_cp(t, u, num, md);
+	return 0;
+}
+
+int
+ui_mv(int src, int dst, long u, unsigned short num)
+{
+	if (mmrkd[right_col]) {
+		if (dialog(y_n_txt, NULL,
+		    "Really move %d files?",
+		    mmrkd[right_col]) != 'y') {
+			return 1;
+		}
+
+		while ((u = get_mmrk()) >= 0) {
+			if (!fs_cp(dst, u, 1, 5)) {
+				fs_rm(src, NULL, NULL, u, 1, 3);
+			}
+		}
+
+		rebuild_db(0);
+		return 1;
+	}
+
+	if (!fs_cp(dst, u, num, 1)) {
+		fs_rm(src, NULL, NULL, u, num, 1);
+	}
+	return 0;
 }
 
 int

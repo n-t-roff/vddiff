@@ -730,14 +730,17 @@ next_key:
 				goto save_st;
 
 			case 'T': /* "Tl" */
-				if (!fs_cp(1, u, num, 1)) {
-					fs_rm(2, NULL, NULL, u, num, 1);
+				if (ui_mv(2, 1, u, num)) {
+					goto next_key;
 				}
 
 				goto save_st;
 
 			case '@':
-				fs_cp(1, u, num, 2);
+				if (ui_cp(1, u, num, 2)) {
+					goto next_key;
+				}
+
 				goto save_st;
 
 			case 'D':
@@ -805,14 +808,17 @@ next_key:
 				goto save_st;
 
 			case 'T': /* "Tr" */
-				if (!fs_cp(2, u, num, 1)) {
-					fs_rm(1, NULL, NULL, u, num, 1);
+				if (ui_mv(1, 2, u, num)) {
+					goto next_key;
 				}
 
 				goto save_st;
 
 			case '@':
-				fs_cp(2, u, num, 2);
+				if (ui_cp(2, u, num, 2)) {
+					goto next_key;
+				}
+
 				goto save_st;
 
 			default:
@@ -841,7 +847,10 @@ next_key:
 				break;
 			}
 
-			fs_cp(1, u, num, 0);
+			if (ui_cp(1, u, num, 0)) {
+				goto next_key;
+			}
+
 			break;
 		case '>':
 			if (*key != '>')
@@ -851,7 +860,10 @@ next_key:
 				break;
 			}
 
-			fs_cp(2, u, num, 0);
+			if (ui_cp(2, u, num, 0)) {
+				goto next_key;
+			}
+
 			goto save_st;
 
 		case 'T': {
@@ -863,8 +875,8 @@ next_key:
 
 			src = dst == 1 ? 2 : 1;
 
-			if (!fs_cp(dst, u, num, 1)) {
-				fs_rm(src, NULL, NULL, u, num, 1);
+			if (ui_mv(src, dst, u, num)) {
+				goto next_key;
 			}
 
 			goto save_st;
@@ -877,7 +889,10 @@ next_key:
 				break;
 			}
 
-			fs_cp(dst, u, num, 2);
+			if (ui_cp(dst, u, num, 2)) {
+				goto next_key;
+			}
+
 			goto save_st;
 		}
 

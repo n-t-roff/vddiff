@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2016, Carsten Kunze <carsten.kunze@arcor.de>
+Copyright (c) 2016-2017, Carsten Kunze <carsten.kunze@arcor.de>
 
 Permission to use, copy, modify, and/or distribute this software for any
 purpose with or without fee is hereby granted, provided that the above
@@ -606,8 +606,9 @@ ret:
 
 int /* !0: Error */
 fs_cp(int to, long u, int n,
-    /* 1: don't rebuild DB
-     * 2: Symlink instead of copying */
+    /* 1: don't rebuild DB */
+    /* 2: Symlink instead of copying */
+    /* 4: Force */
     unsigned md)
 {
 	struct filediff *f;
@@ -625,7 +626,7 @@ fs_cp(int to, long u, int n,
 
 	m = n > 1;
 
-	if (!(force_fs && force_multi) && m) {
+	if (!(force_fs && force_multi) && m && !(md & 4)) {
 		if (to == 1) {
 			syspth[0][pthlen[0]] = 0;
 			pth1 = syspth[0];
@@ -691,7 +692,8 @@ fs_cp(int to, long u, int n,
 		 * with src */
 		if (followlinks) {
 			if (!i && /* from stat */
-			    !force_fs && !m && dialog(y_n_txt, NULL,
+			    !force_fs && !m && !(md & 4) &&
+			    dialog(y_n_txt, NULL,
 			    "Really overwrite \"%s\"?", pth2) != 'y') {
 				return 1;
 			}

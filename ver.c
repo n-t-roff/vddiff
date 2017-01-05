@@ -23,5 +23,5 @@
  *            failes, this will become the release version. */
 
 const char version[] = "1.4.0-pre-alpha  "
-    "2017-01-04 13:51"
+    "2017-01-05 11:52"
     ;
