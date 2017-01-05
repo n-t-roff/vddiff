@@ -16,7 +16,7 @@ PERFORMANCE OF THIS SOFTWARE.
 .Dd January 4, 2017
 .Dt VDDIFF 1
 .Sh NAME
-.Nm vddiff
+.Nm @vddiff@
 .Nd text terminal directory diff tool
 .Sh SYNOPSYS
 .Nm
@@ -153,7 +153,7 @@ should be used in general, it is recommended
 to configure it with the RC file option
 .Sy difftool ,
 see section
-.Sx CONFIGURATION FILE ~/.vddiffrc
+.Sx CONFIGURATION FILE ~/.@vddiff@rc
 below.)
 .It Fl E
 Use extended regular expressions.
@@ -217,7 +217,7 @@ can be combined with option
 .Fl F .
 For example
 .Pp
-.Dl vddiff \-rF '\(rs.[1-9]$' \-G '/usr'
+.Dl @vddiff@ \-rF '\(rs.[1-9]$' \-G '/usr'
 .Pp
 finds all manpage source files which contain
 absolut path names.
@@ -236,7 +236,7 @@ But this can also be expressed as
 .Pp
 For example
 .Pp
-.Dl vddiff \-rF '\(rs.[1-9]$' \-IG '^\.Dd' \-EG '/(usr|etc|var)'
+.Dl @vddiff@ \-rF '\(rs.[1-9]$' \-IG '^\.Dd' \-EG '/(usr|etc|var)'
 .Pp
 finds all manpage source files in
 .Fl mdoc
@@ -339,7 +339,7 @@ If an optional
 .Ar filename
 is supplied, this file is read instead of the default
 initialization file
-.Pa ~/.vddiffrc .
+.Pa ~/.@vddiff@rc .
 .Ar filename
 needs to be separated with white space from
 .Fl u .
@@ -959,7 +959,7 @@ Display only files which contain
 .It Li nogrep
 Remove file content pattern.
 .It Li q , Li qa
-Quit vddiff.
+Quit @vddiff@.
 .It Li set all
 Display the current setting of the changable options.
 .It Li set fkeys
@@ -1034,9 +1034,9 @@ Toggle to always wait for
 after running an external tool.
 This can be useful for debugging purposes.
 .El
-.Sh CONFIGURATION FILE ~/.vddiffrc
+.Sh CONFIGURATION FILE ~/.@vddiff@rc
 Permanent non-default options can be set in the file
-.Pa ~/.vddiffrc ,
+.Pa ~/.@vddiff@rc ,
 which has a very simple
 .Em ( not
 \&.exrc like) syntax.
@@ -1282,7 +1282,7 @@ environment variables are
 .Em not
 expanded.
 (The include command does only work
-if vddiff had been build with a lex version
+if @vddiff@ had been build with a lex version
 which supports buffer switching.)
 .It Li filesfirst
 Display directories at the end instead on top.
@@ -1505,15 +1505,15 @@ set
 (else usually a further mouse click is required to finalize
 the resize).
 .Sh FILES
-.Bl -tag -width ~/.vddiffrc -compact
-.It Pa ~/.vddiffrc
+.Bl -tag -width ~/.@vddiff@rc -compact
+.It Pa ~/.@vddiff@rc
 Read on start-up to set non-default options.
 .El
 .Sh EXAMPLES
 To display only differing files and subdirectories which contain
 differing files in two-column mode enter
 .Pp
-.D1 Li vddiff -cry Ar directory_1 directory_2
+.D1 Li @vddiff@ -cry Ar directory_1 directory_2
 .Pp
 where
 .Fl c
@@ -1534,7 +1534,7 @@ enables two-column mode.
 .Pp
 To only hide equal files enter
 .Pp
-.D1 Li vddiff -nry Ar directory_1 directory_2
+.D1 Li @vddiff@ -nry Ar directory_1 directory_2
 .Pp
 Pressing
 .Sq Li n
@@ -1542,7 +1542,7 @@ toggles showing all files.
 .Pp
 If a recursive diff is not required,
 .Pp
-.D1 Li vddiff -y Ar directory_1 directory_2
+.D1 Li @vddiff@ -y Ar directory_1 directory_2
 .Pp
 (optionally with option
 .Fl c

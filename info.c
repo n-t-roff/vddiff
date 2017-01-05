@@ -36,7 +36,7 @@ static int info_proc(void);
 static void info_wr_bdl(FILE *);
 static void info_wr_ddl(FILE *);
 
-static const char info_name[] = ".vddiffinfo.new";
+static const char info_name[] = "." BIN "info.new";
 const char info_dir_txt[] = "dir";
 const char info_ddir_txt[] = "diffdir";
 

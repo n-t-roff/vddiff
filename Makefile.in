@@ -13,7 +13,7 @@ OBJ=	main.o pars.o lex.o diff.o ui.o db.o exec.o fs.o ed.o uzp.o ver.o \
 	ui2.o gq.o tc.o info.o dl.o
 YFLAGS=	-d
 _CFLAGS=$(CFLAGS) $(CPPFLAGS) $(DEFINES) $(INCDIR_CURSES) -I$(INCDIR) \
-	$(__CDBG) $(__CLDBG) $(TRACE) $(DEBUG)
+	$(__CDBG) $(__CLDBG) $(TRACE) $(DEBUG) -DBIN='"$(BIN)"'
 _LDFLAGS=$(LDFLAGS) $(__CLDBG) -L${LIBDIR} -Wl,-rpath,${LIBDIR} \
 	$(RPATH_CURSES) $(STRP)
 LDADD=	$(LIB_AVLBST) $(LIBDIR_CURSES) $(LIB_CURSES)
@@ -27,8 +27,8 @@ install:
 	install -m 644 $(BIN).1.out $(MANDIR)/man1/$(BIN).1
 
 clean:
-	rm -f $(BIN) $(OBJ) y.tab.? $(BIN).1.html $(BIN).1.pdf \
-	    /tmp/.$(BIN).err /tmp/.$(BIN).toc *.gc?? $(BIN).1.out lex.yy.c
+	rm -f $(BIN) $(OBJ) y.tab.? *.1.html *.1.pdf \
+	    /tmp/.$(BIN).err /tmp/.$(BIN).toc *.gc?? *.1.out lex.yy.c
 
 distclean: clean
 	rm -f Makefile config.log compat.h
@@ -50,7 +50,10 @@ $(BIN): $(OBJ)
 	$(CC) $(_CFLAGS) -c $<
 
 $(BIN).1.out: vddiff.1
-	sed '/^\.begin_comment/,/^\.end_comment/d' vddiff.1 > $@
+	UCBIN=`echo $(BIN)|tr '[:lower:]' '[:upper:]'`; \
+	sed -e '/^\.begin_comment/,/^\.end_comment/d' \
+	    -e "s/VDDIFF/$$UCBIN/g" \
+	    -e 's/@vddiff@/$(BIN)/g' vddiff.1 > $@
 
 html:
 	make $(BIN).1.html

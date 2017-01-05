@@ -218,7 +218,7 @@ main(int argc, char **argv)
 			set_tool(&difftool, strdup(optarg), 0);
 			break;
 		case 'V':
-			printf("%s %s\n\tCompile option(s): "
+			printf(BIN " %s\n\tCompile option(s): "
 #if defined HAVE_NCURSESW_CURSES_H
 			    "ncursesw"
 #elif defined HAVE_NCURSES_CURSES_H
@@ -228,10 +228,10 @@ main(int argc, char **argv)
 #endif
 
 #if !defined(NCURSES_MOUSE_VERSION)
-			    " (currently no mouse support in vddiff)"
+			    " (currently no mouse support in " BIN ")"
 #elif NCURSES_MOUSE_VERSION < 2
 			    " (currently no mouse scroll wheel support"
-			    " in vddiff)"
+			    " in " BIN ")"
 #endif
 			    ", "
 #ifdef HAVE_LIBAVLBST
@@ -239,7 +239,7 @@ main(int argc, char **argv)
 #else
 			    "tsearch"
 #endif
-			    "\n", prog, version);
+			    "\n", version);
 			exit(0);
 		case 'v':
 			set_tool(&viewtool, strdup(optarg), 0);
@@ -310,7 +310,7 @@ main(int argc, char **argv)
 static int
 read_rc(char *upath)
 {
-	static const char rc_name[] = ".vddiffrc";
+	static const char rc_name[] = "." BIN "rc";
 	char *rc_path;
 	int rv = 0;
 	extern FILE *yyin;

@@ -300,7 +300,7 @@ next_key:
 			break;
 		case 'q':
 			if (dialog(y_n_txt, NULL,
-			    "Quit vddiff?") != 'y')
+			    "Quit " BIN "?") != 'y')
 				break;
 
 			/* fall through */
@@ -1233,7 +1233,7 @@ save_st:
 static char *helptxt[] = {
        "Type 'q' to quit help, scroll with <DOWN>, <UP>, <PAGE-DOWN>, and <PAGE-UP>.",
        "",
-       "Q		Quit vddiff",
+       "Q		Quit " BIN,
        "h, ?		Display help",
        "^L		Refresh display",
        "<TAB>		In fmode: Toggle column",
@@ -1359,7 +1359,7 @@ static char *helptxt[] = {
        ":grep <pattern>",
        "		Display only file which contain <pattern>",
        ":nogrep		Remove file content pattern",
-       ":q, :qa		Quit vddiff",
+       ":q, :qa		Quit " BIN,
        ":set all	Display option values",
        ":set fkeys	Enable function keys",
        ":set nofkeys	Disable function keys",

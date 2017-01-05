@@ -1,4 +1,4 @@
-#define TMPPREFIX "/.vddiff."
+#define TMPPREFIX "/." BIN "."
 
 enum uz_id { UZ_NONE, UZ_GZ, UZ_BZ2, UZ_TAR, UZ_TGZ, UZ_TBZ, UZ_ZIP };
 

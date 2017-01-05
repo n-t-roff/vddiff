@@ -648,7 +648,7 @@ open_sh(int tree)
 
 	av[1] = NULL;
 	exec_cmd(av, TOOL_NOLIST | TOOL_TTY, s,
-	    "\nType \"exit\" or '^D' to return to vddiff.\n");
+	    "\nType \"exit\" or '^D' to return to " BIN ".\n");
 
 	/* exec_cmd() did likely create or delete files */
 	rebuild_db(0);
