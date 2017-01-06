@@ -17,6 +17,7 @@ PERFORMANCE OF THIS SOFTWARE.
 #include <errno.h>
 #include <sys/types.h>
 #include <sys/stat.h>
+#include <pwd.h>
 #include <unistd.h>
 #include <signal.h>
 #include <dirent.h>
@@ -43,6 +44,7 @@ complet(char *s, int c)
 	DIR *dh;
 	struct dirent *de;
 	size_t ld, lb, ln;
+	bool co;
 
 	if (c != '\t' || !*s) {
 		return 0;
@@ -71,6 +73,7 @@ complet(char *s, int c)
 	ld = strlen(dn);
 	lb = strlen(bn);
 	memcpy(b, dn, ld+1);
+	co = TRUE;
 
 	if (!(dh = opendir(b))) {
 		printerr(strerror(errno), "opendir \"%s\"", b);
@@ -129,6 +132,7 @@ complet(char *s, int c)
 			}
 
 			ln--;
+			co = FALSE;
 		}
 
 		if (ln == lb) {
@@ -147,7 +151,10 @@ complet(char *s, int c)
 
 	m[ln] = 0;
 	ed_append(m + lb);
-	ed_append("/");
+
+	if (co) { /* complete, not part of name */
+		ed_append("/");
+	}
 
 free:
 	if (m) {
@@ -176,14 +183,37 @@ pthexp(char *p)
 	}
 
 	if (*p == '~') {
-		if (!(s = getenv("HOME"))) {
-			printerr("", "$HOME not set");
-			goto err;
+		p++;
+
+		if (!*p || *p == '/') {
+			if (!(s = getenv("HOME"))) {
+				printerr("", "$HOME not set");
+				goto err;
+			}
+		} else {
+			struct passwd *pw;
+
+			s2 = p;
+
+			while ((c = *p) && c != '/') {
+				p++;
+			}
+
+			*p = 0;
+			errno = 0; /* getpwnam manpage */
+
+			if (!(pw = getpwnam(s2))) {
+				printerr(errno ? strerror(errno) :
+				    "Not found", "getpwnam \"%s\"", s2);
+				goto err;
+			}
+
+			s = pw->pw_dir;
+			*p = c;
 		}
 
 		n = strlen(s);
 		memcpy(b, s, n);
-		p++;
 	}
 
 	while ((c = *p++)) {

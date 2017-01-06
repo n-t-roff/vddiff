@@ -497,17 +497,17 @@ Toggle file name
 or file content
 .Pq Fl G
 filter.
-.It Dq Li Ah
+.It Dq Li \&Ah
 Add scaled file size column.
-.It Dq Li Ap
+.It Dq Li \&Ap
 Add file permissions column.
-.It Dq Li At
+.It Dq Li \&At
 Add file modification time column.
-.It Dq Li Rh
+.It Dq Li \&Rh
 Remove scaled file size column.
-.It Dq Li Rp
+.It Dq Li \&Rp
 Remove file permissions column.
-.It Dq Li Rt
+.It Dq Li \&Rt
 Remove file modification time column.
 .It Sq Li p
 Show current relative work directory.
@@ -949,8 +949,12 @@ Change to directory
 .Ar path .
 .Ar path
 may be absolute or relative.
-.Sq Li ~
-and environment variables are not (yet) expanded.
+.Sq Li ~ ,
+.Dq Li ~ Ns Ar user
+and environment variables are expanded
+but not (yet) auto-completed.
+Other path components are auto-completed on pressing
+.Aq Cm TAB .
 .It Li e Ns Op Li dit
 Allow file change operations and function keys.
 .It Li find Ar pattern
@@ -1016,12 +1020,12 @@ can be pressed during this directory compare (short and only one time)
 to abort it.
 Note that an active file diff is not interrupted.
 This may take some time in case of a huge file.
-.It Dq Li Da
+.It Dq Li \&Da
 Add current directory to a persistent list.
 Items on this list can be selected later using the
-.Dq Li Dl
+.Dq Li \&Dl
 command.
-.It Dq Li Dl
+.It Dq Li \&Dl
 Show persistent directory list.
 .Aq Cm ENTER
 or
