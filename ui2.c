@@ -308,9 +308,7 @@ srch_file(char *pattern, int c)
 	size_t l;
 	char *s;
 
-	(void)c;
-
-	if (!*pattern || !db_num[right_col])
+	if (c || !*pattern || !db_num[right_col])
 		return 0;
 
 	if (*pattern == '/' && !pattern[1]) {

@@ -14,6 +14,7 @@ OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
 PERFORMANCE OF THIS SOFTWARE.
 */
 
+#include <stdarg.h>
 #include <errno.h>
 #include <string.h>
 #include <stdlib.h>
@@ -337,12 +338,9 @@ dl_disp(void)
 
 	for (y = 0, i = dl_top; y < listh && i < dl_num; y++, i++) {
 		dl_line(y, i);
-
-		if (i == dl_pos) {
-			mvwchgat(wlist, y, 0, -1, A_REVERSE, 0, NULL);
-		}
 	}
 
+	dl_curs(1);
 	wnoutrefresh(wlist);
 	wnoutrefresh(wstat);
 	doupdate();
@@ -501,7 +499,9 @@ static void
 dl_curs(unsigned m)
 {
 	mvwchgat(wlist, dl_pos - dl_top, 0, -1,
-	    m == 0 ? A_NORMAL : A_REVERSE, 0, NULL);
+	    m == 0 || color ? A_NORMAL : A_REVERSE,
+	    m != 0 && color ? PAIR_CURSOR : 0,
+	    NULL);
 }
 
 #ifdef NCURSES_MOUSE_VERSION
