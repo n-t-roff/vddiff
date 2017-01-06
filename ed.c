@@ -42,8 +42,12 @@ static void hist_down(struct history *);
 short edit;
 unsigned histsize = 100;
 
+/* Number of characters in the line buffer */
 unsigned linelen;
-static unsigned linepos, leftpos;
+/* Line buffer position. This is not the window position. The window position
+ * is (linpos - leftpos). */
+static unsigned linepos;
+static unsigned leftpos;
 
 wchar_t *linebuf;
 static wchar_t ws[2];
@@ -241,7 +245,9 @@ edit_line(int (*callback)(char *, int), struct history *hist)
 next_key:
 		get_wch(&c);
 
-		if (callback && c == '\t') {
+		/* Currently this callback only makes sense when the cursor
+		 * is at the end of the buffer. */
+		if (callback && linepos == linelen && c == '\t') {
 			wcstombs(rbuf, linebuf, sizeof rbuf);
 			callback(rbuf, (int)c);
 			goto next_key;

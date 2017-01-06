@@ -599,7 +599,7 @@ build_list:
 		diff_db_sort(fmode && (tree & 2) ? 1 : 0);
 
 dir_scan_end:
-	free_names();
+	free_strs(name_db);
 
 	if (!scan) {
 		goto exit;

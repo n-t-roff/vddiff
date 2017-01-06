@@ -459,6 +459,7 @@ no_match:
 int
 parsopt(char *buf)
 {
+	const char dmode_cd_txt[] = "cd not supported in diff mode";
 	char *opt;
 	short not;
 	short skip;
@@ -470,7 +471,7 @@ parsopt(char *buf)
 		char *s;
 
 		if (!(bmode || fmode)) {
-			printerr(NULL, "cd not supported in diff mode");
+			printerr(NULL, dmode_cd_txt);
 			return 0;
 		}
 
@@ -487,7 +488,7 @@ parsopt(char *buf)
 		char *s;
 
 		if (!(bmode || fmode)) {
-			printerr(NULL, "cd not supported in diff mode");
+			printerr(NULL, dmode_cd_txt);
 			return 0;
 		}
 

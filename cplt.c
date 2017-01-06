@@ -14,23 +14,37 @@ OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
 PERFORMANCE OF THIS SOFTWARE.
 */
 
+#include <errno.h>
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <unistd.h>
+#include <signal.h>
+#include <dirent.h>
 #include <ctype.h>
 #include <stdlib.h>
 #include <regex.h>
 #include <string.h>
+#include <libgen.h>
 #include "compat.h"
 #include <wctype.h>
 #include "ed.h"
 #include "cplt.h"
 #include "main.h"
 #include "ui.h"
+#include "exec.h"
+#include "uzp.h"
+#include "db.h"
+#include "diff.h"
 
 int
 complet(char *s, int c)
 {
-	char *e, *b;
+	char *e, *b, *d, *dn, *bn, *fn, *m = NULL;
+	DIR *dh;
+	struct dirent *de;
+	size_t ld, lb, ln;
 
-	if (1 || c != '\t' || !*s) {
+	if (c != '\t' || !*s) {
 		return 0;
 	}
 
@@ -45,16 +59,102 @@ complet(char *s, int c)
 		}
 	}
 
-	if (!strlen(e)) {
-		/* Last char was space */
-		return 0;
-	}
-
 	if (!(b = pthexp(e))) {
 		return 0;
 	}
 
-	ed_append(b);
+	/* Search for the last '/' in b and open this directory.
+	 * If there is no '/' in b open ".". */
+	d = strdup(b);
+	dn = dirname(b);
+	bn = *d ? basename(d) : "";
+	ld = strlen(dn);
+	lb = strlen(bn);
+	memcpy(b, dn, ld+1);
+
+	if (!(dh = opendir(b))) {
+		printerr(strerror(errno), "opendir \"%s\"", b);
+		goto free;
+	}
+
+	while (1) {
+		errno = 0;
+
+		if (!(de = readdir(dh))) {
+			if (errno) {
+				b[ld] = 0;
+				printerr(strerror(errno),
+				    "readdir \"%s\"", b);
+			}
+
+			break;
+		}
+
+		fn = de->d_name;
+
+		if (*fn == '.' && (!fn[1] || (fn[1] == '.' && !fn[2]))) {
+			continue;
+		}
+
+		pthcat(b, ld, fn);
+
+		if (stat(b, &stat1) == -1) {
+			if (errno == ENOENT) {
+				continue;
+			}
+
+			printerr(strerror(errno), "stat \"%s\"", b);
+			continue;
+		}
+
+		if (!S_ISDIR(stat1.st_mode)) {
+			continue;
+		}
+
+		if (lb && strncmp(bn, fn, lb)) {
+			continue;
+		}
+
+		/* Assumption: The first filename is already the correct one.
+		 * For any later found name test how many characters match. */
+		if (!m) {
+			ln = strlen(fn);
+			m = strdup(fn);
+			continue;
+		}
+
+		while (ln > lb) {
+			if (!strncmp(fn, m, ln)) {
+				break;
+			}
+
+			ln--;
+		}
+
+		if (ln == lb) {
+			break;
+		}
+	}
+
+	if (closedir(dh) == -1) {
+		b[ld] = 0;
+		printerr(strerror(errno), "closedir \"%s\"", b);
+	}
+
+	if (!m || ln == lb) {
+		goto free;
+	}
+
+	m[ln] = 0;
+	ed_append(m + lb);
+	ed_append("/");
+
+free:
+	if (m) {
+		free(m);
+	}
+
+	free(d);
 	free(b);
 	disp_edit();
 	return EDCB_WR_BK;
@@ -69,6 +169,11 @@ pthexp(char *p)
 	bool d;
 
 	b = malloc(PATHSIZ);
+
+	if (!*p) {
+		*b = 0; /* "" expanded to "" */
+		return b;
+	}
 
 	if (*p == '~') {
 		if (!(s = getenv("HOME"))) {
@@ -101,7 +206,7 @@ pthexp(char *p)
 				*p = 0;
 
 				if (!(s = getenv(s2))) {
-					printerr("", "$%s not set", s2);
+					printerr(NULL, "$%s not set", s2);
 					goto err;
 				}
 

@@ -42,7 +42,7 @@ static int diff_cmp(union bst_val, union bst_val);
 static int ddl_cmp(union bst_val, union bst_val);
 static void mk_list(struct bst_node *);
 static void diff_db_delete(struct bst_node *);
-static void del_names(struct bst_node *);
+static void del_strs(struct bst_node *);
 static void mk_ddl(struct bst_node *);
 static void mk_str_list(struct bst_node *);
 #else
@@ -328,6 +328,37 @@ mk_str_list(const void *n, const VISIT which, const int depth)
 }
 #endif
 
+void
+free_strs(void *db)
+{
+#ifdef HAVE_LIBAVLBST
+	del_strs(((struct bst *)db)->root);
+	((struct bst *)db)->root = NULL;
+#else
+	char *s;
+
+	while (db) {
+		s = *(char **)db;
+		tdelete(s, &db, name_cmp);
+		free(s);
+	}
+#endif
+}
+
+#ifdef HAVE_LIBAVLBST
+static void
+del_strs(struct bst_node *n)
+{
+	if (!n)
+		return;
+
+	del_strs(n->left);
+	del_strs(n->right);
+	free(n->key.p);
+	free(n);
+}
+#endif
+
 static int
 name_cmp(
 #ifdef HAVE_LIBAVLBST
@@ -561,41 +592,6 @@ curs_cmp(const void *a, const void *b)
 	return strcmp(
 	    ((const struct curs_pos *)a)->path,
 	    ((const struct curs_pos *)b)->path);
-}
-#endif
-
-/***********
- * name DB *
- ***********/
-
-void
-free_names(void)
-{
-#ifdef HAVE_LIBAVLBST
-	del_names(((struct bst *)name_db)->root);
-	((struct bst *)name_db)->root = NULL;
-#else
-	char *s;
-
-	while (name_db) {
-		s = *(char **)name_db;
-		tdelete(s, &name_db, name_cmp);
-		free(s);
-	}
-#endif
-}
-
-#ifdef HAVE_LIBAVLBST
-static void
-del_names(struct bst_node *n)
-{
-	if (!n)
-		return;
-
-	del_names(n->left);
-	del_names(n->right);
-	free(n->key.p);
-	free(n);
 }
 #endif
 
