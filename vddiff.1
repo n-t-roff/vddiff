@@ -13,7 +13,7 @@ LOSS OF USE, DATA OR PROFITS, WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE OR
 OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
 PERFORMANCE OF THIS SOFTWARE.
 ..
-.Dd January 4, 2017
+.Dd January 6, 2017
 .Dt VDDIFF 1
 .Sh NAME
 .Nm @vddiff@
@@ -552,6 +552,11 @@ if it had been below the mark.
 .It Dq Li \(aq>>
 Copy all files between the cursor and the local mark (inclusive)
 from first to second tree.
+.It Oo Ar n Oc Ns Sq Li C
+Copy to other side.
+.It Dq Li \(aqC
+Copy all files between the cursor and the local mark (inclusive)
+to other side.
 .It Oo Ar n Oc Ns Dq Li dd
 Delete file or directory, which must be present in one tree only.
 (Does not follow symbolic links.)

@@ -883,14 +883,16 @@ next_key:
 			goto save_st;
 		}
 
-		case '@': {
+		case '@':
+		case 'C':
+		{
 			int dst;
 
 			if (!(dst = fs_get_dst(u))) {
 				break;
 			}
 
-			if (ui_cp(dst, u, num, 2)) {
+			if (ui_cp(dst, u, num, c == '@' ? 2 : 0)) {
 				goto next_key;
 			}
 
@@ -1288,6 +1290,8 @@ static char *helptxt[] = {
        "[<n>]>>		Copy from first to second tree",
        "'<<		Copy from second to first tree (range cursor...mark)",
        "'>>		Copy from first to second tree (range cursor...mark)",
+       "[<n>]C		Copy to other side",
+       "'C		Copy to other side (range cursor...mark)",
        "[<n>]dd		Delete file or directory",
        "[<n>]dl		Delete file or directory in first tree",
        "[<n>]dr		Delete file or directory in second tree",
