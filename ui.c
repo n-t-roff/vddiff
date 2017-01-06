@@ -2287,6 +2287,13 @@ disp_curs(
 	struct filediff *f;
 	bool cg;
 
+	/* Case: An empty dir is opened in fmode, then TAB is pressed
+	 * to change to the other side. disp_curs(0) is called to remove
+	 * the cursor on this side--which has no cursor. */
+	if (!db_num[right_col]) {
+		return;
+	}
+
 	w = getlstwin();
 	y = curs[right_col];
 	i = top_idx[right_col] + y;
