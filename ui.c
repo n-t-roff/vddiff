@@ -63,7 +63,7 @@ static void file_stat(struct filediff *, struct filediff *);
 static void set_file_info(struct filediff *, mode_t, int *, short *, int *);
 static int disp_name(WINDOW *, int, int, int, int, struct filediff *, int,
     short, char *, int, int);
-static size_t getfilesize(char *, size_t, off_t, bool);
+static size_t getfilesize(char *, size_t, off_t, unsigned);
 static size_t gettimestr(char *, size_t, time_t *);
 static void disp_help(void);
 static void help_pg_down(void);
@@ -123,6 +123,7 @@ bool scrollen = TRUE;
 static bool wstat_dirty;
 static bool dir_change;
 static bool add_hsize; /* scaled size */
+static bool add_bsize;
 static bool add_mode;
 static bool add_mtime;
 
@@ -452,6 +453,7 @@ next_key:
 			switch (*key) {
 			case 'A':
 				c = 0;
+				add_bsize = FALSE;
 				add_hsize = TRUE;
 				disp_fmode();
 				goto next_key;
@@ -1004,6 +1006,21 @@ next_key:
 
 			break;
 		case 's':
+			switch (*key) {
+			case 'A':
+				c = 0;
+				add_hsize = FALSE;
+				add_bsize = TRUE;
+				disp_fmode();
+				goto next_key;
+
+			case 'R':
+				c = 0;
+				add_bsize = FALSE;
+				disp_fmode();
+				goto next_key;
+			}
+
 			/* Don't clear c here! Else sl and sr won't work! */
 			open_sh(3);
 			break;
@@ -1279,9 +1296,11 @@ static char *helptxt[] = {
        "E		Toggle file name or file content filter",
        "Ah		Show scaled file size",
        "Ap		Show file mode",
+       "As		Show file size",
        "At		Show modification time",
        "Rh		Remove scaled file size column",
        "Rp		Remove file mode column",
+       "Rs		Remove file size column",
        "Rt		Remvoe modification time column",
        "p		Show current relative work directory",
        "a		Show command line directory arguments",
@@ -2298,7 +2317,7 @@ disp_curs(
 	y = curs[right_col];
 	i = top_idx[right_col] + y;
 	m = mark_idx[right_col];
-	cg = fmode || add_mode || add_hsize || add_mtime;
+	cg = fmode || add_mode || add_hsize || add_bsize || add_mtime;
 	f = db_list[right_col][i];
 
 #if defined(TRACE) && 0
@@ -2356,7 +2375,7 @@ disp_list(
 	fprintf(debug, "->disp_list\n");
 #endif
 	w = getlstwin();
-	cg = fmode || add_mode || add_hsize || add_mtime;
+	cg = fmode || add_mode || add_hsize || add_bsize || add_mtime;
 
 	/* For the case that entries had been removed
 	 * and page_down() */
@@ -2643,6 +2662,8 @@ disp_name(WINDOW *w, int y, int x, int mx, int o, struct filediff *f, int t,
 
 	if (add_hsize) {
 		mx -= 5;
+	} else if (add_bsize) {
+		mx -= bsizlen[i];
 	}
 
 	if (add_mtime) {
@@ -2687,7 +2708,14 @@ disp_name(WINDOW *w, int y, int x, int mx, int o, struct filediff *f, int t,
 		size_t n;
 
 		mx += 5;
-		n = getfilesize(lbuf, sizeof lbuf, f->siz[i], TRUE);
+		n = getfilesize(lbuf, sizeof lbuf, f->siz[i], 1);
+		wmove(w, y, mx - n);
+		addmbs(w, lbuf, 0);
+	} else if (add_bsize) {
+		size_t n;
+
+		mx += bsizlen[i];
+		n = getfilesize(lbuf, sizeof lbuf, f->siz[i], 2);
 		wmove(w, y, mx - n);
 		addmbs(w, lbuf, 0);
 	}
@@ -2891,7 +2919,7 @@ file_stat(struct filediff *f, struct filediff *f2)
 			    (unsigned long)minor(f->lrdev));
 		else
 			w1 = getfilesize(lbuf, sizeof lbuf, f->siz[0],
-			    scale || twocols);
+			    scale || twocols ? 1 : 0);
 
 		w1++;
 	} else
@@ -2904,7 +2932,7 @@ file_stat(struct filediff *f, struct filediff *f2)
 			    (unsigned long)minor(f2->rrdev));
 		else
 			w2 = getfilesize(rbuf, sizeof rbuf, f2->siz[1],
-			    scale || twocols);
+			    scale || twocols ? 1 : 0);
 
 		w2++;
 	} else
@@ -2967,16 +2995,19 @@ file_stat(struct filediff *f, struct filediff *f2)
 }
 
 static size_t
-getfilesize(char *buf, size_t bufsiz, off_t size, bool scal)
+getfilesize(char *buf, size_t bufsiz, off_t size,
+    /* 1: scale */
+    /* 2: don't group */
+    unsigned md)
 {
 	char *unit;
 	float f;
 
-	if (!scal) {
+	if (!md) {
 		return snprintf(buf, bufsiz, "%'lld", (long long)size);
 
-	} else if (size < 1024) {
-		return snprintf(buf, bufsiz, "%d", (int)size);
+	} else if ((md & 2) || size < 1024) {
+		return snprintf(buf, bufsiz, "%lld", (long long)size);
 
 	} else {
 		f = size / 1024.0;

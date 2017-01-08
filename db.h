@@ -45,6 +45,7 @@ void ddl_sort(void);
 extern enum sorting sorting;
 extern unsigned db_num[2];
 extern struct filediff **db_list[2];
+extern unsigned short bsizlen[2];
 extern short noequal, real_diff;
 extern void *scan_db;
 extern void *name_db;

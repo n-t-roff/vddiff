@@ -67,6 +67,8 @@ enum sorting sorting;
 unsigned db_num[2];
 struct filediff **db_list[2];
 static struct filediff **cur_list;
+static off_t maxsiz;
+unsigned short bsizlen[2];
 short noequal, real_diff;
 void *scan_db;
 void *name_db;
@@ -635,6 +637,7 @@ void
 diff_db_sort(int i)
 {
 	db_idx = 0;
+	maxsiz = 0;
 
 	if (!tot_db_num[i]) {
 		goto exit;
@@ -652,6 +655,9 @@ diff_db_sort(int i)
 #endif
 exit:
 	db_num[i] = db_idx;
+
+	/* 5 instead of 4 for the column separator */
+	for (bsizlen[i] = 5; maxsiz >= 10000; bsizlen[i]++, maxsiz /= 10);
 }
 
 #define PROC_DIFF_NODE() \
@@ -675,6 +681,14 @@ exit:
 	       (f->type[0] && f->type[1]))))) \
 	{ \
 		cur_list[db_idx++] = f; \
+		\
+		if (f->type[0] && f->siz[0] > maxsiz) { \
+			maxsiz = f->siz[0]; \
+		} \
+		\
+		if (f->type[1] && f->siz[1] > maxsiz) { \
+			maxsiz = f->siz[1]; \
+		} \
 	} \
 	} while (0)
 
