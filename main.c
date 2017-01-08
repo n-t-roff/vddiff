@@ -14,6 +14,7 @@ OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
 PERFORMANCE OF THIS SOFTWARE.
 */
 
+#include <libgen.h>
 #include <string.h>
 #include <stdlib.h>
 #include <sys/types.h>
@@ -59,12 +60,13 @@ static void check_args(int, char **);
 static int read_rc(char *);
 static void ttcharoff(void);
 static void usage(void);
+static void runs2x(void);
 
 static char *usage_txt =
-"Usage: %s [-u [<RC file>]] [-BbCcdEefgIiklMmnoqRrVWXy] [-F <pattern>]\n"
+"Usage: %s [-u [<RC file>]] [-BbCcdEefgIiklMmNnoqRrVWXy] [-F <pattern>]\n"
 "	[-G <pattern>] [-t <diff_tool>] [-v <view_tool>] [<directory_1>\n"
 "	[<directory_2>]]\n";
-static char *getopt_arg = "BbCcdEeF:fG:gIiklMmnoqRrt:Vv:WXy";
+static char *getopt_arg = "BbCcdEeF:fG:gIiklMmNnoqRrt:Vv:WXy";
 
 bool bmode;
 bool qdiff;
@@ -74,6 +76,7 @@ bool dontcmp;
 bool force_exec, force_fs, force_multi;
 bool readonly;
 bool nofkeys;
+bool run2x;
 
 int
 main(int argc, char **argv)
@@ -196,6 +199,10 @@ main(int argc, char **argv)
 			sorting = SORTMIXED;
 			break;
 
+		case 'N':
+			run2x = TRUE;
+			break;
+
 		case 'n':
 			noequal = 1;
 			break;
@@ -260,6 +267,10 @@ main(int argc, char **argv)
 		default:
 			usage();
 		}
+	}
+
+	if (!run2x) {
+		runs2x();
 	}
 
 	argc -= optind;
@@ -507,6 +518,34 @@ ttcharoff(void)
 }
 
 static void
+runs2x(void)
+{
+	FILE *fh;
+	static const char cmd[] = "ps -o comm";
+	unsigned short n;
+
+	if (!(fh = popen(cmd, "r"))) {
+		printf("popen(%s): %s\n", cmd, strerror(errno));
+		return;
+	}
+
+	for (n = 0; fgets(lbuf, BUF_SIZE, fh); ) {
+		info_chomp(lbuf);
+
+		if (!strcmp(basename(lbuf), BIN) && n++) {
+			printf(
+BIN " is already running in this terminal.  Type ^D (CTRL-d) to return\n"
+"to " BIN " or use option -N to start a new " BIN " instance.\n");
+			exit(1);
+		}
+	}
+
+	if (pclose(fh) == -1) {
+		printf("pclose(%s): %s\n", cmd, strerror(errno));
+	}
+}
+
+static void
 usage(void)
 {
 	printf(usage_txt, prog);
@@ -516,9 +555,13 @@ usage(void)
 void
 sig_term(int sig)
 {
+	int e;
+
+	e = errno;
 #if defined(TRACE)
 	fprintf(debug, "->sig_term(%d)\n", sig);
 #endif
+
 	/* Change out of tmpdirs before deleting them. */
 	if (chdir("/") == -1) {
 		printerr(strerror(errno), "chdir \"/\" failed");
@@ -539,4 +582,6 @@ sig_term(int sig)
 		endwin();
 		exit(1);
 	}
+
+	errno = e;
 }

@@ -281,6 +281,15 @@ allows to use them on multiple file too.
 .It Fl m
 Normally directories are displayed on top.
 This is disabled with this option.
+.It Fl N
+When using the
+.Sq Li s
+(run shell) commands one may forget
+that @vddiff@ is already running
+and starts a new instance instead of typing
+.Li ^D
+to return to @vddiff@.
+The tool checks this case and prevents a second invocation.
 .It Fl n
 This option suppresses the display of equal files.
 .It Fl o
@@ -955,6 +964,8 @@ and environment variables are expanded
 but not (yet) auto-completed.
 Other path components are auto-completed on pressing
 .Aq Cm TAB .
+This does only work when the cursor is at the
+end of the input string.
 .It Li e Ns Op Li dit
 Allow file change operations and function keys.
 .It Li find Ar pattern
@@ -1514,9 +1525,11 @@ set
 (else usually a further mouse click is required to finalize
 the resize).
 .Sh FILES
-.Bl -tag -width ~/.@vddiff@rc -compact
+.Bl -tag -width ~/.@vddiff@info
 .It Pa ~/.@vddiff@rc
 Read on start-up to set non-default options.
+.It Pa ~/.@vddiff@info
+Storage for permanent information.
 .El
 .Sh EXAMPLES
 To display only differing files and subdirectories which contain
@@ -1564,6 +1577,13 @@ The only disadvantage is,
 that also directories may be shown,
 which contain no differences
 (since the tool had not visited them yet).
+.Sh SEE ALSO
+.Bl -tag -width 8n
+.It Lk http://n-t-roff.github.io/vddiff/vddiff.1.pdf
+This manual page as a PDF document with hyperlinks.
+.It Lk http://n-t-roff.github.io/vddiff/vddiff.1.html
+This manual page as a HTML document with hyperlinks.
+.El
 .\".Sh BUGS
 .\"TODO issue:
 .\"Pp
