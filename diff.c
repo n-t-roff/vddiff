@@ -345,9 +345,9 @@ free_a:
 		}
 
 		if ((diff->type[0] = stat1.st_mode)) {
-			diff->luid  = stat1.st_uid;
-			diff->lgid  = stat1.st_gid;
-			diff->siz[0]  = stat1.st_size;
+			diff->uid[0] = stat1.st_uid;
+			diff->gid[0] = stat1.st_gid;
+			diff->siz[0] = stat1.st_size;
 			diff->mtim[0] = stat1.st_mtim.tv_sec;
 			diff->lrdev = stat1.st_rdev;
 
@@ -359,9 +359,9 @@ free_a:
 		}
 
 		if ((diff->type[1] = stat2.st_mode)) {
-			diff->ruid  = stat2.st_uid;
-			diff->rgid  = stat2.st_gid;
-			diff->siz[1]  = stat2.st_size;
+			diff->uid[1] = stat2.st_uid;
+			diff->gid[1] = stat2.st_gid;
+			diff->siz[1] = stat2.st_size;
 			diff->mtim[1] = stat2.st_mtim.tv_sec;
 			diff->rrdev = stat2.st_rdev;
 
@@ -567,9 +567,9 @@ right_tree:
 		if (file_err)
 			diff->diff = '-';
 		else {
-			diff->ruid  = stat2.st_uid;
-			diff->rgid  = stat2.st_gid;
-			diff->siz[1]  = stat2.st_size;
+			diff->uid[1] = stat2.st_uid;
+			diff->gid[1] = stat2.st_gid;
+			diff->siz[1] = stat2.st_size;
 			diff->mtim[1] = stat2.st_mtim.tv_sec;
 			diff->rrdev = stat2.st_rdev;
 

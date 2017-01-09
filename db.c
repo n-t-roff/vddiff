@@ -14,10 +14,13 @@ OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
 PERFORMANCE OF THIS SOFTWARE.
 */
 
+#include <errno.h>
 #include <string.h>
 #include <stdlib.h>
 #include <sys/types.h>
 #include <sys/stat.h>
+#include <pwd.h>
+#include <grp.h>
 #include <ctype.h>
 #include <search.h>
 #include <regex.h>
@@ -67,6 +70,8 @@ enum sorting sorting;
 unsigned db_num[2];
 struct filediff **db_list[2];
 static struct filediff **cur_list;
+static size_t tusrlen, tgrplen;
+size_t usrlen[2], grplen[2];
 static off_t maxsiz;
 unsigned short bsizlen[2];
 short noequal, real_diff;
@@ -638,6 +643,8 @@ diff_db_sort(int i)
 {
 	db_idx = 0;
 	maxsiz = 0;
+	tusrlen = 0;
+	tgrplen = 0;
 
 	if (!tot_db_num[i]) {
 		goto exit;
@@ -655,6 +662,8 @@ diff_db_sort(int i)
 #endif
 exit:
 	db_num[i] = db_idx;
+	usrlen[i] = tusrlen + 1; /* column separator */
+	grplen[i] = tgrplen + 1;
 
 	/* 5 instead of 4 for the column separator */
 	for (bsizlen[i] = 5; maxsiz >= 10000; bsizlen[i]++, maxsiz /= 10);
@@ -674,8 +683,8 @@ exit:
 	       (f->type[0] & S_IFMT) != (f->type[1] & S_IFMT)) && \
 	      \
 	      (!real_diff || \
-	       f->diff == '!' || (S_ISDIR(f->type[0]) && S_ISDIR(f->type[1]) && \
-	       is_diff_dir(f))) && \
+	       f->diff == '!' || (S_ISDIR(f->type[0]) && S_ISDIR(f->type[1]) \
+	       && is_diff_dir(f))) && \
 	      \
 	      (!nosingle || \
 	       (f->type[0] && f->type[1]))))) \
@@ -689,6 +698,58 @@ exit:
 		if (f->type[1] && f->siz[1] > maxsiz) { \
 			maxsiz = f->siz[1]; \
 		} \
+		\
+		if (add_owner) { \
+			if (f->type[0]) { \
+				if (!(pw = getpwuid(f->uid[0]))) { \
+					l = 5; \
+				} else { \
+					l = strlen(pw->pw_name); \
+				} \
+				\
+				if (l > tusrlen) { \
+					tusrlen = l; \
+				} \
+			} \
+			\
+			if (f->type[1]) { \
+				if (!(pw = getpwuid(f->uid[1]))) { \
+					l = 5; \
+				} else { \
+					l = strlen(pw->pw_name); \
+				} \
+				\
+				if (l > tusrlen) { \
+					tusrlen = l; \
+				} \
+			} \
+		} \
+		\
+		if (add_group) { \
+			if (f->type[0]) { \
+				if (!(gr = getgrgid(f->gid[0]))) { \
+					l = 5; \
+				} else { \
+					l = strlen(gr->gr_name); \
+				} \
+				\
+				if (l > tgrplen) { \
+					tgrplen = l; \
+				} \
+			} \
+			\
+			if (f->type[1]) { \
+				if (!(gr = getgrgid(f->gid[1]))) { \
+					l = 5; \
+				} else { \
+					l = strlen(gr->gr_name); \
+				} \
+				\
+				if (l > tgrplen) { \
+					tgrplen = l; \
+				} \
+			} \
+		} \
 	} \
 	} while (0)
 
@@ -697,6 +758,9 @@ static void
 mk_list(struct bst_node *n)
 {
 	struct filediff *f;
+	struct passwd *pw;
+	struct group *gr;
+	size_t l;
 
 	if (!n) {
 		return;
@@ -712,6 +776,9 @@ static void
 mk_list(const void *n, const VISIT which, const int depth)
 {
 	struct filediff *f;
+	struct passwd *pw;
+	struct group *gr;
+	size_t l;
 
 	(void)depth;
 

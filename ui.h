@@ -80,3 +80,5 @@ extern struct ui_state *ui_stack;
 extern MEVENT mevent;
 #endif
 extern bool scrollen;
+extern bool add_owner;
+extern bool add_group;

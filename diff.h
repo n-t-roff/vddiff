@@ -5,8 +5,8 @@ struct filediff {
 	char   *name;
 	char   *llink, *rlink;
 	mode_t  type[2];
-	uid_t   luid,   ruid;
-	gid_t   lgid,   rgid;
+	uid_t   uid[2];
+	gid_t   gid[2];
 	off_t   siz[2];
 	time_t  mtim[2];
 	dev_t   lrdev,  rrdev;

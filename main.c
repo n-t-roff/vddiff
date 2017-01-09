@@ -76,7 +76,7 @@ bool dontcmp;
 bool force_exec, force_fs, force_multi;
 bool readonly;
 bool nofkeys;
-bool run2x;
+static bool run2x;
 
 int
 main(int argc, char **argv)

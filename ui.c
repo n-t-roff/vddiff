@@ -126,6 +126,8 @@ static bool add_hsize; /* scaled size */
 static bool add_bsize;
 static bool add_mode;
 static bool add_mtime;
+bool add_owner;
+bool add_group;
 
 void
 build_ui(void)
@@ -974,7 +976,30 @@ next_key:
 
 			break;
 		case 'u':
-			if (*key == 'e') {
+			if (*key == 'A') {
+				c = 0;
+
+				if (add_owner) {
+					goto next_key;
+				}
+
+				add_owner = TRUE;
+				re_sort_list();
+				disp_fmode();
+				goto next_key;
+
+			} else if (*key == 'R') {
+				c = 0;
+
+				if (!add_owner) {
+					goto next_key;
+				}
+
+				add_owner = FALSE;
+				disp_fmode();
+				goto next_key;
+
+			} else if (*key == 'e') {
 				fs_chown(3, 0, u, num);
 				goto save_st;
 			} else if (key[1] == 'e') {
@@ -991,7 +1016,30 @@ next_key:
 			rebuild_db(0);
 			break;
 		case 'g':
-			if (*key == 'e') {
+			if (*key == 'A') {
+				c = 0;
+
+				if (add_group) {
+					goto next_key;
+				}
+
+				add_group = TRUE;
+				re_sort_list();
+				disp_fmode();
+				goto next_key;
+
+			} else if (*key == 'R') {
+				c = 0;
+
+				if (!add_group) {
+					goto next_key;
+				}
+
+				add_group = FALSE;
+				disp_fmode();
+				goto next_key;
+
+			} else if (*key == 'e') {
 				fs_chown(3, 1, u, num);
 				goto save_st;
 			} else if (key[1] == 'e') {
@@ -1295,13 +1343,17 @@ static char *helptxt[] = {
        "F		Toggle following symbolic links",
        "E		Toggle file name or file content filter",
        "Ah		Show scaled file size",
+       "Ag		Show file group",
        "Ap		Show file mode",
        "As		Show file size",
        "At		Show modification time",
+       "Au		Show file owner",
        "Rh		Remove scaled file size column",
+       "Rg		Remove file group column",
        "Rp		Remove file mode column",
        "Rs		Remove file size column",
-       "Rt		Remvoe modification time column",
+       "Rt		Remove modification time column",
+       "Ru		Remove file owner column",
        "p		Show current relative work directory",
        "a		Show command line directory arguments",
        "f		Show full path",
@@ -2317,7 +2369,8 @@ disp_curs(
 	y = curs[right_col];
 	i = top_idx[right_col] + y;
 	m = mark_idx[right_col];
-	cg = fmode || add_mode || add_hsize || add_bsize || add_mtime;
+	cg = fmode || add_mode || add_hsize || add_bsize || add_mtime
+	    || add_owner || add_group;
 	f = db_list[right_col][i];
 
 #if defined(TRACE) && 0
@@ -2375,7 +2428,8 @@ disp_list(
 	fprintf(debug, "->disp_list\n");
 #endif
 	w = getlstwin();
-	cg = fmode || add_mode || add_hsize || add_bsize || add_mtime;
+	cg = fmode || add_mode || add_hsize || add_bsize || add_mtime
+	    || add_owner || add_group;
 
 	/* For the case that entries had been removed
 	 * and page_down() */
@@ -2655,9 +2709,19 @@ disp_name(WINDOW *w, int y, int x, int mx, int o, struct filediff *f, int t,
     short ct, char *l, int d, int i)
 {
 	int j;
+	struct passwd *pw;
+	struct group *gr;
 
 	if (add_mode) {
 		mx -= 5;
+	}
+
+	if (add_owner) {
+		mx -= usrlen[i];
+	}
+
+	if (add_group) {
+		mx -= grplen[i];
 	}
 
 	if (add_hsize) {
@@ -2702,6 +2766,28 @@ disp_name(WINDOW *w, int y, int x, int mx, int o, struct filediff *f, int t,
 		snprintf(lbuf, sizeof lbuf, "%04o", f->type[i] & 07777);
 		wmove(w, y, mx - 4);
 		addmbs(w, lbuf, 0);
+	}
+
+	if (add_owner) {
+		if ((pw = getpwuid(f->uid[i])))
+			memcpy(lbuf, pw->pw_name, strlen(pw->pw_name) + 1);
+		else
+			snprintf(lbuf, sizeof lbuf, "%u", f->uid[i]);
+
+		wmove(w, y, mx + 1);
+		addmbs(w, lbuf, 0);
+		mx += usrlen[i];
+	}
+
+	if (add_group) {
+		if ((gr = getgrgid(f->gid[i])))
+			memcpy(lbuf, gr->gr_name, strlen(gr->gr_name) + 1);
+		else
+			snprintf(lbuf, sizeof lbuf, "%u", f->gid[i]);
+
+		wmove(w, y, mx + 1);
+		addmbs(w, lbuf, 0);
+		mx += grplen[i];
 	}
 
 	if (add_hsize) {
@@ -2829,17 +2915,17 @@ file_stat(struct filediff *f, struct filediff *f2)
 		rtyp = 0;
 
 	if (ltyp) {
-		if ((pw = getpwuid(f->luid)))
+		if ((pw = getpwuid(f->uid[0])))
 			memcpy(lbuf, pw->pw_name, strlen(pw->pw_name) + 1);
 		else
-			snprintf(lbuf, sizeof lbuf, "%u", f->luid);
+			snprintf(lbuf, sizeof lbuf, "%u", f->uid[0]);
 	}
 
 	if (rtyp) {
-		if ((pw = getpwuid(f2->ruid)))
+		if ((pw = getpwuid(f2->uid[1])))
 			memcpy(rbuf, pw->pw_name, strlen(pw->pw_name) + 1);
 		else
-			snprintf(rbuf, sizeof rbuf, "%u", f2->ruid);
+			snprintf(rbuf, sizeof rbuf, "%u", f2->uid[1]);
 	}
 
 	if (ltyp) {
@@ -2870,17 +2956,17 @@ file_stat(struct filediff *f, struct filediff *f2)
 		rtyp = 0;
 
 	if (ltyp) {
-		if ((gr = getgrgid(f->lgid)))
+		if ((gr = getgrgid(f->gid[0])))
 			memcpy(lbuf, gr->gr_name, strlen(gr->gr_name) + 1);
 		else
-			snprintf(lbuf, sizeof lbuf, "%u", f->lgid);
+			snprintf(lbuf, sizeof lbuf, "%u", f->gid[0]);
 	}
 
 	if (rtyp) {
-		if ((gr = getgrgid(f2->rgid)))
+		if ((gr = getgrgid(f2->gid[1])))
 			memcpy(rbuf, gr->gr_name, strlen(gr->gr_name) + 1);
 		else
-			snprintf(rbuf, sizeof rbuf, "%u", f2->rgid);
+			snprintf(rbuf, sizeof rbuf, "%u", f2->gid[1]);
 	}
 
 	if (ltyp) {
