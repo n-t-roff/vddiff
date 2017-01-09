@@ -337,17 +337,17 @@ mk_str_list(const void *n, const VISIT which, const int depth)
 #endif
 
 void
-free_strs(void *db)
+free_strs(void **db)
 {
 #ifdef HAVE_LIBAVLBST
-	del_strs(((struct bst *)db)->root);
-	((struct bst *)db)->root = NULL;
+	del_strs(((struct bst *)*db)->root);
+	((struct bst *)*db)->root = NULL;
 #else
 	char *s;
 
-	while (db) {
-		s = *(char **)db;
-		tdelete(s, &db, name_cmp);
+	while (*db) {
+		s = *(char **)*db;
+		tdelete(s, db, name_cmp);
 		free(s);
 	}
 #endif
