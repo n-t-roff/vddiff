@@ -3640,20 +3640,13 @@ enter_dir(char *name, char *rnam, bool lzip, bool rzip, short tree
 	if (bmode) {
 		cp = syspth[1];
 	} else {
-		if (right_col) {
-			syspth[1][pthlen[1]] = 0;
-			cp = syspth[1];
-			lp = &pthlen[1];
-		} else {
-			syspth[0][pthlen[0]] = 0;
-			cp = syspth[0];
-			lp = &pthlen[0];
-		}
-
+		syspth[right_col][pthlen[right_col]] = 0;
+		cp = syspth[right_col];
+		lp = &pthlen[right_col];
 		sp = strdup(cp);
 	}
 
-	db_set_curs(cp, top_idx[right_col], curs[right_col]);
+	db_set_curs(right_col, cp, top_idx[right_col], curs[right_col]);
 	n = NULL; /* flag */
 
 	/* Not in bmode since syspth[0] is always "." there */
@@ -3692,15 +3685,8 @@ enter_dir(char *name, char *rnam, bool lzip, bool rzip, short tree
 			size_t l;
 
 			l = strlen(name);
-
-			if (bpth->col) {
-				memcpy(syspth[1], name, l+1);
-				pthlen[1] = l;
-			} else {
-				memcpy(syspth[0], name, l+1);
-				pthlen[0] = l;
-			}
-
+			memcpy(syspth[bpth->col], name, l+1);
+			pthlen[bpth->col] = l;
 			free(name);
 			name = NULL;
 		}
@@ -3767,7 +3753,7 @@ enter_dir(char *name, char *rnam, bool lzip, bool rzip, short tree
 		syspth[0][pthlen[0]] = 0;
 	}
 
-	if ((uv = db_get_curs(cp))) {
+	if ((uv = db_get_curs(right_col, cp))) {
 		top_idx[right_col] = *uv++;
 		curs[right_col] = *uv;
 	}

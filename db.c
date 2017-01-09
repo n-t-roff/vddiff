@@ -82,7 +82,7 @@ void *uz_path_db;
 void *alias_db;
 void *bdl_db;
 
-static void *curs_db;
+static void *curs_db[2];
 static void *ext_db;
 static void *uz_ext_db;
 static unsigned db_idx, tot_db_num[2];
@@ -103,7 +103,8 @@ db_init(void)
 {
 	scan_db    = db_new(name_cmp);
 	name_db    = db_new(name_cmp);
-	curs_db    = db_new(name_cmp);
+	curs_db[0] = db_new(name_cmp);
+	curs_db[1] = db_new(name_cmp);
 	ext_db     = db_new(name_cmp);
 	uz_ext_db  = db_new(name_cmp);
 	skipext_db = db_new(name_cmp);
@@ -530,7 +531,7 @@ ext_cmp(const void *a, const void *b)
  ***********/
 
 void
-db_set_curs(char *path, unsigned _top_idx, unsigned _curs)
+db_set_curs(int col, char *path, unsigned _top_idx, unsigned _curs)
 {
 	unsigned *uv;
 
@@ -538,11 +539,11 @@ db_set_curs(char *path, unsigned _top_idx, unsigned _curs)
 	struct bst_node *n;
 	int br;
 
-	if (!(br = bst_srch(curs_db, (union bst_val)(void *)path, &n))) {
+	if (!(br = bst_srch(curs_db[col], (union bst_val)(void *)path, &n))) {
 		uv = n->data.p;
 	} else {
 		uv = malloc(2 * sizeof(unsigned));
-		avl_add_at(curs_db, (union bst_val)(void *)strdup(path),
+		avl_add_at(curs_db[col], (union bst_val)(void *)strdup(path),
 		    (union bst_val)(void *)uv, br, n);
 	}
 #else
@@ -551,7 +552,7 @@ db_set_curs(char *path, unsigned _top_idx, unsigned _curs)
 
 	cp = malloc(sizeof(struct curs_pos));
 	cp->path = strdup(path);
-	vp = tsearch(cp, &curs_db, curs_cmp);
+	vp = tsearch(cp, &curs_db[col], curs_cmp);
 	cp2 = *(struct curs_pos **)vp;
 
 	if (cp2 != cp) {
@@ -570,12 +571,12 @@ db_set_curs(char *path, unsigned _top_idx, unsigned _curs)
 }
 
 unsigned *
-db_get_curs(char *path)
+db_get_curs(int col, char *path)
 {
 #ifdef HAVE_LIBAVLBST
 	struct bst_node *n;
 
-	if (!bst_srch(curs_db, (union bst_val)(void *)path, &n))
+	if (!bst_srch(curs_db[col], (union bst_val)(void *)path, &n))
 		return n->data.p;
 #else
 	struct curs_pos *cp, key;
@@ -583,7 +584,7 @@ db_get_curs(char *path)
 
 	key.path = path;
 
-	if ((vp = tfind(&key, &curs_db, curs_cmp))) {
+	if ((vp = tfind(&key, &curs_db[col], curs_cmp))) {
 		cp = *(struct curs_pos **)vp;
 		return (unsigned *)&cp->uv;
 	}
