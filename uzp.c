@@ -68,8 +68,13 @@ static struct uz_ext exttab[] = {
 	{ "tar"    , UZ_TAR },
 	{ "tar.bz2", UZ_TBZ },
 	{ "tar.gz" , UZ_TGZ },
+	{ "tar.xz" , UZ_TXZ },
+	{ "tar.Z"  , UZ_TAR_Z },
 	{ "tbz"    , UZ_TBZ },
 	{ "tgz"    , UZ_TGZ },
+	{ "txz"    , UZ_TXZ },
+	{ "xz"     , UZ_XZ  },
+	{ "Z"      , UZ_GZ  },
 	{ "zip"    , UZ_ZIP }
 };
 
@@ -217,12 +222,16 @@ unpack(struct filediff *f, int tree, char **tmp, int type)
 		return NULL;
 
 	switch (id) {
+	/* all archive types */
 	case UZ_TGZ:
 	case UZ_TBZ:
 	case UZ_TAR:
+	case UZ_TXZ:
 	case UZ_ZIP:
-		if (!type)
+	case UZ_TAR_Z:
+		if (!type) {
 			return NULL;
+		}
 
 		/* fall through */
 	default:
@@ -236,21 +245,39 @@ unpack(struct filediff *f, int tree, char **tmp, int type)
 	case UZ_GZ:
 		z = zcat("zcat", f, tree, i);
 		break;
+
 	case UZ_BZ2:
 		z = zcat("bzcat", f, tree, i);
 		break;
+
+	case UZ_XZ:
+		z = zcat("xzcat", f, tree, i);
+		break;
+
 	case UZ_TGZ:
 		z = tar("xzf", f, tree, i);
 		break;
+
 	case UZ_TBZ:
 		z = tar("xjf", f, tree, i);
 		break;
+
 	case UZ_TAR:
 		z = tar("xf", f, tree, i);
 		break;
+
+	case UZ_TXZ:
+		z = tar("xJf", f, tree, i);
+		break;
+
+	case UZ_TAR_Z:
+		z = tar("xZf", f, tree, i);
+		break;
+
 	case UZ_ZIP:
 		z = unzip(f, tree, i);
 		break;
+
 	default:
 		rmtmpdirs(tmp_dir, TOOL_NOLIST);
 		return NULL;
