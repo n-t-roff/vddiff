@@ -146,13 +146,18 @@ complet(char *s, int c)
 		printerr(strerror(errno), "closedir \"%s\"", b);
 	}
 
-	if (!m || ln == lb) {
+	if (!m) {
 		goto free;
+	}
+
+	if (ln == lb) {
+		goto cplt;
 	}
 
 	m[ln] = 0;
 	ed_append(m + lb);
 
+cplt:
 	if (co) { /* complete, not part of name */
 		ed_append("/");
 	}
