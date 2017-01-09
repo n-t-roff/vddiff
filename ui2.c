@@ -1381,3 +1381,28 @@ ui_chmod(int t, long u, unsigned short num)
 	fs_chmod(t, u, num, 0);
 	return 0;
 }
+
+int
+ui_chown(int t, int op, long u, unsigned short num)
+{
+	unsigned i;
+
+	if (mmrkd[right_col]) {
+		if (dialog(y_n_txt, NULL,
+		    "Really change %s of %d files?",
+		    op ? "group" : "owner",
+		    mmrkd[right_col]) != 'y') {
+			return 1;
+		}
+
+		for (i = 0; (u = get_mmrk()) >= 0; i = 4) {
+			fs_chown(t, op, u, 1, i | 3);
+		}
+
+		rebuild_db(0);
+		return 1;
+	}
+
+	fs_chown(t, op, u, num, 0);
+	return 0;
+}

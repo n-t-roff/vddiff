@@ -308,16 +308,20 @@ ask_for_perms(mode_t *mode)
 }
 
 void
-fs_chown(int tree, int op, long u, int num)
+fs_chown(int tree, int op, long u, int num,
+    /* 1: Force */
+    /* 2: Don't rebuild DB (for mmrk) */
+    /* 4: Reuse previous ID */
+    unsigned md)
 {
 	struct filediff *f;
 	static struct history owner_hist, group_hist;
 	int i;
 	struct passwd *pw;
 	struct group *gr;
-	uid_t uid;
-	gid_t gid;
-	bool have_owner = FALSE;
+	static uid_t uid;
+	static gid_t gid;
+	bool have_owner;
 
 	fs_error = FALSE;
 	fs_ign_errs = FALSE;
@@ -326,7 +330,9 @@ fs_chown(int tree, int op, long u, int num)
 		return;
 	}
 
-	if (!force_multi && num > 1 && dialog(y_n_txt, NULL,
+	have_owner = md & 4 ? TRUE : FALSE;
+
+	if (!force_multi && !(md & 1) && num > 1 && dialog(y_n_txt, NULL,
 	    "Change %s of %d files?", op ? "group" : "owner", num) != 'y')
 		return;
 
@@ -391,7 +397,9 @@ fs_chown(int tree, int op, long u, int num)
 		}
 	}
 
-	rebuild_db(0);
+	if (!(md & 2)) {
+		rebuild_db(0);
+	}
 exit:
 	syspth[0][pthlen[0]] = 0;
 

@@ -1000,14 +1000,23 @@ next_key:
 				goto next_key;
 
 			} else if (*key == 'e') {
-				fs_chown(3, 0, u, num);
+				if (ui_chown(3, 0, u, num)) {
+					goto next_key;
+				}
+
 				goto save_st;
 			} else if (key[1] == 'e') {
 				if (*key == 'l') {
-					fs_chown(1, 0, u, num);
+					if (ui_chown(1, 0, u, num)) {
+						goto next_key;
+					}
+
 					goto save_st;
 				} else if (*key == 'r') {
-					fs_chown(2, 0, u, num);
+					if (ui_chown(2, 0, u, num)) {
+						goto next_key;
+					}
+
 					goto save_st;
 				}
 			}
@@ -1040,14 +1049,23 @@ next_key:
 				goto next_key;
 
 			} else if (*key == 'e') {
-				fs_chown(3, 1, u, num);
+				if (ui_chown(3, 1, u, num)) {
+					goto next_key;
+				}
+
 				goto save_st;
 			} else if (key[1] == 'e') {
 				if (*key == 'l') {
-					fs_chown(1, 1, u, num);
+					if (ui_chown(1, 1, u, num)) {
+						goto next_key;
+					}
+
 					goto save_st;
 				} else if (*key == 'r') {
-					fs_chown(2, 1, u, num);
+					if (ui_chown(2, 1, u, num)) {
+						goto next_key;
+					}
+
 					goto save_st;
 				}
 			}
