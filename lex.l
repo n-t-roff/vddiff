@@ -36,6 +36,7 @@ static char *filename = "-- stdin --";
 #endif
 
 void include(char *);
+static char * concat(char *);
 
 unsigned rc_nline = 1;
 unsigned rc_col = 1;
@@ -44,7 +45,8 @@ static short incl;
 S [ \t]
 NS [^ \t\n]
 %%
-#.*			{ ; }
+^#.*			|
+{S}#.*			{ ; }
 difftool		{ rc_col += yyleng; return DIFFTOOL     ; }
 viewtool		{ rc_col += yyleng; return VIEWTOOL     ; }
 ext			{ rc_col += yyleng; return EXT          ; }
@@ -86,6 +88,8 @@ include			{ rc_col += yyleng; incl = 1            ; }
 			  return INTEGER; }
 \"[^\"]*\"		{ rc_col += yyleng;
 			  yytext[yyleng-1] = 0;
+			  concat(yytext);
+
 			  if (incl) {
 				include(yytext+1);
 			  } else {
@@ -171,4 +175,29 @@ include(char *s)
 	incstack = inc;
 	yy_switch_to_buffer(yy_create_buffer(yyin, YY_BUF_SIZE));
 #endif /* LEX_HAS_BUFS */
+}
+
+static char *
+concat(char *s)
+{
+	char *r, *w;
+	int c, c2;
+
+	for (r = w = s; (c = *r++); ) {
+		if (c != '\\') {
+			goto next;
+		}
+
+		if ((c2 = *r++) == '\n') {
+			continue;
+		} else {
+			*w++ = c;
+			c = c2;
+		}
+next:
+		*w++ = c;
+	}
+
+	*w = 0;
+	return s;
 }

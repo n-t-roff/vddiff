@@ -3464,8 +3464,9 @@ pop_state(
 	struct ui_state *st = ui_stack;
 
 #if defined(TRACE)
+	TRCPTH;
 	fprintf(debug, "->pop_state(m=%d) lp(%s) rp(%s) fp(%s)\n",
-	    mode, syspth[0], syspth[1], fpath);
+	    mode, trcpth[0], trcpth[1], fpath);
 #endif
 	if (!st) {
 		if (from_fmode) {
@@ -3566,8 +3567,9 @@ pop_state(
 
 ret:
 #if defined(TRACE)
+	TRCPTH;
 	fprintf(debug, "<-pop_state lp(%s) rp(%s) fp(%s)\n",
-	    syspth[0], syspth[1], fpath);
+	    trcpth[0], trcpth[1], fpath);
 #endif
 	return;
 }
@@ -3607,10 +3609,12 @@ enter_dir(char *name, char *rnam, bool lzip, bool rzip, short tree
 
 		if (tree == 1) {
 			fpath = strdup(syspth[1]);
+			fpath[pthlen[1]] = 0;
 			memcpy(syspth[1], syspth[0], pthlen[0]+1);
 			pthlen[1] = pthlen[0];
 		} else if (tree == 2) {
 			fpath = strdup(syspth[0]);
+			fpath[pthlen[0]] = 0;
 			memcpy(syspth[0], syspth[1], pthlen[1]+1);
 			pthlen[0] = pthlen[1];
 		}
@@ -3761,7 +3765,8 @@ enter_dir(char *name, char *rnam, bool lzip, bool rzip, short tree
 disp:
 	disp_list(1);
 #ifdef TRACE
-	fprintf(debug, "<-enter_dir lp(%s) rp(%s)\n", syspth[0], syspth[1]);
+	TRCPTH;
+	fprintf(debug, "<-enter_dir lp(%s) rp(%s)\n", trcpth[0], trcpth[1]);
 #endif
 }
 

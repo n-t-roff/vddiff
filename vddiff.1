@@ -60,8 +60,11 @@ supported:
 .Li tar ,
 .Li tbz ,
 .Li tgz ,
+.Li txz ,
+.Li xz ,
+.Li zip ,
 and
-.Li zip .
+.Li Z .
 .Pp
 If
 .Nm
@@ -1082,6 +1085,16 @@ Everything following a
 .Sq Li #
 (outside quoted strings)
 to the end of the line is a comment.
+.Pp
+Quoted strings can be split over several lines
+by placing a backslash
+.Pq Sq Li \(rs
+at the end of a line.
+No character is allowed to follow this backslash
+on the same line, not even a white space character.
+All occurrences of a backslash followed by a new line
+character (i.e. a line break) are removed before storing
+the quoted string.
 .Bl -tag -width 12n
 .It Li twocolumn
 Start in two-column mode.

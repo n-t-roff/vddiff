@@ -121,8 +121,9 @@ dmode_fmode(
 		return;
 
 #if defined(TRACE)
+	TRCPTH;
 	fprintf(debug, "->dmode_fmode(%u) lp(%s) rp(%s) bm=%u fm=%u 2c=%u\n",
-	    mode, syspth[0], syspth[1], bmode ? 1 : 0, fmode ? 1 : 0,
+	    mode, trcpth[0], trcpth[1], bmode ? 1 : 0, fmode ? 1 : 0,
 	    twocols ? 1 : 0);
 #endif
 	while (!bmode && ui_stack)
@@ -147,8 +148,9 @@ dmode_fmode(
 		disp_fmode();
 	}
 #if defined(TRACE)
+	TRCPTH;
 	fprintf(debug, "<-dmode_fmode(%u) lp(%s) rp(%s) bm=%u fm=%u 2c=%u\n",
-	    mode, syspth[0], syspth[1], bmode ? 1 : 0, fmode ? 1 : 0,
+	    mode, trcpth[0], trcpth[1], bmode ? 1 : 0, fmode ? 1 : 0,
 	    twocols ? 1 : 0);
 #endif
 }
