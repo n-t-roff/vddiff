@@ -1863,27 +1863,7 @@ action(
 			tool(lnam, rnam, tree, ign_ext || raw_cont);
 
 		} else if (S_ISDIR(ltyp) || S_ISDIR(rtyp)) {
-			if (bmode) {
-				if (z2) {
-					setpthofs(1, f->name, z2->name);
-				}
-
-				enter_dir(rnam             , NULL ,
-				          z2 ? TRUE : FALSE, FALSE,
-				          tree LOCVAR);
-
-				/* In bmode archives cannot be compared, just
-				 * entered. In this case the archive to be
-				 * entered cannot be the mark--it is the
-				 * cursor. The mark is unpacked to z1, the
-				 * cursor to z2. So the unpacked dir is in z2.
-				 * Hence z1 is useless and can be removed. */
-				if (S_ISDIR(ltyp) && z1) {
-					t1 = strdup(lnam);
-					/* remove "/[lr]" */
-					t1[strlen(t1) - 2] = 0;
-				}
-			} else if (!S_ISDIR(ltyp)) {
+			if (!S_ISDIR(ltyp)) {
 				if (z2) {
 					setpthofs(1, f->name, z2->name);
 				}
@@ -3561,7 +3541,11 @@ pop_state(
 	free(st);
 
 	if (d2f) {
-		restore_fmode();
+		if (from_fmode) {
+			restore_fmode();
+		} else {
+			tgl2c(1);
+		}
 	} else if (mode) {
 		if (!twocols) {
 			dir_change = TRUE;
@@ -3611,25 +3595,33 @@ enter_dir(char *name, char *rnam, bool lzip, bool rzip, short tree
 		dir_change = TRUE;
 	}
 
-	if (fmode && name && rnam) {
-		clr_mark();
+	if (name && rnam) {
+		if (bmode || fmode) {
 
-		if (tree == 1) {
-			fpath = strdup(syspth[1]);
-			fpath[pthlen[1]] = 0;
-			memcpy(syspth[1], syspth[0], pthlen[0]+1);
-			pthlen[1] = pthlen[0];
-		} else if (tree == 2) {
-			fpath = strdup(syspth[0]);
-			fpath[pthlen[0]] = 0;
-			memcpy(syspth[0], syspth[1], pthlen[1]+1);
-			pthlen[0] = pthlen[1];
+			clr_mark();
+			name = strdup(name);
+			rnam = strdup(rnam);
+			f2d = TRUE;
 		}
 
-		name = strdup(name);
-		rnam = strdup(rnam);
-		fmode_dmode();
-		f2d = TRUE;
+		if (bmode) {
+			tgl2c(1);
+
+		} else if (fmode) {
+			if (tree == 1) {
+				fpath = strdup(syspth[1]);
+				fpath[pthlen[1]] = 0;
+				memcpy(syspth[1], syspth[0], pthlen[0]+1);
+				pthlen[1] = pthlen[0];
+			} else if (tree == 2) {
+				fpath = strdup(syspth[0]);
+				fpath[pthlen[0]] = 0;
+				memcpy(syspth[0], syspth[1], pthlen[1]+1);
+				pthlen[0] = pthlen[1];
+			}
+
+			fmode_dmode();
+		}
 	}
 
 	if (mark && !gl_mark && (!fmode ||

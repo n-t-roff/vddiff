@@ -273,29 +273,31 @@ tgl2c(
 				fpath = NULL;
 			}
 
-			dmode_fmode(2);
+			dmode_fmode(2); /* 2: no disp_fmode() */
 
 			if (old_col) {
 				top_idx[0] = old_top_idx;
 				curs[0] = old_curs;
 			}
+
+			disp_fmode();
 		}
-
-		disp_fmode();
-
 	} else if (fmode || /* fmode -> bmode */
 	    (md & 1)) { /* 1C diff -> bmode */
 		clr_mark();
 		syspth[0][pthlen[0]] = 0;
 		syspth[1][pthlen[1]] = 0;
 
-		if (right_col) {
-			fpath = strdup(syspth[0]);
-			old_top_idx = top_idx[0];
-			old_curs = curs[0];
-		} else {
-			fpath = strdup(syspth[1]);
-			memcpy(syspth[1], syspth[0], pthlen[0] + 1);
+		/* not relevant for 1C -> bmode */
+		if (!(md & 1)) {
+			if (right_col) {
+				fpath = strdup(syspth[0]);
+				old_top_idx = top_idx[0];
+				old_curs = curs[0];
+			} else {
+				fpath = strdup(syspth[1]);
+				memcpy(syspth[1], syspth[0], pthlen[0] + 1);
+			}
 		}
 
 		if (chdir(syspth[1]) == -1) {

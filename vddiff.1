@@ -13,7 +13,7 @@ LOSS OF USE, DATA OR PROFITS, WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE OR
 OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
 PERFORMANCE OF THIS SOFTWARE.
 ..
-.Dd January 9, 2017
+.Dd January 10, 2017
 .Dt VDDIFF 1
 .Sh NAME
 .Nm @vddiff@
@@ -74,14 +74,12 @@ file browser (a mode called
 .Sy bmode
 whereas the normal mode is called
 .Sy diff mode ) .
-By use of marks files can be compared in bmode,
-but comparing directories is not possible.
+By use of marks files and directories can be compared in bmode.
 If less than two arguments are used in two-column mode
 kind of a file manager mode (called
 .Sy fmode )
 is started.
-This mode does not support global marks but allows
-comparison of directories.
+This mode does not support global marks.
 All
 .Nm
 modes are explained in section
@@ -1492,8 +1490,7 @@ key
 switches to two-column browse mode.
 .Ss "One-column browse mode (bmode)"
 Bmode is a simply file browser mode.
-It allows file comparison by use or marks,
-but directory comparison is not possible.
+It allows file and directory comparison by use of marks.
 .begin_comment
 Since bmode uses chdir instead of paths
 it needs to resolve paths with symbolic links.
@@ -1508,7 +1505,9 @@ by use of local marks.
 This mode does not have global marks.
 If a directory is left, an existing mark in this
 directory is deleted.
-Generally in any mode at most one mark is supported.
+Generally in any mode at most one mark is supported
+(except the multi-marks set with
+.Sq Li V ) .
 If a mark is defined, an existing mark (in either column)
 is deleted.
 .Pp
