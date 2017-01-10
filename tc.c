@@ -104,6 +104,8 @@ fmode_dmode(void)
 	pwd  = syspth[0] + pthlen[0];
 	rpwd = syspth[1] + pthlen[1];
 	close2cwins();
+	diff_db_free(0);
+	diff_db_free(1);
 #if defined(TRACE)
 	fprintf(debug, "<-fmode_dmode lp(%s) rp(%s) bm=%u fm=%u 2c=%u\n",
 	    syspth[0], syspth[1], bmode ? 1 : 0, fmode ? 1 : 0,
@@ -153,6 +155,27 @@ dmode_fmode(
 	    mode, trcpth[0], trcpth[1], bmode ? 1 : 0, fmode ? 1 : 0,
 	    twocols ? 1 : 0);
 #endif
+}
+
+void
+restore_fmode(void)
+{
+	if (fpath) {
+		size_t l = strlen(fpath);
+
+		if (old_col) {
+			memcpy(syspth[0], fpath, l+1);
+			pthlen[0] = l;
+		} else {
+			memcpy(syspth[1], fpath, l+1);
+			pthlen[1] = l;
+		}
+
+		free(fpath);
+		fpath = NULL;
+	}
+
+	dmode_fmode(1);
 }
 
 void

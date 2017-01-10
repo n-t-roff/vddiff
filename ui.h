@@ -20,9 +20,11 @@ struct ui_state {
 	char *lzip, *rzip;
 	size_t llen, rlen;
 	void *bst;
-	unsigned num;
+	unsigned num; /* db_num */
 	struct filediff **list;
 	unsigned top_idx, curs, mmrkd;
+	/* 1: Don't restore. Just remove tmpdir. */
+	unsigned fl;
 	unsigned short tree;
 	struct ui_state *next;
 };

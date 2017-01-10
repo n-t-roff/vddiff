@@ -86,6 +86,9 @@ build_diff_db(
 		one_scan = FALSE;
 	}
 
+#if defined(TRACE)
+	fprintf(debug, "->build_diff_db tree(%d)\n", tree);
+#endif
 	if (one_scan) {
 		one_scan = FALSE;
 
@@ -119,8 +122,7 @@ build_diff_db(
 	ini_int();
 
 #if defined(TRACE)
-	fprintf(debug, "->build_diff_db tree(%d) opendir lp(%s)%s\n", tree,
-	    syspth[0], scan ? " scan" : "");
+	fprintf(debug, "  opendir lp(%s)%s\n", syspth[0], scan ? " scan" : "");
 #endif
 	if (!(d = opendir(syspth[0]))) {
 		if (!ign_diff_errs && dialog(ign_txt, NULL,

@@ -54,7 +54,7 @@ static int last_line_is_disp(void);
 static int first_line_is_top(void);
 static void curs_up(void);
 static void disp_line(unsigned, unsigned, int);
-static void push_state(char *, char *, bool, bool);
+static void push_state(char *, char *, unsigned);
 static void help(void);
 static char *type_name(mode_t);
 static void ui_resize(void);
@@ -2443,7 +2443,7 @@ disp_list(
 	bool cg;
 
 #if defined(TRACE)
-	fprintf(debug, "->disp_list\n");
+	fprintf(debug, "->disp_list col=%d\n", right_col);
 #endif
 	w = getlstwin();
 	cg = fmode || add_mode || add_hsize || add_bsize || add_mtime
@@ -3404,15 +3404,27 @@ center(unsigned idx)
 }
 
 static void
-push_state(char *name, char *rnam, bool lzip, bool rzip)
+push_state(char *name, char *rnam,
+    /* 1: lzip */
+    /* 2: rzip */
+    /* 4: don't push state */
+    unsigned md)
 {
 	struct ui_state *st;
 
 #if defined(TRACE)
-	fprintf(debug, "->push_state(ln(%s) rn(%s)) lp(%s) rp(%s)\n",
-	    name, rnam, syspth[0], syspth[1]);
+	TRCPTH;
+	fprintf(debug, "->push_state(ln(%s) rn(%s) md=%u) lp(%s) rp(%s)\n",
+	    name, rnam, md, trcpth[0], trcpth[1]);
 #endif
+	if (!*name && !*rnam) {
+		/* from fmode */
+		goto ret;
+	}
+
 	st = malloc(sizeof(struct ui_state));
+
+
 	diff_db_store(st);
 	st->llen = pthlen[0];
 	st->rlen = pthlen[1];
@@ -3440,9 +3452,9 @@ push_state(char *name, char *rnam, bool lzip, bool rzip)
 
 	/* Save name if temporary directory for removing it later */
 
-	st->lzip = lzip ? strdup(name) : NULL;
-	st->rzip = rzip ? strdup(rnam) : NULL;
-
+	st->lzip = md & 1 ? strdup(name) : NULL;
+	st->rzip = md & 2 ? strdup(rnam) : NULL;
+	st->fl = md & 4 ? 1 : 0;
 	st->top_idx = *top_idx;
 	*top_idx = 0;
 	st->curs = *curs;
@@ -3450,9 +3462,12 @@ push_state(char *name, char *rnam, bool lzip, bool rzip)
 	st->tree = subtree;
 	st->next = ui_stack;
 	ui_stack = st;
+ret:
 #if defined(TRACE)
-	fprintf(debug, "<-push_state lp(%s) rp(%s)\n", syspth[0], syspth[1]);
+	TRCPTH;
+	fprintf(debug, "<-push_state lp(%s) rp(%s)\n", trcpth[0], trcpth[1]);
 #endif
+	return;
 }
 
 void
@@ -3462,6 +3477,7 @@ pop_state(
     short mode)
 {
 	struct ui_state *st = ui_stack;
+	bool d2f;
 
 #if defined(TRACE)
 	TRCPTH;
@@ -3470,28 +3486,15 @@ pop_state(
 #endif
 	if (!st) {
 		if (from_fmode) {
-			if (fpath) {
-				size_t l = strlen(fpath);
-
-				if (old_col) {
-					memcpy(syspth[0], fpath, l+1);
-					pthlen[0] = l;
-				} else {
-					memcpy(syspth[1], fpath, l+1);
-					pthlen[1] = l;
-				}
-
-				free(fpath);
-				fpath = NULL;
-			}
-
-			dmode_fmode(1);
+			restore_fmode();
 		} else {
 			printerr(NULL, "At top directory");
 		}
 
 		goto ret;
 	}
+
+	d2f = st->fl & 1 ? TRUE : FALSE;
 
 	if (st->lzip) {
 		if (mode && (
@@ -3557,7 +3560,9 @@ pop_state(
 	diff_db_restore(st);
 	free(st);
 
-	if (mode) {
+	if (d2f) {
+		restore_fmode();
+	} else if (mode) {
 		if (!twocols) {
 			dir_change = TRUE;
 		}
@@ -3591,6 +3596,8 @@ enter_dir(char *name, char *rnam, bool lzip, bool rzip, short tree
 #else
 	struct ptr_db_ent *n;
 #endif
+	bool f2d = FALSE;
+
 #ifdef TRACE
 	TRCPTH;
 	fprintf(debug, "->" LOCFMT
@@ -3619,7 +3626,10 @@ enter_dir(char *name, char *rnam, bool lzip, bool rzip, short tree
 			pthlen[0] = pthlen[1];
 		}
 
+		name = strdup(name);
+		rnam = strdup(rnam);
 		fmode_dmode();
+		f2d = TRUE;
 	}
 
 	if (mark && !gl_mark && (!fmode ||
@@ -3630,9 +3640,16 @@ enter_dir(char *name, char *rnam, bool lzip, bool rzip, short tree
 	}
 
 	if (!bmode && !fmode) {
-		push_state(name, rnam, lzip, rzip);
+		push_state(name, rnam,
+		    (f2d ? 4 : 0) | (rzip ? 2 : 0) | (lzip ? 1 : 0));
 		subtree = (name ? 1 : 0) | (rnam ? 2 : 0);
 		scan_subdir(name, rnam, subtree);
+
+		if (f2d) {
+			free(name);
+			free(rnam);
+		}
+
 		goto disp;
 	}
 

@@ -22,6 +22,7 @@ void disp_fmode(void);
 void fmode_cp_pth(void);
 void fmode_dmode(void);
 void dmode_fmode(unsigned);
+void restore_fmode(void);
 void stmove(int);
 void stmbsra(char *, char *);
 void fmode_chdir(void);
