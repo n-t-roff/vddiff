@@ -509,16 +509,32 @@ or file content
 filter.
 .It Dq Li \&Ah
 Add scaled file size column.
+Does not show device major and minor numbers
+(future version will show this for
+.Dq Li \&As )
+Removes an existing byte size column.
+Can be enabled permanently with .@vddiff@rc option
+.Cm disp_hsize .
 .It Dq Li \&Ag
 Add file group column.
+Can be enabled permanently with .@vddiff@rc option
+.Cm disp_group .
 .It Dq Li \&Ap
 Add file permissions column.
+Can be enabled permanently with .@vddiff@rc option
+.Cm disp_perms .
 .It Dq Li \&As
 Add file size column.
+Does not (yet) show device major and minor numbers.
+Removes an existing scaled size column.
 .It Dq Li \&At
 Add file modification time column.
+Can be enabled permanently with .@vddiff@rc option
+.Cm disp_mtime .
 .It Dq Li \&Au
 Add file owner column.
+Can be enabled permanently with .@vddiff@rc option
+.Cm disp_owner .
 .It Dq Li \&Rh
 Remove scaled file size column.
 .It Dq Li \&Rg
@@ -1391,6 +1407,26 @@ A size less than 2 disables the history
 entry need to be saved to use this feature).
 .It Li scale
 Show file size in human-readable format.
+.It Li disp_perms
+Add file permissions column.
+Can be removed with
+.Dq Li \&Rp
+.It Li disp_owner
+Add file owner column.
+Can be removed with
+.Dq Li \&Ru
+.It Li disp_group
+Add file group column.
+Can be removed with
+.Dq Li \&Rg
+.It Li disp_hsize
+Add scaled file size column.
+Can be removed with
+.Dq Li \&Rh
+.It Li disp_mtime
+Add file modification time column.
+Can be removed with
+.Dq Li \&Rt
 .It Li shell Ar string
 Set shell for the
 .Sq Li s ,
@@ -1553,7 +1589,7 @@ the resize).
 .It Pa ~/.@vddiff@rc
 Read on start-up to set non-default options.
 .It Pa ~/.@vddiff@info
-Storage for permanent information.
+Storage for persistant information.
 .El
 .Sh EXAMPLES
 To display only differing files and subdirectories which contain

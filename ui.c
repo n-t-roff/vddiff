@@ -122,10 +122,10 @@ MEVENT mevent;
 bool scrollen = TRUE;
 static bool wstat_dirty;
 static bool dir_change;
-static bool add_hsize; /* scaled size */
+bool add_hsize; /* scaled size */
 static bool add_bsize;
-static bool add_mode;
-static bool add_mtime;
+bool add_mode;
+bool add_mtime;
 bool add_owner;
 bool add_group;
 

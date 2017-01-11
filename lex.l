@@ -82,6 +82,11 @@ sh			{ rc_col += yyleng; return SH           ; }
 alias			{ rc_col += yyleng; return ALIAS        ; }
 twocolumn		{ rc_col += yyleng; return TWOCOLUMN    ; }
 readonly		{ rc_col += yyleng; return READONLY     ; }
+disp_perms		{ rc_col += yyleng; return DISP_PERM    ; }
+disp_owner		{ rc_col += yyleng; return DISP_OWNER   ; }
+disp_group		{ rc_col += yyleng; return DISP_GROUP   ; }
+disp_hsize		{ rc_col += yyleng; return DISP_HSIZE   ; }
+disp_mtime		{ rc_col += yyleng; return DISP_MTIME   ; }
 include			{ rc_col += yyleng; incl = 1            ; }
 [0-9]+			{ rc_col += yyleng;
 			  yylval.integer = atoi(yytext);

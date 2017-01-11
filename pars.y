@@ -43,7 +43,8 @@ extern char *yytext;
 %token DIFF_COLOR DIR_COLOR UNKNOWN_COLOR LINK_COLOR REAL_DIFF RECURSIVE
 %token VIEWTOOL EXT BG FKEY BMODE HISTSIZE SKIPEXT NOIC MAGIC NOWS SCALE
 %token SHELL SH NORMAL_COLOR CURSOR_COLOR ERROR_COLOR MARK_COLOR BG_COLOR
-%token ALIAS TWOCOLUMN READONLY
+%token ALIAS TWOCOLUMN READONLY DISP_PERM DISP_OWNER DISP_GROUP DISP_HSIZE
+%token DISP_MTIME
 %token <str>     STRING
 %token <integer> INTEGER
 %%
@@ -97,6 +98,11 @@ option:
 	| ALIAS STRING STRING          { add_alias($2, $3)                ; }
 	| TWOCOLUMN                    { twocols = TRUE                   ; }
 	| READONLY                     { readonly = TRUE; nofkeys = TRUE  ; }
+	| DISP_PERM                    { add_mode = TRUE;                 ; }
+	| DISP_OWNER                   { add_owner = TRUE;                ; }
+	| DISP_GROUP                   { add_group = TRUE;                ; }
+	| DISP_HSIZE                   { add_hsize = TRUE;                ; }
+	| DISP_MTIME                   { add_mtime = TRUE;                ; }
 	;
 %%
 void
