@@ -3397,7 +3397,7 @@ push_state(char *name, char *rnam,
 	fprintf(debug, "->push_state(ln(%s) rn(%s) md=%u) lp(%s) rp(%s)\n",
 	    name, rnam, md, trcpth[0], trcpth[1]);
 #endif
-	if (!*name && !*rnam) {
+	if (name && rnam && !*name && !*rnam) {
 		/* from fmode */
 		goto ret;
 	}
