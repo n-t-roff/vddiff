@@ -1247,10 +1247,10 @@ next_key:
 				} else {
 					fmode_dmode();
 					one_scan = TRUE;
+					/* Use "", not NULL here! */
+					enter_dir("", "", FALSE, FALSE,
+					    0 LOCVAR);
 				}
-
-				/* Use "", not NULL here! */
-				enter_dir("", "", FALSE, FALSE, 0 LOCVAR);
 			} else { /* diff -> FM */
 				if (twocols) {
 					dmode_fmode(1);
