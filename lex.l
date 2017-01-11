@@ -70,6 +70,7 @@ normal_color		{ rc_col += yyleng; return NORMAL_COLOR ; }
 cursor_color		{ rc_col += yyleng; return CURSOR_COLOR ; }
 error_color		{ rc_col += yyleng; return ERROR_COLOR  ; }
 mark_color		{ rc_col += yyleng; return MARK_COLOR   ; }
+mmrk_color		{ rc_col += yyleng; return MMRK_COLOR   ; }
 bg_color		{ rc_col += yyleng; return BG_COLOR     ; }
 histsize		{ rc_col += yyleng; return HISTSIZE     ; }
 noic			{ rc_col += yyleng; return NOIC         ; }

@@ -44,7 +44,7 @@ extern char *yytext;
 %token VIEWTOOL EXT BG FKEY BMODE HISTSIZE SKIPEXT NOIC MAGIC NOWS SCALE
 %token SHELL SH NORMAL_COLOR CURSOR_COLOR ERROR_COLOR MARK_COLOR BG_COLOR
 %token ALIAS TWOCOLUMN READONLY DISP_PERM DISP_OWNER DISP_GROUP DISP_HSIZE
-%token DISP_MTIME
+%token DISP_MTIME MMRK_COLOR
 %token <str>     STRING
 %token <integer> INTEGER
 %%
@@ -88,6 +88,8 @@ option:
 	                                 color_error_bg  = $3             ; }
 	| MARK_COLOR INTEGER INTEGER   { color_mark_fg   = $2             ;
 	                                 color_mark_bg   = $3             ; }
+	| MMRK_COLOR INTEGER INTEGER   { color_mmrk_fg   = $2             ;
+	                                 color_mmrk_bg   = $3             ; }
 	| HISTSIZE INTEGER             { histsize        = $2             ; }
 	| NOIC                         { noic  = 1                        ; }
 	| MAGIC                        { magic = 1                        ; }
