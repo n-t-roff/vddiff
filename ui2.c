@@ -1131,6 +1131,10 @@ mbstowchs(WINDOW *w, char *s)
 {
 	size_t l;
 
+	if (!s) {
+		s = "(NULL)";
+	}
+
 	l = mbstowcs(wcbuf, s, sizeof(wcbuf)/sizeof(*wcbuf));
 
 	if (l == (size_t)-1) {
