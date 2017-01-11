@@ -97,6 +97,10 @@ uz_init(void)
 
 	vpath[0] = malloc((vpthsz[0] = 4096));
 	vpath[1] = malloc((vpthsz[1] = 4096));
+#if defined(TRACE)
+	*vpath[0] = 0;
+	*vpath[1] = 0;
+#endif
 	return 0;
 }
 
@@ -470,6 +474,8 @@ zpths(struct filediff *f, struct filediff **z2, int tree, size_t *l2, int i,
 	}
 }
 
+/* Called before output af path to UI */
+
 void
 setvpth(
     /* 0: syspth[0], 1: syspth[1], 2: both paths */
@@ -490,6 +496,10 @@ setvpth(
 		return;
 	}
 
+#if defined(TRACE)
+	TRCPTH;
+	fprintf(debug, "->setvpth(%d): v(%s) s(%s)\n", i, vpath[i], trcpth[i]);
+#endif
 	l = pthlen[i] - spthofs[i];
 
 	while (l >= vpthsz[i] - vpthofs[i]) {
@@ -498,6 +508,9 @@ setvpth(
 
 	memcpy(vpath[i] + vpthofs[i], syspth[i] + spthofs[i], l);
 	vpath[i][vpthofs[i] + l] = 0;
+#if defined(TRACE)
+	fprintf(debug, "<-setvpth: \"%s\"\n", vpath[i]);
+#endif
 }
 
 /* Called when archive is entered */
@@ -510,15 +523,16 @@ setpthofs(
 {
 	size_t l;
 	struct pthofs *p;
+
 #if defined(TRACE)
-	fprintf(debug, "<>setpthofs(%d,%s,%s)\n", i, fn, tn);
+	fprintf(debug, "->setpthofs(col=%d fn(%s) tn(%s))\n", i, fn, tn);
 #endif
 	p = malloc(sizeof(struct pthofs));
 	p->sys = spthofs[i];
 	p->view = vpthofs[i];
 	p->next = pthofs[i];
 	pthofs[i] = p;
-	vpthofs[i] = pthlen[i];
+	vpthofs[i] = pthlen[bmode ? 1 : i];
 	spthofs[i] = strlen(tn);
 	l = strlen(fn);
 
@@ -526,10 +540,19 @@ setpthofs(
 		vpath[i] = realloc(vpath[i], vpthsz[i] <<= 1);
 	}
 
+	/* Nobody sets vpath[0] in bmode. But this is needed for
+	 * bmode -> dmode. */
+	if (bmode && !i) {
+		memcpy(vpath[0], vpath[1], vpthofs[i]);
+	}
+
 	vpath[i][vpthofs[i]++] = '/';
 	memcpy(vpath[i] + vpthofs[i], fn, l);
 	vpath[i][vpthofs[i] += l] = '/';
 	vpath[i][vpthofs[i]] = 0;
+#if defined(TRACE)
+	fprintf(debug, "<-setpthofs \"%s\"\n", vpath[i]);
+#endif
 }
 
 /* Called when archive is left */
@@ -540,7 +563,7 @@ respthofs(int i)
 	struct pthofs *p;
 
 #if defined(TRACE)
-	fprintf(debug, "<>respthofs(%d)\n", i);
+	fprintf(debug, "<>respthofs(col=%d)\n", i);
 #endif
 	p = pthofs[i];
 	pthofs[i] = p->next;

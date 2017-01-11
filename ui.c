@@ -1770,11 +1770,11 @@ action(
 	fprintf(debug, "  f1->name(%s)\n", f1->name);
 #endif
 	if (mark && act) {
-		struct filediff *m;
+		struct filediff *m, *m0;
 		mode_t ltyp = 0, rtyp = 0;
 		char *lnam, *rnam;
 
-		m = mark;
+		m0 = m = mark;
 
 		if (!ign_ext) {
 			/* check if mark needs to be unzipped */
@@ -1856,7 +1856,7 @@ action(
 		}
 
 #if defined(TRACE)
-		fprintf(debug, "mark: lnam(%s) rnam(%s) t=%d\n",
+		fprintf(debug, "  mark: lnam(%s) rnam(%s) t=%d\n",
 		    lnam, rnam, tree);
 #endif
 		if (ign_ext || (S_ISREG(ltyp) && S_ISREG(rtyp))) {
@@ -1874,7 +1874,7 @@ action(
 
 			} else if (!S_ISDIR(rtyp)) {
 				if (z1) {
-					setpthofs(0, f->name, z1->name);
+					setpthofs(0, m0->name, z1->name);
 				}
 
 				enter_dir(lnam             , NULL,
@@ -1887,7 +1887,7 @@ action(
 				one_scan = TRUE;
 
 				if (z1) {
-					setpthofs(0, f->name, z1->name);
+					setpthofs(0, m0->name, z1->name);
 				}
 
 				if (z2) {
