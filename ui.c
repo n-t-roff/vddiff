@@ -2423,7 +2423,7 @@ disp_list(
 	bool cg;
 
 #if defined(TRACE)
-	fprintf(debug, "->disp_list col=%d\n", right_col);
+	fprintf(debug, "->disp_list(%u) col=%d\n", md, right_col);
 #endif
 	w = getlstwin();
 	cg = fmode || add_mode || add_hsize || add_bsize || add_mtime
@@ -3354,7 +3354,7 @@ yank_name(int reverse)
 void
 no_file(void)
 {
-	if (((real_diff || noequal || nosingle) && !bmode) || file_pattern)
+	if (((real_diff || noequal || nosingle) && !bmode) || file_pattern) {
 		printerr(NULL,
 		    "No file in list (type %s%s%s to disable filters).",
 		    !file_pattern ? "" : "'E'",
@@ -3362,8 +3362,14 @@ no_file(void)
 		    !noequal ? "" : !real_diff ? "'!'" : " or '!'",
 		    !nosingle ? "" :
 		    !(real_diff || noequal) ? "'&'" : " or '&'");
-	else
+
+		if (!bmode && !fmode && recursive) {
+			syspth[right_col][pthlen[right_col]] = 0;
+			is_diff_pth(syspth[right_col], 1);
+		}
+	} else {
 		printerr(NULL, "Directory is empty.");
+	}
 }
 
 void

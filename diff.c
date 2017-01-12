@@ -49,7 +49,6 @@ static void add_diff_dir(short);
 static char *read_link(char *, off_t);
 static size_t pthcut(char *, size_t);
 static void ini_int(void);
-static int is_diff_pth(const char *);
 
 static struct filediff *diff;
 static off_t lsiz1, lsiz2;
@@ -490,11 +489,7 @@ right_tree:
 		}
 
 		if (!(bmode || fmode) && (tree & 1) && !str_db_srch(&name_db,
-		    name
-#ifdef HAVE_LIBAVLBST
-		    , NULL
-#endif
-		    )) {
+		    name, NULL)) {
 			continue;
 		}
 
@@ -770,21 +765,21 @@ is_diff_dir(struct filediff *f)
 		memcpy(bp, pth, l);
 		pth = bp;
 		pthcat(pth, l, f->name);
-		v = is_diff_pth(pth);
+		v = is_diff_pth(pth, 0);
 		free(bp);
 	} else {
 		if (f->type[0]) {
 			pth = syspth[0];
 			l = pthlen[0];
 			pthcat(pth, l, f->name);
-			v = is_diff_pth(pth);
+			v = is_diff_pth(pth, 0);
 		}
 
 		if (!v && f->type[1]) {
 			pth = syspth[1];
 			l = pthlen[1];
 			pthcat(pth, l, f->name);
-			v = is_diff_pth(pth);
+			v = is_diff_pth(pth, 0);
 		}
 
 		pth[l] = 0;
@@ -797,13 +792,21 @@ ret0:
 	return v;
 }
 
-static int
-is_diff_pth(const char *p)
+int
+is_diff_pth(const char *p,
+    /* 1: Remove path */
+    unsigned m)
 {
 	char *rp = NULL;
 	int v = 0;
+#ifdef HAVE_LIBAVLBST
+	struct bst_node *n;
+#else
+	char *n;
+#endif
+
 #if defined(TRACE)
-	fprintf(debug, "->is_diff_pth(%s)\n", p);
+	fprintf(debug, "->is_diff_pth(%s,%u)\n", p, m);
 #endif
 	/* Here since both path and name can be symlink */
 	if (!(rp = realpath(p, NULL))) {
@@ -814,11 +817,21 @@ is_diff_pth(const char *p)
 #if defined(TRACE)
 	fprintf(debug, "  realpath: \"%s\"\n", p);
 #endif
-	v = str_db_srch(&scan_db, rp
+	v = str_db_srch(&scan_db, rp, &n) ? 0 : 1;
+
+	if (m && v) {
+#if defined(TRACE)
+		fprintf(debug, "  remove \"%s\"\n",
 #ifdef HAVE_LIBAVLBST
-	    , NULL
+		    rp
+#else
+		    n
 #endif
-	    ) ? 0 : 1;
+		    );
+#endif
+		str_db_del(&scan_db, n);
+	}
+
 	free(rp);
 ret:
 #if defined(TRACE)

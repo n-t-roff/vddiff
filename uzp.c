@@ -309,11 +309,7 @@ check_ext(char *name, int *pos)
 		*--s = tolower((int)name[--l]);
 
 		if (!skipped && *s == '.' &&
-		    !str_db_srch(&skipext_db, s + 1
-#ifdef HAVE_LIBAVLBST
-		    , NULL
-#endif
-		    )) {
+		    !str_db_srch(&skipext_db, s + 1, NULL)) {
 			*s = 0;
 			skipped = 1;
 		}

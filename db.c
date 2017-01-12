@@ -262,9 +262,17 @@ str_db_srch(void **db, char *s, struct bst_node **n)
 }
 #else
 int
-str_db_srch(void **db, char *s)
+str_db_srch(void **db, char *s, char **n)
 {
-	return tfind(s, db, name_cmp) ? 0 : 1;
+	void *vp;
+
+	vp = tfind(s, db, name_cmp);
+
+	if (n) {
+		*n = vp ? *(char **)vp : NULL;
+	}
+
+	return vp ? 0 : 1;
 }
 #endif
 

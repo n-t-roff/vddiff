@@ -87,11 +87,7 @@ tool(char *name, char *rnam, int tree, int ign_ext)
 		*--cmd = tolower((int)name[--l]);
 
 		if (!skipped && *cmd == '.' &&
-		    !str_db_srch(&skipext_db, cmd + 1
-#ifdef HAVE_LIBAVLBST
-		    , NULL
-#endif
-		    )) {
+		    !str_db_srch(&skipext_db, cmd + 1, NULL)) {
 			*cmd = 0;
 			skipped = 1;
 		}
