@@ -2356,24 +2356,23 @@ disp_curs(
 	struct filediff *f;
 	bool cg;
 
-	/* Case: An empty dir is opened in fmode, then TAB is pressed
-	 * to change to the other side. disp_curs(0) is called to remove
-	 * the cursor on this side--which has no cursor. */
-	if (!db_num[right_col]) {
-		return;
-	}
-
 	w = getlstwin();
 	y = curs[right_col];
 	i = top_idx[right_col] + y;
+
+	if (i >= db_num[right_col]) {
+		return;
+	}
+
 	m = mark_idx[right_col];
 	cg = fmode || add_mode || add_hsize || add_bsize || add_mtime
 	    || add_owner || add_group;
 	f = db_list[right_col][i];
 
 #if defined(TRACE) && 0
-	fprintf(debug, "->disp_curs(%i) i=%u c=%u \"%s\"\n",
-	    a, i, y, i < db_num[right_col] ? db_list[right_col][i]->name :
+	fprintf(debug, "->disp_curs(%i) i=%u c=%u n[%d]=%u \"%s\"\n",
+	    a, i, y, right_col, db_num[right_col],
+	    i < db_num[right_col] ? db_list[right_col][i]->name :
 	    "index out of bounds");
 #endif
 	if (cg) {
@@ -2521,7 +2520,7 @@ disp_line(
 	int mx;
 	short cp;
 
-#ifdef DEBUG
+#if defined(DEBUG)
 	if (i >= db_num[right_col]) {
 		standoutc(wstat);
 		printerr("disp_line: i >= num", "");
@@ -3380,6 +3379,9 @@ no_file(void)
 void
 center(unsigned idx)
 {
+#if defined(TRACE)
+	fprintf(debug, "<>center\n");
+#endif
 	disp_curs(0);
 
 	if (db_num[right_col] <= listh || idx <= listh / 2) {

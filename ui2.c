@@ -761,7 +761,7 @@ ret:
 	switch (val) {
 	case 0:
 		printerr(any_txt, "Equal: %s and %s",
-#if defined(DEBUG)
+#if defined(DEBUG) && 0
 		    lnam, rnam);
 		(void)olnam;
 		(void)ornam;
@@ -771,7 +771,7 @@ ret:
 		break;
 	case 1:
 		printerr(any_txt, "Different: %s and %s",
-#if defined(DEBUG)
+#if defined(DEBUG) && 0
 		    lnam, rnam);
 #else
 		    olnam, ornam);
