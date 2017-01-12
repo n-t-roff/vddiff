@@ -2704,28 +2704,33 @@ set_file_info(struct filediff *f, mode_t m, int *t, short *ct, int *d)
 
 static int
 disp_name(WINDOW *w, int y, int x, int mx, int o, struct filediff *f, int t,
-    short ct, char *l, int d, int i)
+    short ct, char *l, int d,
+    /* tree--*not* col! */
+    int i)
 {
 	int j;
 	struct passwd *pw;
 	struct group *gr;
+	int db;
+
+	db = fmode ? right_col : 0;
 
 	if (add_mode) {
 		mx -= 5;
 	}
 
 	if (add_owner) {
-		mx -= usrlen[i];
+		mx -= usrlen[db];
 	}
 
 	if (add_group) {
-		mx -= grplen[i];
+		mx -= grplen[db];
 	}
 
 	if (add_hsize) {
 		mx -= 5;
 	} else if (add_bsize) {
-		mx -= bsizlen[i];
+		mx -= bsizlen[db];
 	}
 
 	if (add_mtime) {
@@ -2774,7 +2779,7 @@ disp_name(WINDOW *w, int y, int x, int mx, int o, struct filediff *f, int t,
 
 		wmove(w, y, mx + 1);
 		addmbs(w, lbuf, 0);
-		mx += usrlen[i];
+		mx += usrlen[db];
 	}
 
 	if (add_group) {
@@ -2785,7 +2790,7 @@ disp_name(WINDOW *w, int y, int x, int mx, int o, struct filediff *f, int t,
 
 		wmove(w, y, mx + 1);
 		addmbs(w, lbuf, 0);
-		mx += grplen[i];
+		mx += grplen[db];
 	}
 
 	if (add_hsize) {
@@ -2798,7 +2803,7 @@ disp_name(WINDOW *w, int y, int x, int mx, int o, struct filediff *f, int t,
 	} else if (add_bsize) {
 		size_t n;
 
-		mx += bsizlen[i];
+		mx += bsizlen[db];
 		n = getfilesize(lbuf, sizeof lbuf, f->siz[i], 2);
 		wmove(w, y, mx - n);
 		addmbs(w, lbuf, 0);
@@ -3097,17 +3102,17 @@ getfilesize(char *buf, size_t bufsiz, off_t size,
 		f = size / 1024.0;
 		unit = "K";
 
-		if (f >= 1024) {
+		if (f >= 1000) {
 			f /= 1024.0;
 			unit = "M";
 		}
 
-		if (f >= 1024) {
+		if (f >= 1000) {
 			f /= 1024.0;
 			unit = "G";
 		}
 
-		if (f >= 1024) {
+		if (f >= 1000) {
 			f /= 1024.0;
 			unit = "T";
 		}
