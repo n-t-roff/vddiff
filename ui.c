@@ -2365,8 +2365,7 @@ disp_curs(
 	}
 
 	m = mark_idx[right_col];
-	cg = fmode || add_mode || add_hsize || add_bsize || add_mtime
-	    || add_owner || add_group;
+	cg = CHGAT_MRKS;
 	f = db_list[right_col][i];
 
 #if defined(TRACE) && 0
@@ -2425,8 +2424,7 @@ disp_list(
 	fprintf(debug, "->disp_list(%u) col=%d\n", md, right_col);
 #endif
 	w = getlstwin();
-	cg = fmode || add_mode || add_hsize || add_bsize || add_mtime
-	    || add_owner || add_group;
+	cg = CHGAT_MRKS;
 
 	/* For the case that entries had been removed
 	 * and page_down() */
@@ -3203,14 +3201,9 @@ clr_mark(void)
 	    mark_idx[0] <  (long)(top_idx[0] + listh) &&
 	    (mark_idx[0] != (long)(top_idx[0] + curs[0]) || rc)) {
 
-#if defined(TRACE)
-			fprintf(debug, "  left side mark\n");
-#endif
-		if (fmode) {
-#if defined(TRACE)
-			fprintf(debug, "  chgat wllst\n");
-#endif
-			chgat_off(wllst, mark_idx[0] - top_idx[0]);
+		if (CHGAT_MRKS) {
+			chgat_off(fmode ? wllst : wlist,
+			    mark_idx[0] - top_idx[0]);
 		}
 
 		right_col = 0;

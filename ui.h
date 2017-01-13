@@ -12,6 +12,8 @@
 
 #define DB_LST_IDX (top_idx[right_col] + curs[right_col])
 #define DB_LST_ITM (db_list[right_col][DB_LST_IDX])
+#define CHGAT_MRKS (fmode || add_mode || add_hsize || add_bsize || add_mtime \
+    || add_owner || add_group)
 
 struct ui_state {
 	/* Path before going to temp dir for returning when leaving temp dir */
