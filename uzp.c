@@ -478,14 +478,18 @@ setvpth(
     int i)
 {
 	size_t l;
+	int src;
 
 	if (i > 1) {
-		setvpth(0);
+		/* 1 before 0 because of bmode */
 		setvpth(1);
+		setvpth(0);
 		return;
 	}
 
-	if (spthofs[i] > pthlen[i] || vpthofs[i] > vpthsz[i]) {
+	src = bmode ? 1 : i;
+
+	if (spthofs[src] > pthlen[src] || vpthofs[i] > vpthsz[i]) {
 #ifdef DEBUG
 		printerr("Path offset error", "setvpth()");
 #endif
@@ -496,16 +500,16 @@ setvpth(
 	TRCPTH;
 	fprintf(debug, "->setvpth(%d): v(%s) s(%s)\n", i, vpath[i], trcpth[i]);
 #endif
-	l = pthlen[i] - spthofs[i];
+	l = pthlen[src] - spthofs[src];
 
 	while (l >= vpthsz[i] - vpthofs[i]) {
 		vpath[i] = realloc(vpath[i], vpthsz[i] <<= 1);
 	}
 
-	memcpy(vpath[i] + vpthofs[i], syspth[i] + spthofs[i], l);
+	memcpy(vpath[i] + vpthofs[i], syspth[src] + spthofs[src], l);
 	vpath[i][vpthofs[i] + l] = 0;
 #if defined(TRACE)
-	fprintf(debug, "<-setvpth: \"%s\"\n", vpath[i]);
+	fprintf(debug, "<-setvpth [%zu] \"%s\"\n", vpthsz[i], vpath[i]);
 #endif
 }
 
@@ -513,22 +517,33 @@ setvpth(
 
 void
 setpthofs(
-    int i, /* 0/1: side */
+    /* 0/1: side, >1: side 1 only */
+    int i,
     char *fn, /* archive file name */
     char *tn) /* temp dir name */
 {
 	size_t l;
 	struct pthofs *p;
+	bool b;
 
 #if defined(TRACE)
 	fprintf(debug, "->setpthofs(col=%d fn(%s) tn(%s))\n", i, fn, tn);
 #endif
+	if (i > 1) {
+		i = 1;
+		b = FALSE;
+	} else {
+		b = bmode && i ? TRUE : FALSE;
+	}
+
 	p = malloc(sizeof(struct pthofs));
 	p->sys = spthofs[i];
 	p->view = vpthofs[i];
 	p->next = pthofs[i];
 	pthofs[i] = p;
-	vpthofs[i] = pthlen[bmode ? 1 : i];
+	/* If we are already in a archive and enter another archive,
+	 * keep the full current vpath and add the archive name. */
+	vpthofs[i] = vpthofs[i] ? strlen(vpath[i]) : pthlen[bmode ? 1 : i];
 	spthofs[i] = strlen(tn);
 	l = strlen(fn);
 
@@ -536,18 +551,29 @@ setpthofs(
 		vpath[i] = realloc(vpath[i], vpthsz[i] <<= 1);
 	}
 
-	/* Nobody sets vpath[0] in bmode. But this is needed for
-	 * bmode -> dmode. */
-	if (bmode && !i) {
-		memcpy(vpath[0], vpath[1], vpthofs[i]);
-	}
-
 	vpath[i][vpthofs[i]++] = '/';
 	memcpy(vpath[i] + vpthofs[i], fn, l);
 	vpath[i][vpthofs[i] += l] = '/';
 	vpath[i][vpthofs[i]] = 0;
+
+	/* Nobody else sets vpath[0] in bmode. But this is needed for
+	 * bmode -> dmode. */
+	if (b) {
+		vpthofs[0] = vpthofs[1];
+
+		while (vpthsz[0] < vpthofs[0] + l + 3) {
+			vpath[0] = realloc(vpath[0], vpthsz[0] <<= 1);
+		}
+
+		memcpy(vpath[0], vpath[1], vpthofs[0] + 1);
 #if defined(TRACE)
-	fprintf(debug, "<-setpthofs \"%s\"\n", vpath[i]);
+		fprintf(debug, "<-setpthofs(0) [%zu] \"%s\"\n",
+		    vpthsz[0], vpath[0]);
+#endif
+	}
+
+#if defined(TRACE)
+	fprintf(debug, "<-setpthofs [%zu] \"%s\"\n", vpthsz[i], vpath[i]);
 #endif
 }
 

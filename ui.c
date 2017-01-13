@@ -1891,7 +1891,8 @@ action(
 				}
 
 				if (z2) {
-					setpthofs(1, f->name, z2->name);
+					/* 2: don't set vpath[0] */
+					setpthofs(2, f->name, z2->name);
 				}
 
 				enter_dir(lnam             , rnam,
@@ -2873,7 +2874,7 @@ file_stat(struct filediff *f, struct filediff *f2)
 	if (bmode) {
 		if (!mark || dir_change) {
 			wmove(wstat, 1, 0);
-			setvpth(1);
+			setvpth(2);
 			putmbsra(wstat, vpath[1], 0);
 		}
 	} else if (dir_change) {
