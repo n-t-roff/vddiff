@@ -62,7 +62,7 @@ static long prev_mmrk[2] = { -1, -1 };
 static wchar_t wcbuf[BUF_SIZE];
 static cchar_t ccbuf[BUF_SIZE];
 short noic, magic, nows, scale;
-short regex;
+short regex_mode;
 unsigned short subtree = 3;
 static struct str_uint *srchmap;
 regex_t re_dat;
@@ -270,20 +270,20 @@ ui_srch(void)
 	qsort(srchmap, db_num[right_col], sizeof(struct str_uint), srchcmp);
 	srch_idx = 0;
 
-	if (regex)
+	if (regex_mode)
 		clr_regex();
 
 	ed_dialog("Type first characters of filename (<ESC> to cancel):",
 	    "" /* remove existing */, srch_file, 0, NULL);
 	free(srchmap);
 
-	if (!regex)
+	if (!regex_mode)
 		return;
 
 	if (ed_dialog(enter_regex_txt,
 	    "" /* remove existing */, NULL, 0, &regex_hist) ||
 	    !*rbuf)
-		regex = 0;
+		regex_mode = 0;
 	else
 		start_regex(rbuf);
 }
@@ -312,7 +312,7 @@ srch_file(char *pattern, int c)
 		return 0;
 
 	if (*pattern == '/' && !pattern[1]) {
-		regex = 1;
+		regex_mode = 1;
 		return EDCB_FAIL;
 	}
 
@@ -362,7 +362,7 @@ disp_regex(void)
 void
 clr_regex(void)
 {
-	regex = 0;
+	regex_mode = 0;
 	regfree(&re_dat);
 	werase(wstat);
 	filt_stat();
@@ -375,7 +375,7 @@ start_regex(char *pattern)
 	int fl = REG_NOSUB;
 
 	if (db_num[right_col] < 2) {
-		regex = 0;
+		regex_mode = 0;
 		return;
 	}
 
@@ -386,7 +386,7 @@ start_regex(char *pattern)
 
 	if (regcomp(&re_dat, pattern, fl)) {
 		printerr(strerror(errno), "regcomp \"%s\"", pattern);
-		regex = 0;
+		regex_mode = 0;
 		return;
 	}
 

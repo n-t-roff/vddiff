@@ -572,7 +572,7 @@ next_key:
 			break;
 
 		case 'n':
-			if (regex) {
+			if (regex_mode) {
 				regex_srch(1);
 				c = 0;
 				break;
@@ -785,7 +785,7 @@ next_key:
 #if defined(TRACE)
 			fprintf(debug,
 			    "  'r': *key(%c) mark=%p edit=%d regex=%d\n",
-			    *key, mark, edit, regex);
+			    *key, mark, edit, regex_mode);
 #endif
 			switch (*key) {
 			case 'd':
@@ -836,7 +836,7 @@ next_key:
 			} else if (edit) {
 				c = 0;
 				clr_edit();
-			} else if (regex) {
+			} else if (regex_mode) {
 				c = 0;
 				clr_regex();
 			}
@@ -1284,7 +1284,7 @@ next_key:
 			break;
 
 		case 'N':
-			if (regex) {
+			if (regex_mode) {
 				c = 0;
 				regex_srch(-1);
 				break;
@@ -2621,7 +2621,7 @@ prtc2:
 		if (wstat_dirty)
 			disp_edit();
 		goto ret;
-	} else if (regex) {
+	} else if (regex_mode) {
 		if (wstat_dirty)
 			disp_regex();
 		goto ret;

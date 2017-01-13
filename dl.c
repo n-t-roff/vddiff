@@ -261,21 +261,21 @@ dl_list(void)
 			break;
 
 		case 'N':
-			if (regex) {
+			if (regex_mode) {
 				dl_regexec(-1);
 			}
 
 			break;
 
 		case 'n':
-			if (regex) {
+			if (regex_mode) {
 				dl_regexec(1);
 			}
 
 			break;
 
 		case 'r':
-			if (regex) {
+			if (regex_mode) {
 				clr_regex();
 			}
 
@@ -293,7 +293,7 @@ dl_list(void)
 	}
 
 ret:
-	if (regex) {
+	if (regex_mode) {
 		clr_regex();
 	}
 
@@ -571,7 +571,7 @@ dl_regcomp(void)
 		return;
 	}
 
-	if (regex) {
+	if (regex_mode) {
 		clr_regex();
 	}
 
@@ -594,7 +594,7 @@ dl_regcomp(void)
 		return;
 	}
 
-	regex = 1;
+	regex_mode = 1;
 
 	if (!dl_regexec(0)) {
 		disp_regex();

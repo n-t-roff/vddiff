@@ -9,7 +9,7 @@ extern long mark_idx[2];
 extern long mmrkd[2];
 extern regex_t re_dat;
 extern short noic, magic, nows, scale;
-extern short regex;
+extern short regex_mode;
 extern unsigned short subtree;
 extern const char y_n_txt[];
 extern const char y_a_n_txt[];
