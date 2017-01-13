@@ -285,6 +285,7 @@ next_key:
 			return 0;
 
 		case KEY_HOME:
+		case CTRL('a'):
 			if (leftpos) {
 				leftpos = 0;
 				wmove(wstat, 1, 0);
@@ -315,6 +316,7 @@ next_key:
 			break;
 
 		case KEY_END:
+		case CTRL('e'):
 			if (linepos == linelen) {
 				break;
 			}

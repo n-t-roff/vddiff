@@ -86,7 +86,8 @@ build_diff_db(
 	}
 
 #if defined(TRACE)
-	fprintf(debug, "->build_diff_db tree(%d)\n", tree);
+	fprintf(debug, "->build_diff_db tree(%d)%s\n",
+	    tree, scan ? " scan" : "");
 #endif
 	if (one_scan) {
 		one_scan = FALSE;
@@ -281,8 +282,8 @@ no_tree2:
 
 			if (S_ISREG(stat1.st_mode) &&
 			    S_ISREG(stat2.st_mode)) {
-				if (cmp_file(syspth[0], stat1.st_size, syspth[1],
-				    stat2.st_size, 0) == 1) {
+				if (cmp_file(syspth[0], stat1.st_size,
+				    syspth[1], stat2.st_size, 0) == 1) {
 					if (qdiff) {
 						printf(
 						    "Files %s and %s differ\n",
@@ -752,7 +753,8 @@ is_diff_dir(struct filediff *f)
 	int v = 0;
 
 	/* E.g. for file stat called independend from 'recursive' */
-	if (!recursive) {
+	/* or called in bmode with option -r (for later dir diffs) */
+	if (!recursive || ((bmode || fmode) && !file_pattern)) {
 		goto ret0; /* No debug print */
 	}
 #if defined(TRACE)
@@ -948,6 +950,9 @@ cmp_file(char *lpth, off_t lsiz, char *rpth, off_t rsiz,
 	close(f2);
 close_f1:
 	close(f1);
+#if defined(TRACE) && 0
+fprintf(debug, "<>cmp_file: %d: %s, %s\n", rv, lpth, rpth);
+#endif
 	return rv;
 }
 

@@ -3553,6 +3553,10 @@ pop_state(
 	diff_db_restore(st);
 	free(st);
 
+	if (!mode) {
+		goto ret;
+	}
+
 	if (d2f) {
 		if (from_fmode) {
 			restore_fmode();

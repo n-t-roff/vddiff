@@ -30,6 +30,7 @@ PERFORMANCE OF THIS SOFTWARE.
 #include "exec.h"
 #include "uzp.h"
 #include "db.h"
+#include "diff.h"
 
 static void set_mb_bg(void);
 
@@ -248,6 +249,9 @@ tgl2c(
 	    md, syspth[0], syspth[1], bmode ? 1 : 0, fmode ? 1 : 0, twocols ? 1 : 0);
 #endif
 	if (bmode) { /* -> fmode */
+		bool sc = one_scan;
+
+		one_scan = FALSE; /* useless */
 		clr_mark();
 		s = !(md & 1) && fpath ? fpath : syspth[1];
 		l1 = strlen(syspth[1]);
@@ -282,6 +286,8 @@ tgl2c(
 
 			disp_fmode();
 		}
+
+		one_scan = sc;
 	} else if (fmode || /* fmode -> bmode */
 	    (md & 1)) { /* 1C diff -> bmode */
 		clr_mark();
@@ -325,7 +331,8 @@ tgl2c(
 	}
 #if defined(TRACE)
 	fprintf(debug, "<-tgl2c(%u) lp(%s) rp(%s) bm=%u fm=%u 2c=%u\n",
-	    md, syspth[0], syspth[1], bmode ? 1 : 0, fmode ? 1 : 0, twocols ? 1 : 0);
+	    md, syspth[0], syspth[1], bmode ? 1 : 0, fmode ? 1 : 0,
+	    twocols ? 1 : 0);
 #endif
 }
 
