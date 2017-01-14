@@ -656,6 +656,9 @@ next_key:
 				break;
 			}
 
+			/* fall through */
+
+		case KEY_DC:
 			if (ui_dd(3, u, num)) {
 				break;
 			}

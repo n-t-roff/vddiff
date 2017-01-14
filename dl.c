@@ -49,6 +49,11 @@ static void dl_act(void);
 static void dl_regcomp(void);
 static int dl_regexec(int);
 static void dl_center(unsigned);
+static void dl_first(void);
+static void dl_last(void);
+static void dl_2mid(void);
+static void dl_2top(void);
+static void dl_2bot(void);
 #ifdef NCURSES_MOUSE_VERSION
 static int dl_mevent(void);
 #endif
@@ -233,6 +238,23 @@ dl_list(void)
 			dl_pg_up();
 			break;
 
+		case KEY_END:
+			dl_last();
+			break;
+
+		case 'G':
+			if (c1 != '1') {
+				dl_last();
+				break;
+			}
+
+			c = 0;
+			/* fall through */
+
+		case KEY_HOME:
+			dl_first();
+			break;
+
 		case 'd':
 			if (c1 != 'd') {
 				break;
@@ -240,6 +262,18 @@ dl_list(void)
 
 			c = 0;
 			/* fall through */
+
+		case 'H':
+			dl_2top();
+			break;
+
+		case 'M':
+			dl_2mid();
+			break;
+
+		case 'L':
+			dl_2bot();
+			break;
 
 		case KEY_DC:
 			del = TRUE;
@@ -286,9 +320,16 @@ dl_list(void)
 			refresh();
 			break;
 
+		case '1':
+			break;
+
 		default:
-			printerr(NULL,
+			werase(wstat);
+			mvwprintw(wstat, 0, 0,
 "'q' close, <ENTER> enter directory, \"dd\" delete entry, '/' regex search");
+			mvwprintw(wstat, 1, 0,
+"\"1G\", 'G', 'H', 'M', 'L'");
+			wrefresh(wstat);
 		}
 	}
 
@@ -496,6 +537,39 @@ dl_pg_up(void)
 }
 
 static void
+dl_first(void)
+{
+	if (!dl_pos) {
+		return;
+	}
+
+	dl_curs(0);
+	dl_top = 0;
+	dl_pos = 0;
+	dl_disp();
+}
+
+static void
+dl_last(void)
+{
+	if (dl_pos == dl_num - 1) {
+		return;
+	}
+
+	dl_curs(0);
+	dl_pos = dl_num - 1;
+
+	if (dl_top + listh >= dl_num) {
+		/* Last line is already displayed */
+		dl_curs(1);
+		wrefresh(wlist);
+		return;
+	}
+
+	dl_disp();
+}
+
+static void
 dl_curs(unsigned m)
 {
 	mvwchgat(wlist, dl_pos - dl_top, 0, -1,
@@ -679,6 +753,56 @@ dl_center(unsigned i)
 	}
 
 	dl_disp();
+}
+
+static void
+dl_2mid(void)
+{
+	dl_curs(0);
+
+	if (dl_top + listh >= dl_num) {
+		/* last line displayed */
+		dl_pos = (dl_num + dl_top) / 2;
+	} else {
+		dl_pos = dl_top + listh / 2;
+	}
+
+	dl_curs(1);
+	wrefresh(wlist);
+}
+
+static void
+dl_2top(void)
+{
+	if (dl_pos == dl_top) {
+		return;
+	}
+
+	dl_curs(0);
+	dl_pos = dl_top;
+	dl_curs(1);
+	wrefresh(wlist);
+}
+
+static void
+dl_2bot(void)
+{
+	unsigned i;
+
+	if (dl_top + listh >= dl_num) {
+		i = dl_num - 1;
+	} else {
+		i = dl_top + listh - 1;
+	}
+
+	if (dl_pos == i) {
+		return;
+	}
+
+	dl_curs(0);
+	dl_pos = i;
+	dl_curs(1);
+	wrefresh(wlist);
 }
 
 void
