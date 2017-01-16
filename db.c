@@ -693,7 +693,7 @@ exit:
 	      \
 	      (!real_diff || \
 	       f->diff == '!' || (S_ISDIR(f->type[0]) && S_ISDIR(f->type[1]) \
-	       && is_diff_dir(f))) && \
+	       && (!recursive || is_diff_dir(f)))) && \
 	      \
 	      (!nosingle || \
 	       (f->type[0] && f->type[1]))))) \

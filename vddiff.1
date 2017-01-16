@@ -144,6 +144,17 @@ but further files are not compared.)
 .It Fl c
 Show only directories which exist in both trees
 and really different files.
+.begin_comment
+.Pp
+One sided directories are not shown\(emas one sided files.
+File type differences are not shown too.
+Normal directories need to be shown to enable browsing.
+.Pp
+.end_comment
+If also
+.Fl r
+is used only those directories are shown
+which contain differences.
 .It Fl d
 Use
 .Dq Li diff $1 $2 | less
@@ -497,6 +508,10 @@ Toggle display of equal files.
 Toggle display of all files or
 only directories which exist in both trees
 and really different files.
+If option
+.Fl r
+is used only those directories are shown
+which contain differences.
 .It Sq Li &
 Toggle display of files which are on one side only.
 .It Sq Li F
