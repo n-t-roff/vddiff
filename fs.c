@@ -622,6 +622,7 @@ fs_cp(int to, long u, int n,
 	struct filediff *f;
 	struct stat st;
 	int i;
+	char *tnam;
 	bool m;
 
 	fs_error = FALSE;
@@ -668,7 +669,6 @@ fs_cp(int to, long u, int n,
 
 		f = db_list[right_col][u];
 		pthcat(pth1, len1, f->name);
-		pthcat(pth2, len2, f->name);
 
 		if (( followlinks &&  stat(pth1, &st) == -1) ||
 		    (!followlinks && lstat(pth1, &st) == -1)) {
@@ -679,6 +679,10 @@ fs_cp(int to, long u, int n,
 
 			continue;
 		}
+
+		tnam = f->name;
+tpth:
+		pthcat(pth2, len2, tnam);
 
 		if (( followlinks && (i =  stat(pth2, &stat2)) == -1) ||
 		    (!followlinks && (i = lstat(pth2, &stat2)) == -1)) {
@@ -691,9 +695,13 @@ fs_cp(int to, long u, int n,
 		if (!i && /* from stat */
 		    st.st_ino == stat2.st_ino &&
 		    stat1.st_dev == stat2.st_dev) {
-			printerr("are the same file", "\"%s\" and \"%s\"",
-			    pth1, pth2);
-			continue;
+			if (ed_dialog("Enter new name (<ESC> to cancel):",
+			    tnam, NULL, 0, NULL) || !*rbuf) {
+				continue;
+			}
+
+			tnam = rbuf;
+			goto tpth;
 		}
 
 		/* After stat src to avoid removing dest if there is a problem
@@ -705,7 +713,7 @@ fs_cp(int to, long u, int n,
 			    "Really overwrite \"%s\"?", pth2) != 'y') {
 				return 1;
 			}
-		} else if (fs_rm(to /* tree */, "overwrite", f->name,
+		} else if (fs_rm(to /* tree */, "overwrite", tnam,
 		    u, 1 /* n */, 0 /* md */) == 1) {
 			return 1;
 		}
@@ -725,7 +733,7 @@ fs_cp(int to, long u, int n,
 		}
 
 		len1 = pthcat(pth1, len1, f->name);
-		len2 = pthcat(pth2, len2, f->name);
+		len2 = pthcat(pth2, len2, tnam);
 		stat1 = st;
 
 		if (md & 2) {
