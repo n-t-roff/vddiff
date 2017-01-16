@@ -1690,7 +1690,9 @@ proc_mevent(void)
 
 	if (mevent.bstate & BUTTON1_CLICKED ||
 	    mevent.bstate & BUTTON1_DOUBLE_CLICKED ||
-	    mevent.bstate & BUTTON1_PRESSED) {
+	    mevent.bstate & BUTTON1_PRESSED ||
+	    mevent.bstate & BUTTON3_CLICKED ||
+	    mevent.bstate & BUTTON3_PRESSED) {
 
 		if (( fmode && mevent.y >= (int)listh) ||
 		    (!fmode && mevent.y >= (int)(db_num[0] - top_idx[0])))
@@ -1715,8 +1717,12 @@ proc_mevent(void)
 		disp_curs(1);
 		refr_scr();
 
-		if (mevent.bstate & BUTTON1_DOUBLE_CLICKED)
+		if (mevent.bstate & BUTTON3_CLICKED ||
+		    mevent.bstate & BUTTON3_PRESSED) {
+			tgl_mmrk(DB_LST_ITM);
+		} else if (mevent.bstate & BUTTON1_DOUBLE_CLICKED) {
 			action(0, 3, 0, FALSE);
+		}
 
 # if NCURSES_MOUSE_VERSION >= 2
 	} else if (mevent.bstate & BUTTON4_PRESSED) {

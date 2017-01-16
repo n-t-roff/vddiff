@@ -54,7 +54,6 @@ struct str_uint {
 static int srchcmp(const void *, const void *);
 static char *getnextarg(char *);
 static void set_all(void);
-static void tgl_mmrk(struct filediff *);
 
 long mark_idx[2] = { -1, -1 };
 long mmrkd[2];
@@ -927,7 +926,7 @@ key_mmrk(void)
 	}
 }
 
-static void
+void
 tgl_mmrk(struct filediff *f)
 {
 	if (f->fl & FDFL_MMRK) {
@@ -1286,6 +1285,7 @@ set_def_mouse_msk(void)
 {
 #ifdef NCURSES_MOUSE_VERSION
 	mousemask(BUTTON1_CLICKED | BUTTON1_DOUBLE_CLICKED | BUTTON1_PRESSED
+	    | BUTTON3_CLICKED | BUTTON3_PRESSED
 # if NCURSES_MOUSE_VERSION >= 2
 	    | BUTTON4_PRESSED | BUTTON5_PRESSED
 # endif

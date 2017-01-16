@@ -25,7 +25,7 @@ git branch
 ```
 The current release testing branch is checked out with
 ```bash
-git checkout 1.3
+git checkout 1.4
 ```
 To return to the default branch enter
 ```bash
