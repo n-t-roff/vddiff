@@ -1321,8 +1321,9 @@ ui_mv(int src, int dst, long u, unsigned short num)
 	syspth[0][pthlen[0]] = 0;
 	syspth[1][pthlen[1]] = 0;
 
-	if (bmode || !strcmp(syspth[0], syspth[1])) {
-		return 1;
+	if (!strcmp(syspth[0], syspth[1])) {
+		fs_rename(3);
+		return 0;
 	}
 
 	if (mmrkd[right_col]) {

@@ -577,6 +577,7 @@ next_key:
 				c = 0;
 				break;
 			} else if (*key == 'e') {
+rename:
 				fs_rename(3);
 				goto save_st;
 			} else if (key[1] == 'e') {
@@ -876,6 +877,10 @@ next_key:
 
 		case 'T': {
 			int src, dst;
+
+			if (bmode) {
+				goto rename;
+			}
 
 			if (!(dst = fs_get_dst(u))) {
 				break;
