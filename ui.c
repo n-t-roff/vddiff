@@ -1687,11 +1687,8 @@ proc_mevent(void)
 	    mevent.bstate & BUTTON1_DOUBLE_CLICKED ||
 	    mevent.bstate & BUTTON1_PRESSED) {
 
-		if (mevent.y >= (int)listh ||
-		    ((!fmode || mevent.x < llstw) &&
-		     mevent.y >= (int)(db_num[0] - top_idx[0])) ||
-		    (fmode && mevent.x >= rlstx &&
-		     mevent.y >= (int)(db_num[1] - top_idx[1])))
+		if (( fmode && mevent.y >= (int)listh) ||
+		    (!fmode && mevent.y >= (int)(db_num[0] - top_idx[0])))
 			return;
 
 		disp_curs(0);
@@ -1706,7 +1703,10 @@ proc_mevent(void)
 			fmode_chdir();
 		}
 
-		curs[right_col] = mevent.y;
+		if (mevent.y < (int)(db_num[right_col] - top_idx[right_col])) {
+			curs[right_col] = mevent.y;
+		}
+
 		disp_curs(1);
 		refr_scr();
 
