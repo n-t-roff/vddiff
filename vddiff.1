@@ -965,7 +965,13 @@ Also used to remove multiple marks
 .Sq ( Li r
 can't be used to remove them).
 .It Sq Li s
-Open shell in current directory.
+Open shell in the directory of the selected file.
+Does not work in diff mode when both files exist
+(use
+.Dq Li sl
+or
+.Dq Li sr
+instead).
 The shell to open can be set with the
 .Sy shell
 option, else it is read from the user's entry in
