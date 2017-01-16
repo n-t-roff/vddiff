@@ -755,6 +755,7 @@ bindiff(void)
 		goto ret;
 	}
 
+	printerr(NULL, "Comparing %s and %s", olnam, ornam);
 	val = cmp_file(lnam, lsiz, rnam, rsiz, 1);
 
 ret:
@@ -1317,6 +1318,13 @@ ui_cp(int t, long u, unsigned short num, unsigned md)
 int
 ui_mv(int src, int dst, long u, unsigned short num)
 {
+	syspth[0][pthlen[0]] = 0;
+	syspth[1][pthlen[1]] = 0;
+
+	if (bmode || !strcmp(syspth[0], syspth[1])) {
+		return 1;
+	}
+
 	if (mmrkd[right_col]) {
 		if (dialog(y_n_txt, NULL,
 		    "Really move %d files?",

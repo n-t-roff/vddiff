@@ -52,7 +52,7 @@ directories are not compared before they are entered.
 Compressed files are automatically decompressed into
 a temporary directory before the diff tool is started.
 These files are detected by their file name extension,
-the file contents are not checked.
+the file contents are not (yet) checked.
 Currently the following file name extensions are
 supported:
 .Li bz2 ,
@@ -816,8 +816,15 @@ and moves the cursor to the next line.
 If a local mark is set,
 the marks of all lines from the line with the local mark
 to the current line are inverted.
+Unless other marks multiple marks are removed with
+.Sq Li u
+instead of
+.Sq Li r .
 .It Sq Li r
 Remove mark, edit line, or regex search.
+Does not remove multiple marks, use
+.Sq Li u
+instead.
 .It Sq Li b
 Test for binary difference between selected and marked file.
 Compressed files are unpacked but compressed archive files
@@ -939,6 +946,9 @@ and
 List strings which had been defined for a function key.
 .It Sq Li u
 Update file list.
+Also used to remove multiple marks
+.Sq ( Li r
+can't be used to remove them).
 .It Sq Li s
 Open shell in current directory.
 The shell to open can be set with the
