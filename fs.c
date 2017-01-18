@@ -426,7 +426,7 @@ fs_rm(
     /* File name. If nam is given, u is not used. n must be 1. */
     char *nam, long u, int n,
     /* 1: Force */
-    /* 2: Don't rebuild DB (for mmrk) */
+    /* 2: Don't rebuild DB (for mmrk and fs_cp()) */
     unsigned md)
 {
 	struct filediff *f;
@@ -435,6 +435,7 @@ fs_rm(
 	char *fn;
 	char *p0, *s[2];
 	size_t l0;
+	struct stat st;
 	bool chg = FALSE;
 
 	fs_error = FALSE;
@@ -458,6 +459,7 @@ fs_rm(
 	l0 = len1;
 	s[0] = strdup(syspth[0]);
 	s[1] = strdup(syspth[1]);
+	st = stat1;
 	m = n > 1;
 
 	/* case: Multiple files (not from fs_cp(), instead from <n>dd */
@@ -584,7 +586,7 @@ fs_rm(
 		}
 
 		if (!(force_fs || fs_all) && !(md & 1) && !m) {
-			switch (dialog(nam ? y_a_n_txt : y_n_txt, NULL,
+			switch (dialog(!tree || nam ? y_a_n_txt : y_n_txt, NULL,
 			    "Really %s %s\"%s\"?", txt ? txt : "delete",
 			    S_ISDIR(stat1.st_mode) ? "directory " : "", pth1)) {
 			case 'a':
@@ -630,6 +632,7 @@ ret:
 	free(s[0]);
 	pth1 = p0;
 	len1 = l0;
+	stat1 = st;
 #if defined(TRACE)
 	fprintf(debug, "<-fs_rm\n");
 #endif
@@ -729,13 +732,15 @@ tpth:
 			goto tpth;
 		}
 
+		len1 = pthcat(pth1, len1, f->name);
+		len2 = pthcat(pth2, len2, tnam);
 #if defined(TRACE)
 		fprintf(debug, "  Copy \"%s\" -> \"%s\"\n", pth1, pth2);
 #endif
 		if (md & 2) {
 			if (!fs_stat(pth2, &stat2) &&
 			    fs_rm(0 /* tree */, "overwrite", NULL /* nam */,
-			    0 /* u */, 1 /* n */, 0 /* md */) == 1) {
+			    0 /* u */, 1 /* n */, 2 /* md */) == 1) {
 				goto ret;
 			}
 
@@ -863,9 +868,11 @@ proc_dir(void)
 		}
 
 		name = ent->d_name;
+
 		if (*name == '.' && (!name[1] || (name[1] == '.' &&
-		    !name[2])))
+		    !name[2]))) {
 			continue;
+		}
 
 		pthcat(pth1, len1, name);
 
@@ -980,9 +987,15 @@ creatdir(void)
 			 * writeable */
 			return 0;
 		}
+
+		if (fs_rm(0 /* tree */, "overwrite", NULL /* nam */,
+		    0 /* u */, 1 /* n */, 2 /* md */) == 1) {
+			return -1;
+		}
 	}
 
-	if (mkdir(pth2, stat1.st_mode & 07777) == -1 && errno != EEXIST) {
+	if (mkdir(pth2, (stat1.st_mode | 0100) & 07777) == -1
+	    && errno != EEXIST) {
 		printerr(strerror(errno), "mkdir %s", pth2);
 		return -1;
 	}
@@ -994,7 +1007,9 @@ static void
 cp_link(void)
 {
 	ssize_t l;
-	char *buf = malloc(stat1.st_size + 1);
+	char *buf;
+
+	buf = malloc(stat1.st_size + 1);
 
 	if ((l = readlink(pth1, buf, stat1.st_size)) == -1) {
 		printerr(strerror(errno), "readlink %s", pth1);
@@ -1007,6 +1022,12 @@ cp_link(void)
 	}
 
 	buf[l] = 0;
+
+	if (!fs_stat(pth2, &stat2) &&
+	    fs_rm(0 /* tree */, "overwrite", NULL /* nam */,
+	    0 /* u */, 1 /* n */, 2 /* md */) == 1) {
+		goto exit;
+	}
 
 	if (symlink(buf, pth2) == -1) {
 		printerr(strerror(errno), "symlink %s", pth2);
@@ -1033,31 +1054,42 @@ cp_reg(void)
 #if defined(TRACE)
 	fprintf(debug, "<>cp_reg \"%s\" -> \"%s\"\n", pth1, pth2);
 #endif
-	if (followlinks) {
-		if (lstat(pth2, &stat2) == -1) {
-			if (errno == ENOENT)
+	if (!fs_stat(pth2, &stat2)) {
+		if (S_ISREG(stat2.st_mode)) {
+			bool ms = FALSE;
+
+test:
+			if (!access(pth2, W_OK)) {
 				goto copy;
+			}
 
-			printerr(strerror(errno),
-			    "lstat \"%s\"", pth2);
-			goto copy;
-		}
+			if (errno != EACCES) {
+				printerr(strerror(errno),
+				    "access \"%s\"", pth2);
+			}
 
-		/* Don't delete symlinks! They must be followed. */
-		if (!S_ISREG(stat2.st_mode))
-			goto copy;
+			if (!ms && !(stat2.st_mode & S_IWUSR)) {
+				if (chmod(pth2, stat2.st_mode & S_IWUSR) == -1)
+				{
+					printerr(strerror(errno),
+					    "chmod \"%s\"", pth2);
+				} else {
+					ms = TRUE;
+					goto test;
+				}
+			}
 
-		/* Avoid deleting the file if it is writeable to not reset
-		 * owner and group. */
-		if (!access(pth2, W_OK))
-			goto copy;
-
-		if (errno != EACCES)
-			printerr(strerror(errno), "access \"%s\"", pth2);
-
-		if (unlink(pth2) == -1) {
-			printerr(strerror(errno), "unlink \"%s\"",
-			    pth2);
+			if (unlink(pth2) == -1) {
+				printerr(strerror(errno), "unlink \"%s\"",
+				    pth2);
+			}
+		} else {
+			/* Don't delete symlinks! They must be followed. */
+			if (!followlinks &&
+			    fs_rm(0 /* tree */, "overwrite", NULL /* nam */,
+			    0 /* u */, 1 /* n */, 2 /* md */) == 1) {
+				return;
+			}
 		}
 	}
 
