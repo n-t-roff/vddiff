@@ -901,15 +901,24 @@ re_sort_list(void)
 	nodelay(stdscr, FALSE);
 }
 
-void
+/* 1: Cursor moved down */
+
+int
 key_mmrk(void)
 {
 	long i1, i2;
+	int r = 0;
 
 	if ((i1 = mark_idx[right_col]) < 0) {
+		/* mark_idx < 0 -> no mark set.
+		 * -> Just apply to current line. */
 		tgl_mmrk(DB_LST_ITM);
-		curs_down();
+
+		if (curs_down() != 1) {
+			r = 1;
+		}
 	} else {
+		/* Mark set. -> Apply to range */
 		i2 = DB_LST_IDX;
 
 		if (i1 > i2) {
@@ -924,6 +933,8 @@ key_mmrk(void)
 		clr_mark();
 		disp_list(1);
 	}
+
+	return r;
 }
 
 void
@@ -955,6 +966,18 @@ ret:
 	    prev_mmrk[right_col]);
 #endif
 	return prev_mmrk[right_col];
+}
+
+void
+mmrktobot(void)
+{
+	long i;
+
+	for (i = DB_LST_IDX; i < db_num[right_col]; i++) {
+		tgl_mmrk(db_list[right_col][i]);
+	}
+
+	disp_list(1);
 }
 
 void

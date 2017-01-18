@@ -820,6 +820,16 @@ Unless other marks multiple marks are removed with
 .Sq Li u
 instead of
 .Sq Li r .
+.It Dq Li VG
+Toggle mark of all files from the cursor position
+to the last line.
+.It Dq Li 1GVG
+Toggle mark of all files.
+(vim uses
+.Dq Li gg
+instead of
+.Dq Li 1G ,
+but this is not a traditional vi command.)
 .It Sq Li r
 Remove mark, edit line, or regex search.
 Does not remove multiple marks, use

@@ -49,7 +49,7 @@ void enter_dir(char *, char *, bool, bool, short
     );
 void set_win_dim(void);
 void pop_state(short);
-void curs_down(void);
+int curs_down(void);
 
 extern short color;
 extern short color_leftonly ,

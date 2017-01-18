@@ -917,13 +917,22 @@ rename:
 			c = 0;
 			curs_first();
 			break;
+
 		case 'G':
-			if (*key == '1') {
+			switch (*key) {
+			case '1':
 				c = 0;
 				curs_first();
-				break;
+				goto next_key;
+
+			case 'V':
+				c = 0;
+				mmrktobot();
+				goto next_key;
 			}
+
 			/* fall-through */
+
 		case KEY_END:
 			c = 0;
 			curs_last();
@@ -1285,7 +1294,10 @@ rename:
 
 		case 'V':
 		case KEY_IC:
-			key_mmrk();
+			if (key_mmrk() != 1) {
+				/* Already at bottom -> disable "VG" */
+				c = 0;
+			}
 			break;
 
 		case 'A': /* Add attribute column */
@@ -1436,6 +1448,8 @@ static char *helptxt[] = {
        ".		Repeat last command",
        "m		Mark file or directory",
        "V, <INSERT>	Mark multiple files",
+       "VG		Toggle mark of all files from cursor to last line",
+       "1GVG		Toggle mark of all files",
        "r		Remove mark, edit line or regex search",
        "b		Binary diff to marked file",
        "y		Copy file path to edit line",
@@ -2141,14 +2155,20 @@ ret:
 	return r;
 }
 
-void
+/* 1: Was already at bottom */
+
+int
 curs_down(void)
 {
+	int r = 0;
+
 #if defined(TRACE) && 0
 	fprintf(debug, "->curs_down c=%u\n", curs[right_col]);
 #endif
+
 	if (top_idx[right_col] + curs[right_col] + 1 >= db_num[right_col]) {
 		printerr(NULL, "At bottom");
+		r = 1;
 		goto ret;
 	}
 
@@ -2174,7 +2194,7 @@ ret:
 #if defined(TRACE) && 0
 	fprintf(debug, "<-curs_down c=%u\n", curs[right_col]);
 #endif
-	return;
+	return r;
 }
 
 static void
