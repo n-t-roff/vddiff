@@ -900,7 +900,9 @@ rename:
 		{
 			int dst;
 
-			if (!(dst = fs_get_dst(u))) {
+			if (bmode) {
+				dst = 2;
+			} else if (!(dst = fs_get_dst(u))) {
 				break;
 			}
 
@@ -1331,7 +1333,7 @@ static char *helptxt[] = {
        "Q		Quit " BIN,
        "h, ?		Display help",
        "^L		Refresh display",
-       "<TAB>		In fmode: Toggle column",
+       "<TAB>		Toggle column",
        "<UP>, k, -	Move cursor up",
        "<DOWN>, j, +	Move cursor down",
        "<LEFT>		Leave directory (one directory up)",
@@ -1346,7 +1348,7 @@ static char *helptxt[] = {
        "|<LEFT>		In two-column mode: Enlarge right column",
        "|<RIGHT>	In two-column mode: Enlarge left column",
        "|=		In two-column mode: Make column widths equal",
-       "^W		In diff mode: Toggle two-column mode",
+       "^W		Toggle two-column mode",
        "/		Search file by typing first letters of filename",
        "//		Search file with regular expression",
        "Sd		Sort files with directories on top",
@@ -1395,16 +1397,16 @@ static char *helptxt[] = {
        "'dd		Delete file or directory (range cursor...mark)",
        "'dl		Delete file or directory in first tree (range cursor...mark)",
        "'dr		Delete file or directory in second tree (range cursor...mark)",
-       "[<n>]T		In fmode: Move file or directory",
+       "[<n>]T		Move file or directory",
        "[<n>]Tl		Move file or directory to left tree",
        "[<n>]Tr		Move file or directory to right tree",
-       "'T		In fmode: Move file or directory (range cursor...mark)",
+       "'T		Move file or directory (range cursor...mark)",
        "'Tl		Move file or directory to left tree (range cursor...mark)",
        "'Tr		Move file or directory to right tree (range cursor...mark)",
-       "[<n>]@		In fmode: Symlink in other tree to selected file or directory",
+       "[<n>]@		Symlink in other tree to selected file or directory",
        "[<n>]@l		Symlink in left tree to file or directory in right tree",
        "[<n>]@r		Symlink in right tree to file or directory in left tree",
-       "'@		In fmode: Create symlink in other tree (range cursor...mark)",
+       "'@		Create symlink in other tree (range cursor...mark)",
        "'@l		Create symlink in left tree (range cursor...mark)",
        "'@r		Create symlink in right tree (range cursor...mark)",
        "en		Rename file",
@@ -1477,7 +1479,7 @@ static char *helptxt[] = {
        ":set ws		Wrap around top or bottom on filename search",
        ":set nows	Don't wrap around top or bottom on filename search",
        ":vie, :view	Set read-only mode, disable function keys",
-       "#		Toggle between diff mode and fmode",
+       "#		Toggle between diff mode and browse mode",
        "=		In fmode: Copy current path from other column",
        "%		Toggle compare file contents",
        "Da		Add current directory to persistent list",

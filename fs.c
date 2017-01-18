@@ -57,13 +57,21 @@ static void cp_reg(void);
 static int ask_for_perms(mode_t *);
 static int fs_ro(void);
 static void fs_fwrap(const char *, ...);
+static int fs_stat(const char *, struct stat *);
 
 static time_t fs_t1, fs_t2;
 static char *pth1, *pth2;
 static size_t len1, len2;
 static enum { TREE_RM, TREE_CP } tree_op;
+/* Ignores all syscall errors (continues on return value -1) */
+/* Set by fs_fwrap() on key 'i' */
 static bool fs_ign_errs;
+/* File system operation did fail. Stop further processing of recursive
+ * operation. */
 static bool fs_error;
+/* Overwrite *all* ? */
+/* Reset at start of each fs_rm() and fs_cp() */
+/* Has the same meaning as force_fs */
 static bool fs_all;
 
 void
@@ -411,8 +419,11 @@ exit:
  * 1: Cancel */
 
 int
-fs_rm(int tree, char *txt,
-    /* File name. If {nam} is given, {u} is not used. {n} should be 1. */
+fs_rm(
+    /* 1: "dl", 2: "dr", 3: "dd" (detect which file exists)
+     * 0: Use pth2, ignore nam and u. n must be 1. */
+    int tree, char *txt,
+    /* File name. If nam is given, u is not used. n must be 1. */
     char *nam, long u, int n,
     /* 1: Force */
     /* 2: Don't rebuild DB (for mmrk) */
@@ -422,6 +433,8 @@ fs_rm(int tree, char *txt,
 	unsigned short m;
 	int rv = 0;
 	char *fn;
+	char *p0, *s[2];
+	size_t l0;
 	bool chg = FALSE;
 
 	fs_error = FALSE;
@@ -440,7 +453,14 @@ fs_rm(int tree, char *txt,
 	fprintf(debug, "->fs_rm(tree=%d txt(%s) nam(%s) u=%ld n=%d md=%u) "
 	    "lp(%s) rp(%s)\n", tree, txt, nam, u, n, md, trcpth[0], trcpth[1]);
 #endif
+	/* Save what is used by fs_cp() too */
+	p0 = pth1;
+	l0 = len1;
+	s[0] = strdup(syspth[0]);
+	s[1] = strdup(syspth[1]);
 	m = n > 1;
+
+	/* case: Multiple files (not from fs_cp(), instead from <n>dd */
 
 	if (!(force_fs && force_multi) && !(md & 1) && m) {
 		if (bmode) {
@@ -479,7 +499,8 @@ fs_rm(int tree, char *txt,
 
 	for (; n; n--, u++) {
 
-		if (!fmode) {
+		/* u is ignored ir nam != NULL or tree == 0 */
+		if (!fmode && !nam && tree) {
 			if (u >= (long)db_num[0]) {
 				continue;
 			}
@@ -516,7 +537,7 @@ fs_rm(int tree, char *txt,
 					tree &= ~2;
 				}
 			}
-		} else if (fmode) {
+		} else if (tree && fmode) {
 			if (nam) {
 				fn = nam;
 			} else {
@@ -537,14 +558,19 @@ fs_rm(int tree, char *txt,
 		} else if (tree == 2) {
 			pth1 = syspth[1];
 			len1 = pthlen[1];
+		} else if (!tree) {
+			pth1 = pth2;
+			len1 = strlen(pth2);
 		} else {
 #ifdef DEBUG
-			printerr("", "fs_rm: tree not 1 or 2 but %d", tree);
+			printerr("", "fs_rm: invalid tree == %d", tree);
 #endif
 			continue;
 		}
 
-		len1 = pthcat(pth1, len1, fn);
+		if (tree) {
+			len1 = pthcat(pth1, len1, fn);
+		}
 
 #if defined(TRACE)
 		fprintf(debug, "  force_fs=%d md=%u m=%u n=%d \"%s\"\n",
@@ -570,7 +596,7 @@ fs_rm(int tree, char *txt,
 
 			default:
 				rv = 1;
-				goto cancel;
+				goto ret;
 			}
 		}
 
@@ -586,7 +612,7 @@ fs_rm(int tree, char *txt,
 
 	if (txt || /* rebuild is done by others */
 	    !chg) { /* Nothing done */
-		goto cancel;
+		goto ret;
 	}
 
 	if (!(md & 2)) {
@@ -597,15 +623,13 @@ fs_rm(int tree, char *txt,
 		chk_mark(gl_mark, 0);
 	}
 
-	goto ret;
-
-cancel:
-	if (!bmode) {
-		syspth[1][pthlen[1]] = 0;
-	}
-
-	syspth[0][pthlen[0]] = 0;
 ret:
+	memcpy(syspth[0], s[0], strlen(s[0]) + 1);
+	memcpy(syspth[1], s[1], strlen(s[1]) + 1);
+	free(s[1]);
+	free(s[0]);
+	pth1 = p0;
+	len1 = l0;
 #if defined(TRACE)
 	fprintf(debug, "<-fs_rm\n");
 #endif
@@ -620,8 +644,8 @@ fs_cp(int to, long u, int n,
     unsigned md)
 {
 	struct filediff *f;
-	struct stat st;
 	int i;
+	int r = 1;
 	char *tnam;
 	bool m;
 
@@ -629,13 +653,22 @@ fs_cp(int to, long u, int n,
 	fs_ign_errs = FALSE;
 	fs_all = FALSE;
 
-	if (bmode || fs_ro() || !db_num[right_col]) {
+	if (fs_ro() || !db_num[right_col]) {
 		return 1;
 	}
 
+#if defined(TRACE)
+	fprintf(debug, "->fs_cp(to=%d u=%ld n=%d md=%u)\n",
+	    to, u, n, md);
+#endif
 	m = n > 1;
 
 	if (!(force_fs && force_multi) && m && !(md & 4)) {
+		if (bmode) {
+			/* Multiple files don't make sense in bmode */
+			goto ret;
+		}
+
 		if (to == 1) {
 			syspth[0][pthlen[0]] = 0;
 			pth1 = syspth[0];
@@ -650,8 +683,13 @@ fs_cp(int to, long u, int n,
 		    (md & 1) ? "move" : "copy", n,
 		    (md & 2) ? "in" : "to", pth1) != 'y') {
 
-			return 1;
+			goto ret;
 		}
+	}
+
+	if (bmode) {
+		memcpy(syspth[0], syspth[1], pthlen[1]);
+		pthlen[0] = pthlen[1];
 	}
 
 	for (; n-- && u < (long)db_num[right_col]; u++) {
@@ -670,30 +708,17 @@ fs_cp(int to, long u, int n,
 		f = db_list[right_col][u];
 		pthcat(pth1, len1, f->name);
 
-		if (( followlinks &&  stat(pth1, &st) == -1) ||
-		    (!followlinks && lstat(pth1, &st) == -1)) {
-			if (errno != ENOENT) {
-				printerr(strerror(errno), LOCFMT "stat \"%s\""
-				    LOCVAR, pth1);
-			}
-
+		if (fs_stat(pth1, &stat1) == -1) {
 			continue;
 		}
 
 		tnam = f->name;
 tpth:
 		pthcat(pth2, len2, tnam);
-
-		if (( followlinks && (i =  stat(pth2, &stat2)) == -1) ||
-		    (!followlinks && (i = lstat(pth2, &stat2)) == -1)) {
-			if (errno != ENOENT) {
-				printerr(strerror(errno), LOCFMT "stat \"%s\""
-				    LOCVAR, pth2);
-			}
-		}
+		i = fs_stat(pth2, &stat2);
 
 		if (!i && /* from stat */
-		    st.st_ino == stat2.st_ino &&
+		    stat1.st_ino == stat2.st_ino &&
 		    stat1.st_dev == stat2.st_dev) {
 			if (ed_dialog("Enter new name (<ESC> to cancel):",
 			    tnam, NULL, 0, NULL) || !*rbuf) {
@@ -704,39 +729,16 @@ tpth:
 			goto tpth;
 		}
 
-		/* After stat src to avoid removing dest if there is a problem
-		 * with src */
-		if (followlinks) {
-			if (!i && /* from stat */
-			    !force_fs && !m && !(md & 4) &&
-			    dialog(y_n_txt, NULL,
-			    "Really overwrite \"%s\"?", pth2) != 'y') {
-				return 1;
-			}
-		} else if (fs_rm(to /* tree */, "overwrite", tnam,
-		    u, 1 /* n */, 0 /* md */) == 1) {
-			return 1;
-		}
-
-		/* fs_rm() did change pths and stat1 */
-
-		if (to == 1) {
-			pth1 = syspth[1];
-			len1 = pthlen[1];
-			pth2 = syspth[0];
-			len2 = pthlen[0];
-		} else {
-			pth1 = syspth[0];
-			len1 = pthlen[0];
-			pth2 = syspth[1];
-			len2 = pthlen[1];
-		}
-
-		len1 = pthcat(pth1, len1, f->name);
-		len2 = pthcat(pth2, len2, tnam);
-		stat1 = st;
-
+#if defined(TRACE)
+		fprintf(debug, "  Copy \"%s\" -> \"%s\"\n", pth1, pth2);
+#endif
 		if (md & 2) {
+			if (!fs_stat(pth2, &stat2) &&
+			    fs_rm(0 /* tree */, "overwrite", NULL /* nam */,
+			    0 /* u */, 1 /* n */, 0 /* md */) == 1) {
+				goto ret;
+			}
+
 			if (symlink(pth1, pth2) == -1) {
 				printerr(strerror(errno), "symlink %s -> %s",
 				    pth2, pth1);
@@ -753,7 +755,19 @@ tpth:
 		rebuild_db(0);
 	}
 
-	return 0;
+	r = 0;
+
+ret:
+	if (bmode) {
+		syspth[0][0] = '.';
+		syspth[0][1] = 0;
+		pthlen[0] = 1;
+	}
+
+#if defined(TRACE)
+	fprintf(debug, "<-fs_cp\n");
+#endif
+	return r;
 }
 
 static int
@@ -824,8 +838,9 @@ proc_dir(void)
 	char *name;
 	struct str_list *dirs = NULL;
 
-	if (tree_op == TREE_CP && creatdir())
+	if (tree_op == TREE_CP && creatdir()) {
 		return;
+	}
 
 	if (!(d = opendir(pth1))) {
 		printerr(strerror(errno), "opendir %s failed", pth1);
@@ -943,23 +958,28 @@ cp_file(void)
 		fs_t1 = fs_t2;
 	}
 
-	if (S_ISREG(stat1.st_mode))
+	if (S_ISREG(stat1.st_mode)) {
 		cp_reg();
-	else if (S_ISLNK(stat1.st_mode))
+	} else if (S_ISLNK(stat1.st_mode)) {
 		cp_link();
-	/* other file types are ignored */
+	} else {
+		printerr(NULL, "Not copied: \"%s\"", pth1);
+	}
 }
 
 static int
 creatdir(void)
 {
-	if (( followlinks &&  stat(pth1, &stat1) == -1) ||
-	    (!followlinks && lstat(pth1, &stat1) == -1)) {
-		if (errno != ENOENT) {
-			printerr(strerror(errno),
-			    LOCFMT "stat %s" LOCVAR, pth1);
-		}
+	if (fs_stat(pth1, &stat1) == -1) {
 		return -1;
+	}
+
+	if (!fs_stat(pth2, &stat2)) {
+		if (S_ISDIR(stat2.st_mode)) {
+			/* Respect write protected dirs, don't make them
+			 * writeable */
+			return 0;
+		}
 	}
 
 	if (mkdir(pth2, stat1.st_mode & 07777) == -1 && errno != EEXIST) {
@@ -1146,4 +1166,20 @@ fs_get_dst(long u)
 	}
 
 	return dst;
+}
+
+static int
+fs_stat(const char *p, struct stat *s)
+{
+	int i;
+
+	if (( followlinks && (i =  stat(p, s)) == -1) ||
+	    (!followlinks && (i = lstat(p, s)) == -1)) {
+		if (errno != ENOENT) {
+			printerr(strerror(errno), LOCFMT "stat \"%s\""
+			    LOCVAR, p);
+		}
+	}
+
+	return i;
 }
