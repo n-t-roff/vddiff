@@ -1058,6 +1058,10 @@ cp_reg(void)
 		if (S_ISREG(stat2.st_mode)) {
 			bool ms = FALSE;
 
+			if (!cmp_file(pth1, stat1.st_size,
+			              pth2, stat2.st_size, 1)) {
+				return;
+			}
 test:
 			if (!access(pth2, W_OK)) {
 				goto copy;
