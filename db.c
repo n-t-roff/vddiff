@@ -73,7 +73,9 @@ static struct filediff **cur_list;
 static size_t tusrlen, tgrplen;
 size_t usrlen[2], grplen[2];
 static off_t maxsiz;
+static unsigned long maxmajor, maxminor;
 unsigned short bsizlen[2];
+unsigned short majorlen[2], minorlen[2];
 short noequal, real_diff;
 void *scan_db;
 void *name_db;
@@ -652,6 +654,8 @@ diff_db_sort(int i)
 {
 	db_idx = 0;
 	maxsiz = 0;
+	maxmajor = 0;
+	maxminor = 0;
 	tusrlen = 0;
 	tgrplen = 0;
 
@@ -674,8 +678,27 @@ exit:
 	usrlen[i] = tusrlen + 1; /* column separator */
 	grplen[i] = tgrplen + 1;
 
-	/* 5 instead of 4 for the column separator */
-	for (bsizlen[i] = 5; maxsiz >= 10000; bsizlen[i]++, maxsiz /= 10);
+	if (add_bsize) {
+		/* 5 instead of 4 for the column separator */
+		for (bsizlen[i] = 5; maxsiz >= 10000;
+		    bsizlen[i]++, maxsiz /= 10);
+
+		if (maxmajor || maxminor) {
+			unsigned j;
+
+			for (majorlen[i] = 4; maxmajor >= 1000;
+			    majorlen[i]++, maxmajor /= 10);
+
+			for (minorlen[i] = 4; maxminor >= 1000;
+			    minorlen[i]++, maxminor /= 10);
+
+			j = majorlen[i] + minorlen[i] + 2;
+
+			if (bsizlen[i] < j) {
+				bsizlen[i] = j;
+			}
+		}
+	}
 }
 
 #define PROC_DIFF_NODE() \
@@ -700,12 +723,36 @@ exit:
 	{ \
 		cur_list[db_idx++] = f; \
 		\
-		if (f->type[0] && f->siz[0] > maxsiz) { \
-			maxsiz = f->siz[0]; \
-		} \
-		\
-		if (f->type[1] && f->siz[1] > maxsiz) { \
-			maxsiz = f->siz[1]; \
+		if (add_bsize) { \
+			if (f->type[0]) { \
+				if (S_ISCHR(f->type[0]) || \
+				    S_ISBLK(f->type[0])) { \
+					if (major(f->rdev[0]) > maxmajor) { \
+						maxmajor = major(f->rdev[0]); \
+					} \
+					\
+					if (minor(f->rdev[0]) > maxminor) { \
+						maxminor = minor(f->rdev[0]); \
+					} \
+				} else if (f->siz[0] > maxsiz) { \
+					maxsiz = f->siz[0]; \
+				} \
+			} \
+			\
+			if (f->type[1]) { \
+				if (S_ISCHR(f->type[1]) || \
+				    S_ISBLK(f->type[1])) { \
+					if (major(f->rdev[1]) > maxmajor) { \
+						maxmajor = major(f->rdev[1]); \
+					} \
+					\
+					if (minor(f->rdev[1]) > maxminor) { \
+						maxminor = minor(f->rdev[1]); \
+					} \
+				} else if (f->siz[1] > maxsiz) { \
+					maxsiz = f->siz[1]; \
+				} \
+			} \
 		} \
 		\
 		if (add_owner) { \

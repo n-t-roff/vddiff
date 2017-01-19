@@ -9,7 +9,7 @@ struct filediff {
 	gid_t   gid[2];
 	off_t   siz[2];
 	time_t  mtim[2];
-	dev_t   lrdev,  rrdev;
+	dev_t   rdev[2];
 	unsigned fl;
 	char    diff;
 };

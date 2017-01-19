@@ -123,7 +123,7 @@ bool scrollen = TRUE;
 static bool wstat_dirty;
 static bool dir_change;
 bool add_hsize; /* scaled size */
-static bool add_bsize;
+bool add_bsize;
 bool add_mode;
 bool add_mtime;
 bool add_owner;
@@ -1108,13 +1108,24 @@ rename:
 			switch (*key) {
 			case 'A':
 				c = 0;
+
+				if (add_bsize) {
+					goto next_key;
+				}
+
 				add_hsize = FALSE;
 				add_bsize = TRUE;
+				re_sort_list();
 				disp_fmode();
 				goto next_key;
 
 			case 'R':
 				c = 0;
+
+				if (!add_bsize) {
+					goto next_key;
+				}
+
 				add_bsize = FALSE;
 				disp_fmode();
 				goto next_key;
@@ -2871,11 +2882,21 @@ disp_name(WINDOW *w, int y, int x, int mx, int o, struct filediff *f, int t,
 		n = getfilesize(lbuf, sizeof lbuf, f->siz[i], 1);
 		wmove(w, y, mx - n);
 		addmbs(w, lbuf, 0);
+
 	} else if (add_bsize) {
 		size_t n;
 
 		mx += bsizlen[db];
-		n = getfilesize(lbuf, sizeof lbuf, f->siz[i], 2);
+
+		if (S_ISCHR(f->type[i]) || S_ISBLK(f->type[i])) {
+
+			n = snprintf(lbuf, sizeof lbuf, "%lu, %lu",
+			    (unsigned long)major(f->rdev[i]),
+			    (unsigned long)minor(f->rdev[i]));
+		} else {
+			n = getfilesize(lbuf, sizeof lbuf, f->siz[i], 2);
+		}
+
 		wmove(w, y, mx - n);
 		addmbs(w, lbuf, 0);
 	}
@@ -3075,8 +3096,8 @@ file_stat(struct filediff *f, struct filediff *f2)
 	if (ltyp && !S_ISDIR(ltyp)) {
 		if (S_ISCHR(ltyp) || S_ISBLK(ltyp))
 			w1 = snprintf(lbuf, sizeof lbuf, "%lu, %lu",
-			    (unsigned long)major(f->lrdev),
-			    (unsigned long)minor(f->lrdev));
+			    (unsigned long)major(f->rdev[0]),
+			    (unsigned long)minor(f->rdev[0]));
 		else
 			w1 = getfilesize(lbuf, sizeof lbuf, f->siz[0],
 			    scale || twocols ? 1 : 0);
@@ -3088,8 +3109,8 @@ file_stat(struct filediff *f, struct filediff *f2)
 	if (rtyp && !S_ISDIR(rtyp)) {
 		if (S_ISCHR(rtyp) || S_ISBLK(rtyp))
 			w2 = snprintf(rbuf, sizeof rbuf, "%lu, %lu",
-			    (unsigned long)major(f2->rrdev),
-			    (unsigned long)minor(f2->rrdev));
+			    (unsigned long)major(f2->rdev[1]),
+			    (unsigned long)minor(f2->rdev[1]));
 		else
 			w2 = getfilesize(rbuf, sizeof rbuf, f2->siz[1],
 			    scale || twocols ? 1 : 0);
