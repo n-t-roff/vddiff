@@ -66,6 +66,8 @@ unsigned short subtree = 3;
 static struct str_uint *srchmap;
 regex_t re_dat;
 static unsigned srch_idx;
+unsigned prev_pos[2];
+unsigned jmrk[2][32];
 
 bool file_pattern; /* TRUE for -F or -G */
 
@@ -1441,4 +1443,38 @@ ui_chown(int t, int op, long u, unsigned short num)
 
 	fs_chown(t, op, u, num, 0);
 	return 0;
+}
+
+void
+prt_ln_num(void)
+{
+	printerr(NULL, "File %lu of %lu", DB_LST_IDX + 1, db_num[right_col]);
+}
+
+void
+list_jmrks(void)
+{
+	int c;
+	unsigned i, y, u;
+
+	werase(wlist);
+	werase(wstat);
+
+	for (i = 0, y = 0; i < 32 && y < listh; i++) {
+		if (!(u = jmrk[right_col][i]) || u >= db_num[right_col]) {
+			continue;
+		}
+
+		mvwprintw(wlist, y, 0, "% 2u  ", i);
+		addmbs(wlist, db_list[right_col][u]->name, 0);
+		y++;
+	}
+
+	wrefresh(wlist);
+
+	if ((c = getch()) >= '0' && c <= '9') {
+		ungetch(c);
+	}
+
+	disp_fmode();
 }

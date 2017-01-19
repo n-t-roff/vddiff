@@ -13,7 +13,7 @@ LOSS OF USE, DATA OR PROFITS, WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE OR
 OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
 PERFORMANCE OF THIS SOFTWARE.
 ..
-.Dd January 16, 2017
+.Dd January 19, 2017
 .Dt VDDIFF 1
 .Sh NAME
 .Nm @vddiff@
@@ -427,10 +427,13 @@ and the selected file or directory.
 Scroll one screen up.
 .It Ao Cm PAGE-DOWN Ac or Aq Cm SPACE
 Scroll one screen down.
-.It Ao Cm HOME Ac or Sq Li 1G
+.It Ao Cm HOME Ac or Dq Li 1G
 Go to first file.
 .It Ao Cm END Ac or Sq Li G
 Go to last file.
+.It Ar n Ns Sq Li G
+Go to line
+.Ar n .
 .It So Li | Sc Ns Aq Cm LEFT
 In two-column mode:
 Enlarge right column by 10 characters.
@@ -1103,6 +1106,23 @@ or
 removes a item.
 .Sq Li /
 starts a regex search.
+.It Aq Cm CTRL-g
+Print cursor line number and number of files.
+.It Dq Li \(aq\(aq
+Jump to previous cursor position.
+.It Ar n Ns Sq Li m
+Set jump mark.
+.Ar n
+is a number between 0 and 31.
+(In contrast to vi a number instead of a letter is used
+and
+.Sq Li m
+is behind instead of before the number.)
+.It Ar n Ns Sq Li \(aq
+Jump to mark
+.Ar n .
+.It Dq Li \(aql
+List jump marks.
 .It Sq Li W
 Toggle to always wait for
 .Aq Cm ENTER

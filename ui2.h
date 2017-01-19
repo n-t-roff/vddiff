@@ -19,6 +19,8 @@ extern const char any_txt[];
 extern const char enter_regex_txt[];
 extern const char no_match_txt[];
 extern bool file_pattern;
+extern unsigned prev_pos[2];
+extern unsigned jmrk[2][32];
 
 int test_fkey(int, unsigned short);
 void set_fkey_cmd(int, char *, int);
@@ -64,3 +66,5 @@ int ui_mv(int, int, long, unsigned short);
 int ui_dd(int, long, unsigned short);
 int ui_chmod(int, long, unsigned short);
 int ui_chown(int, int, long, unsigned short);
+void prt_ln_num(void);
+void list_jmrks(void);

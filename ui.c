@@ -241,9 +241,10 @@ ui_ctrl(void)
 {
 	static struct history opt_hist;
 	int key[2] = { 0, 0 }, key2[2], c = 0, c2 = 0, i;
-	unsigned short num, num2;
+	unsigned num, num2;
 	long u;
 	struct filediff *f;
+	bool ns; /* num set */
 
 	while (1) {
 next_key:
@@ -252,6 +253,7 @@ next_key:
 
 		if (!c) {
 			num = 1;
+			ns = FALSE;
 			u = top_idx[right_col] + curs[right_col];
 		}
 
@@ -283,12 +285,14 @@ next_key:
 			goto save_st;
 		}
 
-		/* case '1' see below */
-		for (i = '2'; i <= '9'; i++) {
-			if (c == i) {
-				num = i - '0';
-				goto next_key;
-			}
+		if (c >= '0' && c <= '9') {
+			num = ns ? num * 10 : 0;
+			num += c - '0';
+			ns = TRUE;
+#if defined(TRACE)
+			fprintf(debug, "  ui_ctrl: num := %u\n", num);
+#endif
+			goto next_key;
 		}
 
 		switch (c) {
@@ -298,10 +302,6 @@ next_key:
 			proc_mevent();
 			break;
 #endif
-		case '1':
-			/* !!! DON'T USE c = 0 !!!
-			 * else "1G" won't work anymore! */
-			break;
 		case 'q':
 			if (dialog(y_n_txt, NULL,
 			    "Quit " BIN "?") != 'y')
@@ -757,6 +757,11 @@ rename:
 				dl_list();
 				goto next_key;
 
+			case '\'':
+				c = 0;
+				list_jmrks();
+				goto next_key;
+
 			default:
 				;
 			}
@@ -919,16 +924,14 @@ rename:
 			break;
 
 		case 'G':
-			switch (*key) {
-			case '1':
+			if (ns) {
 				c = 0;
-				curs_first();
-				goto next_key;
-
-			case 'V':
+				center(num ? num - 1 : 0);
+				break;
+			} else if (*key == 'V') {
 				c = 0;
 				mmrktobot();
-				goto next_key;
+				break;
 			}
 
 			/* fall-through */
@@ -937,8 +940,19 @@ rename:
 			c = 0;
 			curs_last();
 			break;
+
 		case 'm':
-			if (*key == 'S') {
+			if (ns) {
+				c = 0;
+
+				if (num > 31) {
+					break;
+				}
+
+				jmrk[right_col][num] = DB_LST_IDX;
+				break;
+
+			} else if (*key == 'S') {
 				c = 0;
 
 				if (sorting == SORTMIXED)
@@ -1203,11 +1217,21 @@ rename:
 
 		case '`':
 		case '\'':
-			if (mark_idx[right_col] < 0) {
-				standoutc(wstat);
-				/* calls standend */
-				printerr(NULL, "No local mark");
+			if (*key == '\'') {
 				c = 0;
+				center(prev_pos[right_col]);
+				break;
+			} else if (ns) {
+				c = 0;
+
+				if (num < 32 && (u = jmrk[right_col][num])) {
+					center(u);
+				}
+
+				break;
+			}
+
+			if (mark_idx[right_col] < 0) {
 				break;
 			}
 
@@ -1300,6 +1324,11 @@ rename:
 			}
 			break;
 
+		case CTRL('g'):
+			c = 0;
+			prt_ln_num();
+			break;
+
 		case 'A': /* Add attribute column */
 		case 'D': /* Display directory list */
 		case 'R': /* Remove attribute column */
@@ -1357,6 +1386,7 @@ static char *helptxt[] = {
        "		Scroll one screen down",
        "<HOME>, 1G	Go to first file",
        "<END>, G	Go to last file",
+       "<n>G		Go to line <n>",
        "|<LEFT>		In two-column mode: Enlarge right column",
        "|<RIGHT>	In two-column mode: Enlarge left column",
        "|=		In two-column mode: Make column widths equal",
@@ -1498,6 +1528,11 @@ static char *helptxt[] = {
        "%		Toggle compare file contents",
        "Da		Add current directory to persistent list",
        "Dl		Show persistent directory list",
+       "^G		Print cursor line number and number of files",
+       "''		Jump to previous cursor position",
+       "<n>m		Set jump mark",
+       "<n>'		Jump to mark",
+       "'l		List jump marks",
        "W		Toggle wait for <ENTER> after running external tool" };
 
 #define HELP_NUM (sizeof(helptxt) / sizeof(*helptxt))
@@ -2054,6 +2089,7 @@ curs_last(void)
 	}
 
 	disp_curs(0);
+	prev_pos[right_col] = DB_LST_IDX;
 	top_idx[right_col] = db_num[right_col] - listh;
 	curs[right_col] = listh - 1;
 	disp_list(1);
@@ -2095,6 +2131,7 @@ curs_first(void)
 	if (first_line_is_top())
 		return;
 
+	prev_pos[right_col] = DB_LST_IDX;
 	top_idx[right_col] = curs[right_col] = 0;
 	disp_list(1);
 }
@@ -3413,6 +3450,7 @@ center(unsigned idx)
 	fprintf(debug, "<>center\n");
 #endif
 	disp_curs(0);
+	prev_pos[right_col] = DB_LST_IDX;
 
 	if (db_num[right_col] <= listh || idx <= listh / 2) {
 		top_idx[right_col] = 0;
