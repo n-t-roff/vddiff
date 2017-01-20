@@ -58,6 +58,8 @@ static int ask_for_perms(mode_t *);
 static int fs_ro(void);
 static void fs_fwrap(const char *, ...);
 static int fs_stat(const char *, struct stat *);
+static int fs_deldialog(const char *, const char *, const char *,
+    const char *);
 
 static time_t fs_t1, fs_t2;
 static char *pth1, *pth2;
@@ -585,18 +587,11 @@ fs_rm(
 			continue;
 		}
 
-		if (!(force_fs || fs_all) && !(md & 1) && !m) {
-			switch (dialog(!tree || nam ? y_a_n_txt : y_n_txt, NULL,
-			    "Really %s %s\"%s\"?", txt ? txt : "delete",
-			    S_ISDIR(stat1.st_mode) ? "directory " : "", pth1)) {
-			case 'a':
-				fs_all = TRUE;
-				/* fall through */
-
-			case 'y':
-				break;
-
-			default:
+		if (!(md & 1) && !m) {
+			if (fs_deldialog(!tree || nam ? y_a_n_txt : y_n_txt,
+			    txt ? txt : "delete",
+			    S_ISDIR(stat1.st_mode) ? "directory " : NULL,
+			    pth1)) {
 				rv = 1;
 				goto ret;
 			}
@@ -1062,6 +1057,11 @@ cp_reg(void)
 			              pth2, stat2.st_size, 1)) {
 				return;
 			}
+
+			if (fs_deldialog(y_a_n_txt, "overwrite", "file ",
+			    pth2)) {
+				return;
+			}
 test:
 			if (!access(pth2, W_OK)) {
 				goto copy;
@@ -1167,6 +1167,30 @@ fs_fwrap(const char *f, ...)
 	}
 
 	va_end(a);
+}
+
+/* 0: yes */
+
+static int
+fs_deldialog(const char *menu, const char *op, const char *typ,
+    const char *nam)
+{
+	if (force_fs || fs_all) {
+		return 0;
+	}
+
+	switch (dialog(menu, NULL,
+	    "Really %s %s\"%s\"?", op, typ ? typ : "", nam)) {
+	case 'a':
+		fs_all = TRUE;
+		/* fall through */
+
+	case 'y':
+		return 0;
+
+	default:
+		return 1;
+	}
 }
 
 /* 0: Error
