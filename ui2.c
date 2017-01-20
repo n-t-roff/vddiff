@@ -52,7 +52,7 @@ struct str_uint {
 };
 
 static int srchcmp(const void *, const void *);
-static char *getnextarg(char *);
+static char *getnextarg(char *, unsigned);
 static void set_all(void);
 
 long mark_idx[2] = { -1, -1 };
@@ -474,6 +474,7 @@ parsopt(char *buf)
 			return 0;
 		}
 
+cd_home:
 		if (!(s = getenv("HOME"))) {
 			printerr(NULL, "HOME not set\n");
 			return 0;
@@ -491,8 +492,8 @@ parsopt(char *buf)
 			return 0;
 		}
 
-		if (!(buf = getnextarg(buf + 3))) {
-			return 0;
+		if (!(buf = getnextarg(buf + 3, 0))) {
+			goto cd_home;
 		}
 
 		if (!(s = pthexp(buf))) {
@@ -511,7 +512,7 @@ parsopt(char *buf)
 	}
 
 	if (!strncmp(buf, "find ", 5)) {
-		if (!(buf = getnextarg(buf + 5))) {
+		if (!(buf = getnextarg(buf + 5, 1))) {
 			return 0;
 		}
 
@@ -524,7 +525,7 @@ parsopt(char *buf)
 	}
 
 	if (!strncmp(buf, "grep ", 5)) {
-		if (!(buf = getnextarg(buf + 5))) {
+		if (!(buf = getnextarg(buf + 5, 1))) {
 			return 0;
 		}
 
@@ -572,7 +573,7 @@ parsopt(char *buf)
 
 	if (!strncmp(buf, "se " , (skip = 3)) ||
 	    !strncmp(buf, "set ", (skip = 4))) {
-		if (!(buf = getnextarg(buf + skip))) {
+		if (!(buf = getnextarg(buf + skip, 1))) {
 			return 0;
 		}
 
@@ -608,14 +609,17 @@ parsopt(char *buf)
 }
 
 static char *
-getnextarg(char *buf)
+getnextarg(char *buf, unsigned m)
 {
 	while (*buf == ' ') {
 		buf++;
 	}
 
 	if (!*buf) {
-		printerr(NULL, "Argument expected");
+		if (m) {
+			printerr(NULL, "Argument expected");
+		}
+
 		return NULL;
 	}
 

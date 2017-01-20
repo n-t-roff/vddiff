@@ -38,6 +38,35 @@ PERFORMANCE OF THIS SOFTWARE.
 #include "db.h"
 #include "diff.h"
 
+static int cpltstr(char *, const char **);
+
+static const char *set_opts[] = {
+	"all",
+	"fkeys",
+	"ic",
+	"magic",
+	"nofkeys",
+	"noic",
+	"nomagic",
+	"norecursive",
+	"nows",
+	"recursive",
+	"ws",
+	NULL
+};
+
+static const char *ex_cmds[] = {
+	"cd",
+	"edit",
+	"find",
+	"grep",
+	"nofind",
+	"nogrep",
+	"set",
+	"view",
+	NULL
+};
+
 int
 complet(char *s, int c)
 {
@@ -60,6 +89,14 @@ complet(char *s, int c)
 			e++;
 			break;
 		}
+	}
+
+	if (e == s) {
+		return cpltstr(e, ex_cmds);
+	} else if (!strncmp(s, "se ", 3) || !strncmp(s, "set ", 4)) {
+		return cpltstr(e, set_opts);
+	} else if (strncmp(s, "cd ", 3)) {
+		return 0;
 	}
 
 	if (!(b = pthexp(e))) {
@@ -170,6 +207,25 @@ free:
 	free(d);
 	free(b);
 	disp_edit();
+	return EDCB_WR_BK;
+}
+
+static int
+cpltstr(
+    /* begin of last word of input */
+    char *lw,
+    /* string list */
+    const char **lst)
+{
+	const char *cw; /* current word */
+	size_t lwl = strlen(lw); /* last word length */
+
+	while ((cw = *lst++)) {
+		if (strncmp(cw, lw, lwl)) {
+			continue;
+		}
+	}
+
 	return EDCB_WR_BK;
 }
 
