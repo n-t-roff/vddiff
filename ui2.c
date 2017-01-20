@@ -466,6 +466,12 @@ parsopt(char *buf)
 #if defined(TRACE)
 	fprintf(debug, "<->parsopt(%s)\n", buf);
 #endif
+	opt = buf + strlen(buf); /* reuse opt */
+
+	while (*--opt == ' ') {
+		*opt = 0;
+	}
+
 	if (!strcmp(buf, "cd")) {
 		char *s;
 

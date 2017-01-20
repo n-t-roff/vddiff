@@ -13,7 +13,7 @@ LOSS OF USE, DATA OR PROFITS, WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE OR
 OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
 PERFORMANCE OF THIS SOFTWARE.
 ..
-.Dd January 19, 2017
+.Dd January 20, 2017
 .Dt VDDIFF 1
 .Sh NAME
 .Nm @vddiff@
@@ -1071,6 +1071,14 @@ which can be accessed with the
 and
 .Aq Cm DOWN
 keys.
+If possible, commands and their arguments are auto-completed
+on pressing
+.Aq Cm TAB .
+To e.g. input
+.Dq Li set recursive
+it is sufficient to type
+.Pp
+.D1 Li :s Ns Ao Cm TAB Ac Ns Li r Ns Aq Cm TAB
 .It Sq Li #
 Toggle between diff mode and two-column browse mode
 .Sy ( fmode ) .

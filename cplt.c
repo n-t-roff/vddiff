@@ -74,6 +74,7 @@ complet(char *s, int c)
 	DIR *dh;
 	struct dirent *de;
 	size_t ld, lb, ln;
+	int r = 0;
 	bool co;
 	bool ts; /* trailing slash */
 
@@ -166,7 +167,7 @@ complet(char *s, int c)
 		 * For any later found name test how many characters match. */
 		if (!m) {
 			ln = strlen(fn);
-			m = strdup(fn);
+			m  = strdup(fn);
 			continue;
 		}
 
@@ -203,40 +204,83 @@ complet(char *s, int c)
 
 	m[ln] = 0;
 	ed_append(m + lb);
+	r = EDCB_WR_BK;
 
 cplt:
 	if (co) { /* complete, not part of name */
 		ed_append("/");
+		r = EDCB_WR_BK;
 	}
 
 free:
-	if (m) {
-		free(m);
-	}
-
+	free(m);
 	free(d);
 	free(b);
 	disp_edit();
-	return EDCB_WR_BK;
+	return r;
 }
 
 static int
 cpltstr(
     /* begin of last word of input */
-    char *lw,
+    char *iw,
     /* string list */
     const char **lst)
 {
 	const char *cw; /* current word */
-	size_t lwl = strlen(lw); /* last word length */
+	char *mw = NULL; /* matched word */
+	size_t iwl = strlen(iw); /* input word length */
+	size_t mwl; /* matched word length */
+	int r = 0;
+	bool co = TRUE;
 
 	while ((cw = *lst++)) {
-		if (strncmp(cw, lw, lwl)) {
+		if (iwl && strncmp(cw, iw, iwl)) {
 			continue;
+		}
+
+		if (!mw) {
+			mwl = strlen(cw);
+			mw  = strdup(cw);
+			continue;
+		}
+
+		while (mwl > iwl) {
+			if (!strncmp(cw, mw, mwl)) {
+				break;
+			}
+
+			mwl--;
+			co = FALSE;
+		}
+
+		if (mwl == iwl) {
+			break;
 		}
 	}
 
-	return EDCB_WR_BK;
+	if (!mw) {
+		goto free;
+	}
+
+	if (mwl == iwl) {
+		goto cplt;
+	}
+
+	mw[mwl] = 0;
+	ed_append(mw + iwl);
+	r = EDCB_WR_BK;
+
+cplt:
+	if (co) {
+		ed_append(" ");
+		r = EDCB_WR_BK;
+	}
+
+free:
+	free(mw);
+	disp_edit();
+	return r;
 }
 
 char *
