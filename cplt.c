@@ -75,12 +75,14 @@ complet(char *s, int c)
 	struct dirent *de;
 	size_t ld, lb, ln;
 	bool co;
+	bool ts; /* trailing slash */
 
 	if (c != '\t' || !*s) {
 		return 0;
 	}
 
 	e = s + strlen(s);
+	ts = e[-1] == '/' ? TRUE : FALSE;
 
 	while (e != s) {
 		e--;
@@ -106,8 +108,17 @@ complet(char *s, int c)
 	/* Search for the last '/' in b and open this directory.
 	 * If there is no '/' in b open ".". */
 	d = strdup(b);
-	dn = dirname(b);
-	bn = *d ? basename(d) : "";
+
+	/* On "foo/" dirname is "." and basename is "foo".
+	 * But this code expects dirname as "foo" and basename as "". */
+	if (ts) {
+		dn = b;
+		bn = "";
+	} else {
+		dn = dirname(b);
+		bn = *d ? basename(d) : "";
+	}
+
 	ld = strlen(dn);
 	lb = strlen(bn);
 	memcpy(b, dn, ld+1);
@@ -132,11 +143,6 @@ complet(char *s, int c)
 		}
 
 		fn = de->d_name;
-
-		if (*fn == '.' && (!fn[1] || (fn[1] == '.' && !fn[2]))) {
-			continue;
-		}
-
 		pthcat(b, ld, fn);
 
 		if (stat(b, &stat1) == -1) {
@@ -188,6 +194,10 @@ complet(char *s, int c)
 	}
 
 	if (ln == lb) {
+		if (ts) {
+			goto free;
+		}
+
 		goto cplt;
 	}
 
