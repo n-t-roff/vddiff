@@ -46,12 +46,14 @@ complet(char *s, int c)
 	struct dirent *de;
 	size_t ld, lb, ln;
 	bool co;
+	bool ts; /* trailing slash */
 
 	if (c != '\t' || !*s) {
 		return 0;
 	}
 
 	e = s + strlen(s);
+	ts = e[-1] == '/' ? TRUE : FALSE;
 
 	while (e != s) {
 		e--;
@@ -151,6 +153,10 @@ complet(char *s, int c)
 	}
 
 	if (ln == lb) {
+		if (ts) {
+			goto free;
+		}
+
 		goto cplt;
 	}
 
