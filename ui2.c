@@ -543,6 +543,11 @@ cd_home:
 		return 0;
 	}
 
+	if (!strcmp(buf, "marks")) {
+		list_jmrks();
+		return 0;
+	}
+
 	if (!strcmp(buf, "nofind")) {
 		if (!fn_free()) {
 			rebuild_db(1);

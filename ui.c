@@ -966,6 +966,7 @@ rename:
 			c = 0;
 			set_mark();
 			break;
+
 		case 'y':
 			c = 0;
 			yank_name(0);
@@ -1519,6 +1520,7 @@ static char *helptxt[] = {
        ":grep <pattern>",
        "		Display only file which contain <pattern>",
        ":nogrep		Remove file content pattern",
+       ":marks		List jump marks",
        ":q, :qa		Quit " BIN,
        ":set all	Display option values",
        ":set fkeys	Enable function keys",

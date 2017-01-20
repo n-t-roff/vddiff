@@ -1036,6 +1036,8 @@ Display only files which contain
 .Ar pattern .
 .It Li nogrep
 Remove file content pattern.
+.It Li marks
+List jump marks.
 .It Li q , Li qa
 Quit @vddiff@.
 .It Li set all
@@ -1126,6 +1128,13 @@ is a number between 0 and 31.
 and
 .Sq Li m
 is behind instead of before the number.)
+Jump marks save the file position, not the file name.
+If the position of the file in the list changes,
+the mark points to an other file.
+.begin_comment
+The mark can't be saved in diffinfo, since all diffinfo structures
+are freed on reload.
+.end_comment
 .It Ar n Ns Sq Li \(aq
 Jump to mark
 .Ar n .
