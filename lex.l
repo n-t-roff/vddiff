@@ -36,82 +36,135 @@ static char *filename = "-- stdin --";
 #endif
 
 void include(char *);
-static char * concat(char *);
 
 unsigned rc_nline = 1;
 unsigned rc_col = 1;
+static size_t qstrsiz;
+static size_t qstrlen;
+static char *qstr;
 static short incl;
 %}
+
+%x QSTR
+
 S [ \t]
 NS [^ \t\n]
-%%
-^#.*			|
-{S}#.*			{ ; }
-difftool		{ rc_col += yyleng; return DIFFTOOL     ; }
-viewtool		{ rc_col += yyleng; return VIEWTOOL     ; }
-ext			{ rc_col += yyleng; return EXT          ; }
-skipext			{ rc_col += yyleng; return SKIPEXT      ; }
-bg			{ rc_col += yyleng; return BG           ; }
-fkey			{ rc_col += yyleng; return FKEY         ; }
-filesfirst		{ rc_col += yyleng; return FILES        ; }
-mixed			{ rc_col += yyleng; return MIXED        ; }
-followlinks		{ rc_col += yyleng; return FOLLOW       ; }
-mono			{ rc_col += yyleng; return MONO         ; }
-noequal			{ rc_col += yyleng; return NOEQUAL      ; }
-real_diff		{ rc_col += yyleng; return REAL_DIFF    ; }
-recursive		{ rc_col += yyleng; return RECURSIVE    ; }
-left_color		{ rc_col += yyleng; return LEFT_COLOR   ; }
-right_color		{ rc_col += yyleng; return RIGHT_COLOR  ; }
-diff_color		{ rc_col += yyleng; return DIFF_COLOR   ; }
-dir_color		{ rc_col += yyleng; return DIR_COLOR    ; }
-unknown_color		{ rc_col += yyleng; return UNKNOWN_COLOR; }
-link_color		{ rc_col += yyleng; return LINK_COLOR   ; }
-normal_color		{ rc_col += yyleng; return NORMAL_COLOR ; }
-cursor_color		{ rc_col += yyleng; return CURSOR_COLOR ; }
-error_color		{ rc_col += yyleng; return ERROR_COLOR  ; }
-mark_color		{ rc_col += yyleng; return MARK_COLOR   ; }
-mmrk_color		{ rc_col += yyleng; return MMRK_COLOR   ; }
-bg_color		{ rc_col += yyleng; return BG_COLOR     ; }
-histsize		{ rc_col += yyleng; return HISTSIZE     ; }
-noic			{ rc_col += yyleng; return NOIC         ; }
-magic			{ rc_col += yyleng; return MAGIC        ; }
-nows			{ rc_col += yyleng; return NOWS         ; }
-scale                   { rc_col += yyleng; return SCALE        ; }
-bmode			{ rc_col += yyleng; return BMODE        ; }
-shell			{ rc_col += yyleng; return SHELL        ; }
-sh			{ rc_col += yyleng; return SH           ; }
-alias			{ rc_col += yyleng; return ALIAS        ; }
-twocolumn		{ rc_col += yyleng; return TWOCOLUMN    ; }
-readonly		{ rc_col += yyleng; return READONLY     ; }
-disp_perms		{ rc_col += yyleng; return DISP_PERM    ; }
-disp_owner		{ rc_col += yyleng; return DISP_OWNER   ; }
-disp_group		{ rc_col += yyleng; return DISP_GROUP   ; }
-disp_hsize		{ rc_col += yyleng; return DISP_HSIZE   ; }
-disp_mtime		{ rc_col += yyleng; return DISP_MTIME   ; }
-include			{ rc_col += yyleng; incl = 1            ; }
-[0-9]+			{ rc_col += yyleng;
-			  yylval.integer = atoi(yytext);
-			  return INTEGER; }
-\"[^\"]*\"		{ rc_col += yyleng;
-			  yytext[yyleng-1] = 0;
-			  concat(yytext);
 
-			  if (incl) {
-				include(yytext+1);
-			  } else {
-				yylval.str = strdup(yytext+1);
-				return STRING;
-			  } }
-{NS}+			{ rc_col += yyleng;
-			  if (incl) {
-				include(yytext);
-			  } else {
-				yylval.str = strdup(yytext);
-				return STRING;
-			  } }
-{S}+			{ rc_col += yyleng; }
-\n			{ rc_nline++;
-			  rc_col = 1; }
+%%
+^#.*		|
+{S}#.*		{ ; }
+difftool	{ rc_col += yyleng; return DIFFTOOL     ; }
+viewtool	{ rc_col += yyleng; return VIEWTOOL     ; }
+ext		{ rc_col += yyleng; return EXT          ; }
+skipext		{ rc_col += yyleng; return SKIPEXT      ; }
+bg		{ rc_col += yyleng; return BG           ; }
+fkey		{ rc_col += yyleng; return FKEY         ; }
+filesfirst	{ rc_col += yyleng; return FILES        ; }
+mixed		{ rc_col += yyleng; return MIXED        ; }
+followlinks	{ rc_col += yyleng; return FOLLOW       ; }
+mono		{ rc_col += yyleng; return MONO         ; }
+noequal		{ rc_col += yyleng; return NOEQUAL      ; }
+real_diff	{ rc_col += yyleng; return REAL_DIFF    ; }
+recursive	{ rc_col += yyleng; return RECURSIVE    ; }
+left_color	{ rc_col += yyleng; return LEFT_COLOR   ; }
+right_color	{ rc_col += yyleng; return RIGHT_COLOR  ; }
+diff_color	{ rc_col += yyleng; return DIFF_COLOR   ; }
+dir_color	{ rc_col += yyleng; return DIR_COLOR    ; }
+unknown_color	{ rc_col += yyleng; return UNKNOWN_COLOR; }
+link_color	{ rc_col += yyleng; return LINK_COLOR   ; }
+normal_color	{ rc_col += yyleng; return NORMAL_COLOR ; }
+cursor_color	{ rc_col += yyleng; return CURSOR_COLOR ; }
+error_color	{ rc_col += yyleng; return ERROR_COLOR  ; }
+mark_color	{ rc_col += yyleng; return MARK_COLOR   ; }
+mmrk_color	{ rc_col += yyleng; return MMRK_COLOR   ; }
+bg_color	{ rc_col += yyleng; return BG_COLOR     ; }
+histsize	{ rc_col += yyleng; return HISTSIZE     ; }
+noic		{ rc_col += yyleng; return NOIC         ; }
+magic		{ rc_col += yyleng; return MAGIC        ; }
+nows		{ rc_col += yyleng; return NOWS         ; }
+scale		{ rc_col += yyleng; return SCALE        ; }
+bmode		{ rc_col += yyleng; return BMODE        ; }
+shell		{ rc_col += yyleng; return SHELL        ; }
+sh		{ rc_col += yyleng; return SH           ; }
+alias		{ rc_col += yyleng; return ALIAS        ; }
+twocolumn	{ rc_col += yyleng; return TWOCOLUMN    ; }
+readonly	{ rc_col += yyleng; return READONLY     ; }
+disp_perms	{ rc_col += yyleng; return DISP_PERM    ; }
+disp_owner	{ rc_col += yyleng; return DISP_OWNER   ; }
+disp_group	{ rc_col += yyleng; return DISP_GROUP   ; }
+disp_hsize	{ rc_col += yyleng; return DISP_HSIZE   ; }
+disp_mtime	{ rc_col += yyleng; return DISP_MTIME   ; }
+include		{ rc_col += yyleng; incl = 1            ; }
+{S}+		{ rc_col += yyleng; }
+
+[0-9]+ {
+		rc_col += yyleng;
+		yylval.integer = atoi(yytext);
+		return INTEGER;
+	}
+
+\"[^\"\n]*\" {
+		rc_col += yyleng;
+		yytext[yyleng-1] = 0;
+
+		if (incl) {
+			include(yytext+1);
+		} else {
+			yylval.str = strdup(yytext+1);
+			return STRING;
+		}
+	}
+
+\"[^\"]*\\\n {
+		rc_nline++;
+		rc_col = 1;
+		yytext[yyleng-2] = 0;
+		qstrsiz = yyleng + 1024;
+		qstr = malloc(qstrsiz);
+		memcpy(qstr, yytext + 1, yyleng - 2);
+		qstrlen = yyleng - 3;
+		BEGIN QSTR;
+	}
+
+<QSTR>[^\"]*\\\n {
+		rc_nline++;
+		rc_col = 1;
+		yytext[yyleng-2] = 0;
+
+		if (qstrsiz <= qstrlen + yyleng) {
+			qstrsiz = (qstrlen + yyleng) * 2;
+			qstr = realloc(qstr, qstrsiz);
+		}
+
+		memcpy(qstr + qstrlen, yytext + 1, qstrlen + yyleng - 2);
+		qstrlen += yyleng - 3;
+	}
+
+<QSTR>[^\"\n]*\" {
+		yytext[yyleng-1] = 0;
+		yylval.str = malloc(qstrlen + yyleng - 1);
+		memcpy(yylval.str, qstr, qstrlen);
+		memcpy(yylval.str + qstrlen, yytext + 1, yyleng - 1);
+		free(qstr);
+		BEGIN 0;
+		return STRING;
+	}
+
+{NS}+ {
+		rc_col += yyleng;
+
+		if (incl) {
+			include(yytext);
+		} else {
+			yylval.str = strdup(yytext);
+			return STRING;
+		}
+	}
+
+\n {
+		rc_nline++;
+		rc_col = 1;
+	}
 %%
 
 int
@@ -181,29 +234,4 @@ include(char *s)
 	incstack = inc;
 	yy_switch_to_buffer(yy_create_buffer(yyin, YY_BUF_SIZE));
 #endif /* LEX_HAS_BUFS */
-}
-
-static char *
-concat(char *s)
-{
-	char *r, *w;
-	int c, c2;
-
-	for (r = w = s; (c = *r++); ) {
-		if (c != '\\') {
-			goto next;
-		}
-
-		if ((c2 = *r++) == '\n') {
-			continue;
-		} else {
-			*w++ = c;
-			c = c2;
-		}
-next:
-		*w++ = c;
-	}
-
-	*w = 0;
-	return s;
 }
