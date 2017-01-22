@@ -593,36 +593,35 @@ rename:
 			/* fall through */
 
 		case '!':
-			c = 0;
-
-			if (bmode || fmode) {
-				break;
-			}
-
-			noequal = noequal ? 0 : 1;
-			re_sort_list();
-			break;
-
 		case 'c':
-			c = 0;
-
-			if (bmode || fmode) {
-				break;
-			}
-
-			real_diff = real_diff ? 0 : 1;
-			re_sort_list();
-			break;
-
 		case '&':
-			c = 0;
-
+		case '^':
 			if (bmode || fmode) {
+				c = 0;
 				break;
 			}
 
-			nosingle = nosingle ? 0 : 1;
+			switch (c) {
+			case 'n':
+			case '!':
+				noequal = noequal ? 0 : 1;
+				break;
+
+			case 'c':
+				real_diff = real_diff ? 0 : 1;
+				break;
+
+			case '&':
+				nosingle = nosingle ? 0 : 1;
+				break;
+
+			case '^':
+				excl_or = excl_or ? FALSE : TRUE;
+				break;
+			}
+
 			re_sort_list();
+			c = 0;
 			break;
 
 		case 'E':
@@ -1422,6 +1421,7 @@ static char *helptxt[] = {
        "!, n		Toggle display of equal files",
        "c		Toggle showing only directories and really different files",
        "&		Toggle display of files which are on one side only",
+       "^		Toggle display of files which are in both trees",
        "F		Toggle following symbolic links",
        "E		Toggle file name or file content filter",
        "Ah		Show scaled file size",
@@ -3448,14 +3448,28 @@ yank_name(int reverse)
 void
 no_file(void)
 {
-	if (((real_diff || noequal || nosingle) && !bmode) || file_pattern) {
+	int n = 0;
+
+	if (!(bmode || fmode)) {
+		if (real_diff) n++;
+		if (noequal  ) n++;
+		if (nosingle ) n++;
+		if (excl_or  ) n++;
+	}
+
+	if (file_pattern) n++;
+
+	if (n) {
 		printerr(NULL,
-		    "No file in list (type %s%s%s to disable filters).",
-		    !file_pattern ? "" : "'E'",
-		    !real_diff ? "" : "'c'",
-		    !noequal ? "" : !real_diff ? "'!'" : " or '!'",
-		    !nosingle ? "" :
-		    !(real_diff || noequal) ? "'&'" : " or '&'");
+		    "No file in list (key%s %s%s%s%s%sdisable%s filter%s).",
+		    n > 1 ? "s" : "",
+		    file_pattern ? "'E' " : "",
+		    real_diff    ? "'c' " : "",
+		    noequal      ? "'!' " : "",
+		    nosingle     ? "'&' " : "",
+		    excl_or      ? "'^' " : "",
+		    n > 1 ? "" : "s",
+		    n > 1 ? "s" : "");
 
 		if (!bmode && !fmode && recursive) {
 			syspth[right_col][pthlen[right_col]] = 0;

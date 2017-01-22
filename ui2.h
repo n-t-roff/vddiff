@@ -19,6 +19,7 @@ extern const char any_txt[];
 extern const char enter_regex_txt[];
 extern const char no_match_txt[];
 extern bool file_pattern;
+extern bool excl_or;
 extern unsigned prev_pos[2];
 extern unsigned jmrk[2][32];
 

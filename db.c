@@ -712,14 +712,18 @@ exit:
 	    (bmode || fmode || \
 	     ((!noequal || \
 	       f->diff == '!' || S_ISDIR(f->type[0]) || \
-	       (f->type[0] & S_IFMT) != (f->type[1] & S_IFMT)) && \
-	      \
+	       (f->type[0] & S_IFMT) != (f->type[1] & S_IFMT)) \
+	      && \
 	      (!real_diff || \
 	       f->diff == '!' || (S_ISDIR(f->type[0]) && S_ISDIR(f->type[1]) \
-	       && (!recursive || is_diff_dir(f)))) && \
-	      \
+	       && (!recursive || is_diff_dir(f)))) \
+	      && \
 	      (!nosingle || \
-	       (f->type[0] && f->type[1]))))) \
+	       (f->type[0] && f->type[1])) \
+	      && \
+	      (!excl_or || \
+	       (!f->type[0] &&  f->type[1]) || \
+	       ( f->type[0] && !f->type[1]))))) \
 	{ \
 		cur_list[db_idx++] = f; \
 		\

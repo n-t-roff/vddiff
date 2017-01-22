@@ -70,6 +70,7 @@ unsigned prev_pos[2];
 unsigned jmrk[2][32];
 
 bool file_pattern; /* TRUE for -F or -G */
+bool excl_or;
 
 int
 test_fkey(int c, unsigned short num)
@@ -1025,6 +1026,10 @@ filt_stat(void)
 	}
 
 	if (!(bmode || fmode)) {
+		if (excl_or) {
+			mvwaddch(wstat, 0, x--, '^');
+		}
+
 		if (nosingle) {
 			mvwaddch(wstat, 0, x--, '&');
 		}
