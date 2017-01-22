@@ -110,6 +110,6 @@ option:
 void
 yyerror(const char *s)
 {
-	printf("Parse error: %s on line %u before column %u\n",
-	    s, rc_nline, rc_col);
+	printf("Parse error: %s in %s line %u before column %u\n",
+	    s, cur_rc_filenam, rc_nline, rc_col);
 }

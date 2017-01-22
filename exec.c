@@ -237,7 +237,7 @@ set_tool(struct tool *_tool, char *s, tool_flags_t flags)
 	bool sh = FALSE;
 
 #if defined(TRACE)
-	fprintf(debug, "set_tool(%s)\n", s);
+	fprintf(debug, "<>set_tool(%s)\n", s);
 #endif
 	free_tool(_tool);
 	_tool->tool = b = s;

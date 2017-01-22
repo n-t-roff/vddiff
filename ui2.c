@@ -244,6 +244,9 @@ edit_fkey:
 void
 set_fkey_cmd(int i, char *s, int ek)
 {
+#if defined(TRACE)
+	fprintf(debug, "<>set_fkey_cmd(%d '%c' \"%s\"\n", i, ek, s);
+#endif
 	fkey_cmd[i] = strdup(s);
 	fkey_flags[i] = ek == '!' ? FKEY_WAIT  : /* wait after command */
 			ek == '#' ? FKEY_FORCE : /* don't wait before command */
@@ -1463,7 +1466,12 @@ ui_chown(int t, int op, long u, unsigned short num)
 void
 prt_ln_num(void)
 {
-	printerr(NULL, "File %lu of %lu", DB_LST_IDX + 1, db_num[right_col]);
+	if (db_num[right_col]) {
+		printerr(NULL, "File %lu of %lu",
+		    DB_LST_IDX + 1, db_num[right_col]);
+	} else {
+		printerr(NULL, "No file");
+	}
 }
 
 void

@@ -40,6 +40,7 @@ PERFORMANCE OF THIS SOFTWARE.
 #include "gq.h"
 #include "tc.h"
 #include "info.h"
+#include "lex.h"
 
 int yyparse(void);
 
@@ -62,6 +63,7 @@ static void ttcharoff(void);
 static void usage(void);
 static void runs2x(void);
 
+const char rc_name[] = "." BIN "rc";
 static char *usage_txt =
 "Usage: %s [-u [<RC file>]] [-BbCcdEefgIiklMmNnoqRrVWXy] [-F <pattern>]\n"
 "	[-G <pattern>] [-t <diff_tool>] [-v <view_tool>] [<directory_1>\n"
@@ -321,7 +323,6 @@ main(int argc, char **argv)
 static int
 read_rc(char *upath)
 {
-	static const char rc_name[] = "." BIN "rc";
 	char *rc_path;
 	int rv = 0;
 	extern FILE *yyin;
@@ -348,6 +349,7 @@ read_rc(char *upath)
 		goto free;
 	}
 
+	cur_rc_filenam = rc_path;
 	rv = yyparse();
 
 	if (fclose(yyin) == EOF) {
@@ -534,8 +536,8 @@ runs2x(void)
 
 		if (!strcmp(basename(lbuf), BIN) && n++) {
 			printf(
-BIN " is already running in this terminal.  Type ^D (CTRL-d) to return\n"
-"to " BIN " or use option -N to start a new " BIN " instance.\n");
+BIN " is already running in this terminal.  Type \"exit\" or ^D (CTRL-d)\n"
+"to return to " BIN " or use option -N to start a new " BIN " instance.\n");
 			exit(1);
 		}
 	}

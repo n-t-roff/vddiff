@@ -1172,6 +1172,12 @@ on the same line, not even a white space character.
 All occurrences of a backslash followed by a new line
 character (i.e. a line break) are removed before storing
 the quoted string.
+.Pp
+To embed a double quote sign
+.Sq ( Li \(dq )
+into a quoted string, precede it with a backslash.
+This backslash is removed before storing the string.
+All other backslashes are preserved.
 .Bl -tag -width 12n
 .It Li twocolumn
 Start in two-column mode.

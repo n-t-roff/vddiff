@@ -32,11 +32,12 @@ struct incl_file {
 };
 
 static struct incl_file *incstack;
-static char *filename = "-- stdin --";
 #endif
 
-void include(char *);
+static void include(const char *);
+static void qstr_append(const char *, size_t);
 
+char *cur_rc_filenam;
 unsigned rc_nline = 1;
 unsigned rc_col = 1;
 static size_t qstrsiz;
@@ -48,7 +49,7 @@ static short incl;
 %x QSTR
 
 S [ \t]
-NS [^ \t\n]
+NS [^ \t\"\n]
 
 %%
 ^#.*		|
@@ -103,51 +104,41 @@ include		{ rc_col += yyleng; incl = 1            ; }
 		return INTEGER;
 	}
 
-\"[^\"\n]*\" {
+\"	{
 		rc_col += yyleng;
-		yytext[yyleng-1] = 0;
-
-		if (incl) {
-			include(yytext+1);
-		} else {
-			yylval.str = strdup(yytext+1);
-			return STRING;
-		}
-	}
-
-\"[^\"]*\\\n {
-		rc_nline++;
-		rc_col = 1;
-		yytext[yyleng-2] = 0;
-		qstrsiz = yyleng + 1024;
-		qstr = malloc(qstrsiz);
-		memcpy(qstr, yytext + 1, yyleng - 2);
-		qstrlen = yyleng - 3;
 		BEGIN QSTR;
 	}
 
-<QSTR>[^\"]*\\\n {
-		rc_nline++;
-		rc_col = 1;
-		yytext[yyleng-2] = 0;
-
-		if (qstrsiz <= qstrlen + yyleng) {
-			qstrsiz = (qstrlen + yyleng) * 2;
-			qstr = realloc(qstr, qstrsiz);
-		}
-
-		memcpy(qstr + qstrlen, yytext + 1, qstrlen + yyleng - 2);
-		qstrlen += yyleng - 3;
+<QSTR>[^\"\\\n]+ |
+<QSTR>\\. {
+		rc_col += yyleng;
+		qstr_append(yytext, yyleng);
 	}
 
-<QSTR>[^\"\n]*\" {
-		yytext[yyleng-1] = 0;
-		yylval.str = malloc(qstrlen + yyleng - 1);
-		memcpy(yylval.str, qstr, qstrlen);
-		memcpy(yylval.str + qstrlen, yytext + 1, yyleng - 1);
-		free(qstr);
+\n |
+<QSTR>\\\n {
+		rc_col = 1;
+		rc_nline++;
+	}
+
+<QSTR>\n {
+		yyerror("Unterminated string");
+		exit(1);
+	}
+
+<QSTR>\" {
+		rc_col += yyleng;
 		BEGIN 0;
-		return STRING;
+
+		if (incl) {
+			include(qstr);
+			free(qstr);
+			qstr = NULL;
+		} else {
+			yylval.str = qstr;
+			qstr = NULL;
+			return STRING;
+		}
 	}
 
 {NS}+ {
@@ -159,11 +150,6 @@ include		{ rc_col += yyleng; incl = 1            ; }
 			yylval.str = strdup(yytext);
 			return STRING;
 		}
-	}
-
-\n {
-		rc_nline++;
-		rc_col = 1;
 	}
 %%
 
@@ -180,11 +166,11 @@ yywrap(void)
 	}
 
 	if (fclose(yyin) == EOF) {
-		printf("fclose \"%s\": %s\n", filename, strerror(errno));
+		printf("fclose \"%s\": %s\n", cur_rc_filenam, strerror(errno));
 	}
 
-	free(filename);
-	filename = incstack->name;
+	free(cur_rc_filenam);
+	cur_rc_filenam = incstack->name;
 	rc_nline = incstack->line;
 	yy_delete_buffer(YY_CURRENT_BUFFER);
 	yy_switch_to_buffer(incstack->buf);
@@ -195,8 +181,8 @@ yywrap(void)
 #endif
 }
 
-void
-include(char *s)
+static void
+include(const char *s)
 {
 #ifndef LEX_HAS_BUFS
 # warning lex(1) on this system does not support buffer switching. \
@@ -206,27 +192,28 @@ include(char *s)
 	    "The statement \"include %s\" will not work.\n", s);
 #else
 	struct incl_file *inc;
+	char *p;
 
 	incl = 0;
 
 	if (*s == '/') {
-		s = strdup(s);
-	} else if (!(s = add_home_pth(s))) {
+		p = strdup(s);
+	} else if (!(p = add_home_pth(s))) {
 		return;
 	}
 
 # if defined(TRACE)
-	fprintf(debug, "<->include(%s)\n", s);
+	fprintf(debug, "<>include(%s)\n", p);
 # endif
 
-	if (!(yyin = fopen(s, "r"))){
-		printf("include \"%s\": %s\n", s, strerror(errno));
+	if (!(yyin = fopen(p, "r"))){
+		printf("include \"%s\": %s\n", p, strerror(errno));
 		exit(1);
 	}
 
 	inc = malloc(sizeof(struct incl_file));
-	inc->name = filename;
-	filename = s;
+	inc->name = cur_rc_filenam;
+	cur_rc_filenam = p;
 	inc->line = rc_nline;
 	rc_nline = 1;
 	inc->buf = YY_CURRENT_BUFFER;
@@ -234,4 +221,22 @@ include(char *s)
 	incstack = inc;
 	yy_switch_to_buffer(yy_create_buffer(yyin, YY_BUF_SIZE));
 #endif /* LEX_HAS_BUFS */
+}
+
+static void
+qstr_append(const char *s, size_t l)
+{
+	if (!qstr) {
+		qstrlen = 0;
+		qstrsiz = 1024;
+		qstr = malloc(qstrsiz);
+	}
+
+	if (qstrsiz <= qstrlen + l) {
+		qstrsiz = (qstrlen + l) * 2;
+		qstr = realloc(qstr, qstrsiz);
+	}
+
+	memcpy(qstr + qstrlen, s, l + 1);
+	qstrlen += l;
 }

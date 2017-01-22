@@ -35,6 +35,7 @@ struct strlst {
 	struct strlst *next;
 };
 
+extern const char rc_name[];
 extern struct stat stat1, stat2;
 extern size_t pthlen[2];
 extern char *pwd, *rpwd, *arg[];
