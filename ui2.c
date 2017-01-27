@@ -1364,12 +1364,12 @@ ui_cp(int t, long u, unsigned short num, unsigned md)
 }
 
 int
-ui_mv(int src, int dst, long u, unsigned short num)
+ui_mv(int dst, long u, unsigned short num)
 {
 	syspth[0][pthlen[0]] = 0;
 	syspth[1][pthlen[1]] = 0;
 
-	if (!strcmp(syspth[0], syspth[1])) {
+	if (bmode || !strcmp(syspth[0], syspth[1])) {
 		fs_rename(3);
 		return 0;
 	}
@@ -1382,18 +1382,14 @@ ui_mv(int src, int dst, long u, unsigned short num)
 		}
 
 		while ((u = get_mmrk()) >= 0) {
-			if (!fs_cp(dst, u, 1, 5)) {
-				fs_rm(src, NULL, NULL, u, 1, 3);
-			}
+			fs_cp(dst, u, 1, 16 | 5);
 		}
 
 		rebuild_db(0);
 		return 1;
 	}
 
-	if (!fs_cp(dst, u, num, 1)) {
-		fs_rm(src, NULL, NULL, u, num, 1);
-	}
+	fs_cp(dst, u, num, 16);
 	return 0;
 }
 

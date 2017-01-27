@@ -63,7 +63,7 @@ void tgl_mmrk(struct filediff *);
 long get_mmrk(void);
 void mmrktobot(void);
 int ui_cp(int, long, unsigned short, unsigned);
-int ui_mv(int, int, long, unsigned short);
+int ui_mv(int, long, unsigned short);
 int ui_dd(int, long, unsigned short);
 int ui_chmod(int, long, unsigned short);
 int ui_chown(int, int, long, unsigned short);

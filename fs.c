@@ -50,10 +50,10 @@ struct str_list {
 
 static void proc_dir(void);
 static void rm_file(void);
-static void cp_file(void);
+static int cp_file(void);
 static int creatdir(void);
-static void cp_link(void);
-static void cp_reg(void);
+static int cp_link(void);
+static int cp_reg(void);
 static int ask_for_perms(mode_t *);
 static int fs_ro(void);
 static void fs_fwrap(const char *, ...);
@@ -424,6 +424,7 @@ int
 fs_rm(
     /* 1: "dl", 2: "dr", 3: "dd" (detect which file exists)
      * 0: Use pth2, ignore nam and u. n must be 1. */
+    /* -1: Use pth1 */
     int tree, char *txt,
     /* File name. If nam is given, u is not used. n must be 1. */
     char *nam, long u, int n,
@@ -504,7 +505,7 @@ fs_rm(
 	for (; n; n--, u++) {
 
 		/* u is ignored ir nam != NULL or tree == 0 */
-		if (!fmode && !nam && tree) {
+		if (!fmode && !nam && tree > 0) {
 			if (u >= (long)db_num[0]) {
 				continue;
 			}
@@ -541,7 +542,7 @@ fs_rm(
 					tree &= ~2;
 				}
 			}
-		} else if (tree && fmode) {
+		} else if (tree > 0 && fmode) {
 			if (nam) {
 				fn = nam;
 			} else {
@@ -566,13 +567,10 @@ fs_rm(
 			pth1 = pth2;
 			len1 = strlen(pth2);
 		} else {
-#ifdef DEBUG
-			printerr("", "fs_rm: invalid tree == %d", tree);
-#endif
-			continue;
+			len1 = strlen(pth1);
 		}
 
-		if (tree) {
+		if (tree > 0) {
 			len1 = pthcat(pth1, len1, fn);
 		}
 
@@ -588,7 +586,7 @@ fs_rm(
 		}
 
 		if (!(md & 1) && !m) {
-			if (fs_deldialog(!tree || nam ? y_a_n_txt : y_n_txt,
+			if (fs_deldialog(tree < 1 || nam ? y_a_n_txt : y_n_txt,
 			    txt ? txt : "delete",
 			    S_ISDIR(stat1.st_mode) ? "directory " : NULL,
 			    pth1)) {
@@ -635,15 +633,20 @@ ret:
 }
 
 int /* !0: Error */
-fs_cp(int to, long u, int n,
+fs_cp(
+    /* 0: Auto-detect */
+    int to, long u, int n,
     /* 1: don't rebuild DB */
     /* 2: Symlink instead of copying */
     /* 4: Force */
+    /* 8: Sync (update, 'U') */
+    /* 16: Move (remove source after copy) */
     unsigned md)
 {
 	struct filediff *f;
 	int i;
 	int r = 1;
+	int eto;
 	char *tnam;
 	bool m;
 
@@ -667,19 +670,12 @@ fs_cp(int to, long u, int n,
 			goto ret;
 		}
 
-		if (to == 1) {
-			syspth[0][pthlen[0]] = 0;
-			pth1 = syspth[0];
-		} else {
-			syspth[1][pthlen[1]] = 0;
-			pth1 = syspth[1];
-		}
-
 		if (dialog(y_n_txt, NULL,
-		    "Really %s %d files %s \"%s\"?",
-		    (md & 2) ? "create symlink to" :
-		    (md & 1) ? "move" : "copy", n,
-		    (md & 2) ? "in" : "to", pth1) != 'y') {
+		    "Really %s %d files?",
+		    md &  2 ? "create symlink to" :
+		    md & 16 ? "move"              :
+		              "copy"              ,
+		    n) != 'y') {
 
 			goto ret;
 		}
@@ -691,7 +687,13 @@ fs_cp(int to, long u, int n,
 	}
 
 	for (; n-- && u < (long)db_num[right_col]; u++) {
-		if (to == 1) {
+		if (to) {
+			eto = to;
+		} else if (!(eto = fs_get_dst(u, m & 8 ? 1 : 0))) {
+			continue;
+		}
+
+		if (eto == 1) {
 			pth1 = syspth[1];
 			len1 = pthlen[1];
 			pth2 = syspth[0];
@@ -742,12 +744,19 @@ tpth:
 			if (symlink(pth1, pth2) == -1) {
 				printerr(strerror(errno), "symlink %s -> %s",
 				    pth2, pth1);
+				continue;
 			}
 		} else if (S_ISDIR(stat1.st_mode)) {
 			tree_op = TREE_CP;
 			proc_dir();
 		} else {
-			cp_file();
+			if (cp_file()) {
+				continue;
+			}
+		}
+
+		if (!fs_error && (md & 16)) {
+			fs_rm(-1, NULL, NULL, 0, 1, 3);
 		}
 	}
 
@@ -952,7 +961,9 @@ rm_file(void)
 	}
 }
 
-static void
+/* !0: Error */
+
+static int
 cp_file(void)
 {
 	if ((fs_t2 = time(NULL)) - fs_t1) {
@@ -961,11 +972,12 @@ cp_file(void)
 	}
 
 	if (S_ISREG(stat1.st_mode)) {
-		cp_reg();
+		return cp_reg();
 	} else if (S_ISLNK(stat1.st_mode)) {
-		cp_link();
+		return cp_link();
 	} else {
 		printerr(NULL, "Not copied: \"%s\"", pth1);
+		return 0; /* Not an error */
 	}
 }
 
@@ -998,21 +1010,24 @@ creatdir(void)
 	return 0;
 }
 
-static void
+static int
 cp_link(void)
 {
 	ssize_t l;
 	char *buf;
+	int r = 0;
 
 	buf = malloc(stat1.st_size + 1);
 
 	if ((l = readlink(pth1, buf, stat1.st_size)) == -1) {
 		printerr(strerror(errno), "readlink %s", pth1);
+		r = -1;
 		goto exit;
 	}
 
 	if (l != stat1.st_size) {
 		printerr("Unexpected link lenght", "readlink %s", pth1);
+		r = -1;
 		goto exit;
 	}
 
@@ -1021,11 +1036,13 @@ cp_link(void)
 	if (!fs_stat(pth2, &stat2) &&
 	    fs_rm(0 /* tree */, "overwrite", NULL /* nam */,
 	    0 /* u */, 1 /* n */, 2 /* md */) == 1) {
+		r = 1;
 		goto exit;
 	}
 
 	if (symlink(buf, pth2) == -1) {
 		printerr(strerror(errno), "symlink %s", pth2);
+		r = -1;
 		goto exit;
 	}
 
@@ -1033,9 +1050,12 @@ cp_link(void)
 
 exit:
 	free(buf);
+	return r;
 }
 
-static void
+/* !0: Error */
+
+static int
 cp_reg(void)
 {
 	int f1, f2;
@@ -1055,12 +1075,12 @@ cp_reg(void)
 
 			if (!cmp_file(pth1, stat1.st_size,
 			              pth2, stat2.st_size, 1)) {
-				return;
+				return 0;
 			}
 
 			if (fs_deldialog(y_a_n_txt, "overwrite", "file ",
 			    pth2)) {
-				return;
+				return 1;
 			}
 test:
 			if (!access(pth2, W_OK)) {
@@ -1092,7 +1112,7 @@ test:
 			if (!followlinks &&
 			    fs_rm(0 /* tree */, "overwrite", NULL /* nam */,
 			    0 /* u */, 1 /* n */, 2 /* md */) == 1) {
-				return;
+				return 1;
 			}
 		}
 	}
@@ -1101,7 +1121,7 @@ copy:
 	if ((f2 = open(pth2, O_CREAT | O_TRUNC | O_WRONLY,
 	    stat1.st_mode & 07777)) == -1) {
 		printerr(strerror(errno), "create %s", pth2);
-		return;
+		return -1;
 	}
 
 	if (!stat1.st_size)
@@ -1148,6 +1168,7 @@ setattr:
 
 close2:
 	close(f2);
+	return 0;
 }
 
 static void
@@ -1198,25 +1219,34 @@ fs_deldialog(const char *menu, const char *op, const char *typ,
  * 2: Right tree */
 
 int
-fs_get_dst(long u)
+fs_get_dst(long u,
+    /* 1: auto-detect */
+    unsigned m)
 {
 	struct filediff *f;
-	int dst;
+	int dst = 0;
 
 	if (bmode) {
-		return 0;
 	} else if (fmode) {
-		dst = right_col ? 1 : 2;
+		dst = m ? 0 : right_col ? 1 : 2;
 	} else {
 		if (u >= (long)db_num[0]) {
-			return 0;
+			goto ret;
 		}
 
 		f = db_list[0][u];
 
 		if (f->type[0]) {
 			if (f->type[1]) {
-				return 0;
+				if (!m || !S_ISREG(f->type[0]) ||
+				          !S_ISREG(f->type[1])) {
+				} else if (f->mtim[0] < f->mtim[1]) {
+					dst = 1;
+				} else if (f->mtim[0] > f->mtim[1]) {
+					dst = 2;
+				}
+
+				goto ret;
 			}
 
 			dst = 2;
@@ -1225,6 +1255,7 @@ fs_get_dst(long u)
 		}
 	}
 
+ret:
 	return dst;
 }
 

@@ -577,7 +577,6 @@ next_key:
 				c = 0;
 				break;
 			} else if (*key == 'e') {
-rename:
 				fs_rename(3);
 				goto save_st;
 			} else if (key[1] == 'e') {
@@ -738,13 +737,13 @@ rename:
 				goto save_st;
 
 			case 'T': /* "Tl" */
-				if (ui_mv(2, 1, u, num)) {
+				if (ui_mv(1, u, num)) {
 					goto next_key;
 				}
 
 				goto save_st;
 
-			case '@':
+			case '@': /* "@l" */
 				if (ui_cp(1, u, num, 2)) {
 					goto next_key;
 				}
@@ -821,13 +820,13 @@ rename:
 				goto save_st;
 
 			case 'T': /* "Tr" */
-				if (ui_mv(1, 2, u, num)) {
+				if (ui_mv(2, u, num)) {
 					goto next_key;
 				}
 
 				goto save_st;
 
-			case '@':
+			case '@': /* "@r" */
 				if (ui_cp(2, u, num, 2)) {
 					goto next_key;
 				}
@@ -879,38 +878,35 @@ rename:
 
 			goto save_st;
 
-		case 'T': {
-			int src, dst;
-
-			if (bmode) {
-				goto rename;
-			}
-
-			if (!(dst = fs_get_dst(u))) {
+		case 'T':
+			if (!fs_get_dst(u, 1)) {
+				/* diff mode */
 				break;
 			}
 
-			src = dst == 1 ? 2 : 1;
-
-			if (ui_mv(src, dst, u, num)) {
+			if (ui_mv(0, u, num)) {
 				goto next_key;
 			}
 
 			goto save_st;
-		}
 
 		case '@':
 		case 'C':
+		case 'U':
 		{
-			int dst;
+			unsigned m = 0;
 
-			if (bmode) {
-				dst = 2;
-			} else if (!(dst = fs_get_dst(u))) {
+			if (!fs_get_dst(u, 1)) {
+				/* diff mode */
 				break;
 			}
 
-			if (ui_cp(dst, u, num, c == '@' ? 2 : 0)) {
+			switch (c) {
+			case '@': m |= 2; break;
+			case 'U': m |= 8; break;
+			}
+
+			if (ui_cp(0, u, num, m)) {
 				goto next_key;
 			}
 
