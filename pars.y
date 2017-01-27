@@ -30,8 +30,8 @@ PERFORMANCE OF THIS SOFTWARE.
 #include "lex.h"
 #include "diff.h"
 #include "tc.h"
+#include "pars.h"
 
-void yyerror(const char *);
 int yylex(void);
 extern char *yytext;
 %}

@@ -22,6 +22,7 @@ PERFORMANCE OF THIS SOFTWARE.
 #include "main.h"
 #include "y.tab.h"
 #include "lex.h"
+#include "pars.h"
 
 #ifdef LEX_HAS_BUFS
 struct incl_file {

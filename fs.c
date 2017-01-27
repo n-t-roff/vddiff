@@ -649,6 +649,7 @@ fs_cp(
 	int eto;
 	char *tnam;
 	bool m;
+	bool chg = FALSE;
 
 	fs_error = FALSE;
 	fs_ign_errs = FALSE;
@@ -689,7 +690,7 @@ fs_cp(
 	for (; n-- && u < (long)db_num[right_col]; u++) {
 		if (to) {
 			eto = to;
-		} else if (!(eto = fs_get_dst(u, m & 8 ? 1 : 0))) {
+		} else if (!(eto = fs_get_dst(u, md & 8 ? 1 : 0))) {
 			continue;
 		}
 
@@ -758,9 +759,11 @@ tpth:
 		if (!fs_error && (md & 16)) {
 			fs_rm(-1, NULL, NULL, 0, 1, 3);
 		}
+
+		chg = TRUE;
 	}
 
-	if (!(md & 1)) {
+	if (chg && !(md & 1)) {
 		rebuild_db(0);
 	}
 
@@ -1256,6 +1259,9 @@ fs_get_dst(long u,
 	}
 
 ret:
+#if defined(TRACE)
+	fprintf(debug, "<>fs_get_dst(u=%ld m=%u): %d\n", u, m, dst);
+#endif
 	return dst;
 }
 
