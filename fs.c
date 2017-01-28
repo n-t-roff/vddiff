@@ -430,6 +430,7 @@ fs_rm(
     char *nam, long u, int n,
     /* 1: Force */
     /* 2: Don't rebuild DB (for mmrk and fs_cp()) */
+    /* 4: Don't reset 'fs_all' */
     unsigned md)
 {
 	struct filediff *f;
@@ -444,7 +445,7 @@ fs_rm(
 	fs_error = FALSE;
 	fs_ign_errs = FALSE;
 
-	if (!txt) {
+	if (!(md & 4)) {
 		fs_all = FALSE;
 	}
 
@@ -738,7 +739,7 @@ tpth:
 		if (md & 2) {
 			if (!fs_stat(pth2, &stat2) &&
 			    fs_rm(0 /* tree */, "overwrite", NULL /* nam */,
-			    0 /* u */, 1 /* n */, 2 /* md */) == 1) {
+			    0 /* u */, 1 /* n */, 4|2 /* md */) == 1) {
 				goto ret;
 			}
 
@@ -757,7 +758,7 @@ tpth:
 		}
 
 		if (!fs_error && (md & 16)) {
-			fs_rm(-1, NULL, NULL, 0, 1, 3);
+			fs_rm(-1, NULL, NULL, 0, 1, 4|3);
 		}
 
 		chg = TRUE;
@@ -999,7 +1000,7 @@ creatdir(void)
 		}
 
 		if (fs_rm(0 /* tree */, "overwrite", NULL /* nam */,
-		    0 /* u */, 1 /* n */, 2 /* md */) == 1) {
+		    0 /* u */, 1 /* n */, 4|2 /* md */) == 1) {
 			return -1;
 		}
 	}
@@ -1038,7 +1039,7 @@ cp_link(void)
 
 	if (!fs_stat(pth2, &stat2) &&
 	    fs_rm(0 /* tree */, "overwrite", NULL /* nam */,
-	    0 /* u */, 1 /* n */, 2 /* md */) == 1) {
+	    0 /* u */, 1 /* n */, 4|2 /* md */) == 1) {
 		r = 1;
 		goto exit;
 	}
@@ -1114,7 +1115,7 @@ test:
 			/* Don't delete symlinks! They must be followed. */
 			if (!followlinks &&
 			    fs_rm(0 /* tree */, "overwrite", NULL /* nam */,
-			    0 /* u */, 1 /* n */, 2 /* md */) == 1) {
+			    0 /* u */, 1 /* n */, 4|2 /* md */) == 1) {
 				return 1;
 			}
 		}

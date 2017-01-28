@@ -879,7 +879,7 @@ next_key:
 			goto save_st;
 
 		case 'T':
-			if (!fs_get_dst(u, 1)) {
+			if (!bmode && !fmode && !fs_get_dst(u, 1)) {
 				/* diff mode */
 				break;
 			}
@@ -896,7 +896,7 @@ next_key:
 		{
 			unsigned m = 0;
 
-			if (!fs_get_dst(u, 1)) {
+			if (!bmode && !fmode && !fs_get_dst(u, 1)) {
 				/* diff mode */
 				break;
 			}
@@ -2070,7 +2070,7 @@ out:
 static void
 page_down(void)
 {
-#if defined(TRACE)
+#if defined(TRACE) && 0
 	fprintf(debug, "->page_down c=%u\n", curs[right_col]);
 #endif
 	if (last_line_is_disp()) {
@@ -2084,7 +2084,7 @@ page_down(void)
 	disp_list(1);
 
 ret:
-#if defined(TRACE)
+#if defined(TRACE) && 0
 	fprintf(debug, "<-page_down c=%u\n", curs[right_col]);
 #endif
 	return;
@@ -2107,7 +2107,7 @@ curs_last(void)
 static void
 page_up(void)
 {
-#if defined(TRACE)
+#if defined(TRACE) && 0
 	fprintf(debug, "->page_up c=%u\n", curs[right_col]);
 #endif
 	if (first_line_is_top()) {
@@ -2128,7 +2128,7 @@ page_up(void)
 	disp_list(1);
 
 ret:
-#if defined(TRACE)
+#if defined(TRACE) && 0
 	fprintf(debug, "->page_up c=%u\n", curs[right_col]);
 #endif
 	return;
@@ -2149,7 +2149,7 @@ static int
 last_line_is_disp(void)
 {
 	int r = 0;
-#if defined(TRACE)
+#if defined(TRACE) && 0
 	fprintf(debug, "->last_line_is_disp\n");
 #endif
 	if (db_num[right_col] - top_idx[right_col] <= listh) {
@@ -2169,7 +2169,7 @@ last_line_is_disp(void)
 	}
 
 ret:
-#if defined(TRACE)
+#if defined(TRACE) && 0
 	fprintf(debug, "<-last_line_is_disp\n");
 #endif
 	return r;
@@ -2179,7 +2179,7 @@ static int
 first_line_is_top(void)
 {
 	int r = 0;
-#if defined(TRACE)
+#if defined(TRACE) && 0
 	fprintf(debug, "->first_line_is_top\n");
 #endif
 	if (!top_idx[right_col]) {
@@ -2195,7 +2195,7 @@ first_line_is_top(void)
 	}
 
 ret:
-#if defined(TRACE)
+#if defined(TRACE) && 0
 	fprintf(debug, "<-first_line_is_top\n");
 #endif
 	return r;
