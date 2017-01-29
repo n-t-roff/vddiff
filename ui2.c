@@ -992,7 +992,7 @@ ret:
 void
 mmrktobot(void)
 {
-	long i;
+	unsigned long i;
 
 	for (i = DB_LST_IDX; i < db_num[right_col]; i++) {
 		tgl_mmrk(db_list[right_col][i]);
@@ -1489,7 +1489,8 @@ list_jmrks(void)
 			continue;
 		}
 
-		mvwprintw(wlist, y, 0, "% 2u  ", i);
+		mvwprintw(wlist, y, 0, "%u", i);
+		wmove(wlist, y, 4);
 		addmbs(wlist, db_list[right_col][u]->name, 0);
 		y++;
 	}

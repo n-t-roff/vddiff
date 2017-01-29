@@ -2846,7 +2846,7 @@ disp_name(WINDOW *w, int y, int x, int mx, int o, struct filediff *f, int t,
 
 	if (add_mode) {
 		mx += 5;
-		snprintf(lbuf, sizeof lbuf, "%04o", f->type[i] & 07777);
+		snprintf(lbuf, sizeof lbuf, "%04o", (int)f->type[i] & 07777);
 		wmove(w, y, mx - 4);
 		addmbs(w, lbuf, 0);
 	}

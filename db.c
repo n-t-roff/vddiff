@@ -26,6 +26,9 @@ PERFORMANCE OF THIS SOFTWARE.
 #include <regex.h>
 #include <stdarg.h>
 #include <signal.h>
+#ifdef USE_SYS_MKDEV_H
+# include <sys/mkdev.h>
+#endif
 #include "compat.h"
 #include "diff.h"
 #include "main.h"
@@ -731,11 +734,13 @@ exit:
 			if (f->type[0]) { \
 				if (S_ISCHR(f->type[0]) || \
 				    S_ISBLK(f->type[0])) { \
-					if (major(f->rdev[0]) > maxmajor) { \
+					if ((long)major(f->rdev[0]) > \
+					    (long)maxmajor) { \
 						maxmajor = major(f->rdev[0]); \
 					} \
 					\
-					if (minor(f->rdev[0]) > maxminor) { \
+					if ((long)minor(f->rdev[0]) > \
+					    (long)maxminor) { \
 						maxminor = minor(f->rdev[0]); \
 					} \
 				} else if (f->siz[0] > maxsiz) { \
@@ -746,11 +751,13 @@ exit:
 			if (f->type[1]) { \
 				if (S_ISCHR(f->type[1]) || \
 				    S_ISBLK(f->type[1])) { \
-					if (major(f->rdev[1]) > maxmajor) { \
+					if ((long)major(f->rdev[1]) \
+					    > (long)maxmajor) { \
 						maxmajor = major(f->rdev[1]); \
 					} \
 					\
-					if (minor(f->rdev[1]) > maxminor) { \
+					if ((long)minor(f->rdev[1]) \
+					    > (long)maxminor) { \
 						maxminor = minor(f->rdev[1]); \
 					} \
 				} else if (f->siz[1] > maxsiz) { \
