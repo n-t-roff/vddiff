@@ -923,7 +923,7 @@ next_key:
 				c = 0;
 				center(num ? num - 1 : 0);
 				break;
-			} else if (*key == 'V') {
+			} else if (*key == 'V' || *key == KEY_IC) {
 				c = 0;
 				mmrktobot();
 				break;
