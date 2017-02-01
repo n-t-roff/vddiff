@@ -1231,6 +1231,7 @@ fs_get_dst(long u,
 	int dst = 0;
 
 	if (bmode) {
+		dst = 2;
 	} else if (fmode) {
 		dst = m ? 0 : right_col ? 1 : 2;
 	} else {
