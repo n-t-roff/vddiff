@@ -4,6 +4,11 @@
 
 enum sorting { DIRSFIRST, FILESFIRST, SORTMIXED, SORTMTIME, SORTSIZE };
 
+struct scan_db {
+	void *db;
+	struct scan_db *next;
+};
+
 #ifdef HAVE_LIBAVLBST
 void db_init(void);
 void str_db_add(void **, char *, int, struct bst_node *);
@@ -12,11 +17,6 @@ int str_db_srch(void **, char *, struct bst_node **);
 struct ptr_db_ent {
 	char *key;
 	void *dat;
-};
-
-struct scan_db {
-	void *db;
-	struct scan_db *next;
 };
 
 char *str_db_add(void **, char *);

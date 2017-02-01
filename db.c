@@ -422,7 +422,7 @@ push_scan_db(bool os)
 	if (os) {
 		one_scan = TRUE;
 #ifdef HAVE_LIBAVLBST
-		scan_sb = db_new(name_cmp);
+		scan_db = db_new(name_cmp);
 #endif
 	}
 }
@@ -436,6 +436,9 @@ pop_scan_db(void)
 	fprintf(debug, "<>pop_scan_db()\n");
 #endif
 	free_scan_db(FALSE);
+#ifdef HAVE_LIBAVLBST
+	free(scan_db);
+#endif
 
 	if (!(p = scan_db_list)) {
 		return;
