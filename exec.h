@@ -5,6 +5,7 @@
 #define TOOL_NOLIST 16 /* Don't call disp_fmode() */
 #define TOOL_TTY    32 /* For commands for which output is expected */
 #define TOOL_UDSCR  64 /* Implies TOOL_NOLIST, calls rebuild_scr() */
+#define TOOL_NOCURS 128 /* Don't call curses functions */
 
 typedef unsigned tool_flags_t;
 

@@ -13,7 +13,7 @@ LOSS OF USE, DATA OR PROFITS, WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE OR
 OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
 PERFORMANCE OF THIS SOFTWARE.
 ..
-.Dd January 20, 2017
+.Dd February 1, 2017
 .Dt VDDIFF 1
 .Sh NAME
 .Nm @vddiff@
@@ -27,8 +27,8 @@ PERFORMANCE OF THIS SOFTWARE.
 .Op Fl t Ar diff_tool
 .Op Fl v Ar view_tool
 .Oo
-.Ar directory_1
-.Op Ar directory_2
+.Ar directory_1 Ns Li | Ns Ar file_1
+.Op Ar directory_2 Ns Li | Ns Ar file_2
 .Oc
 .Sh DESCRIPTION
 .Nm
@@ -1715,6 +1715,38 @@ The only disadvantage is,
 that also directories may be shown,
 which contain no differences
 (since the tool had not visited them yet).
+.Pp
+The arguments of @vddiff@ need not be directories.
+If
+.Pa ~/.@vddiff@rc
+is setup accordingly,
+.Pp
+.D1 Li @vddiff@ Ar file Ns Li .1.gz
+.Pp
+opens a manual page,
+.Pp
+.D1 Li @vddiff@ Ar file Ns Li .mpg
+.Pp
+plays a movie, etc.
+Compressed files are unpacked automatically.
+.Pp
+.D1 Li @vddiff@ Ar file_1 file_2
+.Pp
+starts
+.Nm vimdiff .
+Again, any argument may be a compressed file.
+.Pp
+.D1 Li @vddiff@ Ar file Ns Li .tgz
+.Pp
+opens an archive,
+.Pp
+.D1 Li @vddiff@ Ar file_1 Ns Li .tgz Ar file_2 Ns Li .zip
+.Pp
+compares two archives and
+.Pp
+.D1 Li @vddiff@ Ar file Ns Li .txz Ar directory
+.Pp
+compares an archive with a directory.
 .Sh SEE ALSO
 .Bl -tag -width 8n
 .It Lk http://n-t-roff.github.io/vddiff/vddiff.1.pdf

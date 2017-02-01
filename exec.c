@@ -438,12 +438,15 @@ exec_cmd(char **av, tool_flags_t flags, char *path, char *msg)
 	    flags & TOOL_NOLIST ? " TOOL_NOLIST" : "",
 	    flags & TOOL_UDSCR ? " TOOL_UDSCR" : "");
 #endif
-	erase();
-	refresh();
-	def_prog_mode();
+	if (!(flags & TOOL_NOCURS)) {
+		erase();
+		refresh();
+		def_prog_mode();
 
-	if (flags & TOOL_TTY)
-		endwin();
+		if (flags & TOOL_TTY) {
+			endwin();
+		}
+	}
 
 	exec_set_sig(&intr, &quit, &smsk);
 
@@ -494,7 +497,9 @@ exec_cmd(char **av, tool_flags_t flags, char *path, char *msg)
 		}
 	}
 
-	doupdate();
+	if (!(flags & TOOL_NOCURS)) {
+		doupdate();
+	}
 
 	if (pid == -1) {
 		printerr(strerror(errno), "fork");
@@ -502,10 +507,12 @@ exec_cmd(char **av, tool_flags_t flags, char *path, char *msg)
 
 	exec_res_sig(&intr, &quit, &smsk);
 
-	if (!(flags & TOOL_UDSCR)) {
-		rebuild_scr();
-	} else if (!(flags & TOOL_NOLIST)) {
-		disp_fmode();
+	if (!(flags & TOOL_NOCURS)) {
+		if (!(flags & TOOL_UDSCR)) {
+			rebuild_scr();
+		} else if (!(flags & TOOL_NOLIST)) {
+			disp_fmode();
+		}
 	}
 
 #if defined(TRACE)

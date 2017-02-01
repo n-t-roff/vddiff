@@ -43,8 +43,8 @@ struct pthofs {
 static int mktmpdirs(void);
 static enum uz_id check_ext(char *, int *);
 static struct filediff *zcat(char *, struct filediff *, int, int);
-static struct filediff *tar(char *, struct filediff *, int, int);
-static struct filediff *unzip(struct filediff *, int, int);
+static struct filediff *tar(char *, struct filediff *, int, int, unsigned);
+static struct filediff *unzip(struct filediff *, int, int, unsigned);
 static char *zpths(struct filediff *, struct filediff **, int, size_t *,
     int, int);
 
@@ -208,7 +208,11 @@ rmtmpdirs(char *s, tool_flags_t tf)
 }
 
 struct filediff *
-unpack(struct filediff *f, int tree, char **tmp, int type)
+unpack(struct filediff *f, int tree, char **tmp,
+    /* 1: Also unpack files, not just archives */
+    /* 2: Non-curses mode */
+    /* 4: Always set tmpdir */
+    int type)
 {
 	enum uz_id id;
 	struct filediff *z;
@@ -233,7 +237,7 @@ unpack(struct filediff *f, int tree, char **tmp, int type)
 	case UZ_TXZ:
 	case UZ_ZIP:
 	case UZ_TAR_Z:
-		if (!type) {
+		if (!(type & 1)) {
 			return NULL;
 		}
 
@@ -259,31 +263,32 @@ unpack(struct filediff *f, int tree, char **tmp, int type)
 		break;
 
 	case UZ_TGZ:
-		z = tar("xzf", f, tree, i);
+		z = tar("xzf", f, tree, i, type & 4 ? 1 : 0);
 		break;
 
 	case UZ_TBZ:
-		z = tar("xjf", f, tree, i);
+		z = tar("xjf", f, tree, i, type & 4 ? 1 : 0);
 		break;
 
 	case UZ_TAR:
-		z = tar("xf", f, tree, i);
+		z = tar("xf", f, tree, i, type & 4 ? 1 : 0);
 		break;
 
 	case UZ_TXZ:
-		z = tar("xJf", f, tree, i);
+		z = tar("xJf", f, tree, i, type & 4 ? 1 : 0);
 		break;
 
 	case UZ_TAR_Z:
-		z = tar("xZf", f, tree, i);
+		z = tar("xZf", f, tree, i, type & 4 ? 1 : 0);
 		break;
 
 	case UZ_ZIP:
-		z = unzip(f, tree, i);
+		z = unzip(f, tree, i, type & 4 ? 1 : 0);
 		break;
 
 	default:
-		rmtmpdirs(tmp_dir, TOOL_NOLIST);
+		rmtmpdirs(tmp_dir, TOOL_NOLIST |
+		    (type & 2 ? TOOL_NOCURS : 0));
 		return NULL;
 	}
 
@@ -360,12 +365,14 @@ zcat(char *cmd, struct filediff *f, int tree, int i)
 }
 
 static struct filediff *
-tar(char *opt, struct filediff *f, int tree, int i)
+tar(char *opt, struct filediff *f, int tree, int i,
+    /* 1: set tmpdir */
+    unsigned m)
 {
 	struct filediff *z;
 	static char *av[] = { "tar", NULL, NULL, "-C", NULL, NULL };
 
-	zpths(f, &z, tree, NULL, i, 0);
+	zpths(f, &z, tree, NULL, i, m & 1 ? 2 : 0);
 	av[1] = opt;
 	av[2] = lbuf;
 	av[4] = rbuf;
@@ -378,12 +385,14 @@ tar(char *opt, struct filediff *f, int tree, int i)
 }
 
 static struct filediff *
-unzip(struct filediff *f, int tree, int i)
+unzip(struct filediff *f, int tree, int i,
+    /* 1: set tmp_dir */
+    unsigned m)
 {
 	struct filediff *z;
 	static char *av[] = { "unzip", "-qq", NULL, "-d", NULL, NULL };
 
-	zpths(f, &z, tree, NULL, i, 0);
+	zpths(f, &z, tree, NULL, i, m & 1 ? 2 : 0);
 	av[2] = lbuf;
 	av[4] = rbuf;
 	exec_cmd(av, 0, NULL, NULL);
@@ -392,13 +401,15 @@ unzip(struct filediff *f, int tree, int i)
 
 static char *
 zpths(struct filediff *f, struct filediff **z2, int tree, size_t *l2, int i,
+    /* 1: is file, not dir */
+    /* 2: keep tmpdir */
     int fn)
 {
 	char *s, *s2;
 	size_t l, l3;
 	struct filediff *z;
 
-	if (!fn)
+	if (!(fn & 1))
 		i = 0;
 
 	s2 = f->name ? f->name : bmode ? gl_mark : tree == 1 ? mark_lnam :
@@ -411,14 +422,14 @@ zpths(struct filediff *f, struct filediff **z2, int tree, size_t *l2, int i,
 	s = malloc(l + 3 + i);
 	memcpy(s, tmp_dir, l);
 
-	if (!fn) {
+	if (!(fn & 2)) {
 		free(tmp_dir);
 		tmp_dir = NULL;
 	}
 
 	s[l++] = tree == 1 ? 'l' : 'r';
 
-	if (!fn) {
+	if (!(fn & 1)) {
 		l3 = 0;
 	} else {
 		s[l++] = '/';
@@ -438,7 +449,7 @@ zpths(struct filediff *f, struct filediff **z2, int tree, size_t *l2, int i,
 		s = syspth[0];
 		l = pthlen[0];
 
-		if (!fn)
+		if (!(fn & 1))
 			z->type[0] = S_IFDIR | S_IRWXU;
 
 		z->type[1] = 0;
@@ -447,7 +458,7 @@ zpths(struct filediff *f, struct filediff **z2, int tree, size_t *l2, int i,
 		l = pthlen[1];
 		z->type[0] = 0;
 
-		if (!fn)
+		if (!(fn & 1))
 			z->type[1] = S_IFDIR | S_IRWXU;
 	}
 

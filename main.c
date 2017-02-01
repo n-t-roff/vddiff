@@ -56,6 +56,8 @@ short nosingle;
 FILE *debug;
 char trcpth[2][PATHSIZ];
 #endif
+static struct filediff *zipfile[2];
+static char *zipdir[2];
 
 static void check_args(int, char **);
 static void get_arg(char *, int);
@@ -85,6 +87,7 @@ int
 main(int argc, char **argv)
 {
 	int opt;
+	int i;
 
 	prog = *argv;
 	setlocale(LC_ALL, "");
@@ -295,8 +298,27 @@ main(int argc, char **argv)
 		fmode = TRUE;
 	}
 
+	inst_sighdl(SIGCHLD, sig_child);
+	inst_sighdl(SIGINT , sig_term);
+	inst_sighdl(SIGTERM, sig_term);
+	ttcharoff();
+
 	if (argc || fmode) {
 		check_args(argc, argv);
+
+		if (!S_ISDIR(gstat[0].st_mode)) {
+			if (bmode) {
+				tool(syspth[0], NULL, 1, 0);
+			/* check_args() uses stat(), hence type can't
+			 * be symlink */
+			} else if (S_ISREG(gstat[0].st_mode)
+			        && S_ISREG(gstat[1].st_mode))
+			{
+				tool("", "", 3, 0);
+			}
+
+			goto rmtmp;
+		}
 	} else { /* bmode only */
 		/* Since bmode does not work with paths it need to
 		 * resolve the absolute path. */
@@ -312,12 +334,21 @@ main(int argc, char **argv)
 
 	pwd  = syspth[0] + pthlen[0];
 	rpwd = syspth[1] + pthlen[1];
-	inst_sighdl(SIGCHLD, sig_child);
-	inst_sighdl(SIGINT , sig_term);
-	inst_sighdl(SIGTERM, sig_term);
-	ttcharoff();
 	info_load();
 	build_ui();
+
+rmtmp:
+	for (i = 0; i < 2; i++) {
+		if (zipdir[i]) {
+			rmtmpdirs(zipdir[i], TOOL_NOCURS);
+		}
+#if defined(TRACE)
+		else {
+			fprintf(debug, "  zipdir[%d]==0\n", i);
+		}
+#endif
+	}
+
 	return 0;
 }
 
@@ -428,17 +459,32 @@ static void
 get_arg(char *s, int i)
 {
 	char *s2;
+	struct filediff f;
 
 	arg[i] = s;
 
+stat:
 	if (stat(s, &gstat[i]) == -1) {
 		printf(LOCFMT "stat \"%s\": %s\n" LOCVAR, s, strerror(errno));
 		exit(1);
 	}
 
 	if (!S_ISDIR(gstat[i].st_mode)) {
-		printf("\"%s\" is not a directory\n", s);
-		exit(1);
+		if (!S_ISREG(gstat[i].st_mode)) {
+			printf("\"%s\": Unsupported file type\n", s);
+			exit(1);
+		}
+
+		if (!zipfile[i]) { /* break loop */
+			f.name = s;
+			f.type[i] = gstat[i].st_mode;
+
+			if ((zipfile[i] = unpack(&f, i ? 2 : 1,
+			    &zipdir[i], 4|2|1))) {
+				s = zipfile[i]->name;
+				goto stat;
+			}
+		}
 	}
 
 	if (fmode && *s != '/') {
