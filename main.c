@@ -48,7 +48,7 @@ static char *prog;
 char *pwd, *rpwd, *arg[2];
 size_t pthlen[2];
 char syspth[2][PATHSIZ], lbuf[BUF_SIZE], rbuf[BUF_SIZE];
-struct stat stat1, stat2;
+struct stat gstat[2];
 regex_t fn_re;
 short recursive, scan;
 short nosingle;
@@ -58,6 +58,7 @@ char trcpth[2][PATHSIZ];
 #endif
 
 static void check_args(int, char **);
+static void get_arg(char *, int);
 static int read_rc(char *);
 static void ttcharoff(void);
 static void usage(void);
@@ -124,7 +125,7 @@ main(int argc, char **argv)
 		argc--; argv++;
 
 		if (argc > 1 && argv[1][0] != '-' &&
-		    stat(argv[1], &stat1) == 0 && S_ISREG(stat1.st_mode)) {
+		    stat(argv[1], &gstat[0]) == 0 && S_ISREG(gstat[0].st_mode)) {
 			if (read_rc(argv[1]))
 				return 1;
 
@@ -333,7 +334,7 @@ read_rc(char *upath)
 		return 1;
 	}
 
-	if (stat(rc_path, &stat1) == -1) {
+	if (stat(rc_path, &gstat[0]) == -1) {
 		if (errno == ENOENT)
 			goto free;
 		printf("stat \"%s\": %s\n", rc_path,
@@ -392,7 +393,7 @@ ret:
 static void
 check_args(int argc, char **argv)
 {
-	char *s, *s2;
+	char *s;
 
 	if (argc) {
 		s = *argv++;
@@ -402,64 +403,40 @@ check_args(int argc, char **argv)
 		s = ".";
 	}
 
-	arg[0] = s;
+	get_arg(s, 0);
 
-	if (stat(s, &stat1) == -1) {
-		printf(LOCFMT "stat \"%s\": %s\n" LOCVAR, s, strerror(errno));
-		exit(1);
-	}
-
-	if (!S_ISDIR(stat1.st_mode)) {
-		printf("\"%s\" is not a directory\n", s);
-		exit(1);
-	}
-
-	if (fmode && *s != '/') {
-		if (!(s2 = realpath(s, NULL))) {
-			printf(LOCFMT "realpath \"%s\": %s\n" LOCVAR, s,
-			    strerror(errno));
-			exit(1);
-		}
-	} else {
-		s2 = s;
-	}
-
-	if ((pthlen[0] = strlen(s2)) >= PATHSIZ - 1) {
-		printf("Path too long: %s\n", s2);
-		exit(1);
-	}
-
-	while (pthlen[0] > 1 && s2[pthlen[0] - 1] == '/') {
-		s2[--pthlen[0]] = 0;
-	}
-
-	memcpy(syspth[0], s2, pthlen[0] + 1);
-
-	if (fmode && *s != '/')
-		free(s2);
-
-	if (bmode)
+	if (bmode) {
 		return;
-
-	if (argc)
-		s = *argv;
-
-	arg[1] = s;
-
-	if (stat(s, &stat2) == -1) {
-		printf(LOCFMT "stat \"%s\": %s\n" LOCVAR, s, strerror(errno));
-		exit(1);
 	}
+
+	if (argc) {
+		s = *argv;
+	}
+
+	get_arg(s, 1);
 
 	if (!fmode &&
-	    stat1.st_ino == stat2.st_ino &&
-	    stat1.st_dev == stat2.st_dev) {
+	    gstat[0].st_ino == gstat[1].st_ino &&
+	    gstat[0].st_dev == gstat[1].st_dev) {
 		printf("\"%s\" and \"%s\" are the same directory\n",
-		    syspth[0], s);
+		    syspth[0], syspth[1]);
 		exit(0);
 	}
+}
 
-	if (!S_ISDIR(stat2.st_mode)) {
+static void
+get_arg(char *s, int i)
+{
+	char *s2;
+
+	arg[i] = s;
+
+	if (stat(s, &gstat[i]) == -1) {
+		printf(LOCFMT "stat \"%s\": %s\n" LOCVAR, s, strerror(errno));
+		exit(1);
+	}
+
+	if (!S_ISDIR(gstat[i].st_mode)) {
 		printf("\"%s\" is not a directory\n", s);
 		exit(1);
 	}
@@ -474,19 +451,20 @@ check_args(int argc, char **argv)
 		s2 = s;
 	}
 
-	if ((pthlen[1] = strlen(s2)) >= PATHSIZ - 1) {
+	if ((pthlen[i] = strlen(s2)) >= PATHSIZ - 1) {
 		printf("Path too long: %s\n", s2);
 		exit(1);
 	}
 
-	while (pthlen[1] > 1 && s2[pthlen[1] - 1] == '/') {
-		s2[--pthlen[1]] = 0;
+	while (pthlen[i] > 1 && s2[pthlen[i] - 1] == '/') {
+		s2[--pthlen[i]] = 0;
 	}
 
-	memcpy(syspth[1], s2, pthlen[1] + 1);
+	memcpy(syspth[i], s2, pthlen[i] + 1);
 
-	if (fmode && *s != '/')
+	if (fmode && *s != '/') {
 		free(s2);
+	}
 }
 
 static void

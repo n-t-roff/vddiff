@@ -169,16 +169,16 @@ build_diff_db(
 		/* Get link length. Redundant code but necessary,
 		 * unfortunately. */
 
-		if (followlinks && !scan && lstat(syspth[0], &stat1) != -1 &&
-		    S_ISLNK(stat1.st_mode))
-			lsiz1 = stat1.st_size;
+		if (followlinks && !scan && lstat(syspth[0], &gstat[0]) != -1 &&
+		    S_ISLNK(gstat[0].st_mode))
+			lsiz1 = gstat[0].st_size;
 		else
 			lsiz1 = -1;
 
 		file_err = FALSE;
 
-		if (!followlinks || (i = stat(syspth[0], &stat1)) == -1)
-			i = lstat(syspth[0], &stat1);
+		if (!followlinks || (i = stat(syspth[0], &gstat[0])) == -1)
+			i = lstat(syspth[0], &gstat[0]);
 
 		if (i == -1) {
 			if (errno != ENOENT) {
@@ -195,7 +195,7 @@ build_diff_db(
 					continue;
 			}
 
-			stat1.st_mode = 0;
+			gstat[0].st_mode = 0;
 		}
 
 		if (tree & 2) {
@@ -203,14 +203,14 @@ build_diff_db(
 		} else
 			goto no_tree2;
 
-		if (followlinks && !scan && lstat(syspth[1], &stat2) != -1 &&
-		    S_ISLNK(stat2.st_mode))
-			lsiz2 = stat2.st_size;
+		if (followlinks && !scan && lstat(syspth[1], &gstat[1]) != -1 &&
+		    S_ISLNK(gstat[1].st_mode))
+			lsiz2 = gstat[1].st_size;
 		else
 			lsiz2 = -1;
 
-		if (!followlinks || (i = stat(syspth[1], &stat2)) == -1)
-			i = lstat(syspth[1], &stat2);
+		if (!followlinks || (i = stat(syspth[1], &gstat[1])) == -1)
+			i = lstat(syspth[1], &gstat[1]);
 
 		if (i == -1) {
 			if (errno != ENOENT) {
@@ -235,12 +235,12 @@ no_tree2:
 				continue;
 			}
 
-			stat2.st_mode = 0;
+			gstat[1].st_mode = 0;
 		}
 
 		if (scan || qdiff) {
-			if (S_ISDIR(stat1.st_mode) &&
-			    (S_ISDIR(stat2.st_mode) || bmode || fmode)) {
+			if (S_ISDIR(gstat[0].st_mode) &&
+			    (S_ISDIR(gstat[1].st_mode) || bmode || fmode)) {
 
 				struct scan_dir *se;
 
@@ -251,7 +251,7 @@ no_tree2:
 
 				se = malloc(sizeof(struct scan_dir));
 				se->s = strdup(name);
-				se->tree = S_ISDIR(stat2.st_mode) ? 3 : 1;
+				se->tree = S_ISDIR(gstat[1].st_mode) ? 3 : 1;
 				se->next = dirs;
 				dirs = se;
 				continue;
@@ -268,10 +268,10 @@ no_tree2:
 
 			if (gq_pattern) {
 				diff = alloc_diff(name);
-				diff->type[0] = stat1.st_mode;
-				diff->type[1] = stat2.st_mode;
-				diff->siz[0]  = stat1.st_size;
-				diff->siz[1]  = stat2.st_size;
+				diff->type[0] = gstat[0].st_mode;
+				diff->type[1] = gstat[1].st_mode;
+				diff->siz[0]  = gstat[0].st_size;
+				diff->siz[1]  = gstat[1].st_size;
 
 				if (!gq_proc(diff))
 					dir_diff = 1;
@@ -280,10 +280,10 @@ no_tree2:
 				continue;
 			}
 
-			if (S_ISREG(stat1.st_mode) &&
-			    S_ISREG(stat2.st_mode)) {
-				if (cmp_file(syspth[0], stat1.st_size,
-				    syspth[1], stat2.st_size, 0) == 1) {
+			if (S_ISREG(gstat[0].st_mode) &&
+			    S_ISREG(gstat[1].st_mode)) {
+				if (cmp_file(syspth[0], gstat[0].st_size,
+				    syspth[1], gstat[1].st_size, 0) == 1) {
 					if (qdiff) {
 						printf(
 						    "Files %s and %s differ\n",
@@ -295,14 +295,14 @@ no_tree2:
 				continue;
 			}
 
-			if (S_ISLNK(stat1.st_mode) &&
-			    S_ISLNK(stat2.st_mode)) {
+			if (S_ISLNK(gstat[0].st_mode) &&
+			    S_ISLNK(gstat[1].st_mode)) {
 				char *a, *b;
 
-				if (!(a = read_link(syspth[0], stat1.st_size)))
+				if (!(a = read_link(syspth[0], gstat[0].st_size)))
 					continue;
 
-				if (!(b = read_link(syspth[1], stat2.st_size)))
+				if (!(b = read_link(syspth[1], gstat[1].st_size)))
 					goto free_a;
 
 				if (strcmp(a, b)) {
@@ -325,8 +325,8 @@ free_a:
 			if (real_diff)
 				continue;
 
-			if (!stat1.st_mode || !stat2.st_mode ||
-			     stat1.st_mode !=  stat2.st_mode) {
+			if (!gstat[0].st_mode || !gstat[1].st_mode ||
+			     gstat[0].st_mode !=  gstat[1].st_mode) {
 				if (qdiff)
 					printf("Different file type: "
 					    "%s and %s\n", syspth[0], syspth[1]);
@@ -346,29 +346,29 @@ free_a:
 			continue;
 		}
 
-		if ((diff->type[0] = stat1.st_mode)) {
-			diff->uid[0] = stat1.st_uid;
-			diff->gid[0] = stat1.st_gid;
-			diff->siz[0] = stat1.st_size;
-			diff->mtim[0] = stat1.st_mtim.tv_sec;
-			diff->rdev[0] = stat1.st_rdev;
+		if ((diff->type[0] = gstat[0].st_mode)) {
+			diff->uid[0] = gstat[0].st_uid;
+			diff->gid[0] = gstat[0].st_gid;
+			diff->siz[0] = gstat[0].st_size;
+			diff->mtim[0] = gstat[0].st_mtim.tv_sec;
+			diff->rdev[0] = gstat[0].st_rdev;
 
-			if (S_ISLNK(stat1.st_mode))
-				lsiz1 = stat1.st_size;
+			if (S_ISLNK(gstat[0].st_mode))
+				lsiz1 = gstat[0].st_size;
 
 			if (lsiz1 >= 0)
 				diff->llink = read_link(syspth[0], lsiz1);
 		}
 
-		if ((diff->type[1] = stat2.st_mode)) {
-			diff->uid[1] = stat2.st_uid;
-			diff->gid[1] = stat2.st_gid;
-			diff->siz[1] = stat2.st_size;
-			diff->mtim[1] = stat2.st_mtim.tv_sec;
-			diff->rdev[1] = stat2.st_rdev;
+		if ((diff->type[1] = gstat[1].st_mode)) {
+			diff->uid[1] = gstat[1].st_uid;
+			diff->gid[1] = gstat[1].st_gid;
+			diff->siz[1] = gstat[1].st_size;
+			diff->mtim[1] = gstat[1].st_mtim.tv_sec;
+			diff->rdev[1] = gstat[1].st_rdev;
 
-			if (S_ISLNK(stat2.st_mode))
-				lsiz2 = stat2.st_size;
+			if (S_ISLNK(gstat[1].st_mode))
+				lsiz2 = gstat[1].st_size;
 
 			if (lsiz2 >= 0)
 				diff->rlink = read_link(syspth[1], lsiz2);
@@ -379,17 +379,17 @@ free_a:
 			diff_db_add(diff, 0);
 			continue;
 
-		} else if (stat1.st_ino == stat2.st_ino &&
-		           stat1.st_dev == stat2.st_dev) {
+		} else if (gstat[0].st_ino == gstat[1].st_ino &&
+		           gstat[0].st_dev == gstat[1].st_dev) {
 
 			diff->diff = '=';
 			diff_db_add(diff, 0);
 			continue;
 
-		} else if (S_ISREG(stat1.st_mode)) {
+		} else if (S_ISREG(gstat[0].st_mode)) {
 
-			switch (cmp_file(syspth[0], stat1.st_size, syspth[1],
-			    stat2.st_size, 0)) {
+			switch (cmp_file(syspth[0], gstat[0].st_size, syspth[1],
+			    gstat[1].st_size, 0)) {
 			case -1:
 				diff->diff = '-';
 				goto db_add_file;
@@ -402,12 +402,12 @@ db_add_file:
 				continue;
 			}
 
-		} else if (S_ISDIR(stat1.st_mode)) {
+		} else if (S_ISDIR(gstat[0].st_mode)) {
 
 			diff_db_add(diff, 0);
 			continue;
 
-		} else if (S_ISLNK(stat1.st_mode)) {
+		} else if (S_ISLNK(gstat[0].st_mode)) {
 
 			if (diff->llink && diff->rlink) {
 				if (strcmp(diff->llink, diff->rlink))
@@ -505,17 +505,17 @@ right_tree:
 
 		pthcat(syspth[1], pthlen[1], name);
 
-		if (followlinks && !scan && lstat(syspth[1], &stat2) != -1 &&
-		    S_ISLNK(stat2.st_mode)) {
-			lsiz2 = stat2.st_size;
+		if (followlinks && !scan && lstat(syspth[1], &gstat[1]) != -1 &&
+		    S_ISLNK(gstat[1].st_mode)) {
+			lsiz2 = gstat[1].st_size;
 		} else {
 			lsiz2 = -1;
 		}
 
 		file_err = FALSE;
 
-		if (!followlinks || (i = stat(syspth[1], &stat2)) == -1) {
-			i = lstat(syspth[1], &stat2);
+		if (!followlinks || (i = stat(syspth[1], &gstat[1])) == -1) {
+			i = lstat(syspth[1], &gstat[1]);
 		}
 
 		if (i == -1) {
@@ -530,11 +530,11 @@ right_tree:
 				file_err = TRUE;
 			}
 
-			stat2.st_mode = 0;
+			gstat[1].st_mode = 0;
 		}
 
 		if (scan) {
-			if (S_ISDIR(stat2.st_mode)) {
+			if (S_ISDIR(gstat[1].st_mode)) {
 				struct scan_dir *se;
 
 				se = malloc(sizeof(struct scan_dir));
@@ -560,19 +560,19 @@ right_tree:
 
 		diff = alloc_diff(name);
 		diff->type[0] = 0;
-		diff->type[1] = stat2.st_mode;
+		diff->type[1] = gstat[1].st_mode;
 
 		if (file_err)
 			diff->diff = '-';
 		else {
-			diff->uid[1] = stat2.st_uid;
-			diff->gid[1] = stat2.st_gid;
-			diff->siz[1] = stat2.st_size;
-			diff->mtim[1] = stat2.st_mtim.tv_sec;
-			diff->rdev[1] = stat2.st_rdev;
+			diff->uid[1] = gstat[1].st_uid;
+			diff->gid[1] = gstat[1].st_gid;
+			diff->siz[1] = gstat[1].st_size;
+			diff->mtim[1] = gstat[1].st_mtim.tv_sec;
+			diff->rdev[1] = gstat[1].st_rdev;
 
-			if (S_ISLNK(stat2.st_mode))
-				lsiz2 = stat2.st_size;
+			if (S_ISLNK(gstat[1].st_mode))
+				lsiz2 = gstat[1].st_size;
 
 			if (lsiz2 >= 0)
 				diff->rlink = read_link(syspth[1], lsiz2);
@@ -861,7 +861,7 @@ read_link(char *path, off_t size)
 	return l;
 }
 
-/* Input: stat1, stat2, syspth[0], syspth[1]
+/* Input: gstat[0], gstat[1], syspth[0], syspth[1]
  * Output:
  * -1  Error, don't make DB entry
  *  0  No diff

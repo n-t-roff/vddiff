@@ -16,6 +16,7 @@ PERFORMANCE OF THIS SOFTWARE.
 */
 
 #include <sys/types.h>
+#include <sys/stat.h>
 #include <regex.h>
 #include <stdarg.h>
 #include <signal.h>

@@ -57,7 +57,7 @@ info_load(void)
 	info_pth = strdup(info_tpth);
 	info_pth[strlen(info_pth) - 4] = 0;
 
-	if (stat(info_pth, &stat1) == -1) {
+	if (stat(info_pth, &gstat[0]) == -1) {
 		if (errno == ENOENT) {
 			return;
 		}
@@ -183,7 +183,7 @@ info_proc(void)
 	}
 
 rm:
-	if (stat(info_pth, &stat1) == -1) {
+	if (stat(info_pth, &gstat[0]) == -1) {
 		if (errno == ENOENT) {
 			goto mv;
 		}

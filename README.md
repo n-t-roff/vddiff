@@ -12,7 +12,6 @@ git pull
 (latest changes are notified in the
 [change log](https://github.com/n-t-roff/vddiff/commits/master)).
 
-<!---
 Note that the default branch is the development branch
 which normally contains unstable pre-alpha and alpha versions.
 These are not intended to be used
@@ -26,13 +25,12 @@ git branch
 ```
 The current release testing branch is checked out with
 ```bash
-git checkout 1.4
+git checkout 1.5
 ```
 To return to the default branch enter
 ```bash
 git checkout master
 ```
--->
 
 It is suggested (but not required) to install
 the speed optimized AVL library

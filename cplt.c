@@ -147,7 +147,7 @@ complet(char *s, int c)
 		fn = de->d_name;
 		pthcat(b, ld, fn);
 
-		if (stat(b, &stat1) == -1) {
+		if (stat(b, &gstat[0]) == -1) {
 			if (errno == ENOENT) {
 				continue;
 			}
@@ -156,7 +156,7 @@ complet(char *s, int c)
 			continue;
 		}
 
-		if (!S_ISDIR(stat1.st_mode)) {
+		if (!S_ISDIR(gstat[0].st_mode)) {
 			continue;
 		}
 

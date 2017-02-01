@@ -149,16 +149,16 @@ fs_rename(int tree)
 	len1 = pthcat(pth1, len1, rbuf);
 	s = strdup(pth1);
 
-	if (lstat(pth1, &stat1) == -1) {
+	if (lstat(pth1, &gstat[0]) == -1) {
 		if (errno != ENOENT)
 			printerr(strerror(errno), "lstat \"%s\" failed", pth1);
 	} else {
 		if (!force_fs && dialog(y_n_txt, NULL,
-		    "Delete existing %s \"%s\"?", S_ISDIR(stat1.st_mode) ?
+		    "Delete existing %s \"%s\"?", S_ISDIR(gstat[0].st_mode) ?
 		    "directory" : "file", pth1) != 'y')
 			goto exit;
 
-		if (S_ISDIR(stat1.st_mode)) {
+		if (S_ISDIR(gstat[0].st_mode)) {
 			tree_op = TREE_RM;
 			proc_dir();
 		} else
@@ -463,7 +463,7 @@ fs_rm(
 	l0 = len1;
 	s[0] = strdup(syspth[0]);
 	s[1] = strdup(syspth[1]);
-	st = stat1;
+	st = gstat[0];
 	m = n > 1;
 
 	/* case: Multiple files (not from fs_cp(), instead from <n>dd */
@@ -579,7 +579,7 @@ fs_rm(
 		fprintf(debug, "  force_fs=%d md=%u m=%u n=%d \"%s\"\n",
 		    force_fs ? 1 : 0, md, m, n, pth1);
 #endif
-		if (lstat(pth1, &stat1) == -1) {
+		if (lstat(pth1, &gstat[0]) == -1) {
 			if (errno != ENOENT)
 				printerr(strerror(errno), "lstat %s failed",
 				    pth1);
@@ -589,7 +589,7 @@ fs_rm(
 		if (!(md & 1) && !m) {
 			if (fs_deldialog(tree < 1 || nam ? y_a_n_txt : y_n_txt,
 			    txt ? txt : "delete",
-			    S_ISDIR(stat1.st_mode) ? "directory " : NULL,
+			    S_ISDIR(gstat[0].st_mode) ? "directory " : NULL,
 			    pth1)) {
 				rv = 1;
 				goto ret;
@@ -598,7 +598,7 @@ fs_rm(
 
 		chg = TRUE;
 
-		if (S_ISDIR(stat1.st_mode)) {
+		if (S_ISDIR(gstat[0].st_mode)) {
 			tree_op = TREE_RM;
 			proc_dir();
 		} else {
@@ -626,7 +626,7 @@ ret:
 	free(s[0]);
 	pth1 = p0;
 	len1 = l0;
-	stat1 = st;
+	gstat[0] = st;
 #if defined(TRACE)
 	fprintf(debug, "<-fs_rm\n");
 #endif
@@ -710,18 +710,18 @@ fs_cp(
 		f = db_list[right_col][u];
 		pthcat(pth1, len1, f->name);
 
-		if (fs_stat(pth1, &stat1) == -1) {
+		if (fs_stat(pth1, &gstat[0]) == -1) {
 			continue;
 		}
 
 		tnam = f->name;
 tpth:
 		pthcat(pth2, len2, tnam);
-		i = fs_stat(pth2, &stat2);
+		i = fs_stat(pth2, &gstat[1]);
 
 		if (!i && /* from stat */
-		    stat1.st_ino == stat2.st_ino &&
-		    stat1.st_dev == stat2.st_dev) {
+		    gstat[0].st_ino == gstat[1].st_ino &&
+		    gstat[0].st_dev == gstat[1].st_dev) {
 			if (ed_dialog("Enter new name (<ESC> to cancel):",
 			    tnam, NULL, 0, NULL) || !*rbuf) {
 				continue;
@@ -737,7 +737,7 @@ tpth:
 		fprintf(debug, "  Copy \"%s\" -> \"%s\"\n", pth1, pth2);
 #endif
 		if (md & 2) {
-			if (!fs_stat(pth2, &stat2) &&
+			if (!fs_stat(pth2, &gstat[1]) &&
 			    fs_rm(0 /* tree */, "overwrite", NULL /* nam */,
 			    0 /* u */, 1 /* n */, 4|2 /* md */) == 1) {
 				goto ret;
@@ -748,7 +748,7 @@ tpth:
 				    pth2, pth1);
 				continue;
 			}
-		} else if (S_ISDIR(stat1.st_mode)) {
+		} else if (S_ISDIR(gstat[0].st_mode)) {
 			tree_op = TREE_CP;
 			proc_dir();
 		} else {
@@ -886,9 +886,9 @@ proc_dir(void)
 
 		/* fs_rm does never follow links! */
 		if (followlinks && tree_op != TREE_RM)
-			i =  stat(pth1, &stat1);
+			i =  stat(pth1, &gstat[0]);
 		else
-			i = lstat(pth1, &stat1);
+			i = lstat(pth1, &gstat[0]);
 
 		if (i == -1) {
 			if (errno != ENOENT) {
@@ -899,7 +899,7 @@ proc_dir(void)
 			continue; /* deleted after readdir */
 		}
 
-		if (S_ISDIR(stat1.st_mode)) {
+		if (S_ISDIR(gstat[0].st_mode)) {
 			struct str_list *se = malloc(sizeof(struct str_list));
 			se->s = strdup(name);
 			se->next = dirs ? dirs : NULL;
@@ -975,9 +975,9 @@ cp_file(void)
 		fs_t1 = fs_t2;
 	}
 
-	if (S_ISREG(stat1.st_mode)) {
+	if (S_ISREG(gstat[0].st_mode)) {
 		return cp_reg();
-	} else if (S_ISLNK(stat1.st_mode)) {
+	} else if (S_ISLNK(gstat[0].st_mode)) {
 		return cp_link();
 	} else {
 		printerr(NULL, "Not copied: \"%s\"", pth1);
@@ -988,12 +988,12 @@ cp_file(void)
 static int
 creatdir(void)
 {
-	if (fs_stat(pth1, &stat1) == -1) {
+	if (fs_stat(pth1, &gstat[0]) == -1) {
 		return -1;
 	}
 
-	if (!fs_stat(pth2, &stat2)) {
-		if (S_ISDIR(stat2.st_mode)) {
+	if (!fs_stat(pth2, &gstat[1])) {
+		if (S_ISDIR(gstat[1].st_mode)) {
 			/* Respect write protected dirs, don't make them
 			 * writeable */
 			return 0;
@@ -1005,7 +1005,7 @@ creatdir(void)
 		}
 	}
 
-	if (mkdir(pth2, (stat1.st_mode | 0100) & 07777) == -1
+	if (mkdir(pth2, (gstat[0].st_mode | 0100) & 07777) == -1
 	    && errno != EEXIST) {
 		printerr(strerror(errno), "mkdir %s", pth2);
 		return -1;
@@ -1021,15 +1021,15 @@ cp_link(void)
 	char *buf;
 	int r = 0;
 
-	buf = malloc(stat1.st_size + 1);
+	buf = malloc(gstat[0].st_size + 1);
 
-	if ((l = readlink(pth1, buf, stat1.st_size)) == -1) {
+	if ((l = readlink(pth1, buf, gstat[0].st_size)) == -1) {
 		printerr(strerror(errno), "readlink %s", pth1);
 		r = -1;
 		goto exit;
 	}
 
-	if (l != stat1.st_size) {
+	if (l != gstat[0].st_size) {
 		printerr("Unexpected link lenght", "readlink %s", pth1);
 		r = -1;
 		goto exit;
@@ -1037,7 +1037,7 @@ cp_link(void)
 
 	buf[l] = 0;
 
-	if (!fs_stat(pth2, &stat2) &&
+	if (!fs_stat(pth2, &gstat[1]) &&
 	    fs_rm(0 /* tree */, "overwrite", NULL /* nam */,
 	    0 /* u */, 1 /* n */, 4|2 /* md */) == 1) {
 		r = 1;
@@ -1073,12 +1073,12 @@ cp_reg(void)
 #if defined(TRACE)
 	fprintf(debug, "<>cp_reg \"%s\" -> \"%s\"\n", pth1, pth2);
 #endif
-	if (!fs_stat(pth2, &stat2)) {
-		if (S_ISREG(stat2.st_mode)) {
+	if (!fs_stat(pth2, &gstat[1])) {
+		if (S_ISREG(gstat[1].st_mode)) {
 			bool ms = FALSE;
 
-			if (!cmp_file(pth1, stat1.st_size,
-			              pth2, stat2.st_size, 1)) {
+			if (!cmp_file(pth1, gstat[0].st_size,
+			              pth2, gstat[1].st_size, 1)) {
 				return 0;
 			}
 
@@ -1096,8 +1096,8 @@ test:
 				    "access \"%s\"", pth2);
 			}
 
-			if (!ms && !(stat2.st_mode & S_IWUSR)) {
-				if (chmod(pth2, stat2.st_mode & S_IWUSR) == -1)
+			if (!ms && !(gstat[1].st_mode & S_IWUSR)) {
+				if (chmod(pth2, gstat[1].st_mode & S_IWUSR) == -1)
 				{
 					printerr(strerror(errno),
 					    "chmod \"%s\"", pth2);
@@ -1123,12 +1123,12 @@ test:
 
 copy:
 	if ((f2 = open(pth2, O_CREAT | O_TRUNC | O_WRONLY,
-	    stat1.st_mode & 07777)) == -1) {
+	    gstat[0].st_mode & 07777)) == -1) {
 		printerr(strerror(errno), "create %s", pth2);
 		return -1;
 	}
 
-	if (!stat1.st_size)
+	if (!gstat[0].st_size)
 		goto setattr;
 
 	if ((f1 = open(pth1, O_RDONLY)) == -1) {
@@ -1161,12 +1161,12 @@ copy:
 
 setattr:
 #ifdef HAVE_FUTIMENS
-	ts[0] = stat1.st_atim;
-	ts[1] = stat1.st_mtim;
+	ts[0] = gstat[0].st_atim;
+	ts[1] = gstat[0].st_mtim;
 	futimens(f2, ts); /* error not checked */
 #else
-	tb.actime  = stat1.st_atime;
-	tb.modtime = stat1.st_mtime;
+	tb.actime  = gstat[0].st_atime;
+	tb.modtime = gstat[0].st_mtime;
 	utime(pth2, &tb);
 #endif
 
