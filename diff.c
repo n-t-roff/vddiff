@@ -1013,19 +1013,9 @@ pthcut(char *p, size_t l)
 void
 do_scan(void)
 {
-#ifdef HAVE_LIBAVLBST
-	struct bst_node *n;
-#else
-	char *n;
-#endif
-
 #if defined(TRACE)
 	fprintf(debug, "->do_scan lp(%s) rp(%s)\n", syspth[0], syspth[1]);
 #endif
-	while ((n = str_db_get_node(scan_db))) {
-		str_db_del(&scan_db, n);
-	}
-
 	scan = 1;
 	build_diff_db(bmode ? 1 : 3);
 	scan = 0;

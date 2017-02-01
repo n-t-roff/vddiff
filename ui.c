@@ -1296,7 +1296,7 @@ next_key:
 					tgl2c(1);
 				} else {
 					fmode_dmode();
-					one_scan = TRUE;
+					push_scan_db(TRUE);
 					/* Use "", not NULL here! */
 					enter_dir("", "", FALSE, FALSE,
 					    0 LOCVAR);
@@ -1955,10 +1955,7 @@ action(
 				          z1 ? TRUE : FALSE, FALSE,
 				          tree LOCVAR);
 			} else {
-				/* If t<n> == NULL tmpdir is not removed.
-				 * It must not be removed before it is left
-				 * with "cd .." later. */
-				one_scan = TRUE;
+				push_scan_db(TRUE);
 
 				if (z1) {
 					setpthofs(0, m0->name, z1->name);
@@ -2030,7 +2027,7 @@ action(
 				tool(f1->name, NULL, 1, 0);
 		} else if (S_ISDIR(f1->type[0])) {
 			if (z1 || z2) {
-				one_scan = TRUE;
+				push_scan_db(TRUE);
 			}
 
 			if (z1) {
@@ -3589,6 +3586,12 @@ pop_state(
 	}
 
 	d2f = st->fl & 1 ? TRUE : FALSE;
+
+	if (st->lzip || st->rzip) {
+		/* In diff mode a new scan DB is only required when
+		 * a compressed archive had been entered */
+		pop_scan_db();
+	}
 
 	if (st->lzip) {
 		if (mode && (

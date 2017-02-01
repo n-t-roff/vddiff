@@ -92,6 +92,7 @@ static void *ext_db;
 static void *uz_ext_db;
 static unsigned db_idx, tot_db_num[2];
 static char **str_list;
+static struct scan_db *scan_db_list;
 
 #ifdef HAVE_LIBAVLBST
 static struct bst diff_db[2] = { { NULL, diff_cmp },
@@ -398,6 +399,71 @@ name_cmp(
 #endif
 
 	return strcmp(s1, s2);
+}
+
+/***********
+ * scan DB *
+ ***********/
+
+void
+push_scan_db(bool os)
+{
+	struct scan_db *p;
+
+#if defined(TRACE)
+	fprintf(debug, "<>push_scan_db(%d)\n", os ? 1 : 0);
+#endif
+	p = malloc(sizeof(struct scan_db));
+	p->db = scan_db;
+	p->next = scan_db_list;
+	scan_db_list = p;
+	scan_db = NULL;
+
+	if (os) {
+		one_scan = TRUE;
+#ifdef HAVE_LIBAVLBST
+		scan_sb = db_new(name_cmp);
+#endif
+	}
+}
+
+void
+pop_scan_db(void)
+{
+	struct scan_db *p;
+
+#if defined(TRACE)
+	fprintf(debug, "<>pop_scan_db()\n");
+#endif
+	free_scan_db(FALSE);
+
+	if (!(p = scan_db_list)) {
+		return;
+	}
+
+	scan_db = p->db;
+	scan_db_list = p->next;
+	free(p);
+}
+
+void
+free_scan_db(bool os)
+{
+#ifdef HAVE_LIBAVLBST
+	struct bst_node *n;
+#else
+	char *n;
+#endif
+
+#if defined(TRACE)
+	fprintf(debug, "<>free_scan_db(%d)\n", os ? 1 : 0);
+#endif
+
+	while ((n = str_db_get_node(scan_db))) {
+		str_db_del(&scan_db, n);
+	}
+
+	one_scan = os;
 }
 
 /****************

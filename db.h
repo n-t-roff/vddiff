@@ -14,6 +14,11 @@ struct ptr_db_ent {
 	void *dat;
 };
 
+struct scan_db {
+	void *db;
+	struct scan_db *next;
+};
+
 char *str_db_add(void **, char *);
 int str_db_srch(void **, char *, char **);
 #endif
@@ -38,6 +43,9 @@ void ptr_db_del(void **, void *);
 void *ptr_db_get_node(void *);
 void str_db_del(void **, void *);
 void *str_db_get_node(void *);
+void push_scan_db(bool);
+void pop_scan_db(void);
+void free_scan_db(bool);
 int ddl_add(char *, char *);
 void ddl_del(char **);
 void ddl_sort(void);

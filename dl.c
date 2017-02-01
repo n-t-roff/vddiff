@@ -627,7 +627,7 @@ dl_act(void)
 			pop_state(0);
 		}
 
-		one_scan = TRUE;
+		free_scan_db(TRUE);
 		diff_db_free(0);
 		pthlen[0] = 0;
 		pthlen[1] = 0;
