@@ -59,7 +59,9 @@ char trcpth[2][PATHSIZ];
 static struct filediff *zipfile[2];
 static char *zipdir[2];
 
+static void arg_diff(int);
 static void check_args(int, char **);
+static void cmp_inodes(void);
 static void get_arg(char *, int);
 static int read_rc(char *);
 static void ttcharoff(void);
@@ -324,8 +326,17 @@ main(int argc, char **argv)
 			        && S_ISREG(gstat[1].st_mode))
 			{
 				tool("", "", 3, 0);
+			} else {
+				/* get_arg() already checks for supported
+				 * file types */
+				arg_diff(1);
 			}
 
+			goto rmtmp;
+		} else if (!S_ISDIR(gstat[1].st_mode)) {
+			/* get_arg() already checks for supported
+			 * file types */
+			arg_diff(0);
 			goto rmtmp;
 		}
 	} else { /* bmode only */
@@ -359,6 +370,29 @@ rmtmp:
 	}
 
 	return 0;
+}
+
+/* according POSIX diff(1) */
+
+static void
+arg_diff(int i)
+{
+	char *s, *s2;
+
+	s = strdup(syspth[i ? 0 : 1]);
+	s2 = basename(s);
+
+	pthlen[i] = pthcat(syspth[i], pthlen[i], s2);
+
+	if (stat(syspth[i], &gstat[i]) == -1) {
+		printf(LOCFMT "stat \"%s\": %s\n" LOCVAR,
+		    syspth[i], strerror(errno));
+		exit(1);
+	}
+
+	cmp_inodes();
+	tool("", "", 3, 0);
+	free(s);
 }
 
 static int
@@ -455,10 +489,18 @@ check_args(int argc, char **argv)
 
 	get_arg(s, 1);
 
+	if (!fmode) {
+		cmp_inodes();
+	}
+}
+
+static void
+cmp_inodes(void)
+{
 	if (!fmode &&
 	    gstat[0].st_ino == gstat[1].st_ino &&
 	    gstat[0].st_dev == gstat[1].st_dev) {
-		printf("\"%s\" and \"%s\" are the same directory\n",
+		printf("\"%s\" and \"%s\" are the same file\n",
 		    syspth[0], syspth[1]);
 		exit(0);
 	}

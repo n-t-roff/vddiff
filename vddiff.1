@@ -13,7 +13,7 @@ LOSS OF USE, DATA OR PROFITS, WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE OR
 OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
 PERFORMANCE OF THIS SOFTWARE.
 ..
-.Dd February 1, 2017
+.Dd February 2, 2017
 .Dt VDDIFF 1
 .Sh NAME
 .Nm @vddiff@
@@ -66,6 +66,9 @@ supported:
 and
 .Li Z .
 .Pp
+If one argument is a directory and the other is a
+non-directory, a diff is done between the non-directory
+and it's last path component within the directory.
 If
 .Nm
 is started with only one or no argument
