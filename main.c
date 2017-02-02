@@ -306,6 +306,15 @@ main(int argc, char **argv)
 	if (argc || fmode) {
 		check_args(argc, argv);
 
+		if (zipfile[0]) {
+			setpthofs(bmode ? 5 : 4, arg[0], zipfile[0]->name);
+		}
+
+		if (zipfile[1]) {
+			/* 2: don't set vpath[0] */
+			setpthofs(6, arg[1], zipfile[1]->name);
+		}
+
 		if (!S_ISDIR(gstat[0].st_mode)) {
 			if (bmode) {
 				tool(syspth[0], NULL, 1, 0);

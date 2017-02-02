@@ -528,18 +528,23 @@ setvpth(
 
 void
 setpthofs(
-    /* 0/1: side, >1: side 1 only */
+    /* 0/1: side, 2: side 1 only */
+    /* 4: Started from main() */
     int i,
     char *fn, /* archive file name */
     char *tn) /* temp dir name */
 {
 	size_t l;
 	struct pthofs *p;
+	int fl;
 	bool b;
 
 #if defined(TRACE)
 	fprintf(debug, "->setpthofs(col=%d fn(%s) tn(%s))\n", i, fn, tn);
 #endif
+	fl = i & ~3;
+	i &= 3;
+
 	if (i > 1) {
 		i = 1;
 		b = FALSE;
@@ -554,7 +559,8 @@ setpthofs(
 	pthofs[i] = p;
 	/* If we are already in a archive and enter another archive,
 	 * keep the full current vpath and add the archive name. */
-	vpthofs[i] = vpthofs[i] ? strlen(vpath[i]) : pthlen[bmode ? 1 : i];
+	vpthofs[i] = fl & 4 ? 0 :
+	             vpthofs[i] ? strlen(vpath[i]) : pthlen[bmode ? 1 : i];
 	spthofs[i] = strlen(tn);
 	l = strlen(fn);
 
@@ -562,7 +568,10 @@ setpthofs(
 		vpath[i] = realloc(vpath[i], vpthsz[i] <<= 1);
 	}
 
-	vpath[i][vpthofs[i]++] = '/';
+	if (!(fl & 4)) {
+		vpath[i][vpthofs[i]++] = '/';
+	}
+
 	memcpy(vpath[i] + vpthofs[i], fn, l);
 	vpath[i][vpthofs[i] += l] = '/';
 	vpath[i][vpthofs[i]] = 0;
