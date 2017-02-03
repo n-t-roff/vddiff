@@ -355,6 +355,7 @@ main(int argc, char **argv)
 	pwd  = syspth[0] + pthlen[0];
 	rpwd = syspth[1] + pthlen[1];
 	info_load();
+	info_load();
 	build_ui();
 
 rmtmp:

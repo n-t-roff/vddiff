@@ -23,6 +23,7 @@ PERFORMANCE OF THIS SOFTWARE.
 #include <unistd.h>
 #include <errno.h>
 #include <string.h>
+#include <fcntl.h>
 #include "compat.h"
 #include "ui.h"
 #include "main.h"
@@ -36,6 +37,9 @@ static void info_wait(void);
 static int info_proc(void);
 static void info_wr_bdl(FILE *);
 static void info_wr_ddl(FILE *);
+static int create_flock(char *);
+static int wait_flock(char *);
+static void remove_flock(int);
 
 static const char info_name[] = "." BIN "info.new";
 const char info_dir_txt[] = "dir";
@@ -43,32 +47,44 @@ const char info_ddir_txt[] = "diffdir";
 
 char *info_pth;
 static char *info_tpth;
+static char *info_lpth;
 pid_t info_pid;
+time_t info_mtime;
 
 void
 info_load(void)
 {
 	FILE *fh;
+	int lh;
 
-	if (!(info_tpth = add_home_pth(info_name))) {
-		return;
-	}
+	if (!info_tpth) { /* proc only once */
+		size_t l;
 
-	info_pth = strdup(info_tpth);
-	info_pth[strlen(info_pth) - 4] = 0;
-
-	if (stat(info_pth, &gstat[0]) == -1) {
-		if (errno == ENOENT) {
+		if (!(info_tpth = add_home_pth(info_name))) {
 			return;
 		}
 
-		printerr(strerror(errno), "stat \"%s\"", info_pth);
+		l = strlen(info_tpth); /* .vddiffinfo.new */
+		info_pth = strdup(info_tpth);
+		info_lpth = strdup(info_tpth);
+		info_lpth[--l] = 'k'; /* .vddiffinfo.lck */
+		info_lpth[--l] = 'c';
+		info_lpth[--l] = 'l';
+		info_pth[--l] = 0; /* .vddiffinfo */
+	}
+
+	if ((lh = create_flock(info_lpth)) == -1) {
 		return;
+	}
+
+	/* save mtime at read time */
+	if (stat_info_pth() == -1) {
+		goto ret;
 	}
 
 	if (!(fh = fopen(info_pth, "r"))) {
 		printerr(strerror(errno), "fopen \"%s\"", info_pth);
-		return;
+		goto ret;
 	}
 
 	while (fgets(lbuf, BUF_SIZE, fh)) {
@@ -86,6 +102,137 @@ info_load(void)
 	if (fclose(fh) == EOF) {
 		printerr(strerror(errno), "fclose \"%s\"", info_pth);
 	}
+
+ret:
+	remove_flock(lh);
+}
+
+static int
+create_flock(char *fnam)
+{
+	int fh;
+	struct flock fl;
+
+	while ((fh = open(fnam, O_WRONLY|O_CREAT|O_EXCL, 0600)) == -1) {
+		if (errno != EEXIST) {
+			printerr(strerror(errno), "open \"%s\"", fnam);
+			return -1;
+		}
+
+		if (wait_flock(fnam) == -1) {
+			return -1;
+		}
+	}
+
+	if (unlink(fnam) == -1) {
+		printerr(strerror(errno), "unlink \"%s\"", fnam);
+		close(fh);
+		return -1;
+	}
+
+	fl.l_type = F_WRLCK;
+	fl.l_whence = SEEK_SET;
+	fl.l_start = 0;
+	fl.l_len = 0;
+
+	if (fcntl(fh, F_SETLK, &fl) == -1) {
+		printerr(strerror(errno),
+		    "fcntl F_SETLK, F_WRLCK \"%s\"", fnam);
+		close(fh);
+		return -1;
+	}
+
+	return fh;
+}
+
+static int
+wait_flock(char *fnam)
+{
+	int fh;
+	int r = 0;
+	struct flock fl;
+
+	if ((fh = open(fnam, O_RDONLY)) == -1) {
+		if (errno == ENOENT) {
+			return 0;
+		}
+
+		printerr(strerror(errno), "open \"%s\"", fnam);
+		return -1;
+	}
+
+	printerr(NULL, "Waiting for release of lock on %s\n", fnam);
+
+	fl.l_type = F_RDLCK;
+	fl.l_whence = SEEK_SET;
+	fl.l_start = 0;
+	fl.l_len = 0;
+
+	while (fcntl(fh, F_SETLKW, &fl) == -1) {
+		if (errno != EINTR) {
+			printerr(strerror(errno),
+			    "fcntl F_SETLKW, F_RDLCK \"%s\"", fnam);
+			r = -1;
+			goto close;
+		}
+	}
+
+	fl.l_type = F_UNLCK;
+
+	if (fcntl(fh, F_SETLK, &fl) == -1) {
+		printerr(strerror(errno),
+		    "fcntl F_SETLK, F_UNLCK \"%s\"", fnam);
+		r = -1;
+	}
+
+close:
+	close(fh);
+	return r;
+}
+
+static void
+remove_flock(int fh)
+{
+	struct flock fl;
+
+	if (fh == -1) {
+		return;
+	}
+
+	fl.l_type = F_UNLCK;
+	fl.l_whence = SEEK_SET;
+	fl.l_start = 0;
+	fl.l_len = 0;
+
+	if (fcntl(fh, F_SETLK, &fl) == -1) {
+		printerr(strerror(errno),
+		    "fcntl F_SETLK, F_UNLCK");
+	}
+
+	close(fh);
+}
+
+/* -1: Error, 1: time diff, 0: ok */
+
+int
+stat_info_pth(void)
+{
+	time_t t;
+	int r;
+
+	if (stat(info_pth, &gstat[0]) == -1) {
+		if (errno == ENOENT) {
+			return 0;
+		}
+
+		printerr(strerror(errno), "stat \"%s\"", info_pth);
+		return -1;
+	}
+
+	t = gstat[0].st_mtim.tv_sec;
+	r = info_mtime && info_mtime != t;
+	info_mtime = t;
+	return r;
 }
 
 void
@@ -97,6 +244,15 @@ info_store(void)
 
 	if (!info_pth) {
 		return;
+	}
+
+retest:
+	switch (stat_info_pth()) {
+	case -1:
+		return;
+	case 1:
+		info_load();
+		goto retest;
 	}
 
 	info_wait();
@@ -157,13 +313,20 @@ info_proc(void)
 {
 	int rv = 0;
 	FILE *fh;
+	int lh = -1;
 	bool wr;
 
 	wr = bdl_num || ddl_num ? 1 : 0;
 
 	if (!wr) {
 		goto rm;
-	} else if (!(fh = fopen(info_tpth, "w"))) {
+	}
+
+	if ((lh = create_flock(info_lpth)) == -1) {
+		goto ret;
+	}
+
+	if (!(fh = fopen(info_tpth, "w"))) {
 		printerr(strerror(errno), "fopen \"%s\"", info_tpth);
 		rv = 1;
 		goto ret;
@@ -206,6 +369,7 @@ mv:
 	}
 
 ret:
+	remove_flock(lh);
 	return rv;
 }
 
