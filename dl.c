@@ -174,10 +174,14 @@ dl_del(void)
 	wdeleteln(wlist);
 
 	if (dl_num) {
-		dl_curs(1);
+		if (dl_pos >= dl_num) {
+			dl_up(1);
+		} else {
+			dl_curs(1);
 
-		if (dl_top + listh - 1 < dl_num) {
-			dl_line(listh - 1, dl_top + listh - 1);
+			if (dl_top + listh - 1 < dl_num) {
+				dl_line(listh - 1, dl_top + listh - 1);
+			}
 		}
 	}
 
@@ -389,10 +393,12 @@ ret:
 	}
 
 	disp_fmode();
+
 ret0:
 #if defined(TRACE)
 	fprintf(debug, "<-dl_list\n");
 #endif
+	return;
 }
 
 static void

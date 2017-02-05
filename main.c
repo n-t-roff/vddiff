@@ -101,7 +101,7 @@ main(int argc, char **argv)
 
 		l = strlen(s);
 		memcpy(lbuf, s, l);
-#if 0
+#if 1
 		snprintf(lbuf + l, BUF_SIZE - l, "%lu",
 		    (unsigned long)getuid());
 #else

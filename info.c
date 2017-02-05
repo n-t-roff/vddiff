@@ -109,10 +109,12 @@ info_load(void)
 
 unlock:
 	remove_flock(lh);
+
 ret:
 #if defined(TRACE)
 	fprintf(debug, "<-info_load\n");
 #endif
+	return;
 }
 
 static int
@@ -287,10 +289,12 @@ retest:
 	}
 
 	exec_res_sig(&intr, &quit, &smsk);
+
 ret:
 #if defined(TRACE)
 	fprintf(debug, "<-info_store pid=%d\n", (int)pid);
 #endif
+	return;
 }
 
 static void
