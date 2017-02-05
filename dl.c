@@ -94,34 +94,47 @@ dl_add(void)
 	}
 }
 
+/* 0: Not found -> now added */
+/* 1: Was already in DB -> *not* added */
+
 static int
 bdl_add(char *s)
 {
+	int r = 1;
 #ifdef HAVE_LIBAVLBST
 	struct bst_node *n;
 	int i;
+#else
+	char *s2;
+#endif
 
+#if defined(TRACE)
+	fprintf(debug, "->bdl_add(%s)\n", s);
+#endif
+
+#ifdef HAVE_LIBAVLBST
 	if ((i = str_db_srch(&bdl_db, s, &n))) {
 		str_db_add(&bdl_db, strdup(s), i, n);
 		bdl_num++;
-		return 0;
+		r = 0;
 	}
-
-	return 1;
 #else
-	char *s2;
-
 	s = strdup(s);
 	s2 = str_db_add(&bdl_db, s);
 
 	if (s2 == s) {
 		bdl_num++;
-		return 0;
+		r = 0;
 	} else {
 		free(s);
-		return 1;
 	}
 #endif
+
+#if defined(TRACE)
+	fprintf(debug, "<-bdl_add %sadded, num->%u\n",
+	    r ? "not " : "", bdl_num);
+#endif
+	return r;
 }
 
 static void
@@ -178,6 +191,14 @@ dl_list(void)
 	bool del = FALSE;
 	bool act = FALSE;
 
+#if defined(TRACE)
+	fprintf(debug, "->dl_list\n");
+#endif
+
+	if (stat_info_pth() == 1) {
+		info_load();
+	}
+
 	if (bmode || fmode) {
 		bdl_list = str_db_sort(bdl_db, bdl_num);
 		dl_num = bdl_num;
@@ -192,7 +213,7 @@ dl_list(void)
 
 	if (!dl_num) {
 		printerr(NULL, "List empty");
-		return;
+		goto ret0;
 	}
 
 	standendc(wlist);
@@ -368,6 +389,10 @@ ret:
 	}
 
 	disp_fmode();
+ret0:
+#if defined(TRACE)
+	fprintf(debug, "<-dl_list\n");
+#endif
 }
 
 static void

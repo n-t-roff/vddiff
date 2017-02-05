@@ -101,8 +101,13 @@ main(int argc, char **argv)
 
 		l = strlen(s);
 		memcpy(lbuf, s, l);
+#if 0
 		snprintf(lbuf + l, BUF_SIZE - l, "%lu",
 		    (unsigned long)getuid());
+#else
+		snprintf(lbuf + l, BUF_SIZE - l, "%lu_%lu",
+		    (unsigned long)getuid(), (unsigned long)getpid());
+#endif
 
 		if (!(debug = fopen(lbuf, "w"))) {
 			printf("fopen \"%s\": %s\n", lbuf, strerror(errno));
@@ -354,7 +359,6 @@ main(int argc, char **argv)
 
 	pwd  = syspth[0] + pthlen[0];
 	rpwd = syspth[1] + pthlen[1];
-	info_load();
 	info_load();
 	build_ui();
 

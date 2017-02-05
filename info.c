@@ -57,11 +57,15 @@ info_load(void)
 	FILE *fh;
 	int lh;
 
+#if defined(TRACE)
+	fprintf(debug, "->info_load\n");
+#endif
+
 	if (!info_tpth) { /* proc only once */
 		size_t l;
 
 		if (!(info_tpth = add_home_pth(info_name))) {
-			return;
+			goto ret;
 		}
 
 		l = strlen(info_tpth); /* .vddiffinfo.new */
@@ -74,17 +78,17 @@ info_load(void)
 	}
 
 	if ((lh = create_flock(info_lpth)) == -1) {
-		return;
+		goto ret;
 	}
 
 	/* save mtime at read time */
 	if (stat_info_pth() == -1) {
-		goto ret;
+		goto unlock;
 	}
 
 	if (!(fh = fopen(info_pth, "r"))) {
 		printerr(strerror(errno), "fopen \"%s\"", info_pth);
-		goto ret;
+		goto unlock;
 	}
 
 	while (fgets(lbuf, BUF_SIZE, fh)) {
@@ -103,8 +107,12 @@ info_load(void)
 		printerr(strerror(errno), "fclose \"%s\"", info_pth);
 	}
 
-ret:
+unlock:
 	remove_flock(lh);
+ret:
+#if defined(TRACE)
+	fprintf(debug, "<-info_load\n");
+#endif
 }
 
 static int
@@ -230,7 +238,11 @@ stat_info_pth(void)
 	}
 
 	t = gstat[0].st_mtim.tv_sec;
-	r = info_mtime && info_mtime != t;
+	r = info_mtime && info_mtime != t ? 1 : 0;
+#if defined(TRACE)
+	fprintf(debug, "<>stat_info_pth(saved_time=%lu file_time=%lu): %d\n",
+	    info_mtime, t, r);
+#endif
 	info_mtime = t;
 	return r;
 }
@@ -246,10 +258,14 @@ info_store(void)
 		return;
 	}
 
+#if defined(TRACE)
+	fprintf(debug, "->info_store\n");
+#endif
+
 retest:
 	switch (stat_info_pth()) {
 	case -1:
-		return;
+		goto ret;
 	case 1:
 		info_load();
 		goto retest;
@@ -271,8 +287,9 @@ retest:
 	}
 
 	exec_res_sig(&intr, &quit, &smsk);
+ret:
 #if defined(TRACE)
-	fprintf(debug, "<>info_store pid=%d\n", (int)pid);
+	fprintf(debug, "<-info_store pid=%d\n", (int)pid);
 #endif
 }
 

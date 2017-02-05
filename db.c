@@ -307,8 +307,13 @@ str_db_get_node(void *db)
 char **
 str_db_sort(void *db, unsigned long n)
 {
+	char **r = NULL;
+
+#if defined(TRACE)
+	fprintf(debug, "->str_db_sort(n=%lu)\n", n);
+#endif
 	if (!n) {
-		return NULL;
+		goto ret;;
 	}
 
 	str_list = malloc(sizeof(char *) * n);
@@ -318,7 +323,13 @@ str_db_sort(void *db, unsigned long n)
 #else
 	twalk(db, mk_str_list);
 #endif
-	return str_list;
+	r = str_list;
+
+ret:
+#if defined(TRACE)
+	fprintf(debug, "<-str_db_sort\n");
+#endif
+	return r;
 }
 
 #ifdef HAVE_LIBAVLBST
@@ -342,6 +353,9 @@ mk_str_list(const void *n, const VISIT which, const int depth)
 	switch (which) {
 	case postorder:
 	case leaf:
+#if defined(TRACE)
+		fprintf(debug, "<>mk_str_list set [%u]\n", db_idx);
+#endif
 		str_list[db_idx++] = *(char * const *)n;
 		break;
 	default:
