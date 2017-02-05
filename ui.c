@@ -105,13 +105,12 @@ unsigned listh;
 WINDOW *wlist;
 WINDOW *wstat;
 struct ui_state *ui_stack;
-/* Line scroll enable. Else only full screen is scrolled */
 struct filediff *mark;
 char *gl_mark, *mark_lnam, *mark_rnam;
 static struct history sh_cmd_hist;
 
 #ifdef NCURSES_MOUSE_VERSION
-static void proc_mevent(void);
+static void proc_mevent(int *);
 # if NCURSES_MOUSE_VERSION >= 2
 static void help_mevent(void);
 # endif
@@ -298,8 +297,7 @@ next_key:
 		switch (c) {
 #ifdef NCURSES_MOUSE_VERSION
 		case KEY_MOUSE:
-			c = 0;
-			proc_mevent();
+			proc_mevent(&c);
 			break;
 #endif
 		case 'q':
@@ -1329,6 +1327,7 @@ next_key:
 				/* Already at bottom -> disable "VG" */
 				c = 0;
 			}
+
 			break;
 
 		case CTRL('g'):
@@ -1724,7 +1723,7 @@ help_up(unsigned short n)
 
 #ifdef NCURSES_MOUSE_VERSION
 static void
-proc_mevent(void)
+proc_mevent(int *c)
 {
 	static bool mb;
 
@@ -1779,7 +1778,10 @@ proc_mevent(void)
 
 		if (mevent.bstate & BUTTON3_CLICKED ||
 		    mevent.bstate & BUTTON3_PRESSED) {
+			/* Not key_mmrk() since mouse button must not move
+			 * cursor down! */
 			tgl_mmrk(DB_LST_ITM);
+			*c = 'V'; /* Fake key */
 		} else if (mevent.bstate & BUTTON1_DOUBLE_CLICKED) {
 			action(0, 3, 0, FALSE);
 		}
