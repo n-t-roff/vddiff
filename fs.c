@@ -117,6 +117,7 @@ fs_rename(int tree)
 	struct filediff *f;
 	char *s;
 	size_t l;
+	int ntr = 0;
 
 	fs_error = FALSE;
 	fs_ign_errs = FALSE;
@@ -127,16 +128,20 @@ fs_rename(int tree)
 
 	f = db_list[right_col][top_idx[right_col] + curs[right_col]];
 
-	/* "en" is not allowed if both files are present */
-	if ((tree == 3 && f->type[0] && f->type[1]) ||
-	    (tree == 1 && !f->type[0]) ||
+	if ((tree == 1 && !f->type[0]) ||
 	    (tree == 2 && !f->type[1]))
 		return;
+
+	if (tree == 3 && f->type[0] && f->type[1]) {
+		tree = 1;
+		ntr = 2;
+	}
 
 	if (ed_dialog("Enter new name (<ESC> to cancel):", f->name, NULL, 0,
 	    NULL))
 		return;
 
+ntr:
 	if ((tree & 2) && f->type[1]) {
 		pth1 = syspth[1];
 		len1 = pthlen[1];
@@ -173,6 +178,13 @@ fs_rename(int tree)
 		goto exit;
 	}
 
+	if (ntr) {
+		tree = ntr;
+		ntr = 0;
+		free(s);
+		goto ntr;
+	}
+
 	rebuild_db(0);
 exit:
 	free(s);
@@ -191,6 +203,7 @@ fs_chmod(int tree, long u, int num,
 {
 	struct filediff *f;
 	static mode_t m;
+	int ntr = 0;
 	bool have_mode;
 
 	fs_error = FALSE;
@@ -213,12 +226,16 @@ fs_chmod(int tree, long u, int num,
 	while (num-- && u < (long)db_num[right_col]) {
 		f = db_list[right_col][u++];
 
-		/* "en" is not allowed if both files are present */
-		if ((tree == 3 && f->type[0] && f->type[1]) ||
-		    (tree == 1 && !f->type[0]) ||
+		if ((tree == 1 && !f->type[0]) ||
 		    (tree == 2 && !f->type[1]))
 			continue;
 
+		if (tree == 3 && f->type[0] && f->type[1]) {
+			tree = 1;
+			ntr = 2;
+		}
+
+ntr:
 		if ((tree & 2) && f->type[1]) {
 			if (S_ISLNK(f->type[1]))
 				continue;
@@ -251,6 +268,12 @@ fs_chmod(int tree, long u, int num,
 		if (chmod(pth1, m) == -1) {
 			printerr(strerror(errno), "chmod \"%s\"");
 			goto exit;
+		}
+
+		if (ntr) {
+			tree = ntr;
+			ntr = 0;
+			goto ntr;
 		}
 	}
 
@@ -331,6 +354,7 @@ fs_chown(int tree, int op, long u, int num,
 	struct group *gr;
 	static uid_t uid;
 	static gid_t gid;
+	int ntr = 0;
 	bool have_owner;
 
 	fs_error = FALSE;
@@ -349,12 +373,16 @@ fs_chown(int tree, int op, long u, int num,
 	while (num-- && u < (long)db_num[right_col]) {
 		f = db_list[right_col][u++];
 
-		/* "en" is not allowed if both files are present */
-		if ((tree == 3 && f->type[0] && f->type[1]) ||
-		    (tree == 1 && !f->type[0]) ||
+		if ((tree == 1 && !f->type[0]) ||
 		    (tree == 2 && !f->type[1]))
 			continue;
 
+		if (tree == 3 && f->type[0] && f->type[1]) {
+			tree = 1;
+			ntr = 2;
+		}
+
+ntr:
 		if ((tree & 2) && f->type[1]) {
 			if (S_ISLNK(f->type[1]))
 				continue;
@@ -405,6 +433,12 @@ fs_chown(int tree, int op, long u, int num,
 			    pth1, rbuf);
 			goto exit;
 		}
+
+		if (ntr) {
+			tree = ntr;
+			ntr = 0;
+			goto ntr;
+		}
 	}
 
 	if (!(md & 2)) {
@@ -440,6 +474,7 @@ fs_rm(
 	char *p0, *s[2];
 	size_t l0;
 	struct stat st;
+	int ntr = 0; /* next tree */
 	bool chg = FALSE;
 
 	fs_error = FALSE;
@@ -505,7 +540,7 @@ fs_rm(
 
 	for (; n; n--, u++) {
 
-		/* u is ignored ir nam != NULL or tree == 0 */
+		/* u is ignored if nam != NULL or tree == 0 */
 		if (!fmode && !nam && tree > 0) {
 			if (u >= (long)db_num[0]) {
 				continue;
@@ -530,9 +565,8 @@ fs_rm(
 				/* "dd" is not allowed
 				 * if both files are present */
 				if (f->type[0] && f->type[1]) {
-					printerr(NULL, "File on both sides, "
-					    "use \"dl\" or \"dr\" instead");
-					continue;
+					ntr = 2;
+					tree = 1;
 				}
 
 				if (!f->type[0]) {
@@ -558,6 +592,7 @@ fs_rm(
 			}
 		}
 
+ntr:
 		if (tree == 1) {
 			pth1 = syspth[0];
 			len1 = pthlen[0];
@@ -567,7 +602,7 @@ fs_rm(
 		} else if (!tree) {
 			pth1 = pth2;
 			len1 = strlen(pth2);
-		} else {
+		} else { /* tree < 0 */
 			len1 = strlen(pth1);
 		}
 
@@ -587,7 +622,8 @@ fs_rm(
 		}
 
 		if (!(md & 1) && !m) {
-			if (fs_deldialog(tree < 1 || nam ? y_a_n_txt : y_n_txt,
+			if (fs_deldialog(
+			    tree < 1 || nam || ntr ? y_a_n_txt : y_n_txt,
 			    txt ? txt : "delete",
 			    S_ISDIR(gstat[0].st_mode) ? "directory " : NULL,
 			    pth1)) {
@@ -604,6 +640,12 @@ fs_rm(
 		} else {
 			rm_file();
 		}
+
+		if (ntr) {
+			tree = ntr;
+			ntr = 0;
+			goto ntr;
+		 }
 	}
 
 	if (txt || /* rebuild is done by others */

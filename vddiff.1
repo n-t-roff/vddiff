@@ -13,7 +13,7 @@ LOSS OF USE, DATA OR PROFITS, WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE OR
 OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
 PERFORMANCE OF THIS SOFTWARE.
 ..
-.Dd February 2, 2017
+.Dd February 6, 2017
 .Dt VDDIFF 1
 .Sh NAME
 .Nm @vddiff@
@@ -609,8 +609,8 @@ Copy to other side.
 Copy all files between the cursor and the local mark (inclusive)
 to other side.
 .It Oo Ar n Oc Ns Dq Li dd
-Delete file or directory, which must be present in one tree only.
-(Does not follow symbolic links.)
+Delete file or directory.
+Does not follow symbolic links.
 .Nm
 does not warn if a directory to delete is not empty.
 If
@@ -625,9 +625,8 @@ Delete file or directory in first tree.
 Delete file or directory in second tree.
 (Does not follow symbolic links.)
 .It Dq Li \(aqdd
-Delete all files between the cursor and the local mark (inclusive),
-which must be present in one tree only.
-(Does not follow symbolic links.)
+Delete all files between the cursor and the local mark (inclusive).
+Does not follow symbolic links.
 .It Dq Li \(aqdl
 Delete all files between the cursor and the local mark (inclusive)
 in first tree.
@@ -676,13 +675,13 @@ Create symlinks in right file tree
 to all files between the cursor and the local mark (inclusive)
 in left file tree.
 .It Dq Li en
-Rename file, which must be present in one tree only.
+Rename file.
 .It Dq Li eln
 Rename file in first tree.
 .It Dq Li ern
 Rename file in second tree.
 .It Oo Ar n Oc Ns Dq Li ep
-Change permissions of file, which must be present in one tree only.
+Change permissions of file.
 If following symbolic links is not enabled
 the command is ignored for symbolic links.
 If decimal digit
@@ -696,8 +695,7 @@ Change permissions of file in first tree.
 Change permissions of file in second tree.
 .It Dq Li \(aqep
 Change permissions of
-all files between the cursor and the local mark (inclusive),
-which must be present in one tree only.
+all files between the cursor and the local mark (inclusive).
 .It Dq Li \(aqelp
 Change permissions of
 all files between the cursor and the local mark (inclusive)
@@ -707,7 +705,7 @@ Change permissions of
 all files between the cursor and the local mark (inclusive)
 in second tree.
 .It Oo Ar n Oc Ns Dq Li eu
-Change owner of file, which must be present in one tree only.
+Change owner of file.
 If following symbolic links is not enabled
 the command is ignored for symbolic links.
 Previously entered user names are saved in a history,
@@ -727,8 +725,7 @@ Change owner of file in first tree.
 Change owner of file in second tree.
 .It Dq Li \(aqeu
 Change owner of
-all files between the cursor and the local mark (inclusive)
-which must be present in one tree only.
+all files between the cursor and the local mark (inclusive).
 .It Dq Li \(aqelu
 Change owner of
 all files between the cursor and the local mark (inclusive)
@@ -738,7 +735,7 @@ Change owner of
 all files between the cursor and the local mark (inclusive),
 in second tree.
 .It Oo Ar n Oc Ns Dq Li eg
-Change group of file, which must be present in one tree only.
+Change group of file.
 If following symbolic links is not enabled
 the command is ignored for symbolic links.
 Previously entered group names are saved in a history,
@@ -758,8 +755,7 @@ Change group of file in first tree.
 Change group of file in second tree.
 .It Dq Li \(aqeg
 Change group of
-all files between the cursor and the local mark (inclusive)
-which must be present in one tree only.
+all files between the cursor and the local mark (inclusive).
 .It Dq Li \(aqelg
 Change group of
 all files between the cursor and the local mark (inclusive)
