@@ -323,7 +323,7 @@ main(int argc, char **argv)
 		}
 
 		if (!S_ISDIR(gstat[0].st_mode)) {
-			if (bmode) {
+			if (argc < 2) {
 				tool(syspth[0], NULL, 1, 0);
 			/* check_args() uses stat(), hence type can't
 			 * be symlink */
@@ -338,7 +338,8 @@ main(int argc, char **argv)
 			}
 
 			goto rmtmp;
-		} else if (!S_ISDIR(gstat[1].st_mode)) {
+
+		} else if (argc > 1 && !S_ISDIR(gstat[1].st_mode)) {
 			/* get_arg() already checks for supported
 			 * file types */
 			arg_diff(0);
