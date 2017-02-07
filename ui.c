@@ -244,6 +244,7 @@ ui_ctrl(void)
 	long u;
 	struct filediff *f;
 	bool ns; /* num set */
+	bool us; /* u set */
 
 	while (1) {
 next_key:
@@ -253,7 +254,7 @@ next_key:
 		if (!c) {
 			num = 1;
 			ns = FALSE;
-			u = top_idx[right_col] + curs[right_col];
+			us = FALSE;
 		}
 
 		if ((c = getch()) == ERR)
@@ -292,6 +293,10 @@ next_key:
 			fprintf(debug, "  ui_ctrl: num := %u\n", num);
 #endif
 			goto next_key;
+		}
+
+		if (!us) {
+			u = top_idx[right_col] + curs[right_col];
 		}
 
 		switch (c) {
@@ -786,6 +791,7 @@ next_key:
 
 			anykey();
 			break;
+
 		case 'r':
 #if defined(TRACE)
 			fprintf(debug,
@@ -847,13 +853,13 @@ next_key:
 			}
 
 			break;
+
 		case '<':
-			if (*key != '<')
+			if (*key != '<') {
 				break;
+			}
 
-			c = 0;
-
-			if (fmode && !right_col) {
+			if (bmode || (fmode && !right_col)) {
 				break;
 			}
 
@@ -861,12 +867,14 @@ next_key:
 				goto next_key;
 			}
 
-			break;
-		case '>':
-			if (*key != '>')
-				break;
+			goto save_st;
 
-			if (fmode && right_col) {
+		case '>':
+			if (*key != '>') {
+				break;
+			}
+
+			if (bmode || (fmode && right_col)) {
 				break;
 			}
 
@@ -1257,6 +1265,7 @@ next_key:
 				}
 
 				curs[right_col] = u - top_idx[right_col];
+				us = TRUE;
 			}
 
 			break;

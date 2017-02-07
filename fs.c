@@ -75,6 +75,7 @@ static bool fs_error;
 /* Reset at start of each fs_rm() and fs_cp() */
 /* Has the same meaning as force_fs */
 static bool fs_all;
+static bool fs_none;
 
 void
 fs_mkdir(short tree)
@@ -482,6 +483,7 @@ fs_rm(
 
 	if (!(md & 4)) {
 		fs_all = FALSE;
+		fs_none = FALSE;
 	}
 
 	if (fs_ro()) {
@@ -697,6 +699,7 @@ fs_cp(
 	fs_error = FALSE;
 	fs_ign_errs = FALSE;
 	fs_all = FALSE;
+	fs_none = FALSE;
 
 	if (fs_ro() || !db_num[right_col]) {
 		return 1;
@@ -1242,6 +1245,10 @@ static int
 fs_deldialog(const char *menu, const char *op, const char *typ,
     const char *nam)
 {
+	if (fs_none) {
+		return 1;
+	}
+
 	if (force_fs || fs_all) {
 		return 0;
 	}
@@ -1254,6 +1261,10 @@ fs_deldialog(const char *menu, const char *op, const char *typ,
 
 	case 'y':
 		return 0;
+
+	case 'N':
+		fs_none = TRUE;
+		/* fall through */
 
 	default:
 		return 1;

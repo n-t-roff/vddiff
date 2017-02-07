@@ -39,7 +39,7 @@ PERFORMANCE OF THIS SOFTWARE.
 #include "cplt.h"
 
 const char y_n_txt[] = "'y' yes, 'n' no";
-const char y_a_n_txt[] = "'y' yes, 'a' all, 'n' no";
+const char y_a_n_txt[] = "'y' yes, 'a' all, 'n' no, 'N' none";
 const char ign_txt[] = "'i' ignore errors, <ENTER> continue";
 const char ign_esc_txt[] = "<ENTER> continue, <ESC> cancel, 'i' ignore errors";
 const char any_txt[] = "Press any key to continue";
