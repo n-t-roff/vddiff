@@ -797,7 +797,8 @@ exit:
 	    \
 	    (bmode || fmode || \
 	     ((!noequal || \
-	       f->diff == '!' || S_ISDIR(f->type[0]) || \
+	       f->diff == '!' || \
+	       (S_ISDIR(f->type[0]) && (!recursive || is_diff_dir(f))) || \
 	       (f->type[0] & S_IFMT) != (f->type[1] & S_IFMT)) \
 	      && \
 	      (!real_diff || \
