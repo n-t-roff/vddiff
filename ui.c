@@ -2791,10 +2791,13 @@ set_file_info(struct filediff *f, mode_t m, int *t, short *ct, int *d)
 }
 
 static int
-disp_name(WINDOW *w, int y, int x, int mx, int o, struct filediff *f, int t,
-    short ct, char *l, int d,
-    /* tree--*not* col! */
-    int i)
+disp_name(WINDOW *w, int y, int x, int mx,
+    int o, /* info */
+    struct filediff *f, int t,
+    short ct, /* color_id */
+    char *l,
+    int d, /* diff */
+    int i) /* tree--*not* col! */
 {
 	int j;
 	struct passwd *pw;
@@ -2825,12 +2828,18 @@ disp_name(WINDOW *w, int y, int x, int mx, int o, struct filediff *f, int t,
 		mx -= 13;
 	}
 
-	if (color && !o) {
-		if (ct) {
-			wattron(w, COLOR_PAIR(ct) | A_BOLD);
+	if (!o) {
+		if (!color) {
+			if (d != ' ') {
+				wattron(w, A_BOLD);
+			}
 		} else {
-			/* not attrset, else bold is off */
-			wattron(w, COLOR_PAIR(PAIR_NORMAL));
+			if (ct) {
+				wattron(w, COLOR_PAIR(ct) | A_BOLD);
+			} else {
+				/* not attrset, else bold is off */
+				wattron(w, COLOR_PAIR(PAIR_NORMAL));
+			}
 		}
 	}
 
