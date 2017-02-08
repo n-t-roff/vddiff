@@ -1078,6 +1078,14 @@ diff_db_delete(struct bst_node *n)
  * Diff mode directory list DB *
  *******************************/
 
+#define STRSL(s) \
+	l = strlen(s); \
+	\
+	/* allow "/" (root dir) */ \
+	if (l && --l && s[l] == '/') { \
+		s[l] = 0; \
+	}
+
 /* 0: Was in DB, 1: Now added to DB */
 
 int
@@ -1085,6 +1093,7 @@ ddl_add(char *d1, char *d2)
 {
 	char **da;
 	int rv = 0;
+	size_t l;
 #ifdef HAVE_LIBAVLBST
 	struct bst_node *n;
 	int br;
@@ -1095,6 +1104,9 @@ ddl_add(char *d1, char *d2)
 #if defined(TRACE)
 	fprintf(debug, "->ddl_add(%d:%s,%s)\n", ddl_num, d1, d2);
 #endif
+	STRSL(d1);
+	STRSL(d2);
+
 	da = malloc(sizeof(char *) * 2);
 	*da = strdup(d1);
 	da[1] = strdup(d2);
