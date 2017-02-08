@@ -408,14 +408,15 @@ next_key:
 				break;
 			}
 
-			c = 0;
-
 			if (!db_num[right_col]) {
+				c = 0;
 				no_file();
 				break;
 			}
 
-			action(0, 3, c == '\n' ? 1 : 0, FALSE);
+			action(0, 3, c == '\n' ? 1 : 0 /* act */, FALSE);
+			/* Don't clear {c} above this line, it is read there */
+			c = 0;
 			break;
 
 		case '=':
@@ -626,9 +627,9 @@ next_key:
 		case 'c':
 		case '&':
 		case '^':
-			c = 0;
-
 			if (bmode || fmode) {
+				/* Don't clear {c} above this line! */
+				c = 0;
 				break;
 			}
 
@@ -651,6 +652,8 @@ next_key:
 				break;
 			}
 
+			/* Don't clear {c} above this line! */
+			c = 0;
 			re_sort_list();
 			break;
 
@@ -734,13 +737,13 @@ next_key:
 
 			if (S_ISREG(f->type[0]) && !S_ISREG(f->type[1])) {
 				c = 0;
-				action(0, 1, 0, TRUE);
+				action(0, 1, 0 /* act */, TRUE);
 				break;
 			}
 
 			if (S_ISREG(f->type[1]) && !S_ISREG(f->type[0])) {
 				c = 0;
-				action(0, 2, 0, TRUE);
+				action(0, 2, 0 /* act */, TRUE);
 				break;
 			}
 
@@ -763,12 +766,12 @@ next_key:
 
 			case 'v':
 				c = 0;
-				action(0, 1, 0, TRUE);
+				action(0, 1, 0 /* act */, TRUE);
 				goto next_key;
 
 			case 'o':
 				c = 0;
-				action(0, 1, 0, FALSE);
+				action(0, 1, 0 /* act */, FALSE);
 				goto next_key;
 
 			case 'e':
@@ -853,12 +856,12 @@ next_key:
 
 			case 'v':
 				c = 0;
-				action(0, 2, 0, TRUE);
+				action(0, 2, 0 /* act */, TRUE);
 				goto next_key;
 
 			case 'o':
 				c = 0;
-				action(0, 2, 0, FALSE);
+				action(0, 2, 0 /* act */, FALSE);
 				goto next_key;
 
 			case 'e':
@@ -1272,13 +1275,13 @@ next_key:
 
 			if (S_ISREG(f->type[0]) && !S_ISREG(f->type[1])) {
 				c = 0;
-				action(0, 1, 0, FALSE);
+				action(0, 1, 0 /* act */, FALSE);
 				break;
 			}
 
 			if (S_ISREG(f->type[1]) && !S_ISREG(f->type[0])) {
 				c = 0;
-				action(0, 2, 0, FALSE);
+				action(0, 2, 0 /* act */, FALSE);
 				break;
 			}
 
@@ -1445,8 +1448,6 @@ next_key:
 			/* fall through */
 
 		default:
-			c = 0;
-
 			if (isascii(c) && !iscntrl(c)) {
 				printerr(NULL,
 				    "Invalid input '%c' (type 'h' for help).",
@@ -1456,6 +1457,9 @@ next_key:
 				    "Invalid character code 0x%x"
 				    " (type 'h' for help).", c);
 			}
+
+			/* Don't clear {c} above this line! */
+			c = 0;
 		}
 	}
 
@@ -1887,7 +1891,7 @@ proc_mevent(int *c)
 			*c = 'V'; /* Fake key */
 
 		} else if (mevent.bstate & BUTTON1_DOUBLE_CLICKED) {
-			action(0, 3, 0, FALSE);
+			action(0, 3, 0 /* act */, FALSE);
 		}
 
 # if NCURSES_MOUSE_VERSION >= 2
@@ -1942,8 +1946,8 @@ action(
 	static char *typdif = "Different file type";
 
 #if defined(TRACE)
-	fprintf(debug, "->action(ignext=%d t=%d act=%u raw=%d)\n",
-	    ign_ext, tree, act, raw_cont);
+	fprintf(debug, "->action(ignext=%d t=%d act=%u raw=%d) mark=%d\n",
+	    ign_ext, tree, act, raw_cont, mark ? 1 : 0);
 #endif
 	if (!db_num[right_col])
 		goto out;
