@@ -937,12 +937,6 @@ next_key:
 			goto save_st;
 
 		case 'T':
-			if (!bmode && !fmode && !fs_get_dst(u, 1)) {
-				/* diff mode */
-				/* Don't clear {c} ("Tl", "Tr") */
-				break;
-			}
-
 			if (ui_mv(0, u, num)) {
 				c = 0;
 				goto next_key;
@@ -955,11 +949,6 @@ next_key:
 		case 'U':
 		{
 			unsigned m = 0;
-
-			if (!bmode && !fmode && !fs_get_dst(u, 1)) {
-				/* diff mode */
-				break;
-			}
 
 			switch (c) {
 			case '@': m |= 2; break;

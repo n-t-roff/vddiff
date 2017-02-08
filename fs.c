@@ -680,7 +680,9 @@ ret:
 int /* !0: Error */
 fs_cp(
     /* 0: Auto-detect */
-    int to, long u, int n,
+    int to,
+    long u, /* initial index */
+    int n,
     /* 1: don't rebuild DB */
     /* 2: Symlink instead of copying */
     /* 4: Force */
@@ -754,6 +756,9 @@ fs_cp(
 
 		f = db_list[right_col][u];
 		pthcat(pth1, len1, f->name);
+#if defined(TRACE)
+		fprintf(debug, "  fs_cp path(%s)\n", pth1);
+#endif
 
 		if (fs_stat(pth1, &gstat[0]) == -1) {
 			continue;
