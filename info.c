@@ -82,7 +82,9 @@ info_load(void)
 	}
 
 	/* save mtime at read time */
-	if (stat_info_pth() == -1) {
+	switch (stat_info_pth()) {
+	case -1:
+	case 2:
 		goto unlock;
 	}
 
@@ -222,7 +224,7 @@ remove_flock(int fh)
 	close(fh);
 }
 
-/* -1: Error, 1: time diff, 0: ok */
+/* -1: Error, 0: ok, 1: time diff, 2: ENOENT */
 
 int
 stat_info_pth(void)
@@ -232,7 +234,7 @@ stat_info_pth(void)
 
 	if (stat(info_pth, &gstat[0]) == -1) {
 		if (errno == ENOENT) {
-			return 0;
+			return 2;
 		}
 
 		printerr(strerror(errno), "stat \"%s\"", info_pth);
