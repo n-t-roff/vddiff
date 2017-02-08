@@ -13,7 +13,7 @@ LOSS OF USE, DATA OR PROFITS, WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE OR
 OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
 PERFORMANCE OF THIS SOFTWARE.
 ..
-.Dd February 6, 2017
+.Dd February 8, 2017
 .Dt VDDIFF 1
 .Sh NAME
 .Nm @vddiff@
@@ -608,6 +608,12 @@ Copy to other side.
 .It Dq Li \(aqC
 Copy all files between the cursor and the local mark (inclusive)
 to other side.
+.It Oo Ar n Oc Ns Sq Li U
+Update files:
+Overwrite older files.
+Files with equal modification time and directories are ignored.
+.It Dq Li \(aqU
+Update all files between the cursor and the local mark (inclusive).
 .It Oo Ar n Oc Ns Dq Li dd
 Delete file or directory.
 Does not follow symbolic links.

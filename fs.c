@@ -1298,8 +1298,12 @@ fs_get_dst(long u,
 			if (f->type[1]) {
 				if (!m || !S_ISREG(f->type[0]) ||
 				          !S_ISREG(f->type[1])) {
+
+					/* return 0 */
+
 				} else if (f->mtim[0] < f->mtim[1]) {
 					dst = 1;
+
 				} else if (f->mtim[0] > f->mtim[1]) {
 					dst = 2;
 				}

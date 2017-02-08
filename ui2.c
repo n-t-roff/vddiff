@@ -155,7 +155,7 @@ exec:
 				}
 
 #if defined(TRACE)
-				fprintf(debug, "test_fkey: ->%u x \"%s\"\n",
+				fprintf(debug, "  test_fkey: ->%u x \"%s\"\n",
 				    num, fkey_cmd[i]);
 #endif
 				while (num--) {
@@ -163,7 +163,7 @@ exec:
 					top_idx[right_col]++; /* kludge */
 				}
 #if defined(TRACE)
-				fprintf(debug, "test_fkey: <-\"%s\"\n",
+				fprintf(debug, "  test_fkey: <-\"%s\"\n",
 				    fkey_cmd[i]);
 #endif
 

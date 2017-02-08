@@ -247,6 +247,8 @@ ui_ctrl(void)
 	bool us; /* u set */
 
 	while (1) {
+/* {continue} may be dangerous when a {for} loop is put around the statement
+ * later. */
 next_key:
 		key[1] = *key;
 		*key = c;
@@ -257,8 +259,9 @@ next_key:
 			us = FALSE;
 		}
 
-		if ((c = getch()) == ERR)
-			goto next_key;
+		while ((c = getch()) == ERR) {
+		}
+
 #if defined(TRACE)
 		if (isascii(c) && !iscntrl(c)) {
 			fprintf(debug, "<>getch: '%c'\n", c);
@@ -266,6 +269,7 @@ next_key:
 			fprintf(debug, "<>getch: 0x%x\n", c);
 		}
 #endif
+
 		if (c == '.' && c2 && !*key) {
 			if (!c2) {
 				goto next_key;
@@ -278,7 +282,9 @@ next_key:
 		}
 
 		if (test_fkey(c, num)) {
-			if (nofkeys) {
+			c = 0;
+
+			if (nofkeys) { /* read-only mode active */
 				goto next_key;
 			}
 
@@ -305,20 +311,24 @@ next_key:
 			proc_mevent(&c);
 			break;
 #endif
+
 		case 'q':
 			if (dialog(y_n_txt, NULL,
 			    "Quit " BIN "?") != 'y')
 				break;
 
 			/* fall through */
+
 		case 'Q':
 			return;
+
 		case KEY_DOWN:
 		case 'j':
 		case '+':
 			c = 0;
 			curs_down();
 			break;
+
 		case KEY_UP:
 		case 'k':
 		case '-':
@@ -385,6 +395,7 @@ next_key:
 			}
 
 			/* fall through */
+
 		case KEY_RIGHT:
 			if (*key == '|') {
 				c = *key;
@@ -397,15 +408,16 @@ next_key:
 				break;
 			}
 
+			c = 0;
+
 			if (!db_num[right_col]) {
 				no_file();
-				c = 0;
 				break;
 			}
 
 			action(0, 3, c == '\n' ? 1 : 0, FALSE);
-			c = 0;
 			break;
+
 		case '=':
 			if (*key == '|') {
 				c = *key;
@@ -424,6 +436,7 @@ next_key:
 			c = 0;
 			fmode_cp_pth();
 			break;
+
 		case 'b':
 			c = 0;
 			bindiff();
@@ -441,16 +454,24 @@ next_key:
 			c = 0;
 			page_up();
 			break;
+
 		case CTRL('e'):
+			c = 0;
 			scroll_down(1, FALSE, -1);
 			break;
+
 		case CTRL('y'):
+			c = 0;
 			scroll_up(1, FALSE, -1);
 			break;
+
 		case CTRL('d'):
+			c = 0;
 			scroll_down(listh/2, TRUE, -1);
 			break;
+
 		case CTRL('u'):
+			c = 0;
 			scroll_up(listh/2, TRUE, -1);
 			break;
 
@@ -492,19 +513,23 @@ next_key:
 
 			} else if (*key == 'e') {
 				if (ui_chmod(3, u, num)) {
+					c = 0;
 					goto next_key;
 				}
 
 				goto save_st;
+
 			} else if (key[1] == 'e') {
 				if (*key == 'l') {
 					if (ui_chmod(1, u, num)) {
+						c = 0;
 						goto next_key;
 					}
 
 					goto save_st;
 				} else if (*key == 'r') {
 					if (ui_chmod(2, u, num)) {
+						c = 0;
 						goto next_key;
 					}
 
@@ -576,16 +601,19 @@ next_key:
 
 		case 'n':
 			if (regex_mode) {
-				regex_srch(1);
 				c = 0;
+				regex_srch(1);
 				break;
+
 			} else if (*key == 'e') {
 				fs_rename(3);
 				goto save_st;
+
 			} else if (key[1] == 'e') {
 				if (*key == 'l') {
 					fs_rename(1);
 					goto save_st;
+
 				} else if (*key == 'r') {
 					fs_rename(2);
 					goto save_st;
@@ -598,8 +626,9 @@ next_key:
 		case 'c':
 		case '&':
 		case '^':
+			c = 0;
+
 			if (bmode || fmode) {
-				c = 0;
 				break;
 			}
 
@@ -623,7 +652,6 @@ next_key:
 			}
 
 			re_sort_list();
-			c = 0;
 			break;
 
 		case 'E':
@@ -633,8 +661,10 @@ next_key:
 			break;
 
 		case KEY_RESIZE:
+			c = 0;
 			ui_resize();
 			break;
+
 		case 'P':
 			if (bmode || fmode) {
 				fs_mkdir(right_col ? 2 : 1);
@@ -662,10 +692,12 @@ next_key:
 
 		case KEY_DC:
 			if (ui_dd(3, u, num)) {
+				c = 0;
 				break;
 			}
 
 			goto save_st;
+
 		case 't':
 			switch (*key) {
 			case 'S':
@@ -713,34 +745,43 @@ next_key:
 			}
 
 			break;
+
 		case 'l':
 			switch (*key) {
 			case 'd':
 				if (ui_dd(1, u, num)) {
+					c = 0;
 					goto next_key;
 				}
 
 				goto save_st;
+
 			case 's':
 				c = 0;
 				open_sh(1);
 				goto next_key;
+
 			case 'v':
 				c = 0;
 				action(0, 1, 0, TRUE);
 				goto next_key;
+
 			case 'o':
 				c = 0;
 				action(0, 1, 0, FALSE);
 				goto next_key;
+
 			case 'e':
 				goto next_key;
+
 			case 'P':
+				c = 0;
 				fs_mkdir(1);
 				goto save_st;
 
 			case 'T': /* "Tl" */
 				if (ui_mv(1, u, num)) {
+					c = 0;
 					goto next_key;
 				}
 
@@ -748,6 +789,7 @@ next_key:
 
 			case '@': /* "@l" */
 				if (ui_cp(1, u, num, 2)) {
+					c = 0;
 					goto next_key;
 				}
 
@@ -762,9 +804,6 @@ next_key:
 				c = 0;
 				list_jmrks();
 				goto next_key;
-
-			default:
-				;
 			}
 
 			c = 0;
@@ -801,30 +840,38 @@ next_key:
 			switch (*key) {
 			case 'd':
 				if (ui_dd(2, u, num)) {
+					c = 0;
 					goto next_key;
 				}
 
 				goto save_st;
+
 			case 's':
 				c = 0;
 				open_sh(2);
 				goto next_key;
+
 			case 'v':
 				c = 0;
 				action(0, 2, 0, TRUE);
 				goto next_key;
+
 			case 'o':
 				c = 0;
 				action(0, 2, 0, FALSE);
 				goto next_key;
+
 			case 'e':
 				goto next_key;
+
 			case 'P':
+				c = 0;
 				fs_mkdir(2);
 				goto save_st;
 
 			case 'T': /* "Tr" */
 				if (ui_mv(2, u, num)) {
+					c = 0;
 					goto next_key;
 				}
 
@@ -832,13 +879,11 @@ next_key:
 
 			case '@': /* "@r" */
 				if (ui_cp(2, u, num, 2)) {
+					c = 0;
 					goto next_key;
 				}
 
 				goto save_st;
-
-			default:
-				;
 			}
 
 			if (mark) {
@@ -859,6 +904,8 @@ next_key:
 				break;
 			}
 
+			c = 0;
+
 			if (bmode || (fmode && !right_col)) {
 				break;
 			}
@@ -874,6 +921,8 @@ next_key:
 				break;
 			}
 
+			c = 0;
+
 			if (bmode || (fmode && right_col)) {
 				break;
 			}
@@ -887,10 +936,12 @@ next_key:
 		case 'T':
 			if (!bmode && !fmode && !fs_get_dst(u, 1)) {
 				/* diff mode */
+				/* Don't clear {c} ("Tl", "Tr") */
 				break;
 			}
 
 			if (ui_mv(0, u, num)) {
+				c = 0;
 				goto next_key;
 			}
 
@@ -913,6 +964,7 @@ next_key:
 			}
 
 			if (ui_cp(0, u, num, m)) {
+				c = 0;
 				goto next_key;
 			}
 
@@ -972,10 +1024,12 @@ next_key:
 			c = 0;
 			yank_name(0);
 			break;
+
 		case 'Y':
 			c = 0;
 			yank_name(1);
 			break;
+
 		case '$':
 			c = 0;
 
@@ -991,12 +1045,15 @@ next_key:
 			/* exec_cmd() did likely create or delete files */
 			rebuild_db(0);
 			break;
+
 		case 'e':
 			break;
+
 		case '/':
 			c = 0;
 			ui_srch();
 			break;
+
 		case 'S':
 			if (*key == 'S') {
 				c = 0;
@@ -1010,6 +1067,7 @@ next_key:
 			}
 
 			break;
+
 		case 'u':
 			if (*key == 'A') {
 				c = 0;
@@ -1036,19 +1094,24 @@ next_key:
 
 			} else if (*key == 'e') {
 				if (ui_chown(3, 0, u, num)) {
+					c = 0;
 					goto next_key;
 				}
 
 				goto save_st;
+
 			} else if (key[1] == 'e') {
 				if (*key == 'l') {
 					if (ui_chown(1, 0, u, num)) {
+						c = 0;
 						goto next_key;
 					}
 
 					goto save_st;
+
 				} else if (*key == 'r') {
 					if (ui_chown(2, 0, u, num)) {
+						c = 0;
 						goto next_key;
 					}
 
@@ -1059,6 +1122,7 @@ next_key:
 			c = 0;
 			rebuild_db(0);
 			break;
+
 		case 'g':
 			if (*key == 'A') {
 				c = 0;
@@ -1085,19 +1149,24 @@ next_key:
 
 			} else if (*key == 'e') {
 				if (ui_chown(3, 1, u, num)) {
+					c = 0;
 					goto next_key;
 				}
 
 				goto save_st;
+
 			} else if (key[1] == 'e') {
 				if (*key == 'l') {
 					if (ui_chown(1, 1, u, num)) {
+						c = 0;
 						goto next_key;
 					}
 
 					goto save_st;
+
 				} else if (*key == 'r') {
 					if (ui_chown(2, 1, u, num)) {
+						c = 0;
 						goto next_key;
 					}
 
@@ -1106,6 +1175,7 @@ next_key:
 			}
 
 			break;
+
 		case 's':
 			switch (*key) {
 			case 'A':
@@ -1136,8 +1206,10 @@ next_key:
 			/* Don't clear c here! Else sl and sr won't work! */
 			open_sh(3);
 			break;
+
 		case 'z':
 			break;
+
 		case '.':
 			if (*key == 'z') {
 				c = 0;
@@ -1145,11 +1217,13 @@ next_key:
 			}
 
 			break;
+
 		case 'F':
 			c = 0;
 			followlinks = followlinks ? 0 : 1;
 			rebuild_db(1);
 			break;
+
 		case 'H':
 			c = 0;
 
@@ -1160,6 +1234,7 @@ next_key:
 			curs[right_col] = 0;
 			disp_list(1);
 			break;
+
 		case 'M':
 			c = 0;
 			disp_curs(0);
@@ -1173,6 +1248,7 @@ next_key:
 
 			disp_list(1);
 			break;
+
 		case 'L':
 			c = 0;
 			disp_curs(0);
@@ -1186,6 +1262,7 @@ next_key:
 
 			disp_list(1);
 			break;
+
 		case 'o':
 			if (!db_num[right_col])
 				break;
@@ -1206,6 +1283,7 @@ next_key:
 			}
 
 			break;
+
 		case ':':
 			c = 0;
 
@@ -1217,10 +1295,12 @@ next_key:
 			}
 
 			break;
+
 		case CTRL('l'):
 			c = 0;
 			rebuild_scr();
 			break;
+
 		case 'W':
 			c = 0;
 			wait_after_exec = wait_after_exec ? FALSE : TRUE;
@@ -1250,6 +1330,8 @@ next_key:
 
 			u = top_idx[right_col] + curs[right_col];
 
+			/* Don't clear {c}, else {u} is overwritten */
+
 			if (u <= mark_idx[right_col]) {
 				num = mark_idx[right_col] - u + 1;
 			} else {
@@ -1271,10 +1353,11 @@ next_key:
 			break;
 
 		case '\t':
+			c = 0;
+
 			if (!fmode)
 				break;
 
-			c = 0;
 			disp_curs(0);
 			wnoutrefresh(getlstwin());
 			right_col = right_col ? 0 : 1;
@@ -1285,15 +1368,18 @@ next_key:
 			doupdate();
 			fmode_chdir();
 			break;
+
 		case '|':
 			if (!twocols)
 				c = 0;
 
 			break;
+
 		case CTRL('w'):
 			c = 0;
 			tgl2c(0);
 			break;
+
 		case '#':
 			c = 0;
 			clr_mark();
@@ -1357,7 +1443,10 @@ next_key:
 			}
 
 			/* fall through */
+
 		default:
+			c = 0;
+
 			if (isascii(c) && !iscntrl(c)) {
 				printerr(NULL,
 				    "Invalid input '%c' (type 'h' for help).",
@@ -1367,8 +1456,6 @@ next_key:
 				    "Invalid character code 0x%x"
 				    " (type 'h' for help).", c);
 			}
-
-			c = 0;
 		}
 	}
 
@@ -1449,6 +1536,8 @@ static char *helptxt[] = {
        "'>>		Copy from first to second tree (range cursor...mark)",
        "[<n>]C		Copy to other side",
        "'C		Copy to other side (range cursor...mark)",
+       "[<n>]U		Update file(s)",
+       "'U		Update file(s) (range cursor...mark)",
        "[<n>]dd		Delete file or directory",
        "[<n>]dl		Delete file or directory in first tree",
        "[<n>]dr		Delete file or directory in second tree",
@@ -1743,6 +1832,7 @@ proc_mevent(int *c)
 		movemb(mevent.x);
 
 		if (mevent.bstate & BUTTON1_RELEASED) {
+			*c = 0;
 			mb = FALSE;
 			doresizecols();
 		}
@@ -1751,6 +1841,7 @@ proc_mevent(int *c)
 	}
 
 	if (twocols && (mevent.bstate & BUTTON1_PRESSED) && mevent.x == llstw) {
+		*c = 0;
 		mb = TRUE;
 		mousemask(REPORT_MOUSE_POSITION | BUTTON1_RELEASED, NULL);
 		return;
@@ -1761,6 +1852,8 @@ proc_mevent(int *c)
 	    mevent.bstate & BUTTON1_PRESSED ||
 	    mevent.bstate & BUTTON3_CLICKED ||
 	    mevent.bstate & BUTTON3_PRESSED) {
+
+		*c = 0;
 
 		if (( fmode && mevent.y >= (int)listh) ||
 		    (!fmode && mevent.y >= (int)(db_num[0] - top_idx[0])))
@@ -1787,16 +1880,20 @@ proc_mevent(int *c)
 
 		if (mevent.bstate & BUTTON3_CLICKED ||
 		    mevent.bstate & BUTTON3_PRESSED) {
+
 			/* Not key_mmrk() since mouse button must not move
 			 * cursor down! */
 			tgl_mmrk(DB_LST_ITM);
 			*c = 'V'; /* Fake key */
+
 		} else if (mevent.bstate & BUTTON1_DOUBLE_CLICKED) {
 			action(0, 3, 0, FALSE);
 		}
 
 # if NCURSES_MOUSE_VERSION >= 2
 	} else if (mevent.bstate & BUTTON4_PRESSED) {
+		*c = 0;
+
 		if (fmode) {
 			if (mevent.x < llstw) {
 				scroll_up(3, FALSE, 0);
@@ -1807,6 +1904,8 @@ proc_mevent(int *c)
 			scroll_up(3, FALSE, -1);
 		}
 	} else if (mevent.bstate & BUTTON5_PRESSED) {
+		*c = 0;
+
 		if (fmode) {
 			if (mevent.x < llstw) {
 				scroll_down(3, FALSE, 0);
