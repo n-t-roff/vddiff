@@ -273,8 +273,13 @@ ntr:
 
 		if (ntr) {
 			tree = ntr;
-			ntr = 0;
-			goto ntr;
+
+			if (ntr == 3) {
+				ntr = 0;
+			} else {
+				ntr = 3;
+				goto ntr;
+			}
 		}
 	}
 
@@ -437,8 +442,13 @@ ntr:
 
 		if (ntr) {
 			tree = ntr;
-			ntr = 0;
-			goto ntr;
+
+			if (ntr == 3) {
+				ntr = 0;
+			} else {
+				ntr = 3;
+				goto ntr;
+			}
 		}
 	}
 
@@ -645,9 +655,14 @@ ntr:
 
 		if (ntr) {
 			tree = ntr;
-			ntr = 0;
-			goto ntr;
-		 }
+
+			if (ntr == 3) {
+				ntr = 0;
+			} else {
+				ntr = 3;
+				goto ntr;
+			}
+		}
 	}
 
 	if (txt || /* rebuild is done by others */
