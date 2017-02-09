@@ -527,7 +527,7 @@ cd_home:
 		}
 
 		if (!fn_init(buf)) {
-			free_scan_db(TRUE);
+			free_scan_db(TRUE); /* sets {one_scan} */
 			rebuild_db(1);
 		}
 
@@ -540,7 +540,7 @@ cd_home:
 		}
 
 		if (!gq_init(buf)) {
-			free_scan_db(TRUE);
+			free_scan_db(TRUE); /* sets {one_scan} */
 			rebuild_db(1);
 		}
 

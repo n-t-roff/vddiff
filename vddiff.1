@@ -13,7 +13,7 @@ LOSS OF USE, DATA OR PROFITS, WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE OR
 OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
 PERFORMANCE OF THIS SOFTWARE.
 ..
-.Dd February 8, 2017
+.Dd February 9, 2017
 .Dt VDDIFF 1
 .Sh NAME
 .Nm @vddiff@
@@ -652,16 +652,20 @@ or
 .Sq Li r
 is pressed.
 .It Oo Ar n Oc Ns Dq Li Tl
+Diff mode:
 Move file or directory to left file tree.
 .It Oo Ar n Oc Ns Dq Li Tr
+Diff mode:
 Move file or directory to right file tree.
 .It Dq Li \(aqT
 Move all files between the cursor and the local mark (inclusive)
 to the other file tree.
 .It Dq Li \(aqTl
+Diff mode:
 Move all files between the cursor and the local mark (inclusive)
 to left file tree.
 .It Dq Li \(aqTr
+Diff mode:
 Move all files between the cursor and the local mark (inclusive)
 to right file tree.
 .It Oo Ar n Oc Ns Sq Li @
@@ -677,9 +681,11 @@ or
 .Sq Li r
 is pressed.
 .It Oo Ar n Oc Ns Dq Li @l
+Diff mode:
 Create symbolic link in left file tree
 to file in right file tree.
 .It Oo Ar n Oc Ns Dq Li @r
+Diff mode:
 Create symbolic link in right file tree
 to file in left file tree.
 .It Dq Li \(aq@
@@ -687,10 +693,12 @@ Create symlinks in other column
 to all files between the cursor and the local mark (inclusive)
 in active column.
 .It Dq Li \(aq@l
+Diff mode:
 Create symlinks in left file tree
 to all files between the cursor and the local mark (inclusive)
 in right file tree.
 .It Dq Li \(aq@r
+Diff mode:
 Create symlinks in right file tree
 to all files between the cursor and the local mark (inclusive)
 in left file tree.

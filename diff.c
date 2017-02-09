@@ -56,6 +56,7 @@ static off_t lsiz1, lsiz2;
 short followlinks;
 
 bool one_scan;
+static bool stopscan;
 static bool ign_diff_errs;
 
 /* !0: Error */
@@ -239,6 +240,13 @@ no_tree2:
 		}
 
 		if (scan || qdiff) {
+			if (stopscan ||
+			    ((bmode || fmode) && file_pattern && getch() == '%')) {
+				stopscan = TRUE;
+				closedir(d);
+				goto dir_scan_end;
+			}
+
 			if (S_ISDIR(gstat[0].st_mode) &&
 			    (S_ISDIR(gstat[1].st_mode) || bmode || fmode)) {
 
@@ -534,6 +542,13 @@ right_tree:
 		}
 
 		if (scan) {
+			if (stopscan ||
+			    ((bmode || fmode) && file_pattern && getch() == '%')) {
+				stopscan = TRUE;
+				closedir(d);
+				goto dir_scan_end;
+			}
+
 			if (S_ISDIR(gstat[1].st_mode)) {
 				struct scan_dir *se;
 
@@ -636,9 +651,23 @@ exit:
 static void
 ini_int(void)
 {
-	mvwaddstr(wstat, 0, 0, "Type '%' to disable file compare");
+	const char *s = "Type '%' to disable file compare";
+	const char *s2 = "Type '%' to stop find command";
+
+	nodelay(stdscr, TRUE); /* compare() waits for key */
+
+	if (bmode || fmode) {
+		if (gq_pattern) {
+			/* keep msg */
+		} else if (recursive && find_name) {
+			s = s2;
+		} else {
+			return;
+		}
+	}
+
+	mvwaddstr(wstat, 0, 0, s);
 	wrefresh(wstat);
-	nodelay(stdscr, TRUE);
 }
 
 int
@@ -1018,6 +1047,7 @@ do_scan(void)
 #endif
 	scan = 1;
 	build_diff_db(bmode ? 1 : 3);
+	stopscan = FALSE;
 	scan = 0;
 #if defined(TRACE)
 	fprintf(debug, "<-do_scan\n");
