@@ -464,21 +464,23 @@ parsopt(char *buf)
 {
 	const char dmode_cd_txt[] = "cd not supported in diff mode";
 	char *opt;
-	size_t l;
 	short not;
 	short skip;
 
 #if defined(TRACE)
 	fprintf(debug, "<->parsopt(%s)\n", buf);
 #endif
+	opt = buf + strlen(buf); /* reuse opt */
 
-	if (!(l = strlen(buf))) {
-		return 0;
-	}
+	while (1) {
+		if (opt == buf) {
+			return 0;
+		}
 
-	opt = buf + l; /* reuse opt */
+		if (*--opt != ' ') {
+			break;
+		}
 
-	while (l-- && *--opt == ' ') {
 		*opt = 0;
 	}
 

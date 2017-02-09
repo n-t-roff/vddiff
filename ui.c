@@ -959,7 +959,7 @@ next_key:
 			case '@':
 				if (!bmode && !fmode && !fs_any_dst(u, num)) {
 					/* wait for key 'l' or 'r' */
-					break;
+					goto next_key;
 				}
 
 				m |= 2;
