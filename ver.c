@@ -22,6 +22,6 @@
  * RC<n>:     Test phase.  All features are tested again.  If no test
  *            failes, this will become the release version. */
 
-const char version[] = "1.5.0-pre-alpha "
-	"2017-02-01 11:13"
+const char version[] = "1.5.0-beta "
+	"2017-02-09 15:07"
 	;

@@ -472,7 +472,15 @@ parsopt(char *buf)
 #endif
 	opt = buf + strlen(buf); /* reuse opt */
 
-	while (*--opt == ' ') {
+	while (1) {
+		if (opt == buf) {
+			return 0;
+		}
+
+		if (*--opt != ' ') {
+			break;
+		}
+
 		*opt = 0;
 	}
 
