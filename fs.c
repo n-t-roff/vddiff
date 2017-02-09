@@ -1344,6 +1344,18 @@ ret:
 	return dst;
 }
 
+int /* 0: false, !0: true */
+fs_any_dst(long u, int n)
+{
+	for (; n--; u++) {
+		if (fs_get_dst(u, 0)) {
+			return 1;
+		}
+	}
+
+	return 0;
+}
+
 static int
 fs_stat(const char *p, struct stat *s)
 {

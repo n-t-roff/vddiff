@@ -49,7 +49,7 @@ char *info_pth;
 static char *info_tpth;
 static char *info_lpth;
 pid_t info_pid;
-time_t info_mtime;
+static time_t info_mtime;
 
 void
 info_load(void)
@@ -264,6 +264,7 @@ info_store(void)
 
 #if defined(TRACE)
 	fprintf(debug, "->info_store\n");
+	pid = 0; /* silence warning */
 #endif
 
 retest:

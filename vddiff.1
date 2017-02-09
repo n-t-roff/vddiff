@@ -644,6 +644,13 @@ in second tree.
 .It Oo Ar n Oc Ns Sq Li T
 Move file or directory to the other file tree.
 Does a rename if source and destination directory are the same.
+If used in diff mode it is tested if there is any selected file which
+can be moved automatically (does exist on one side only).
+When there is no such file the tool waits until
+.Sq Li l
+or
+.Sq Li r
+is pressed.
 .It Oo Ar n Oc Ns Dq Li Tl
 Move file or directory to left file tree.
 .It Oo Ar n Oc Ns Dq Li Tr
@@ -662,6 +669,13 @@ Create symbolic link in other column
 to selected file in active column.
 Asks for a name for the link
 if source and destination directory are the same.
+If used in diff mode it is tested if there is any selected file which
+does exist on one side only.
+When there is no such file the tool waits until
+.Sq Li l
+or
+.Sq Li r
+is pressed.
 .It Oo Ar n Oc Ns Dq Li @l
 Create symbolic link in left file tree
 to file in right file tree.

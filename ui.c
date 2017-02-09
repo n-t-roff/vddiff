@@ -937,6 +937,11 @@ next_key:
 			goto save_st;
 
 		case 'T':
+			if (!bmode && !fmode && !fs_any_dst(u, num)) {
+				/* wait for key 'l' or 'r' */
+				break;
+			}
+
 			if (ui_mv(0, u, num)) {
 				c = 0;
 				goto next_key;
@@ -951,8 +956,18 @@ next_key:
 			unsigned m = 0;
 
 			switch (c) {
-			case '@': m |= 2; break;
-			case 'U': m |= 8; break;
+			case '@':
+				if (!bmode && !fmode && !fs_any_dst(u, num)) {
+					/* wait for key 'l' or 'r' */
+					break;
+				}
+
+				m |= 2;
+				break;
+
+			case 'U':
+				m |= 8;
+				break;
 			}
 
 			if (ui_cp(0, u, num, m)) {
@@ -3842,11 +3857,17 @@ enter_dir(char *name, char *rnam, bool lzip, bool rzip, short tree
 
 		} else if (fmode) {
 			if (tree == 1) {
+#if defined(TRACE)
+				fprintf(debug, "  set fpath\n");
+#endif
 				fpath = strdup(syspth[1]);
 				fpath[pthlen[1]] = 0;
 				memcpy(syspth[1], syspth[0], pthlen[0]+1);
 				pthlen[1] = pthlen[0];
 			} else if (tree == 2) {
+#if defined(TRACE)
+				fprintf(debug, "  set fpath\n");
+#endif
 				fpath = strdup(syspth[0]);
 				fpath[pthlen[0]] = 0;
 				memcpy(syspth[0], syspth[1], pthlen[1]+1);

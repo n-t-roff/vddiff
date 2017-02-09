@@ -174,6 +174,9 @@ restore_fmode(void)
 			pthlen[1] = l;
 		}
 
+#if defined(TRACE)
+		fprintf(debug, "  free fpath\n");
+#endif
 		free(fpath);
 		fpath = NULL;
 	}
@@ -248,7 +251,8 @@ tgl2c(
 
 #if defined(TRACE)
 	fprintf(debug, "->tgl2c(%u) lp(%s) rp(%s) bm=%u fm=%u 2c=%u\n",
-	    md, syspth[0], syspth[1], bmode ? 1 : 0, fmode ? 1 : 0, twocols ? 1 : 0);
+	    md, syspth[0], syspth[1], bmode ? 1 : 0, fmode ? 1 : 0,
+	    twocols ? 1 : 0);
 #endif
 	if (bmode) { /* -> fmode */
 		bool sc = one_scan;
@@ -275,6 +279,9 @@ tgl2c(
 			rebuild_db(0);
 		} else {
 			if (fpath) {
+#if defined(TRACE)
+				fprintf(debug, "  free fpath\n");
+#endif
 				free(fpath);
 				fpath = NULL;
 			}
@@ -298,6 +305,10 @@ tgl2c(
 
 		/* not relevant for 1C -> bmode */
 		if (!(md & 1)) {
+#if defined(TRACE)
+			fprintf(debug, "  set fpath\n");
+#endif
+
 			if (right_col) {
 				fpath = strdup(syspth[0]);
 				old_top_idx = top_idx[0];
