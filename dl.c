@@ -263,18 +263,6 @@ dl_list(void)
 			c = 0;
 			/* fall through */
 
-		case 'H':
-			dl_2top();
-			break;
-
-		case 'M':
-			dl_2mid();
-			break;
-
-		case 'L':
-			dl_2bot();
-			break;
-
 		case KEY_DC:
 			del = TRUE;
 			dl_del();
@@ -289,6 +277,18 @@ dl_list(void)
 		case '\n':
 			act = TRUE;
 			goto ret;
+
+		case 'H':
+			dl_2top();
+			break;
+
+		case 'M':
+			dl_2mid();
+			break;
+
+		case 'L':
+			dl_2bot();
+			break;
 
 		case '/':
 			dl_regcomp();
