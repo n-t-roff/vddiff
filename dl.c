@@ -174,7 +174,10 @@ dl_del(void)
 		ddl_num--;
 	}
 
-	dl_num--;
+	if (!--dl_num) {
+		dl_pos = 0;
+		return;
+	}
 
 	for (i = dl_pos; i < dl_num; i++) {
 		if (bmode || fmode) {
@@ -184,22 +187,12 @@ dl_del(void)
 		}
 	}
 
-	wmove(wlist, dl_pos, 0);
-	wdeleteln(wlist);
-
-	if (dl_num) {
-		if (dl_pos >= dl_num) {
-			dl_up(1);
-		} else {
-			dl_curs(1);
-
-			if (dl_top + listh - 1 < dl_num) {
-				dl_line(listh - 1, dl_top + listh - 1);
-			}
-		}
+	if (dl_pos == dl_num) {
+		dl_pos--;
 	}
 
-	wrefresh(wlist);
+	/* Instead of wdeleteln() to correct indices */
+	dl_disp();
 }
 
 void
