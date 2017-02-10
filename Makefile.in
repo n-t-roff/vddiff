@@ -12,7 +12,7 @@ DEBUG=	#-DDEBUG
 STRP=	-s
 
 OBJ=	main.o pars.o lex.o diff.o ui.o db.o exec.o fs.o ed.o uzp.o ver.o \
-	ui2.o gq.o tc.o info.o dl.o cplt.o
+	ui2.o gq.o tc.o info.o dl.o cplt.o misc.o
 YFLAGS=	-d
 _CFLAGS=$(CFLAGS) $(CPPFLAGS) $(DEFINES) $(INCDIR_CURSES) -I$(INCDIR) \
 	$(__CDBG) $(__CLDBG) $(TRACE) $(DEBUG) -DBIN='"$(BIN)"'

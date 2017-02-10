@@ -22,6 +22,7 @@ PERFORMANCE OF THIS SOFTWARE.
 #include <sys/stat.h>
 #include <regex.h>
 #include <signal.h>
+#include <ctype.h>
 #include "compat.h"
 #include "dl.h"
 #include "main.h"
@@ -34,6 +35,7 @@ PERFORMANCE OF THIS SOFTWARE.
 #include "db.h"
 #include "info.h"
 #include "ed.h"
+#include "misc.h"
 
 static void dl_disp(void);
 static void dl_line(unsigned, unsigned);
@@ -61,6 +63,7 @@ static int dl_mevent(void);
 
 unsigned bdl_num, ddl_num;
 static unsigned dl_num;
+static int dl_wnum;
 static unsigned bdl_top, ddl_top, dl_top;
 static unsigned bdl_pos, ddl_pos, dl_pos;
 static char **bdl_list;
@@ -203,6 +206,7 @@ void
 dl_list(void)
 {
 	int c, c1;
+	unsigned num;
 	bool del = FALSE;
 	bool act = FALSE;
 
@@ -232,13 +236,35 @@ dl_list(void)
 	}
 
 	standendc(wlist);
+	dl_wnum = getuwidth(dl_num) + 1;
 	dl_disp();
 	c = c1 = 0;
 
 	while (1) {
+		if (c < '0' || c > '9') {
+			num = 0;
+		}
+
 		c1 = c;
 
-		switch (c = getch()) {
+		while ((c = getch()) == ERR) {
+		}
+
+#if defined(TRACE)
+		if (isascii(c) && !iscntrl(c)) {
+			fprintf(debug, "<>getch: '%c' num=%u\n", c, num);
+		} else {
+			fprintf(debug, "<>getch: 0x%x num=%u\n", c, num);
+		}
+#endif
+
+		if (c >= '0' && c <= '9') {
+			num = num * 10;
+			num += c - '0';
+			continue;
+		}
+
+		switch (c) {
 #ifdef NCURSES_MOUSE_VERSION
 		case KEY_MOUSE:
 			if (dl_mevent() == 1) {
@@ -280,12 +306,21 @@ dl_list(void)
 			break;
 
 		case 'G':
-			if (c1 != '1') {
+			if (!num) {
 				dl_last();
 				break;
 			}
 
-			c = 0;
+			if (num > dl_num) {
+				break;
+			}
+
+			if (num > 1) {
+				dl_pos = num - 1;
+				act = TRUE;
+				goto ret;
+			}
+
 			/* fall through */
 
 		case KEY_HOME:
@@ -299,18 +334,6 @@ dl_list(void)
 
 			c = 0;
 			/* fall through */
-
-		case 'H':
-			dl_2top();
-			break;
-
-		case 'M':
-			dl_2mid();
-			break;
-
-		case 'L':
-			dl_2bot();
-			break;
 
 		case KEY_DC:
 			del = TRUE;
@@ -326,6 +349,18 @@ dl_list(void)
 		case '\n':
 			act = TRUE;
 			goto ret;
+
+		case 'H':
+			dl_2top();
+			break;
+
+		case 'M':
+			dl_2mid();
+			break;
+
+		case 'L':
+			dl_2bot();
+			break;
 
 		case '/':
 			dl_regcomp();
@@ -355,9 +390,6 @@ dl_list(void)
 		case CTRL('l'):
 			endwin();
 			refresh();
-			break;
-
-		case '1':
 			break;
 
 		default:
@@ -433,11 +465,13 @@ dl_disp(void)
 static void
 dl_line(unsigned y, unsigned i)
 {
+	mvwprintw(wlist, y, 0, "%u", i + 1);
+
 	if (bmode || fmode) {
-		wmove(wlist, y, 0);
+		wmove(wlist, y, dl_wnum);
 		putmbsra(wlist, bdl_list[i], 0);
 	} else {
-		wmove(wlist, y, 0);
+		wmove(wlist, y, dl_wnum);
 		putmbsra(wlist, ddl_list[i][0], llstw);
 		wmove(wlist, y, rlstx);
 		putmbsra(wlist, ddl_list[i][1], 0);
@@ -611,6 +645,22 @@ dl_last(void)
 
 	dl_disp();
 }
+
+#if 0 /* currently not needed */
+static void
+dl_go(unsigned i)
+{
+	if (i < dl_top || i >= dl_top + listh) {
+		dl_center(i);
+		return;
+	}
+
+	dl_curs(0);
+	dl_pos = i;
+	dl_curs(1);
+	wrefresh(wlist);
+}
+#endif
 
 static void
 dl_curs(unsigned m)

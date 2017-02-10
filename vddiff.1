@@ -13,7 +13,7 @@ LOSS OF USE, DATA OR PROFITS, WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE OR
 OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
 PERFORMANCE OF THIS SOFTWARE.
 ..
-.Dd February 9, 2017
+.Dd February 10, 2017
 .Dt VDDIFF 1
 .Sh NAME
 .Nm @vddiff@
@@ -385,20 +385,28 @@ This is currently only supported if two arguments are given.
 .El
 .Sh INTERACTIVE COMMANDS
 .Bl -tag -width 12n
-.It Sq Li Q
+.It So Li Q Sc , Dq Li qy
 Quit
 .Nm .
 .It So Li h Sc or Sq Li \&?
 Display help.
-Help mode is left with
-.Sq Li q .
-Keys
-.Aq Cm DOWN ,
-.Aq Cm UP ,
-.Aq Cm PAGE-DOWN ,
-and
-.Aq Cm PAGE-UP
-are used for scrolling in help mode.
+In help mode the following inputs are valid:
+.Bl -tag -width 12n
+.It So Li q Sc , Aq Cm LEFT
+Leave help mode.
+.It So Li + Sc , So Li j Sc , Aq Cm DOWN
+Scroll down.
+.It So Li - Sc , So Li k Sc , Aq Cm UP
+Scroll up.
+.It Mouse scroll wheel
+Scroll list.
+.It So Li " " Sc , Aq Cm PAGE-DOWN
+Scroll one screen down.
+.It Ao Cm BACKSPACE Ac , Aq Cm PAGE-UP
+Scroll one screen up.
+.It Aq Cm CTRL-l
+Redraw screen.
+.El
 .It Aq Cm CTRL-l
 Refresh display.
 This may be necessary after another application
@@ -1135,16 +1143,52 @@ Items on this list can be selected later using the
 command.
 .It Dq Li \&Dl
 Show persistent directory list.
-.Aq Cm ENTER
-or
-.Aq Cm RIGHT
-on a list item changes into that directory.
-.Dq Li dd
-or
-.Aq Cm DELETE
-removes a item.
-.Sq Li /
-starts a regex search.
+In this list the following inputs are valid:
+.Bl -tag -width 12n
+.It So Li q Sc , Aq Cm LEFT
+Close directory list.
+.It So Li + Sc , So Li j Sc , Aq Cm DOWN
+Move cursor down.
+.It So Li - Sc , So Li k Sc , Aq Cm UP
+Move cursor up.
+.It So Li " " Sc , Aq Cm PAGE-DOWN
+Scroll one page down.
+.It Ao Cm BACKSPACE Ac , Aq Cm PAGE-UP
+Scroll one page up.
+.It Do Li 1G Dc , Aq Cm HOME
+Go to first line.
+.It So Li G Sc , Aq Cm END
+Go to last line.
+.It Ar n Ns Sq Li G
+Change into directory
+.Ar n .
+.It Ao Cm ENTER Ac , Aq Cm RIGHT
+Change into directory.
+.It Do Li dd Dc , Aq Cm DELETE
+Delete entry.
+.It Mouse button 1
+Select entry.
+.It Mouse button 1 double click
+Change into directory.
+.It Mouse button scroll wheel
+Scroll list.
+.It Sq Li H
+Place cursor in top line.
+.It Sq Li M
+Place cursor in middle line.
+.It Sq Li L
+Place cursor in bottom line.
+.It Sq Li /
+Start regex search.
+.It Sq Li n
+Find next matching pattern.
+.It Sq Li N
+Find previous matching pattern.
+.It Sq Li r
+Finish regex search.
+.It Aq Cm CTRL-l
+Rebuild screen.
+.El
 .It Aq Cm CTRL-g
 Print cursor line number and number of files.
 .It Dq Li \(aq\(aq

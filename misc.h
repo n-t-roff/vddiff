@@ -1,0 +1,1 @@
+int getuwidth(unsigned long);
