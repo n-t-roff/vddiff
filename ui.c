@@ -1041,7 +1041,11 @@ next_key:
 			c = 0;
 
 			if (!ed_dialog("Type command (<ESC> to cancel):",
-			    NULL /* must be NULL !!! */, NULL, 0,
+			    /* Must be NULL (instead of "")
+			     * to not clear buffer.
+			     * Else 'y' would not work. */
+			    NULL,
+			    NULL, 0,
 			    &sh_cmd_hist) && *rbuf) {
 				char *s = rbuf;
 
@@ -1296,7 +1300,11 @@ next_key:
 			c = 0;
 
 			if (!ed_dialog("Enter command:",
-			    NULL /* must be NULL !!! */, complet, 0,
+			    /* "" instead of NULL to start
+			     * with an empty buffer.
+			     * 'y' need not be supported for ':'. */
+			    "",
+			    complet, 0,
 			    &opt_hist)) {
 				if (parsopt(rbuf) == 1)
 					return;
