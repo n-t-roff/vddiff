@@ -484,6 +484,13 @@ parsopt(char *buf)
 		*opt = 0;
 	}
 
+	if (*buf == '!') {
+		buf++;
+		exec_cmd(&buf, TOOL_WAIT | TOOL_NOLIST |
+		    TOOL_TTY | TOOL_SHELL, NULL, NULL);
+		rebuild_db(0);
+	}
+
 	if (!strcmp(buf, "cd")) {
 		char *s;
 

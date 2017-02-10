@@ -1047,10 +1047,11 @@ next_key:
 
 				exec_cmd(&s, TOOL_WAIT | TOOL_NOLIST |
 				    TOOL_TTY | TOOL_SHELL, NULL, NULL);
+				/* exec_cmd() did likely create or
+				 * delete files */
+				rebuild_db(0);
 			}
 
-			/* exec_cmd() did likely create or delete files */
-			rebuild_db(0);
 			break;
 
 		case 'e':
