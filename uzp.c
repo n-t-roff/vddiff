@@ -37,6 +37,7 @@ PERFORMANCE OF THIS SOFTWARE.
 struct pthofs {
 	size_t sys;
 	size_t view;
+	char *vpth;
 	struct pthofs *next;
 };
 
@@ -539,11 +540,13 @@ setpthofs(
 	p = malloc(sizeof(struct pthofs));
 	p->sys = spthofs[i];
 	p->view = vpthofs[i];
+	p->vpth = *fn == '/' ? strdup(vpath[i]) : NULL;
 	p->next = pthofs[i];
 	pthofs[i] = p;
 	/* If we are already in a archive and enter another archive,
 	 * keep the full current vpath and add the archive name. */
-	vpthofs[i] = vpthofs[i] ? strlen(vpath[i]) : pthlen[bmode ? 1 : i];
+	vpthofs[i] = *fn == '/' ? 0 :
+	             vpthofs[i] ? strlen(vpath[i]) : pthlen[bmode ? 1 : i];
 	spthofs[i] = strlen(tn);
 	l = strlen(fn);
 
@@ -551,7 +554,10 @@ setpthofs(
 		vpath[i] = realloc(vpath[i], vpthsz[i] <<= 1);
 	}
 
-	vpath[i][vpthofs[i]++] = '/';
+	if (!(*fn == '/')) {
+		vpath[i][vpthofs[i]++] = '/';
+	}
+
 	memcpy(vpath[i] + vpthofs[i], fn, l);
 	vpath[i][vpthofs[i] += l] = '/';
 	vpath[i][vpthofs[i]] = 0;
@@ -591,5 +597,11 @@ respthofs(int i)
 	pthofs[i] = p->next;
 	spthofs[i] = p->sys;
 	vpthofs[i] = p->view;
+
+	if (p->vpth) {
+		memcpy(vpath[i], p->vpth, strlen(p->vpth) + 1);
+		free(p->vpth);
+	}
+
 	free(p);
 }
