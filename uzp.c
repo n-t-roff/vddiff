@@ -217,19 +217,23 @@ unpack(const struct filediff *f, int tree, char **tmp,
     int type)
 {
 	enum uz_id id;
-	struct filediff *z;
+	struct filediff *z = NULL;
 	int i;
 	char *s;
 
+#if defined(TRACE)
+	fprintf(debug, "->unpack(f->name=%s, tree=%d)\n", f->name, tree);
+#endif
+
 	if ((tree == 1 && !S_ISREG(f->type[0])) ||
 	    (tree == 2 && !S_ISREG(bmode ? f->type[0] : f->type[1])))
-		return NULL;
+		goto ret;
 
 	s = f->name ? f->name : bmode ? gl_mark : tree == 1 ? mark_lnam :
 	    mark_rnam;
 
 	if ((id = check_ext(s, &i)) == UZ_NONE)
-		return NULL;
+		goto ret;
 
 	switch (id) {
 	/* all archive types */
@@ -240,7 +244,7 @@ unpack(const struct filediff *f, int tree, char **tmp,
 	case UZ_ZIP:
 	case UZ_TAR_Z:
 		if (!(type & 1)) {
-			return NULL;
+			goto ret;
 		}
 
 		/* fall through */
@@ -249,7 +253,7 @@ unpack(const struct filediff *f, int tree, char **tmp,
 	}
 
 	if (mktmpdirs())
-		return NULL;
+		goto ret;
 
 	switch (id) {
 	case UZ_GZ:
@@ -291,10 +295,15 @@ unpack(const struct filediff *f, int tree, char **tmp,
 	default:
 		rmtmpdirs(tmp_dir, TOOL_NOLIST |
 		    (type & 2 ? TOOL_NOCURS : 0));
-		return NULL;
+		goto ret;
 	}
 
 	*tmp = tmp_dir;
+ret:
+#if defined(TRACE)
+	fprintf(debug, "<-unpack: z->name=%s *tmp=%s\n",
+	    z ? z->name : "", *tmp);
+#endif
 	return z;
 }
 
@@ -345,7 +354,7 @@ zcat(const char *cmd, const struct filediff *f, int tree, int i)
 	struct stat st;
 
 	l = 20;
-	s = zpths(f, &z, tree, &l, i, 1);
+	s = zpths(f, &z, tree, &l, i, 3);
 	snprintf(s, l, "%s %s > %s", cmd, lbuf, rbuf);
 	s2 = strdup(rbuf); /* altered by exec_cmd() */
 	exec_cmd(&s, TOOL_SHELL, NULL, NULL);

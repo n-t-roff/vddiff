@@ -1147,6 +1147,9 @@ anykey(void)
 void
 free_zdir(struct filediff *z, char *t)
 {
+#if defined(TRACE)
+	fprintf(debug, "<>free_zdir(z->name=%s, t=%s)\n", z->name, t);
+#endif
 	free(z->name);
 	free(z);
 
