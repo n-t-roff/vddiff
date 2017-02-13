@@ -1621,6 +1621,8 @@ static char *helptxt[] = {
        "v		View raw file contents",
        "vl		View raw left file contents",
        "vr		View raw right file contents",
+       ":!<shell command>",
+       "		Enter shell command",
        ":cd		bmode, fmode: Change to home directory",
        ":cd <path>	bmode, fmode: Change to directory <path>",
        ":e, :edit	Enable write operations and function keys",
@@ -1971,11 +1973,17 @@ action(
 	fprintf(debug, "  f1->name(%s)\n", f1->name);
 #endif
 	if (mark && act) {
-		struct filediff *m, *m0;
+		struct filediff *m;
 		mode_t ltyp = 0, rtyp = 0;
-		char *lnam, *rnam;
+		char *lnam, *rnam, *mnam;
 
-		m0 = m = mark;
+		m = mark;
+
+		mnam = m->name ? m->name :
+		       bmode ? gl_mark :
+		       m->type[0] ? mark_lnam :
+		       m->type[1] ? mark_rnam :
+		       "<error>" ;
 
 		if (!ign_ext) {
 			/* check if mark needs to be unzipped */
@@ -2075,7 +2083,7 @@ action(
 
 			} else if (!S_ISDIR(rtyp)) {
 				if (z1) {
-					setpthofs(0, m0->name, z1->name);
+					setpthofs(0, mnam, z1->name);
 				}
 
 				enter_dir(lnam             , NULL,
@@ -2085,7 +2093,7 @@ action(
 				push_scan_db(TRUE);
 
 				if (z1) {
-					setpthofs(0, m0->name, z1->name);
+					setpthofs(0, mnam, z1->name);
 				}
 
 				if (z2) {

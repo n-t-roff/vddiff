@@ -931,8 +931,9 @@ proc_dir(void)
 		errno = 0;
 
 		if (!(ent = readdir(d))) {
-			if (!errno)
+			if (!errno) {
 				break;
+			}
 
 			pth1[len1] = 0;
 			printerr(strerror(errno), "readdir %s failed", pth1);
@@ -950,10 +951,11 @@ proc_dir(void)
 		pthcat(pth1, len1, name);
 
 		/* fs_rm does never follow links! */
-		if (followlinks && tree_op != TREE_RM)
+		if (followlinks && tree_op != TREE_RM) {
 			i =  stat(pth1, &gstat[0]);
-		else
+		} else {
 			i = lstat(pth1, &gstat[0]);
+		}
 
 		if (i == -1) {
 			if (errno != ENOENT) {
@@ -961,17 +963,18 @@ proc_dir(void)
 				    LOCFMT "stat %s" LOCVAR, pth1);
 				goto closedir;
 			}
+
 			continue; /* deleted after readdir */
 		}
 
 		if (S_ISDIR(gstat[0].st_mode)) {
 			struct str_list *se = malloc(sizeof(struct str_list));
 			se->s = strdup(name);
-			se->next = dirs ? dirs : NULL;
+			se->next = dirs;
 			dirs = se;
-		} else if (tree_op == TREE_RM)
+		} else if (tree_op == TREE_RM) {
 			rm_file();
-		else {
+		} else {
 			pthcat(pth2, len2, name);
 			cp_file();
 		}
@@ -1189,7 +1192,7 @@ test:
 copy:
 	if ((f2 = open(pth2, O_CREAT | O_TRUNC | O_WRONLY,
 	    gstat[0].st_mode & 07777)) == -1) {
-		printerr(strerror(errno), "create %s", pth2);
+		printerr(strerror(errno), "create \"%s\"", pth2);
 		return -1;
 	}
 
@@ -1197,13 +1200,13 @@ copy:
 		goto setattr;
 
 	if ((f1 = open(pth1, O_RDONLY)) == -1) {
-		printerr(strerror(errno), "open %s", pth1);
+		printerr(strerror(errno), "open \"%s\"", pth1);
 		goto close2;
 	}
 
 	while (1) {
 		if ((l1 = read(f1, lbuf, sizeof lbuf)) == -1) {
-			printerr(strerror(errno), "read %s", pth1);
+			printerr(strerror(errno), "read \"%s\"", pth1);
 			break;
 		}
 
@@ -1211,12 +1214,14 @@ copy:
 			break;
 
 		if ((l2 = write(f2, lbuf, l1)) == -1 && !fs_ign_errs) {
-			fs_fwrap("write %s", pth2, strerror(errno));
+			fs_fwrap("write \"%s\"", pth2, strerror(errno));
 			break;
 		}
 
-		if (l2 != l1)
+		if (l2 != l1) {
+			fs_fwrap("\"%s\"", pth2, "write error");
 			break; /* error */
+		}
 
 		if (l1 < (ssize_t)(sizeof lbuf))
 			break;

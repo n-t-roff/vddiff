@@ -37,15 +37,17 @@ PERFORMANCE OF THIS SOFTWARE.
 struct pthofs {
 	size_t sys;
 	size_t view;
+	char *vpth;
 	struct pthofs *next;
 };
 
 static int mktmpdirs(void);
 static enum uz_id check_ext(char *, int *);
-static struct filediff *zcat(char *, struct filediff *, int, int);
-static struct filediff *tar(char *, struct filediff *, int, int, unsigned);
-static struct filediff *unzip(struct filediff *, int, int, unsigned);
-static char *zpths(struct filediff *, struct filediff **, int, size_t *,
+static struct filediff *zcat(const char *, const struct filediff *, int, int);
+static struct filediff *tar(char *, const struct filediff *, int, int,
+    unsigned);
+static struct filediff *unzip(const struct filediff *, int, int, unsigned);
+static char *zpths(const struct filediff *, struct filediff **, int, size_t *,
     int, int);
 
 char *tmp_dir;
@@ -208,7 +210,7 @@ rmtmpdirs(char *s, tool_flags_t tf)
 }
 
 struct filediff *
-unpack(struct filediff *f, int tree, char **tmp,
+unpack(const struct filediff *f, int tree, char **tmp,
     /* 1: Also unpack files, not just archives */
     /* 2: Non-curses mode */
     /* 4: Always set tmpdir */
@@ -335,7 +337,7 @@ check_ext(char *name, int *pos)
 }
 
 static struct filediff *
-zcat(char *cmd, struct filediff *f, int tree, int i)
+zcat(const char *cmd, const struct filediff *f, int tree, int i)
 {
 	char *s, *s2;
 	size_t l;
@@ -365,7 +367,7 @@ zcat(char *cmd, struct filediff *f, int tree, int i)
 }
 
 static struct filediff *
-tar(char *opt, struct filediff *f, int tree, int i,
+tar(char *opt, const struct filediff *f, int tree, int i,
     /* 1: set tmpdir */
     unsigned m)
 {
@@ -385,7 +387,7 @@ tar(char *opt, struct filediff *f, int tree, int i,
 }
 
 static struct filediff *
-unzip(struct filediff *f, int tree, int i,
+unzip(const struct filediff *f, int tree, int i,
     /* 1: set tmp_dir */
     unsigned m)
 {
@@ -400,7 +402,8 @@ unzip(struct filediff *f, int tree, int i,
 }
 
 static char *
-zpths(struct filediff *f, struct filediff **z2, int tree, size_t *l2, int i,
+zpths(const struct filediff *f, struct filediff **z2, int tree, size_t *l2,
+    int i,
     /* 1: is file, not dir */
     /* 2: keep tmpdir */
     int fn)
@@ -555,11 +558,12 @@ setpthofs(
 	p = malloc(sizeof(struct pthofs));
 	p->sys = spthofs[i];
 	p->view = vpthofs[i];
+	p->vpth = *fn == '/' ? strdup(vpath[i]) : NULL;
 	p->next = pthofs[i];
 	pthofs[i] = p;
 	/* If we are already in a archive and enter another archive,
 	 * keep the full current vpath and add the archive name. */
-	vpthofs[i] = fl & 4 ? 0 :
+	vpthofs[i] = fl & 4 || *fn == '/' ? 0 :
 	             vpthofs[i] ? strlen(vpath[i]) : pthlen[bmode ? 1 : i];
 	spthofs[i] = strlen(tn);
 	l = strlen(fn);
@@ -568,7 +572,7 @@ setpthofs(
 		vpath[i] = realloc(vpath[i], vpthsz[i] <<= 1);
 	}
 
-	if (!(fl & 4)) {
+	if (!((fl & 4) || *fn == '/')) {
 		vpath[i][vpthofs[i]++] = '/';
 	}
 
@@ -611,5 +615,11 @@ respthofs(int i)
 	pthofs[i] = p->next;
 	spthofs[i] = p->sys;
 	vpthofs[i] = p->view;
+
+	if (p->vpth) {
+		memcpy(vpath[i], p->vpth, strlen(p->vpth) + 1);
+		free(p->vpth);
+	}
+
 	free(p);
 }
