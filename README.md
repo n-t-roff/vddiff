@@ -37,6 +37,12 @@ git checkout master
 It is suggested (but not required) to install
 the speed optimized AVL library
 [libavlbst](https://github.com/n-t-roff/libavlbst).
+Further run time dependencies are:
+* `less` for viewing text file contents
+* `vim` for the file diff an merging operation
+(if vim is not installed, `diff`(1) is used)
+* Tools to decompress files and archives:
+`tar`, `gzip`, `bzip2`, `xz` and `unzip`
 
 Some configuration can be done in
 [Makefile.in](https://github.com/n-t-roff/vddiff/blob/master/Makefile.in):

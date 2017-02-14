@@ -244,8 +244,8 @@ stat_info_pth(void)
 	t = gstat[0].st_mtim.tv_sec;
 	r = info_mtime && info_mtime != t ? 1 : 0;
 #if defined(TRACE)
-	fprintf(debug, "<>stat_info_pth(saved_time=%lu file_time=%lu): %d\n",
-	    info_mtime, t, r);
+	fprintf(debug, "<>stat_info_pth(saved_time=%llu file_time=%llu): %d\n",
+	    (unsigned long long)info_mtime, (unsigned long long)t, r);
 #endif
 	info_mtime = t;
 	return r;
