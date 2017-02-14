@@ -13,7 +13,7 @@ LOSS OF USE, DATA OR PROFITS, WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE OR
 OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
 PERFORMANCE OF THIS SOFTWARE.
 ..
-.Dd February 10, 2017
+.Dd February 13, 2017
 .Dt VDDIFF 1
 .Sh NAME
 .Nm @vddiff@
@@ -588,7 +588,7 @@ Show full path.
 Copy from second to first tree.
 If
 .Ar n
-as a number between 2 and 9 (inclusive) is given,
+is given,
 .Ar n
 files starting from the current selection are copied.
 .Pp
@@ -629,9 +629,13 @@ Does not follow symbolic links.
 does not warn if a directory to delete is not empty.
 If
 .Ar n
-as a number between 2 and 9 (inclusive) is given,
+is given,
 .Ar n
 files starting from the current selection are deleted.
+Key
+.Aq Cm DELETE
+can be used instead of the key sequence
+.Dq Li dd .
 .It Oo Ar n Oc Ns Dq Li dl
 Delete file or directory in first tree.
 (Does not follow symbolic links.)
@@ -954,7 +958,7 @@ can be used, as in
 .Pp
 If
 .Ar n
-as a number between 2 and 9 (inclusive) is given,
+is given,
 the command is applied to
 .Ar n
 files starting from the current selection.
