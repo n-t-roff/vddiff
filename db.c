@@ -40,6 +40,7 @@ PERFORMANCE OF THIS SOFTWARE.
 #include "gq.h"
 #include "tc.h"
 #include "dl.h"
+#include "misc.h"
 
 #ifdef HAVE_LIBAVLBST
 static void *db_new(int (*)(union bst_val, union bst_val));
@@ -1108,10 +1109,17 @@ ddl_add(char *d1, char *d2)
 	STRSL(d2);
 
 	da = malloc(sizeof(char *) * 2);
-	*da = strdup(d1);
-	da[1] = strdup(d2);
-#ifdef HAVE_LIBAVLBST
 
+	if (!(*da = msgrealpath(d1))) {
+		da[1] = NULL;
+		goto ret;
+	}
+
+	if (!(da[1] = msgrealpath(d2))) {
+		goto ret;
+	}
+
+#ifdef HAVE_LIBAVLBST
 	if (!(br = bst_srch(&ddl_db, (union bst_val)(void *)da, &n))) {
 		goto ret;
 	}
@@ -1130,6 +1138,7 @@ ddl_add(char *d1, char *d2)
 		goto ret;
 	}
 #endif
+
 ret:
 	if (!rv) {
 		free(*da);

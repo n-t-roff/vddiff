@@ -1,4 +1,15 @@
+#include <string.h>
+#include <errno.h>
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <unistd.h>
+#include <limits.h>
+#include <stdlib.h>
+#include <regex.h>
+#include "compat.h"
 #include "misc.h"
+#include "main.h"
+#include "ui.h"
 
 int
 getuwidth(unsigned long u)
@@ -13,4 +24,16 @@ getuwidth(unsigned long u)
 	else w = 6;
 
 	return w;
+}
+
+char *
+msgrealpath(const char *p)
+{
+	char *s;
+
+	if (!(s = realpath(p, NULL))) {
+		printerr(strerror(errno), LOCFMT "realpath \"%s\"" LOCVAR, p);
+	}
+
+	return s;
 }
