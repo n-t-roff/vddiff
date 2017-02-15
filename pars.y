@@ -15,6 +15,7 @@ OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
 PERFORMANCE OF THIS SOFTWARE.
 */
 
+#include <locale.h>
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <regex.h>
@@ -45,7 +46,7 @@ extern char *yytext;
 %token VIEWTOOL EXT BG FKEY BMODE HISTSIZE SKIPEXT NOIC MAGIC NOWS SCALE
 %token SHELL SH NORMAL_COLOR CURSOR_COLOR ERROR_COLOR MARK_COLOR BG_COLOR
 %token ALIAS TWOCOLUMN READONLY DISP_PERM DISP_OWNER DISP_GROUP DISP_HSIZE
-%token DISP_MTIME MMRK_COLOR
+%token DISP_MTIME MMRK_COLOR LOCALE
 %token <str>     STRING
 %token <integer> INTEGER
 %%
@@ -106,6 +107,14 @@ option:
 	| DISP_GROUP                   { add_group = TRUE;                ; }
 	| DISP_HSIZE                   { add_hsize = TRUE;                ; }
 	| DISP_MTIME                   { add_mtime = TRUE;                ; }
+	| LOCALE STRING {
+			if (!setlocale(LC_ALL, $2)) {
+				printf("locale LC_ALL=%s cannot be set\n",
+				    $2);
+			}
+
+			free($2);
+		}
 	;
 %%
 void

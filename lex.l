@@ -98,6 +98,7 @@ disp_owner	{ rc_col += yyleng; return DISP_OWNER   ; }
 disp_group	{ rc_col += yyleng; return DISP_GROUP   ; }
 disp_hsize	{ rc_col += yyleng; return DISP_HSIZE   ; }
 disp_mtime	{ rc_col += yyleng; return DISP_MTIME   ; }
+locale		{ rc_col += yyleng; return LOCALE       ; }
 include		{ rc_col += yyleng; incl = 1            ; }
 {S}+		{ rc_col += yyleng; }
 
