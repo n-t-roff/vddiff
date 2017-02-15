@@ -644,7 +644,7 @@ next_key:
 				break;
 
 			case '&':
-				nosingle = nosingle ? 0 : 1;
+				nosingle = nosingle ? 0 : 3;
 				break;
 
 			case '^':
@@ -653,7 +653,10 @@ next_key:
 			}
 
 			/* Don't clear {c} above this line! */
-			c = 0;
+			if (c != '&') { /* wait for 'l' or 'r' */
+				c = 0;
+			}
+
 			re_sort_list();
 			break;
 
@@ -807,6 +810,12 @@ next_key:
 				c = 0;
 				list_jmrks();
 				goto next_key;
+
+			case '&': /* "&l" */
+				c = 0;
+				nosingle = 1;
+				re_sort_list();
+				goto next_key;
 			}
 
 			c = 0;
@@ -887,6 +896,12 @@ next_key:
 				}
 
 				goto save_st;
+
+			case '&': /* "&r" */
+				c = 0;
+				nosingle = 2;
+				re_sort_list();
+				goto next_key;
 			}
 
 			if (mark) {
@@ -1529,6 +1544,8 @@ static char *helptxt[] = {
        "!, n		Toggle display of equal files",
        "c		Toggle showing only directories and really different files",
        "&		Toggle display of files which are on one side only",
+       "&l		Hide files which are on left side only",
+       "&r		Hide files which are on right side only",
        "^		Toggle display of files which are in both trees",
        "F		Toggle following symbolic links",
        "E		Toggle file name or file content filter",

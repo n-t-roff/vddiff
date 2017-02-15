@@ -220,7 +220,7 @@ main(int argc, char **argv)
 			noequal = 1;
 			break;
 		case 'o':
-			nosingle = 1;
+			nosingle = 3;
 			break;
 		case 'q':
 			qdiff = TRUE;

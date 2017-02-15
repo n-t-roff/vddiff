@@ -807,7 +807,10 @@ exit:
 	       && (!recursive || is_diff_dir(f)))) \
 	      && \
 	      (!nosingle || \
-	       (f->type[0] && f->type[1])) \
+	        /* no right without left */ \
+	       ((!(nosingle & 2) || f->type[0]) && \
+	        /* no left without right */ \
+	        (!(nosingle & 1) || f->type[1]))) \
 	      && \
 	      (!excl_or || \
 	       (!f->type[0] &&  f->type[1]) || \
