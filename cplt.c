@@ -160,6 +160,9 @@ complet(char *s, int c)
 			continue;
 		}
 
+#if defined(TRACE) && 0
+		fprintf(debug, "  cplt cmp \"%s\", \"%s\"\n", bn, fn);
+#endif
 		if (lb && strncmp(bn, fn, lb)) {
 			continue;
 		}
@@ -169,18 +172,33 @@ complet(char *s, int c)
 		if (!m) {
 			ln = strlen(fn);
 			m  = strdup(fn);
+#if defined(TRACE) && 0
+			fprintf(debug, "  cplt 1st match \"%s\"\n", m);
+#endif
 			continue;
 		}
 
-		while (ln > lb) {
+		/* There is a second matching file */
+		co = FALSE;
+
+		do {
 			if (!strncmp(fn, m, ln)) {
+				/* does also fit but is longer than saved
+				 * string */
+#if defined(TRACE) && 0
+				fprintf(debug,
+				    "  cplt 2nd match \"%s\", %zu\n",
+				    fn, ln);
+#endif
 				break;
 			}
+#if defined(TRACE) && 0
+			fprintf(debug, "  cplt no 2nd match \"%s\", %zu\n",
+			    fn, ln);
+#endif
+		} while (--ln > lb);
 
-			ln--;
-			co = FALSE;
-		}
-
+		/* Not the case when above loop is left with {break} */
 		if (ln == lb) {
 			break;
 		}
@@ -246,14 +264,13 @@ cpltstr(
 			continue;
 		}
 
-		while (mwl > iwl) {
+		co = FALSE;
+
+		do {
 			if (!strncmp(cw, mw, mwl)) {
 				break;
 			}
-
-			mwl--;
-			co = FALSE;
-		}
+		} while (--mwl > iwl);
 
 		if (mwl == iwl) {
 			break;
