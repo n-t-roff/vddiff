@@ -6,6 +6,7 @@
 #include <limits.h>
 #include <stdlib.h>
 #include <regex.h>
+#include <stdarg.h>
 #include "compat.h"
 #include "misc.h"
 #include "main.h"
