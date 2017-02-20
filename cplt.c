@@ -126,6 +126,9 @@ complet(char *s, int c)
 	memcpy(b, dn, ld+1);
 	co = TRUE;
 
+#if defined(TRACE) && 0
+		fprintf(debug, "  cplt opendir \"%s\"\n", b);
+#endif
 	if (!(dh = opendir(b))) {
 		printerr(strerror(errno), "opendir \"%s\"", b);
 		goto free;
@@ -145,19 +148,37 @@ complet(char *s, int c)
 		}
 
 		fn = de->d_name;
-		pthcat(b, ld, fn);
 
-		if (stat(b, &gstat[0]) == -1) {
-			if (errno == ENOENT) {
+		/* Don't use pthcat for "..", it destroys the path.
+		 * "." and ".." are directories, stat(2) is not
+		 * necessary. */
+		if (!(*fn == '.' && (!fn[1] || (fn[1] == '.' && !fn[2])))) {
+#if defined(TRACE) && 0
+			fprintf(debug, "  cplt readdir \"%s\" b(%s)\n", fn, b);
+#endif
+			pthcat(b, ld, fn);
+#if defined(TRACE) && 0
+			fprintf(debug, "  cplt stat \"%s\"\n", b);
+#endif
+
+			if (stat(b, &gstat[0]) == -1) {
+				/* Case: Dead symlink */
+				if (errno == ENOENT) {
+#if defined(TRACE) /* keep! */
+					fprintf(debug,
+					    "  cplt stat \"%s\": %s\n",
+					    b, strerror(errno));
+#endif
+					continue;
+				}
+
+				printerr(strerror(errno), "stat \"%s\"", b);
 				continue;
 			}
 
-			printerr(strerror(errno), "stat \"%s\"", b);
-			continue;
-		}
-
-		if (!S_ISDIR(gstat[0].st_mode)) {
-			continue;
+			if (!S_ISDIR(gstat[0].st_mode)) {
+				continue;
+			}
 		}
 
 #if defined(TRACE) && 0
