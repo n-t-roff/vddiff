@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2016, Carsten Kunze <carsten.kunze@arcor.de>
+Copyright (c) 2016-2017, Carsten Kunze <carsten.kunze@arcor.de>
 
 Permission to use, copy, modify, and/or distribute this software for any
 purpose with or without fee is hereby granted, provided that the above
@@ -84,16 +84,17 @@ int
 uz_init(void)
 {
 	int i;
+	char *s;
 
 	for (i = 0; i < (ssize_t)(sizeof(exttab)/sizeof(*exttab)); i++)
 		uz_db_add(exttab + i);
 
-	if (!(tmpdirbase = getenv("TMPDIR")))
-		tmpdirbase = "/var/tmp";
+	if (!(s = getenv("TMPDIR")))
+		s = "/var/tmp";
 
-	if (!(tmpdirbase = realpath(tmpdirbase, NULL))) {
+	if (!(tmpdirbase = realpath(s, NULL))) {
 		printerr(strerror(errno), LOCFMT
-		    "realpath \"%s\"" LOCVAR, tmpdirbase);
+		    "realpath \"%s\"" LOCVAR, s);
 		return 1;
 	}
 
