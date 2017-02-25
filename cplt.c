@@ -162,18 +162,23 @@ complet(char *s, int c)
 #endif
 
 			if (stat(b, &gstat[0]) == -1) {
+				switch (errno) {
 				/* Case: Dead symlink */
-				if (errno == ENOENT) {
+				case EACCES:
+				case ELOOP:
+				case ENOENT:
 #if defined(TRACE) /* keep! */
 					fprintf(debug,
 					    "  cplt stat \"%s\": %s\n",
 					    b, strerror(errno));
 #endif
 					continue;
-				}
 
-				printerr(strerror(errno), "stat \"%s\"", b);
-				continue;
+				default:
+					printerr(strerror(errno),
+					    "stat \"%s\"", b);
+					continue;
+				}
 			}
 
 			if (!S_ISDIR(gstat[0].st_mode)) {
