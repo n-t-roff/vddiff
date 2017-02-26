@@ -1,3 +1,4 @@
+BIN=	vddiff
 PREFIX=	/usr/local
 BINDIR=	$(PREFIX)/bin
 MANDIR=	$(PREFIX)/share/man
@@ -5,7 +6,6 @@ INCDIR=	$(PREFIX)/include
 LIBDIR=	$(PREFIX)/lib
 # Does also set names of ~/.$(BIN)rc and ~/.$(BIN)info to allow parallel
 # installation of different tool versions.
-BIN=	vddiff
 
 TRACE=	#-DTRACE='"/tmp/.$(BIN)_trace_"'
 DEBUG=	#-DDEBUG
@@ -22,11 +22,13 @@ LDADD=	$(LIB_AVLBST) $(LIBDIR_CURSES) $(LIB_CURSES)
 
 all: $(BIN) $(BIN).1.out
 
-install:
-	[ -d $(BINDIR) ] || mkdir -p $(BINDIR)
+install: $(BINDIR) $(MANDIR)/man1
 	install $(BIN) $(BINDIR)/
-	[ -d $(MANDIR)/man1 ] || mkdir -p $(MANDIR)/man1
 	install -m 644 $(BIN).1.out $(MANDIR)/man1/$(BIN).1
+
+uninstall:
+	rm -f $(BINDIR)/$(BIN)
+	rm -f $(MANDIR)/man1/$(BIN).1
 
 clean:
 	rm -f $(BIN) $(OBJ) y.tab.? *.1.html *.1.pdf \
@@ -34,6 +36,9 @@ clean:
 
 distclean: clean
 	rm -f Makefile config.log compat.h
+
+$(BINDIR) $(MANDIR)/man1:
+	[ -d $@ ] || mkdir -p $@
 
 $(BIN): $(OBJ)
 	$(CC) $(_CFLAGS) $(_LDFLAGS) -o $@ $(OBJ) $(LDADD)
