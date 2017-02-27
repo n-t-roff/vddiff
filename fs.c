@@ -712,20 +712,24 @@ fs_cp(
 	char *tnam;
 	bool m;
 	bool chg = FALSE;
+	bool ofs = FALSE;
 
 	fs_error = FALSE;
 	fs_ign_errs = FALSE;
 	fs_all = FALSE;
 	fs_none = FALSE;
-
-	if (fs_ro() || !db_num[right_col]) {
-		return 1;
-	}
-
 #if defined(TRACE)
 	fprintf(debug, "->fs_cp(to=%d u=%ld n=%d md=%u)\n",
 	    to, u, n, md);
 #endif
+
+	if (fs_ro() || !db_num[right_col]) {
+#if defined(TRACE)
+		fprintf(debug, "  r/o or no entry\n");
+#endif
+		goto ret0;
+	}
+
 	m = n > 1;
 
 	if (!(force_fs && force_multi) && m && !(md & 4)) {
@@ -748,12 +752,29 @@ fs_cp(
 	if (bmode) {
 		memcpy(syspth[0], syspth[1], pthlen[1]);
 		pthlen[0] = pthlen[1];
+	} else if (md & 16) {
+		syspth[0][pthlen[0]] = 0;
+		syspth[1][pthlen[1]] = 0;
+
+		if (fs_stat(syspth[0], &gstat[0]) == -1 ||
+		    fs_stat(syspth[1], &gstat[1]) == -1) {
+#if defined(TRACE)
+			fprintf(debug, "  stat \"%s\", \"%s\" error\n",
+			    syspth[0], syspth[1]);
+#endif
+			goto ret0;
+		}
+
+		ofs = gstat[0].st_dev == gstat[1].st_dev ? TRUE : FALSE;
 	}
 
 	for (; n-- && u < (long)db_num[right_col]; u++) {
 		if (to) {
 			eto = to;
 		} else if (!(eto = fs_get_dst(u, md & 8 ? 1 : 0))) {
+#if defined(TRACE)
+			fprintf(debug, "  dest can't be determined\n");
+#endif
 			continue;
 		}
 
@@ -776,6 +797,9 @@ fs_cp(
 #endif
 
 		if (fs_stat(pth1, &gstat[0]) == -1) {
+#if defined(TRACE)
+			fprintf(debug, "  no source\n");
+#endif
 			continue;
 		}
 
@@ -784,9 +808,29 @@ tpth:
 		pthcat(pth2, len2, tnam);
 		i = fs_stat(pth2, &gstat[1]);
 
-		if (!i && /* from stat */
-		    gstat[0].st_ino == gstat[1].st_ino &&
-		    gstat[0].st_dev == gstat[1].st_dev) {
+		if (i == -1) { /* from stat */
+			if (errno != ENOENT) {
+#if defined(TRACE)
+				fprintf(debug, "  stat error\n");
+#endif
+				continue;
+			}
+
+			if ((md & 16) && ofs) {
+#if defined(TRACE)
+				fprintf(debug, "  Rename \"%s\" -> \"%s\"\n",
+				    pth1, pth2);
+#endif
+				if (rename(pth1, pth2) == -1) {
+					printerr(strerror(errno),
+					    "rename %s -> %s", pth1, pth2);
+				}
+
+				chg = TRUE;
+				continue;
+			}
+		} else if (gstat[0].st_ino == gstat[1].st_ino &&
+		           gstat[0].st_dev == gstat[1].st_dev) {
 			if (ed_dialog("Enter new name (<ESC> to cancel):",
 			    tnam, NULL, 0, NULL) || !*rbuf) {
 				continue;
@@ -822,7 +866,7 @@ tpth:
 			}
 		}
 
-		if (!fs_error && (md & 16)) {
+		if ((md & 16) && !fs_error) {
 			fs_rm(-1, NULL, NULL, 0, 1, 4|3);
 		}
 
@@ -842,6 +886,7 @@ ret:
 		pthlen[0] = 1;
 	}
 
+ret0:
 #if defined(TRACE)
 	fprintf(debug, "<-fs_cp\n");
 #endif
