@@ -634,6 +634,15 @@ Overwrite older files.
 Files with equal modification time and directories are ignored.
 .It Dq Li \(aqU
 Update all files between the cursor and the local mark (inclusive).
+.It Oo Ar n Oc Ns Sq Li X
+Diff mode only:
+Exchange files of first and second file tree.
+Only files marked with differences are exchanged.
+For directories this requires recursive mode (e.g. set with option
+.Fl r ) .
+.It Dq Li \(aqX
+Diff mode only:
+Exchange all files between the cursor and the local mark (inclusive).
 .It Oo Ar n Oc Ns Dq Li dd
 Delete file or directory.
 Does not follow symbolic links.

@@ -703,6 +703,7 @@ fs_cp(
     /* 4: Force */
     /* 8: Sync (update, 'U') */
     /* 16: Move (remove source after copy) */
+    /* 32: Exchange */
     unsigned md)
 {
 	struct filediff *f;
@@ -710,6 +711,7 @@ fs_cp(
 	int r = 1;
 	int eto;
 	char *tnam;
+	static char *tmpnam_ = "." BIN ".X";
 	bool m;
 	bool chg = FALSE;
 	bool ofs = FALSE;
@@ -742,6 +744,7 @@ fs_cp(
 		    "Really %s %d files?",
 		    md &  2 ? "create symlink to" :
 		    md & 16 ? "move"              :
+		    md & 32 ? "exchange"          :
 		              "copy"              ,
 		    n) != 'y') {
 
@@ -752,7 +755,7 @@ fs_cp(
 	if (bmode) {
 		memcpy(syspth[0], syspth[1], pthlen[1]);
 		pthlen[0] = pthlen[1];
-	} else if (md & 16) {
+	} else if (md & (16 | 32)) {
 		syspth[0][pthlen[0]] = 0;
 		syspth[1][pthlen[1]] = 0;
 
@@ -771,18 +774,22 @@ fs_cp(
 	for (; n-- && u < (long)db_num[right_col]; u++) {
 		if (to) {
 			eto = to;
-		} else if (!(eto = fs_get_dst(u, md & 8 ? 1 : 0))) {
+		} else if (!(eto = fs_get_dst(u,
+		    md & 8  ? 1 :
+		    md & 32 ? 2 : 0))) {
 #if defined(TRACE)
 			fprintf(debug, "  dest can't be determined\n");
 #endif
 			continue;
 		}
 
+next_xchg:
 		if (eto == 1) {
 			pth1 = syspth[1];
 			len1 = pthlen[1];
 			pth2 = syspth[0];
 			len2 = pthlen[0];
+		/* At first eto == 3 if md & 32 */
 		} else {
 			pth1 = syspth[0];
 			len1 = pthlen[0];
@@ -803,7 +810,7 @@ fs_cp(
 			continue;
 		}
 
-		tnam = f->name;
+		tnam = ((md & 32) && eto == 3) ? tmpnam_ : f->name;
 tpth:
 		pthcat(pth2, len2, tnam);
 		i = fs_stat(pth2, &gstat[1]);
@@ -816,7 +823,7 @@ tpth:
 				continue;
 			}
 
-			if ((md & 16) && ofs) {
+			if ((md & (16 | 32)) && ofs) {
 #if defined(TRACE)
 				fprintf(debug, "  Rename \"%s\" -> \"%s\"\n",
 				    pth1, pth2);
@@ -827,7 +834,7 @@ tpth:
 				}
 
 				chg = TRUE;
-				continue;
+				goto next;
 			}
 		} else if (gstat[0].st_ino == gstat[1].st_ino &&
 		           gstat[0].st_dev == gstat[1].st_dev) {
@@ -866,11 +873,32 @@ tpth:
 			}
 		}
 
-		if ((md & 16) && !fs_error) {
+		if ((md & (16 | 32)) && !fs_error) {
 			fs_rm(-1, NULL, NULL, 0, 1, 4|3);
 		}
 
 		chg = TRUE;
+
+next:
+		if (md & 32) {
+			char *s;
+
+			if (eto == 3) {
+				eto = 1;
+				goto next_xchg;
+			}
+
+			pthcat(pth1, len1, tmpnam_);
+			s = strdup(pth1);
+			pthcat(pth1, len1, f->name);
+
+			if (rename(s, pth1) == -1) {
+				printerr(strerror(errno),
+				    "rename %s -> %s", s, pth1);
+			}
+
+			free(s);
+		}
 	}
 
 	if (chg && !(md & 1)) {
@@ -1348,6 +1376,7 @@ fs_deldialog(const char *menu, const char *op, const char *typ,
 int
 fs_get_dst(long u,
     /* 1: auto-detect */
+    /* 2: Exchange */
     unsigned m)
 {
 	struct filediff *f;
@@ -1364,7 +1393,9 @@ fs_get_dst(long u,
 
 		f = db_list[0][u];
 
-		if (f->type[0]) {
+		if (m == 2) {
+			dst = f->diff == '!' ? 3 : 0;
+		} else if (f->type[0]) {
 			if (f->type[1]) {
 				if (!m || !S_ISREG(f->type[0]) ||
 				          !S_ISREG(f->type[1])) {
@@ -1395,10 +1426,10 @@ ret:
 }
 
 int /* 0: false, !0: true */
-fs_any_dst(long u, int n)
+fs_any_dst(long u, int n, unsigned m)
 {
 	for (; n--; u++) {
-		if (fs_get_dst(u, 0)) {
+		if (fs_get_dst(u, m)) {
 			return 1;
 		}
 	}

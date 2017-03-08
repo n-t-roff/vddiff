@@ -952,7 +952,7 @@ next_key:
 			goto save_st;
 
 		case 'T':
-			if (!bmode && !fmode && !fs_any_dst(u, num)) {
+			if (!bmode && !fmode && !fs_any_dst(u, num, 0)) {
 				/* wait for key 'l' or 'r' */
 				break;
 			}
@@ -967,12 +967,14 @@ next_key:
 		case '@':
 		case 'C':
 		case 'U':
+		case 'X':
 		{
 			unsigned m = 0;
 
 			switch (c) {
 			case '@':
-				if (!bmode && !fmode && !fs_any_dst(u, num)) {
+				if (!bmode && !fmode && !fs_any_dst(u, num, 0))
+				{
 					/* wait for key 'l' or 'r' */
 					goto next_key;
 				}
@@ -982,6 +984,16 @@ next_key:
 
 			case 'U':
 				m |= 8;
+				break;
+
+			case 'X':
+				if (bmode || fmode || !fs_any_dst(u, num, 2))
+				{
+					c = 0;
+					goto next_key;
+				}
+
+				m |= 32;
 				break;
 			}
 
@@ -1572,6 +1584,8 @@ static char *helptxt[] = {
        "'C		Copy to other side (range cursor...mark)",
        "[<n>]U		Update file(s)",
        "'U		Update file(s) (range cursor...mark)",
+       "[<n>]X		Exchange file(s)",
+       "'X		Exchange file(s) (range cursor...mark)",
        "[<n>]dd		Delete file or directory",
        "[<n>]dl		Delete file or directory in first tree",
        "[<n>]dr		Delete file or directory in second tree",
