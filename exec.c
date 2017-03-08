@@ -438,7 +438,7 @@ exec_cmd(char **av, tool_flags_t flags, char *path, char *msg)
 	    flags & TOOL_NOLIST ? " TOOL_NOLIST" : "",
 	    flags & TOOL_UDSCR ? " TOOL_UDSCR" : "");
 #endif
-	if (!(flags & TOOL_NOCURS)) {
+	if (wstat && !(flags & TOOL_NOCURS)) {
 		erase();
 		refresh();
 		def_prog_mode();
@@ -497,7 +497,7 @@ exec_cmd(char **av, tool_flags_t flags, char *path, char *msg)
 		}
 	}
 
-	if (!(flags & TOOL_NOCURS)) {
+	if (wstat && !(flags & TOOL_NOCURS)) {
 		doupdate();
 	}
 
@@ -507,7 +507,7 @@ exec_cmd(char **av, tool_flags_t flags, char *path, char *msg)
 
 	exec_res_sig(&intr, &quit, &smsk);
 
-	if (!(flags & TOOL_NOCURS)) {
+	if (wstat && !(flags & TOOL_NOCURS)) {
 		if (!(flags & TOOL_UDSCR)) {
 			rebuild_scr();
 		} else if (!(flags & TOOL_NOLIST)) {
