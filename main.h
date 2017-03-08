@@ -41,6 +41,7 @@ extern size_t pthlen[2];
 extern char *pwd, *rpwd, *arg[];
 extern char syspth[2][PATHSIZ], lbuf[BUF_SIZE], rbuf[BUF_SIZE];
 extern regex_t fn_re;
+extern char *printwd;
 extern short recursive, scan;
 extern short nosingle;
 #ifdef TRACE

@@ -71,10 +71,11 @@ static void runs2x(void);
 const char rc_name[] = "." BIN "rc";
 static char *usage_txt =
 "Usage: %s [-u [<RC file>]] [-BbCcdEefgIiklMmNnoqRrVWXy] [-F <pattern>]\n"
-"	[-G <pattern>] [-t <diff_tool>] [-v <view_tool>] [<directory_1>\n"
-"	[<directory_2>]]\n";
-static char *getopt_arg = "BbCcdEeF:fG:gIiklMmNnoqRrt:Vv:WXy";
+"	[-G <pattern>] [-P <last_wd_file>] [-t <diff_tool>] [-v <view_tool>]\n"
+"	[<file or directory 1> [<file or directory 2>]]\n";
+static char *getopt_arg = "BbCcdEeF:fG:gIiklMmNnoP:qRrt:Vv:WXy";
 
+char *printwd;
 bool bmode;
 bool qdiff;
 bool find_name;
@@ -222,6 +223,11 @@ main(int argc, char **argv)
 		case 'o':
 			nosingle = 3;
 			break;
+
+		case 'P':
+			printwd = optarg;
+			break;
+
 		case 'q':
 			qdiff = TRUE;
 			break;
@@ -362,6 +368,10 @@ main(int argc, char **argv)
 	rpwd = syspth[1] + pthlen[1];
 	info_load();
 	build_ui();
+
+	if (printwd) {
+		wr_last_path();
+	}
 
 rmtmp:
 	for (i = 0; i < 2; i++) {

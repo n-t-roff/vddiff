@@ -13,7 +13,7 @@ LOSS OF USE, DATA OR PROFITS, WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE OR
 OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
 PERFORMANCE OF THIS SOFTWARE.
 ..
-.Dd February 15, 2017
+.Dd March 8, 2017
 .Dt VDDIFF 1
 .Sh NAME
 .Nm @vddiff@
@@ -24,6 +24,7 @@ PERFORMANCE OF THIS SOFTWARE.
 .Op Fl BbCcdEefgIiklMmnoqRrVWXy
 .Op Fl F Ar file name pattern
 .Op Fl G Ar file content pattern
+.Op Fl P Ar last wd file
 .Op Fl t Ar diff_tool
 .Op Fl v Ar view_tool
 .Oo
@@ -309,6 +310,13 @@ The tool checks this case and prevents a second invocation.
 This option suppresses the display of equal files.
 .It Fl o
 Hide files which are on one side only.
+.It Fl P Ar last wd file
+Write the last working directory to the specified file.
+With the appropriate scripts (not yet installed with this software),
+this can be used to change the shell working directory to the
+last directory used in fmode or bmode.
+(See
+.Xr mc 1 ) .
 .It Fl q
 Debug option:
 Print differing files and exit (similar to
@@ -385,7 +393,7 @@ This is currently only supported if two arguments are given.
 .El
 .Sh INTERACTIVE COMMANDS
 .Bl -tag -width 12n
-.It So Li Q Sc , Dq Li qy
+.It So Li Q Sc , Do Li qy Dc , Do Li :q Dc , Do Li :qa Dc
 Quit
 .Nm .
 .It So Li h Sc or Sq Li \&?

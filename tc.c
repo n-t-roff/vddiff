@@ -430,6 +430,10 @@ fmode_chdir(void)
 	if (chdir(s) == -1) {
 		printerr(strerror(errno), "chdir \"%s\":", s);
 	}
+
+	if (printwd) {
+		save_last_path(s);
+	}
 }
 
 #ifdef NCURSES_MOUSE_VERSION

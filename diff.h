@@ -25,3 +25,5 @@ size_t pthcat(char *, size_t, const char *);
 int cmp_file(char *, off_t, char *, off_t, unsigned);
 void free_diff(struct filediff *);
 void do_scan(void);
+void save_last_path(char *);
+void wr_last_path(void);

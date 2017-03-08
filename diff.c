@@ -52,6 +52,7 @@ static void ini_int(void);
 
 static struct filediff *diff;
 static off_t lsiz1, lsiz2;
+static char *last_path;
 
 short followlinks;
 
@@ -109,11 +110,19 @@ build_diff_db(
 
 		pthlen[1] = strlen(syspth[1]);
 
+		if (printwd) {
+			save_last_path(syspth[1]);
+		}
+
 		if ((lpt2 = time(NULL)) - lpt) {
 			printerr(NULL, "Reading directory \"%s\"", syspth[1]);
 			lpt = lpt2;
 		}
 	} else if (!qdiff) {
+		if (printwd && fmode && !scan) {
+			save_last_path(syspth[0]);
+		}
+
 		if ((lpt2 = time(NULL)) - lpt) {
 			printerr(NULL, "Reading directory \"%s\"", syspth[0]);
 			lpt = lpt2;
@@ -454,6 +463,10 @@ right_tree:
 		goto dir_scan_end;
 
 	if (!qdiff) {
+		if (printwd && fmode && !scan) {
+			save_last_path(syspth[1]);
+		}
+
 		if ((lpt2 = time(NULL)) - lpt) {
 			printerr(NULL, "Reading directory \"%s\"", syspth[1]);
 			lpt = lpt2;
@@ -684,17 +697,19 @@ scan_subdir(char *name, char *rnam, int tree)
 	}
 
 	if (tree & 1) {
-		if (name)
+		if (name) {
 			pthlen[0] = pthcat(syspth[0], pthlen[0], name);
-		else
+		} else {
 			syspth[0][pthlen[0]] = 0; /* -> syspth[0] = "." */
+		}
 	}
 
 	if (tree & 2) {
-		if (rnam)
+		if (rnam) {
 			pthlen[1] = pthcat(syspth[1], pthlen[1], rnam);
-		else
+		} else {
 			syspth[1][pthlen[1]] = 0; /* fmode_cp_pth() */
+		}
 	}
 
 	i = build_diff_db(tree);
@@ -702,6 +717,59 @@ scan_subdir(char *name, char *rnam, int tree)
 	fprintf(debug, "<-scan_subdir: %d\n", i);
 #endif
 	return i;
+}
+
+/* For performance reasons and since the function is called
+ * conditionally anyway, `printwd` is checked before the function
+ * call and not inside the function. */
+
+void
+save_last_path(char *path)
+{
+#if defined(TRACE)
+	fprintf(debug, "<>save_last_path(%s)\n", path);
+#endif
+
+	if (last_path) {
+		free(last_path);
+	}
+
+	last_path = strdup(path);
+}
+
+void
+wr_last_path(void)
+{
+	int f;
+	size_t l;
+
+	if (!last_path) {
+		return;
+	}
+
+	if ((f = open(printwd, O_WRONLY|O_CREAT|O_TRUNC, 0777)) == -1) {
+		fprintf(stderr, "open \"%s\": %s\n", printwd,
+		    strerror(errno));
+		return;
+	}
+
+#if defined(TRACE)
+	fprintf(debug, "<>wr_last_path \"%s\" to \"%s\" (fh %d)\n",
+	    last_path, printwd, f);
+#endif
+
+	l = strlen(last_path);
+	errno = 0;
+
+	if (write(f, last_path, l) != (ssize_t)l) {
+		fprintf(stderr, "write \"%s\": %s\n", printwd,
+		    errno ? strerror(errno) : "Unkown error");
+	}
+
+	if (close(f) == -1) {
+		fprintf(stderr, "close \"%s\": %s\n", printwd,
+		    strerror(errno));
+	}
 }
 
 static void
