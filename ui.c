@@ -762,7 +762,7 @@ next_key:
 
 				goto save_st;
 
-			case 's':
+			case 's': /* "sl" */
 				c = 0;
 				open_sh(1);
 				goto next_key;
@@ -858,7 +858,7 @@ next_key:
 
 				goto save_st;
 
-			case 's':
+			case 's': /* "sr" */
 				c = 0;
 				open_sh(2);
 				goto next_key;

@@ -620,18 +620,22 @@ open_sh(int tree)
 	struct passwd *pw;
 	char *av[2];
 
-	if (db_num[right_col]) {
-		f = db_list[right_col][top_idx[right_col] + curs[right_col]];
+	/* Provide 's'/"sl"/"sr" functionallity in diff mode */
+	if (!bmode && !fmode && db_num[0]) {
+		f = db_list[0][top_idx[0] + curs[0]];
 
-		if ((tree == 3 && f->type[0] && f->type[1]) ||
-		    (tree == 1 && !f->type[0]) ||
-		    (tree == 2 && !f->type[1]))
+		if (tree == 3 && f->type[0] && f->type[1]) {
+			/* Return to allow input of 'l' or 'r' */
 			return;
+		}
 	}
 
-	if (bmode)
+	if (bmode) {
 		s = syspth[1];
-	else if (tree == 2 || ((tree & 2) && db_num[right_col] && f->type[1])) {
+	} else if (tree == 2 ||
+	    ((tree & 2) &&
+	     ((fmode && right_col) ||
+	      (!fmode && db_num[0] && f->type[1])))) {
 		syspth[1][pthlen[1]] = 0;
 		s = syspth[1];
 	} else {
@@ -639,9 +643,9 @@ open_sh(int tree)
 		s = syspth[0];
 	}
 
-	if (ishell)
+	if (ishell) {
 		*av = ishell;
-	else {
+	} else {
 		if (!(pw = getpwuid(getuid()))) {
 			printerr(strerror(errno), "getpwuid failed");
 			return;
