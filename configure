@@ -1,6 +1,6 @@
 #!/bin/sh
 
-# Copyright (c) 2016, Carsten Kunze <carsten.kunze@arcor.de>
+# Copyright (c) 2016-2017, Carsten Kunze <carsten.kunze@arcor.de>
 #
 # Permission to use, copy, modify, and/or distribute this software for any
 # purpose with or without fee is hereby granted, provided that the above
@@ -455,7 +455,24 @@ EOT
 
 	LIB_AVLBST=""
 }
-check_major_minor () {
+check_major_minor_sysmacros () {
+	check_for "major(3), minor(3) using <sys/sysmacros.h>"
+
+	cat <<EOT >$TMPC
+#include <sys/sysmacros.h>
+int
+main() {
+	(void)major(0);
+	(void)minor(0);
+	return 0;
+}
+EOT
+	gen_mk
+	compile
+	test_result
+}
+
+check_major_minor_types () {
 	check_for "major(3), minor(3)"
 
 	cat <<EOT >$TMPC
@@ -469,8 +486,10 @@ main() {
 EOT
 	gen_mk
 	compile
-	test_result && return
+	test_result
+}
 
+check_major_minor_mkdev () {
 	check_for "major(3), minor(3) using <sys/mkdev.h>"
 
 	cat <<EOT >$TMPC
@@ -485,7 +504,20 @@ main() {
 EOT
 	gen_mk
 	compile
-	test_result && DEFS="$DEFS -DUSE_SYS_MKDEV_H"
+	test_result
+}
+
+check_major_minor () {
+	check_major_minor_sysmacros && {
+		DEFS="$DEFS -DUSE_SYS_SYSMACROS_H"
+		return
+	}
+
+	check_major_minor_types && return
+
+	check_major_minor_mkdev && {
+		DEFS="$DEFS -DUSE_SYS_MKDEV_H"
+	}
 }
 check_lex_buffer () {
 	check_for 'lex buffers'

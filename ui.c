@@ -28,6 +28,9 @@ PERFORMANCE OF THIS SOFTWARE.
 #include <regex.h>
 #include <time.h>
 #include <signal.h>
+#ifdef USE_SYS_SYSMACROS_H
+# include <sys/sysmacros.h>
+#endif
 #ifdef USE_SYS_MKDEV_H
 # include <sys/mkdev.h>
 #endif
@@ -575,9 +578,29 @@ next_key:
 		case 'a':
 			c = 0;
 
-			if (*key == 'D') {
+			switch (*key) {
+			case 'A':
+				add_hsize = TRUE;
+				add_mode = TRUE;
+				add_mtime = TRUE;
+				add_owner = TRUE;
+				add_group = TRUE;
+				disp_fmode();
+				goto next_key;
+
+			case 'D':
 				dl_add();
-				break;
+				goto next_key;
+
+			case 'R':
+				add_bsize = FALSE;
+				add_hsize = FALSE;
+				add_mode = FALSE;
+				add_mtime = FALSE;
+				add_owner = FALSE;
+				add_group = FALSE;
+				disp_fmode();
+				goto next_key;
 			}
 
 			if (bmode) {
@@ -1567,12 +1590,14 @@ static char *helptxt[] = {
        "As		Show file size",
        "At		Show modification time",
        "Au		Show file owner",
+       "Aa		Show mode, owner, group, size, and mtime",
        "Rh		Remove scaled file size column",
        "Rg		Remove file group column",
        "Rp		Remove file mode column",
        "Rs		Remove file size column",
        "Rt		Remove modification time column",
        "Ru		Remove file owner column",
+       "Ra		Remove mode, owner, group, size, and mtime column",
        "p		Show current relative work directory",
        "a		Show command line directory arguments",
        "f		Show full path",

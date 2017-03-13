@@ -175,7 +175,7 @@ restore_fmode(void)
 		}
 
 #if defined(TRACE)
-		fprintf(debug, "  free fpath\n");
+		fprintf(debug, "<>restore_fmode: free fpath\n");
 #endif
 		free(fpath);
 		fpath = NULL;
