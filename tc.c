@@ -132,7 +132,7 @@ dmode_fmode(
 	    twocols ? 1 : 0);
 #endif
 	while (!bmode && ui_stack)
-		pop_state(0);
+		pop_state(2);
 
 	if (bmode || /* bmode -> fmode */
 	    twocols) { /* 2C diff -> fmode */
@@ -163,6 +163,9 @@ dmode_fmode(
 void
 restore_fmode(void)
 {
+#if defined(TRACE)
+	fprintf(debug, "->restore_fmode fpath=%s\n", fpath);
+#endif
 	if (fpath) {
 		size_t l = strlen(fpath);
 
@@ -175,13 +178,16 @@ restore_fmode(void)
 		}
 
 #if defined(TRACE)
-		fprintf(debug, "<>restore_fmode: free fpath\n");
+		fprintf(debug, "  restore_fmode: free fpath (%s)\n", fpath);
 #endif
 		free(fpath);
 		fpath = NULL;
 	}
 
 	dmode_fmode(1);
+#if defined(TRACE)
+	fprintf(debug, "<-restore_fmode\n");
+#endif
 }
 
 void
@@ -280,7 +286,9 @@ tgl2c(
 		} else {
 			if (fpath) {
 #if defined(TRACE)
-				fprintf(debug, "  free fpath\n");
+				fprintf(debug,
+				    "  tgl2c(): free fpath (%s)\n",
+				    fpath);
 #endif
 				free(fpath);
 				fpath = NULL;
@@ -305,15 +313,22 @@ tgl2c(
 
 		/* not relevant for 1C -> bmode */
 		if (!(md & 1)) {
-#if defined(TRACE)
-			fprintf(debug, "  set fpath\n");
-#endif
 
 			if (right_col) {
+#if defined(TRACE)
+			fprintf(debug,
+			    "  tgl2c(): set fpath[0] = %s\n",
+			    syspth[0]);
+#endif
 				fpath = strdup(syspth[0]);
 				old_top_idx = top_idx[0];
 				old_curs = curs[0];
 			} else {
+#if defined(TRACE)
+			fprintf(debug,
+			    "  tgl2c(): set fpath[1] = %s\n",
+			    syspth[1]);
+#endif
 				fpath = strdup(syspth[1]);
 				memcpy(syspth[1], syspth[0], pthlen[0] + 1);
 			}

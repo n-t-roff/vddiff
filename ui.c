@@ -3763,6 +3763,7 @@ ret:
 
 void
 pop_state(
+    /* 2: Cleanup from dmode->fmode */
     /* 1: Normal mode
      * 0: Cleanup mode */
     short mode)
@@ -3772,8 +3773,10 @@ pop_state(
 
 #if defined(TRACE)
 	TRCPTH;
-	fprintf(debug, "->pop_state(m=%d) lp(%s) rp(%s) fp(%s)\n",
-	    mode, trcpth[0], trcpth[1], fpath);
+	fprintf(debug, "->pop_state(m=%d) lp(%s) rp(%s) fp(%s)"
+	    " from_fmode=%d st=%p\n",
+	    mode, trcpth[0], trcpth[1], fpath, from_fmode ? 1 : 0,
+	    st);
 #endif
 	if (!st) {
 		if (from_fmode) {
@@ -3786,6 +3789,9 @@ pop_state(
 	}
 
 	d2f = st->fl & 1 ? TRUE : FALSE;
+#if defined(TRACE)
+	fprintf(debug, "  d2f=%d\n", d2f ? 1 : 0);
+#endif
 
 	if (st->lzip || st->rzip) {
 		/* In diff mode a new scan DB is only required when
@@ -3794,7 +3800,7 @@ pop_state(
 	}
 
 	if (st->lzip) {
-		if (mode && (
+		if (mode == 1 && (
 		      /* A global mark inside the archive */
 		      (gl_mark && mark_lnam &&
 		       !strncmp(syspth[0], mark_lnam, pthlen[0])) ||
@@ -3810,7 +3816,7 @@ pop_state(
 	}
 
 	if (st->rzip) {
-		if (mode && (
+		if (mode == 1 && (
 		      (gl_mark && mark_rnam &&
 		       !strncmp(syspth[1], mark_rnam, pthlen[1])) ||
 		      (mark && !gl_mark)
@@ -3823,7 +3829,7 @@ pop_state(
 	}
 
 	if (mark) {
-		if (mode) {
+		if (mode == 1) {
 			if (!gl_mark)
 				mark_global();
 		} else
@@ -3834,7 +3840,7 @@ pop_state(
 	pthlen[1] = st->rlen;
 
 	if (st->lpth) {
-		if (mode)
+		if (mode == 1)
 			memcpy(syspth[0], st->lpth, pthlen[0]);
 
 		syspth[0][pthlen[0]] = 0;
@@ -3842,7 +3848,7 @@ pop_state(
 	}
 
 	if (st->rpth) {
-		if (mode)
+		if (mode == 1)
 			memcpy(syspth[1], st->rpth, pthlen[1]);
 
 		syspth[1][pthlen[1]] = 0;
@@ -3858,6 +3864,14 @@ pop_state(
 	free(st);
 
 	if (!mode) {
+		/* fpath would have been freed in restore_fmode().
+		 * Since the following `goto` skips this function call,
+		 * the path is freed here. */
+		if (fpath) {
+			free(fpath);
+			fpath = NULL;
+		}
+
 		goto ret;
 	}
 
@@ -3867,7 +3881,7 @@ pop_state(
 		} else {
 			tgl2c(1);
 		}
-	} else if (mode) {
+	} else if (mode == 1) {
 		if (!twocols) {
 			dir_change = TRUE;
 		}
@@ -3930,19 +3944,23 @@ enter_dir(char *name, char *rnam, bool lzip, bool rzip, short tree
 
 		} else if (fmode) {
 			if (tree == 1) {
-#if defined(TRACE)
-				fprintf(debug, "  set fpath\n");
-#endif
 				fpath = strdup(syspth[1]);
 				fpath[pthlen[1]] = 0;
+#if defined(TRACE)
+				fprintf(debug,
+				    "  enter_dir(): set fpath[1] = %s\n",
+				    fpath);
+#endif
 				memcpy(syspth[1], syspth[0], pthlen[0]+1);
 				pthlen[1] = pthlen[0];
 			} else if (tree == 2) {
-#if defined(TRACE)
-				fprintf(debug, "  set fpath\n");
-#endif
 				fpath = strdup(syspth[0]);
 				fpath[pthlen[0]] = 0;
+#if defined(TRACE)
+				fprintf(debug,
+				    "  enter_dir(): set fpath[0] = %s\n",
+				    fpath);
+#endif
 				memcpy(syspth[0], syspth[1], pthlen[1]+1);
 				pthlen[0] = pthlen[1];
 			}
