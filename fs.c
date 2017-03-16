@@ -60,6 +60,7 @@ static void fs_fwrap(const char *, ...);
 static int fs_stat(const char *, struct stat *);
 static int fs_deldialog(const char *, const char *, const char *,
     const char *);
+static int fs_testBreak(void);
 
 static time_t fs_t1, fs_t2;
 static char *pth1, *pth2;
@@ -873,7 +874,7 @@ tpth:
 			}
 		}
 
-		if ((md & (16 | 32)) && !fs_error) {
+		if ((md & (16 | 32)) && !fs_error && !fs_none) {
 			fs_rm(-1, NULL, NULL, 0, 1, 4|3);
 		}
 
@@ -998,7 +999,7 @@ proc_dir(void)
 		return;
 	}
 
-	while (!fs_error) {
+	while (!fs_error && !fs_none) {
 		int i;
 
 		errno = 0;
@@ -1099,6 +1100,10 @@ rm_file(void)
 	if ((fs_t2 = time(NULL)) - fs_t1) {
 		printerr(NULL, "Delete \"%s\"", pth1);
 		fs_t1 = fs_t2;
+
+		if (fs_testBreak()) {
+			return;
+		}
 	}
 
 	if (!fs_error && unlink(pth1) == -1 && !fs_ign_errs) {
@@ -1114,7 +1119,11 @@ cp_file(void)
 	if ((fs_t2 = time(NULL)) - fs_t1) {
 		printerr(NULL, "Copy \"%s\" -> \"%s\"", pth1, pth2);
 		fs_t1 = fs_t2;
-	}
+
+		if (fs_testBreak()) {
+			return 1;
+		}
+}
 
 	if (S_ISREG(gstat[0].st_mode)) {
 		return cp_reg();
@@ -1124,6 +1133,26 @@ cp_file(void)
 		printerr(NULL, "Not copied: \"%s\"", pth1);
 		return 0; /* Not an error */
 	}
+}
+
+/* !0: Break */
+
+static int
+fs_testBreak(void)
+{
+	int b = 0;
+
+	mvwaddstr(wstat, 0, 0, "Type <ESC> to cancel");
+	wrefresh(wstat);
+	nodelay(stdscr, TRUE);
+
+	if (getch() == 27 /* ESC */) {
+		fs_none = TRUE;
+		b = 1;
+	}
+
+	nodelay(stdscr, FALSE);
+	return b;
 }
 
 static int
