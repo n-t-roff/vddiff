@@ -87,7 +87,7 @@ build_diff_db(
 		one_scan = FALSE;
 	}
 
-#if defined(TRACE)
+#if defined(TRACE) && 0
 	fprintf(debug, "->build_diff_db tree(%d)%s\n",
 	    tree, scan ? " scan" : "");
 #endif
@@ -131,7 +131,7 @@ build_diff_db(
 
 	ini_int();
 
-#if defined(TRACE)
+#if defined(TRACE) && 0
 	fprintf(debug, "  opendir lp(%s)%s\n", syspth[0], scan ? " scan" : "");
 #endif
 	if (!(d = opendir(syspth[0]))) {
@@ -475,7 +475,7 @@ right_tree:
 
 	ini_int();
 
-#if defined(TRACE)
+#if defined(TRACE) && 0
 	fprintf(debug, "  opendir rp(%s)%s\n", syspth[1], scan ? " scan" : "");
 #endif
 	if (!(d = opendir(syspth[1]))) {
@@ -655,7 +655,7 @@ dir_scan_end:
 
 exit:
 	nodelay(stdscr, FALSE);
-#if defined(TRACE)
+#if defined(TRACE) && 0
 	fprintf(debug, "<-build_diff_db%s\n", scan ? " scan" : "");
 #endif
 	return retval;
@@ -726,7 +726,7 @@ scan_subdir(char *name, char *rnam, int tree)
 void
 save_last_path(char *path)
 {
-#if defined(TRACE)
+#if defined(TRACE) && 0
 	fprintf(debug, "<>save_last_path(%s)\n", path);
 #endif
 
@@ -753,7 +753,7 @@ wr_last_path(void)
 		return;
 	}
 
-#if defined(TRACE)
+#if defined(TRACE) && 0
 	fprintf(debug, "<>wr_last_path \"%s\" to \"%s\" (fh %d)\n",
 	    last_path, printwd, f);
 #endif
@@ -783,7 +783,7 @@ add_diff_dir(
 	syspth[0][pthlen[0]] = 0;
 	syspth[1][pthlen[1]] = 0;
 	path = side ? syspth[1] : syspth[0];
-#if defined(TRACE)
+#if defined(TRACE) && 0
 	fprintf(debug, "->add_diff_dir(%s:%s) lp(%s) rp(%s)\n",
 	    side ? "right" : "left", path, syspth[0], syspth[1]);
 #endif
@@ -818,7 +818,7 @@ add_diff_dir(
 		}
 #endif
 
-#if defined(TRACE)
+#if defined(TRACE) && 0
 		fprintf(debug, "  \"%s\" added\n", path);
 #endif
 		do {
@@ -836,7 +836,7 @@ add_diff_dir(
 ret:
 	free(rp);
 ret0:
-#if defined(TRACE)
+#if defined(TRACE) && 0
 	fprintf(debug, "<-add_diff_dir\n");
 #endif
 	return;
@@ -854,7 +854,7 @@ is_diff_dir(struct filediff *f)
 	if (!recursive || ((bmode || fmode) && !file_pattern)) {
 		goto ret0; /* No debug print */
 	}
-#if defined(TRACE)
+#if defined(TRACE) && 0
 	fprintf(debug, "->is_diff_dir(%s)\n", f->name);
 #endif
 	if (bmode) {
@@ -884,7 +884,7 @@ is_diff_dir(struct filediff *f)
 		pth[l] = 0;
 	}
 
-#if defined(TRACE)
+#if defined(TRACE) && 0
 	fprintf(debug, "<-is_diff_dir: %d\n", v);
 #endif
 ret0:
@@ -904,7 +904,7 @@ is_diff_pth(const char *p,
 	char *n;
 #endif
 
-#if defined(TRACE)
+#if defined(TRACE) && 0
 	fprintf(debug, "->is_diff_pth(%s,%u)\n", p, m);
 #endif
 	/* Here since both path and name can be symlink */
@@ -913,13 +913,13 @@ is_diff_pth(const char *p,
 		    LOCVAR, p);
 		goto ret;
 	}
-#if defined(TRACE)
+#if defined(TRACE) && 0
 	fprintf(debug, "  realpath: \"%s\"\n", p);
 #endif
 	v = str_db_srch(&scan_db, rp, &n) ? 0 : 1;
 
 	if (m && v) {
-#if defined(TRACE)
+#if defined(TRACE) && 0
 		fprintf(debug, "  remove \"%s\"\n",
 #ifdef HAVE_LIBAVLBST
 		    rp
@@ -933,7 +933,7 @@ is_diff_pth(const char *p,
 
 	free(rp);
 ret:
-#if defined(TRACE)
+#if defined(TRACE) && 0
 	fprintf(debug, "<-is_diff_pth: %d\n", v);
 #endif
 	return v;
@@ -1110,14 +1110,14 @@ pthcut(char *p, size_t l)
 void
 do_scan(void)
 {
-#if defined(TRACE)
+#if defined(TRACE) && 0
 	fprintf(debug, "->do_scan lp(%s) rp(%s)\n", syspth[0], syspth[1]);
 #endif
 	scan = 1;
 	build_diff_db(bmode ? 1 : 3);
 	stopscan = FALSE;
 	scan = 0;
-#if defined(TRACE)
+#if defined(TRACE) && 0
 	fprintf(debug, "<-do_scan\n");
 #endif
 }

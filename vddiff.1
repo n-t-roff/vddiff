@@ -434,6 +434,19 @@ View file, enter directory or start diff tool.
 Compressed files and directories
 are unpacked before the view or diff tool is started.
 .Pp
+If in diff mode a directory is only in one file tree,
+.Aq Cm ENTER
+(not
+.Aq Cm RIGHT
+or double click)
+starts a diff between this directory and the current path
+of the other file tree.
+This is useful if a directory should be compared to an
+archive of that directory.
+Unpacking the archive creates an additional hierarchie
+level which can be compensated by entering the directory
+inside the archive.
+.Pp
 If a file is marked (with
 .Sq Li m ) ,
 only

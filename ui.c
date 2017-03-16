@@ -2015,6 +2015,7 @@ action(
 	char *err = NULL;
 	static char *typerr = "Not a directory or regular file";
 	static char *typdif = "Different file type";
+	bool diff_act_ = !bmode && !fmode && tree == 3 && act;
 
 #if defined(TRACE)
 	fprintf(debug, "->action(ignext=%d t=%d act=%u raw=%d) mark=%d\n",
@@ -2175,6 +2176,7 @@ action(
 	}
 
 	if (!f1->type[0] ||
+	    (diff_act_ && S_ISDIR(f2->type[1]) && !S_ISDIR(f2->type[0])) ||
 	    /* Tested here to support "or" */
 	    tree == 2) {
 		if (S_ISREG(f2->type[1]) || ign_ext)
@@ -2186,13 +2188,15 @@ action(
 				setpthofs(1, f->name, z2->name);
 			}
 
-			enter_dir(NULL , f2->name,
+			enter_dir(diff_act_ ? "" : NULL, f2->name,
 			          FALSE, z2 ? TRUE : FALSE, 0 LOCVAR);
 		} else {
 			err = typerr;
 			goto ret;
 		}
-	} else if (!f2->type[1] || tree == 1) {
+	} else if (!f2->type[1] ||
+	    (diff_act_ && S_ISDIR(f2->type[0]) && !S_ISDIR(f2->type[1])) ||
+	    tree == 1) {
 		if (S_ISREG(f1->type[0]) || ign_ext)
 			tool(f1->name, NULL, 1, ign_ext || raw_cont);
 		else if (S_ISDIR(f1->type[0])) {
@@ -2202,7 +2206,7 @@ action(
 				setpthofs(bmode ? 1 : 0, f->name, z1->name);
 			}
 
-			enter_dir(f1->name         , NULL,
+			enter_dir(f1->name, diff_act_ ? "" : NULL,
 			          z1 ? TRUE : FALSE, FALSE, 0 LOCVAR);
 		} else {
 			err = typerr;

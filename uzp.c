@@ -100,7 +100,7 @@ uz_init(void)
 
 	vpath[0] = malloc((vpthsz[0] = 4096));
 	vpath[1] = malloc((vpthsz[1] = 4096));
-#if defined(TRACE)
+#if defined(TRACE) && 0
 	*vpath[0] = 0;
 	*vpath[1] = 0;
 #endif
@@ -197,7 +197,7 @@ rmtmpdirs(char *s, tool_flags_t tf)
 	static char *cm[] = { "chmod", "-R" , "700", NULL, NULL };
 	static char *rm[] = { "rm"   , "-rf", NULL , NULL };
 
-#if defined(TRACE)
+#if defined(TRACE) && 0
 	fprintf(debug, "->rmtmpdirs(%s)\n", s);
 #endif
 	cm[3] = s;
@@ -205,7 +205,7 @@ rmtmpdirs(char *s, tool_flags_t tf)
 	rm[2] = s;
 	exec_cmd(rm, tf, NULL, NULL);
 	free(s); /* either tmp_dir or a DB entry */
-#if defined(TRACE)
+#if defined(TRACE) && 0
 	fprintf(debug, "<-rmtmpdirs\n");
 #endif
 }
@@ -222,7 +222,7 @@ unpack(const struct filediff *f, int tree, char **tmp,
 	int i;
 	char *s;
 
-#if defined(TRACE)
+#if defined(TRACE) && 0
 	fprintf(debug, "->unpack(f->name=%s, tree=%d)\n", f->name, tree);
 #endif
 
@@ -301,7 +301,7 @@ unpack(const struct filediff *f, int tree, char **tmp,
 
 	*tmp = tmp_dir;
 ret:
-#if defined(TRACE)
+#if defined(TRACE) && 0
 	fprintf(debug, "<-unpack: z->name=%s *tmp=%s\n",
 	    z ? z->name : "", *tmp);
 #endif
@@ -520,7 +520,7 @@ setvpth(
 		return;
 	}
 
-#if defined(TRACE)
+#if defined(TRACE) && 0
 	TRCPTH;
 	fprintf(debug, "->setvpth(%d): v(%s) s(%s)\n", i, vpath[i], trcpth[i]);
 #endif
@@ -532,7 +532,7 @@ setvpth(
 
 	memcpy(vpath[i] + vpthofs[i], syspth[src] + spthofs[src], l);
 	vpath[i][vpthofs[i] + l] = 0;
-#if defined(TRACE)
+#if defined(TRACE) && 0
 	fprintf(debug, "<-setvpth [%zu] \"%s\"\n", vpthsz[i], vpath[i]);
 #endif
 }
@@ -552,7 +552,7 @@ setpthofs(
 	int fl;
 	bool b;
 
-#if defined(TRACE)
+#if defined(TRACE) && 0
 	fprintf(debug, "->setpthofs(col=%d fn(%s) tn(%s))\n", i, fn, tn);
 #endif
 	fl = i & ~3;
@@ -600,13 +600,13 @@ setpthofs(
 		}
 
 		memcpy(vpath[0], vpath[1], vpthofs[0] + 1);
-#if defined(TRACE)
+#if defined(TRACE) && 0
 		fprintf(debug, "<-setpthofs(0) [%zu] \"%s\"\n",
 		    vpthsz[0], vpath[0]);
 #endif
 	}
 
-#if defined(TRACE)
+#if defined(TRACE) && 0
 	fprintf(debug, "<-setpthofs [%zu] \"%s\"\n", vpthsz[i], vpath[i]);
 #endif
 }
@@ -618,7 +618,7 @@ respthofs(int i)
 {
 	struct pthofs *p;
 
-#if defined(TRACE)
+#if defined(TRACE) && 0
 	fprintf(debug, "<>respthofs(col=%d)\n", i);
 #endif
 	p = pthofs[i];
