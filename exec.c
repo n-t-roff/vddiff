@@ -60,7 +60,10 @@ bool wait_after_exec;
  * tree side. */
 
 void
-tool(char *name, char *rnam, int tree, int ign_ext)
+tool(char *name, char *rnam, int tree,
+    /* 1: ignore extension */
+    /* 2: execute */
+    unsigned short mode)
 {
 	size_t l;
 	char *cmd;
@@ -69,9 +72,20 @@ tool(char *name, char *rnam, int tree, int ign_ext)
 	int c;
 
 #ifdef TRACE
-	fprintf(debug, "->tool(%s,%s,%d) lp(%s) rp(%s)\n",
-	    name, rnam, tree, syspth[0], syspth[1]);
+	TRCPTH;
+	fprintf(debug, "->tool(%s,%s,%d,%d) lp(%s) rp(%s)\n",
+	    name, rnam, tree, mode, trcpth[0], trcpth[1]);
 #endif
+
+	if (mode & 2) {
+		static char *a[] = { NULL, NULL };
+
+		pthcat(syspth[right_col], pthlen[right_col], name);
+		*a = syspth[right_col];
+		exec_cmd(a, TOOL_BG|TOOL_NOLIST, NULL, NULL);
+		goto ret;
+	}
+
 	l = strlen(name);
 	cmd = lbuf + sizeof lbuf;
 	*--cmd = 0;
@@ -81,7 +95,7 @@ tool(char *name, char *rnam, int tree, int ign_ext)
 	if (tree == 3 ||
 	   /* Case: fmode and both files are on same side */
 	   (name && rnam) ||
-	   ign_ext)
+	   (mode & 1))
 		goto settool;
 
 	while (l) {
@@ -104,18 +118,22 @@ tool(char *name, char *rnam, int tree, int ign_ext)
 
 	if (!tmptool)
 settool:
-		tmptool = (tree == 3 || (name && rnam)) && !ign_ext ?
+		tmptool = (tree == 3 || (name && rnam)) && !(mode & 1) ?
 		    &difftool : &viewtool;
 
 	if (tmptool->flags & TOOL_SHELL) {
 		cmd = exec_mk_cmd(tmptool, name, rnam, tree);
 		exec_cmd(&cmd, tmptool->flags | TOOL_TTY, NULL, NULL);
 		free(cmd);
-	} else
+	} else {
 		exec_tool(tmptool, name, rnam, tree);
+	}
+
+ret:
 #ifdef TRACE
 	fprintf(debug, "<-tool\n");
 #endif
+	return;
 }
 
 #define GRWCMD \

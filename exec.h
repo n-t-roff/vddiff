@@ -27,7 +27,7 @@ extern char *ishell;
 extern char *nishell;
 extern bool wait_after_exec;
 
-void tool(char *, char *, int, int);
+void tool(char *, char *, int, unsigned short);
 char *exec_mk_cmd(struct tool *, char *, char *, int);
 void free_tool(struct tool *);
 void set_tool(struct tool *, char *, tool_flags_t);

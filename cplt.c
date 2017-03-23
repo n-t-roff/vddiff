@@ -42,9 +42,11 @@ static int cpltstr(char *, const char **);
 
 static const char *set_opts[] = {
 	"all",
+	"file_exec",
 	"fkeys",
 	"ic",
 	"magic",
+	"nofile_exec",
 	"nofkeys",
 	"noic",
 	"nomagic",

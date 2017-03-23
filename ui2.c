@@ -71,6 +71,7 @@ unsigned jmrk[2][32];
 
 bool file_pattern; /* TRUE for -F or -G */
 bool excl_or;
+bool file_exec;
 
 int
 test_fkey(int c, unsigned short num)
@@ -621,7 +622,9 @@ cd_home:
 		not = 0;
 	}
 
-	if (!strcmp(opt, "fkeys")) {
+	if (!strcmp(opt, "file_exec")) {
+		file_exec = not ? FALSE : TRUE;
+	} else if (!strcmp(opt, "fkeys")) {
 		nofkeys = not ? TRUE : FALSE;
 	} else if (!strcmp(opt, "ic")) {
 		noic = not;
@@ -659,6 +662,7 @@ getnextarg(char *buf, unsigned m)
 static void
 set_all(void)
 {
+	static char nofile_exec_str[] = "nofile_exec\n";
 	static char nofkeys_str[] = "nofkeys\n";
 	static char noic_str[] = "noic\n";
 	static char nomagic_str[] = "nomagic\n";
@@ -668,6 +672,7 @@ set_all(void)
 	werase(wlist);
 	wattrset(wlist, A_NORMAL);
 	wmove(wlist, 0, 0);
+	waddstr(wlist, file_exec ? nofile_exec_str + 2 : nofile_exec_str);
 	waddstr(wlist, nofkeys ? nofkeys_str : nofkeys_str + 2);
 	waddstr(wlist, noic ? noic_str : noic_str + 2);
 	waddstr(wlist, magic ? nomagic_str + 2 : nomagic_str);

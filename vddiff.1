@@ -13,7 +13,7 @@ LOSS OF USE, DATA OR PROFITS, WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE OR
 OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
 PERFORMANCE OF THIS SOFTWARE.
 ..
-.Dd March 8, 2017
+.Dd March 23, 2017
 .Dt VDDIFF 1
 .Sh NAME
 .Nm @vddiff@
@@ -1123,6 +1123,21 @@ List jump marks.
 Quit @vddiff@.
 .It Li set all
 Display the current setting of the changable options.
+.It Li set file_exec
+bmode and fmode only:
+Enable execution of executeable files by pressing
+.Aq Cm ENTER
+(no mark must be set).
+Double mouse click or pressing
+.Aq Cm RIGHT ,
+.Sq Li o ,
+or
+.Sq Li v
+does not execute the file.
+.It Li set nofile_exec
+Disable execution of executeable files when
+.Aq Cm ENTER
+is pressed.
 .It Li set fkeys
 Enable function keys.
 .It Li set nofkeys
@@ -1620,6 +1635,17 @@ Can be removed with
 Add file modification time column.
 Can be removed with
 .Dq Li \&Rt
+.It Li file_exec
+bmode and fmode only:
+Enable execution of executeable files by pressing
+.Aq Cm ENTER
+(no mark must be set).
+Double mouse click or pressing
+.Aq Cm RIGHT ,
+.Sq Li o ,
+or
+.Sq Li v
+does not execute the file.
 .It Li shell Ar string
 Set shell for the
 .Sq Li s ,

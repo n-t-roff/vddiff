@@ -1691,6 +1691,10 @@ static char *helptxt[] = {
        ":marks		List jump marks",
        ":q, :qa		Quit " BIN,
        ":set all	Display option values",
+       ":set file_exec",
+       "		bmode, fmode: Enable file execution",
+       ":set nofile_exec",
+       "		bmode, fmode: Disable file execution",
        ":set fkeys	Enable function keys",
        ":set nofkeys	Disable function keys",
        ":set ic		Case-insensitive match",
@@ -2015,7 +2019,10 @@ action(
 	char *err = NULL;
 	static char *typerr = "Not a directory or regular file";
 	static char *typdif = "Different file type";
+	mode_t typ[2];
 	bool diff_act_ = !bmode && !fmode && tree == 3 && act;
+	bool exec_act_ = file_exec && !ign_ext && !raw_cont &&
+	    (bmode || fmode) && act;
 
 #if defined(TRACE)
 	fprintf(debug, "->action(ignext=%d t=%d act=%u raw=%d) mark=%d\n",
@@ -2054,6 +2061,9 @@ action(
 				f1 = z2;
 		}
 
+		typ[0] = f1->type[0];
+		typ[1] = m->type[0];
+
 		if (bmode) {
 			/* Take all files from left side. */
 			lnam = m->name ? m->name : gl_mark;
@@ -2061,52 +2071,52 @@ action(
 			if (chk_mark(lnam, 1))
 				goto ret;
 
-			ltyp = m->type[0];
+			ltyp = typ[1];
 			rnam = f1->name;
-			rtyp = f1->type[0];
+			rtyp = typ[0];
 
-		} else if (m->type[0] && f1->type[1] && (tree & 2)) {
+		} else if (typ[1] && typ[0] && (tree & 2)) {
 			lnam = m->name ? m->name : mark_lnam;
 
 			if (chk_mark(lnam, 1))
 				goto ret;
 
-			ltyp = m->type[0];
+			ltyp = typ[1];
 			rnam = f1->name;
-			rtyp = f1->type[1];
+			rtyp = typ[0];
 
-		} else if (f1->type[0] && m->type[1] && (tree & 1)) {
+		} else if (typ[0] && typ[1] && (tree & 1)) {
 			lnam = f1->name;
-			ltyp = f1->type[0];
+			ltyp = typ[0];
 			rnam = m->name ? m->name : mark_rnam;
 
 			if (chk_mark(rnam, 2))
 				goto ret;
 
-			rtyp = m->type[1];
+			rtyp = typ[1];
 
 		/* for fmode: Both files on one side */
 
-		} else if (m->type[0] && f1->type[0]) {
+		} else if (typ[1] && typ[0]) {
 			lnam = m->name;
 
 			if (chk_mark(lnam, 1))
 				goto ret;
 
-			ltyp = m->type[0];
+			ltyp = typ[1];
 			rnam = f1->name;
-			rtyp = f1->type[0];
+			rtyp = typ[0];
 			tree = 1;
 
-		} else if (m->type[1] && f1->type[1]) {
+		} else if (typ[1] && typ[0]) {
 			lnam = m->name;
 
 			if (chk_mark(lnam, 2))
 				goto ret;
 
-			ltyp = m->type[1];
+			ltyp = typ[1];
 			rnam = f1->name;
-			rtyp = f1->type[1];
+			rtyp = typ[0];
 			tree = 2;
 
 		} else {
@@ -2126,7 +2136,7 @@ action(
 		    lnam, rnam, tree);
 #endif
 		if (ign_ext || (S_ISREG(ltyp) && S_ISREG(rtyp))) {
-			tool(lnam, rnam, tree, ign_ext || raw_cont);
+			tool(lnam, rnam, tree, ign_ext || raw_cont ? 1 : 0);
 
 		} else if (S_ISDIR(ltyp) || S_ISDIR(rtyp)) {
 			if (!S_ISDIR(ltyp)) {
@@ -2175,13 +2185,19 @@ action(
 			f2 = z2;
 	}
 
-	if (!f1->type[0] ||
-	    (diff_act_ && S_ISDIR(f2->type[1]) && !S_ISDIR(f2->type[0])) ||
+	typ[0] = f1->type[0];
+	typ[1] = f2->type[1];
+
+	if (!typ[0] ||
+	    (diff_act_ && S_ISDIR(typ[1]) && !S_ISDIR(typ[0])) ||
 	    /* Tested here to support "or" */
 	    tree == 2) {
-		if (S_ISREG(f2->type[1]) || ign_ext)
-			tool(f2->name, NULL, 2, ign_ext || raw_cont);
-		else if (S_ISDIR(f2->type[1])) {
+		if (S_ISREG(typ[1]) || ign_ext)
+			tool(f2->name, NULL, 2,
+			    exec_act_ && S_ISREG(typ[1]) &&
+			      (typ[1] & S_IXUSR) ? 2 :
+			    ign_ext || raw_cont ? 1 : 0);
+		else if (S_ISDIR(typ[1])) {
 			/* Used by fmode */
 
 			if (z2) {
@@ -2194,12 +2210,15 @@ action(
 			err = typerr;
 			goto ret;
 		}
-	} else if (!f2->type[1] ||
-	    (diff_act_ && S_ISDIR(f2->type[0]) && !S_ISDIR(f2->type[1])) ||
+	} else if (!typ[1] ||
+	    (diff_act_ && S_ISDIR(typ[0]) && !S_ISDIR(typ[1])) ||
 	    tree == 1) {
-		if (S_ISREG(f1->type[0]) || ign_ext)
-			tool(f1->name, NULL, 1, ign_ext || raw_cont);
-		else if (S_ISDIR(f1->type[0])) {
+		if (S_ISREG(typ[0]) || ign_ext)
+			tool(f1->name, NULL, 1,
+			    exec_act_ && S_ISREG(typ[0]) &&
+			      (typ[0] & S_IXUSR) ? 2 :
+			    ign_ext || raw_cont ? 1 : 0);
+		else if (S_ISDIR(typ[0])) {
 			/* Used by bmode and fmode */
 
 			if (z1) {
@@ -2212,15 +2231,15 @@ action(
 			err = typerr;
 			goto ret;
 		}
-	} else if ((f1->type[0] & S_IFMT) == (f2->type[1] & S_IFMT)) {
+	} else if ((typ[0] & S_IFMT) == (typ[1] & S_IFMT)) {
 		if (ign_ext || raw_cont)
 			tool(f1->name, f2->name, 3, 1);
-		else if (S_ISREG(f1->type[0])) {
+		else if (S_ISREG(typ[0])) {
 			if (f1->diff == '!')
 				tool(f1->name, f2->name, 3, 0);
 			else
 				tool(f1->name, NULL, 1, 0);
-		} else if (S_ISDIR(f1->type[0])) {
+		} else if (S_ISDIR(typ[0])) {
 			if (z1 || z2) {
 				push_scan_db(TRUE);
 			}
@@ -2943,7 +2962,7 @@ static void
 set_file_info(struct filediff *f, mode_t m, int *t, short *ct, int *d)
 {
 	if (S_ISREG(m)) {
-		if (m & 0100)
+		if (m & S_IXUSR)
 			*t = '*';
 		else
 			*t = ' ';
