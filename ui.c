@@ -2061,9 +2061,6 @@ action(
 				f1 = z2;
 		}
 
-		typ[0] = f1->type[0];
-		typ[1] = m->type[0];
-
 		if (bmode) {
 			/* Take all files from left side. */
 			lnam = m->name ? m->name : gl_mark;
@@ -2071,52 +2068,52 @@ action(
 			if (chk_mark(lnam, 1))
 				goto ret;
 
-			ltyp = typ[1];
+			ltyp = m->type[0];
 			rnam = f1->name;
-			rtyp = typ[0];
+			rtyp = f1->type[0];
 
-		} else if (typ[1] && typ[0] && (tree & 2)) {
+		} else if (m->type[0] && f1->type[1] && (tree & 2)) {
 			lnam = m->name ? m->name : mark_lnam;
 
 			if (chk_mark(lnam, 1))
 				goto ret;
 
-			ltyp = typ[1];
+			ltyp = m->type[0];
 			rnam = f1->name;
-			rtyp = typ[0];
+			rtyp = f1->type[1];
 
-		} else if (typ[0] && typ[1] && (tree & 1)) {
+		} else if (f1->type[0] && m->type[1] && (tree & 1)) {
 			lnam = f1->name;
-			ltyp = typ[0];
+			ltyp = f1->type[0];
 			rnam = m->name ? m->name : mark_rnam;
 
 			if (chk_mark(rnam, 2))
 				goto ret;
 
-			rtyp = typ[1];
+			rtyp = m->type[1];
 
 		/* for fmode: Both files on one side */
 
-		} else if (typ[1] && typ[0]) {
+		} else if (m->type[0] && f1->type[0]) {
 			lnam = m->name;
 
 			if (chk_mark(lnam, 1))
 				goto ret;
 
-			ltyp = typ[1];
+			ltyp = m->type[0];
 			rnam = f1->name;
-			rtyp = typ[0];
+			rtyp = f1->type[0];
 			tree = 1;
 
-		} else if (typ[1] && typ[0]) {
+		} else if (m->type[1] && f1->type[1]) {
 			lnam = m->name;
 
 			if (chk_mark(lnam, 2))
 				goto ret;
 
-			ltyp = typ[1];
+			ltyp = m->type[1];
 			rnam = f1->name;
-			rtyp = typ[0];
+			rtyp = f1->type[1];
 			tree = 2;
 
 		} else {
