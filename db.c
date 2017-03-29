@@ -88,7 +88,7 @@ void *scan_db;
 void *name_db;
 void *skipext_db;
 void *uz_path_db;
-void *alias_db;
+static void *alias_db;
 void *bdl_db;
 
 static void *curs_db[2];
@@ -538,16 +538,25 @@ uz_cmp(const void *a, const void *b)
  ************/
 
 void
-add_alias(char *key, char *value)
+add_alias(char *key, char *value, tool_flags_t flags)
 {
-	char *s;
+	struct tool *t;
 
-	if (!ptr_db_srch(&alias_db, value, (void **)&s, NULL)) {
+	/* `value` used as key here. If a value should be set which is the
+	 * key of another alias, the value of that alias is used instead. */
+
+	if (!ptr_db_srch(&alias_db, value, (void **)&t, NULL)) {
 		free(value);
-		value = strdup(s);
+		/* `s` is the value of the other alias. Hence the strdup
+		 * is necessary, since now a *second* alias will be created
+		 * with that value. */
+		value = strdup(t->tool);
 	}
 
-	ptr_db_add(&alias_db, key, value);
+	t = malloc(sizeof(struct tool));
+	t->tool = value;
+	t->flags = flags;
+	ptr_db_add(&alias_db, key, t);
 }
 
 /**********
@@ -573,15 +582,16 @@ db_def_ext(char *ext, char *_tool, tool_flags_t flags)
 		printf("Error: Tool for extension \"%s\" set twice\n", ext);
 		exit(1);
 	} else {
-		char *s;
+		struct tool *at;
 
 		t = malloc(sizeof(struct tool));
 		t->tool = NULL; /* set_tool makes a free() */
 		t->args = NULL;
 
-		if (!ptr_db_srch(&alias_db, _tool, (void **)&s, NULL)) {
+		if (!ptr_db_srch(&alias_db, _tool, (void **)&at, NULL)) {
 			free(_tool);
-			_tool = strdup(s);
+			_tool = strdup(at->tool);
+			flags |= at->flags;
 		}
 
 		set_tool(t, _tool, flags);

@@ -100,7 +100,8 @@ option:
 	| SCALE                        { scale = 1                        ; }
 	| SHELL STRING                 { ishell = $2                      ; }
 	| SH STRING                    { nishell = $2                     ; }
-	| ALIAS STRING STRING          { add_alias($2, $3)                ; }
+	| ALIAS STRING STRING          { add_alias($2, $3, 0)             ; }
+	| ALIAS STRING BG STRING       { add_alias($2, $4, TOOL_BG)       ; }
 	| TWOCOLUMN                    { twocols = TRUE                   ; }
 	| READONLY                     { readonly = TRUE; nofkeys = TRUE  ; }
 	| DISP_PERM                    { add_mode = TRUE                  ; }
