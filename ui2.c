@@ -1367,6 +1367,8 @@ set_def_mouse_msk(void)
 int
 ui_cp(int t, long u, unsigned short num, unsigned md)
 {
+	unsigned sto;
+
 	if (mmrkd[right_col]) {
 		if (dialog(y_n_txt, NULL,
 		    "Really copy %d files?",
@@ -1375,14 +1377,16 @@ ui_cp(int t, long u, unsigned short num, unsigned md)
 		}
 
 		while ((u = get_mmrk()) >= 0) {
-			fs_cp(t, u, 1, md | 5);
+			fs_cp(t, u, 1, md | 5, &sto);
 		}
 
-		rebuild_db(0);
+		rebuild_db(
+		    !fmode || !sto || sto == 3 || (md & (16 | 32))
+		    ? 0 : sto << 1);
 		return 1;
 	}
 
-	fs_cp(t, u, num, md);
+	fs_cp(t, u, num, md, NULL);
 	return 0;
 }
 
@@ -1405,14 +1409,14 @@ ui_mv(int dst, long u, unsigned short num)
 		}
 
 		while ((u = get_mmrk()) >= 0) {
-			fs_cp(dst, u, 1, 16 | 5);
+			fs_cp(dst, u, 1, 16 | 5, NULL);
 		}
 
 		rebuild_db(0);
 		return 1;
 	}
 
-	fs_cp(dst, u, num, 16);
+	fs_cp(dst, u, num, 16, NULL);
 	return 0;
 }
 

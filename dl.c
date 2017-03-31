@@ -86,6 +86,13 @@ dl_add(void)
 		if (!bdl_add(s)) {
 			info_store();
 		}
+
+		/* bdl_add() changes string length */
+		if (bmode || right_col) {
+			pthlen[1] = strlen(syspth[1]);
+		} else {
+			pthlen[0] = strlen(syspth[0]);
+		}
 	} else {
 		syspth[1][pthlen[1]] = 0;
 		syspth[0][pthlen[0]] = 0;
@@ -94,6 +101,10 @@ dl_add(void)
 			ddl_num++;
 			info_store();
 		}
+
+		/* ddl_add() changes string length */
+		pthlen[1] = strlen(syspth[1]);
+		pthlen[0] = strlen(syspth[0]);
 	}
 }
 
@@ -569,6 +580,7 @@ static void
 dl_pg_down(void)
 {
 	if (dl_top + listh >= dl_num) {
+		dl_last();
 		return;
 	}
 
@@ -587,6 +599,7 @@ static void
 dl_pg_up(void)
 {
 	if (!dl_top) {
+		dl_first();
 		return;
 	}
 

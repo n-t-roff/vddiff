@@ -2800,8 +2800,9 @@ disp_line(
     /* 1: Is cursor line */
     int info)
 {
-	int diff, type[2];
-	mode_t mode[2];
+	int diff = 'E'; /* Internal error */
+	int type[2] = { 'E', 'E' };
+	mode_t mode[2] = { ~0, ~0 }; /* Detect error */
 	struct filediff *f;
 	short color_id = 0;
 	WINDOW *w;
@@ -2872,6 +2873,10 @@ no_diff:
 
 	set_file_info(f, twocols && !fmode ? f->type[0] : *mode, type,
 	    &color_id, &diff);
+#if defined(TRACE)
+	fprintf(debug, "  col %d %c \"%s\"\n", right_col ? 1 : 0,
+	    *type, f->name);
+#endif
 	disp_name(w, y, 0, twocols && !fmode ? llstw : mx, info, f, *type,
 	    color_id,
 	    right_col           ? f->rlink :
@@ -2883,6 +2888,9 @@ prtc2:
 		if (diff != '<') {
 			(wattr_set)(w, a, cp, NULL);
 			set_file_info(f, f->type[1], type+1, &color_id, &diff);
+#if defined(TRACE)
+			fprintf(debug, "  col R %c \"%s\"\n", type[1], f->name);
+#endif
 			disp_name(w, y, rlstx, mx, info, f, type[1], color_id,
 			    f->rlink, diff, 1);
 		}

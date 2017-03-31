@@ -3,7 +3,7 @@ void fs_rename(int);
 void fs_chmod(int, long, int, unsigned);
 void fs_chown(int, int, long, int, unsigned);
 int fs_rm(int, char *, char *, long, int, unsigned);
-int fs_cp(int, long, int, unsigned);
+int fs_cp(int, long, int, unsigned, unsigned *);
 void rebuild_db(short);
 int fs_get_dst(long, unsigned);
 int fs_any_dst(long, int, unsigned);

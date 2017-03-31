@@ -696,6 +696,8 @@ ret:
 int /* !0: Error */
 fs_cp(
     /* 0: Auto-detect */
+    /* 1: To left side
+     * 2: To right side */
     int to,
     long u, /* initial index */
     int n,
@@ -705,12 +707,14 @@ fs_cp(
     /* 8: Sync (update, 'U') */
     /* 16: Move (remove source after copy) */
     /* 32: Exchange */
-    unsigned md)
+    unsigned md,
+    unsigned *sto_res_)
 {
 	struct filediff *f;
 	int i;
 	int r = 1;
-	int eto;
+	int eto; /* Effective dest side */
+	unsigned sto = 0; /* OR sum dest side */
 	char *tnam;
 	static char *tmpnam_ = "." BIN ".X";
 	bool m;
@@ -786,12 +790,14 @@ fs_cp(
 
 next_xchg:
 		if (eto == 1) {
+			sto |= 1;
 			pth1 = syspth[1];
 			len1 = pthlen[1];
 			pth2 = syspth[0];
 			len2 = pthlen[0];
 		/* At first eto == 3 if md & 32 */
 		} else {
+			sto |= 2;
 			pth1 = syspth[0];
 			len1 = pthlen[0];
 			pth2 = syspth[1];
@@ -801,7 +807,9 @@ next_xchg:
 		f = db_list[right_col][u];
 		pthcat(pth1, len1, f->name);
 #if defined(TRACE)
-		fprintf(debug, "  fs_cp path(%s)\n", pth1);
+		fprintf(debug, "  fs_cp src path(%s) f->name(%s) "
+		    "right_col=%d u=%ld\n",
+		    pth1, f->name, right_col, u);
 #endif
 
 		if (fs_stat(pth1, &gstat[0]) == -1) {
@@ -814,6 +822,9 @@ next_xchg:
 		tnam = ((md & 32) && eto == 3) ? tmpnam_ : f->name;
 tpth:
 		pthcat(pth2, len2, tnam);
+#if defined(TRACE)
+		fprintf(debug, "  fs_cp dst path(%s)\n", pth2);
+#endif
 		i = fs_stat(pth2, &gstat[1]);
 
 		if (i == -1) { /* from stat */
@@ -903,7 +914,12 @@ next:
 	}
 
 	if (chg && !(md & 1)) {
-		rebuild_db(0);
+#if defined(TRACE)
+		fprintf(debug, "  sto=%d\n", sto);
+#endif
+		rebuild_db(
+		    !fmode || !sto || sto == 3 || (md & (16 | 32))
+		    ? 0 : sto << 1);
 	}
 
 	r = 0;
@@ -916,6 +932,10 @@ ret:
 	}
 
 ret0:
+	if (sto_res_) {
+		*sto_res_ = sto;
+	}
+
 #if defined(TRACE)
 	fprintf(debug, "<-fs_cp\n");
 #endif
@@ -941,6 +961,8 @@ rebuild_db(
      *    (for filesystem operations)
      * 1: keep selected name unchanged
      *    (for changing the list sort mode) */
+    /* 2: rebuild left side only
+     * 4: rebuild right side only */
     short mode)
 {
 	char *name;
@@ -963,10 +985,12 @@ rebuild_db(
 		mark_global();
 	}
 
-	diff_db_free(0);
-	build_diff_db(bmode || fmode ? 1 : subtree);
+	if (!(mode & 4)) {
+		diff_db_free(0);
+		build_diff_db(bmode || fmode ? 1 : subtree);
+	}
 
-	if (fmode) {
+	if (fmode && !(mode & 2)) {
 		diff_db_free(1);
 		build_diff_db(2);
 	}
@@ -1414,7 +1438,9 @@ fs_get_dst(long u,
 	if (bmode) {
 		dst = 2;
 	} else if (fmode) {
-		dst = m ? 0 : right_col ? 1 : 2;
+		dst = m         ? 0 :
+		      right_col ? 1 :
+		                  2 ;
 	} else {
 		if (u >= (long)db_num[0]) {
 			goto ret;
