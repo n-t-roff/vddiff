@@ -160,6 +160,9 @@ build_diff_db(
 			goto dir_scan_end;
 		}
 
+#if defined(TRACE) && 1
+		fprintf(debug, "  readdir L \"%s\"\n", ent->d_name);
+#endif
 		name = ent->d_name;
 
 		if (*name == '.' && (!name[1] || (name[1] == '.' &&
@@ -518,6 +521,9 @@ right_tree:
 			goto dir_scan_end;
 		}
 
+#if defined(TRACE) && 1
+		fprintf(debug, "  readdir R \"%s\"\n", ent->d_name);
+#endif
 		name = ent->d_name;
 
 		if (*name == '.' && (!name[1] || (name[1] == '.' &&
@@ -996,6 +1002,14 @@ cmp_file(char *lpth, off_t lsiz, char *rpth, off_t rsiz,
 	int rv = 0, f1, f2;
 	ssize_t l1, l2;
 
+	if (lsiz != rsiz) {
+		return 1;
+	}
+
+	if (!lsiz) {
+		return 0;
+	}
+
 	if (!md) {
 		if (dontcmp) {
 			return 0;
@@ -1006,12 +1020,6 @@ cmp_file(char *lpth, off_t lsiz, char *rpth, off_t rsiz,
 			return 0;
 		}
 	}
-
-	if (lsiz != rsiz)
-		return 1;
-
-	if (!lsiz)
-		return 0;
 
 	if ((f1 = open(lpth, O_RDONLY)) == -1) {
 		if (!ign_diff_errs && dialog(ign_txt, NULL,

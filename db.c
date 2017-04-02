@@ -1033,6 +1033,10 @@ diff_cmp(
 void
 diff_db_add(struct filediff *diff, int i)
 {
+#if defined(TRACE)
+	fprintf(debug, "<>diff_db_add name(%s) ltyp 0%o rtyp 0%o\n",
+	    diff->name, diff->type[0], diff->type[1]);
+#endif
 #ifdef HAVE_LIBAVLBST
 	avl_add(&diff_db[i],
 	    (union bst_val)(void *)diff, (union bst_val)(int)0);

@@ -2874,8 +2874,8 @@ no_diff:
 	set_file_info(f, twocols && !fmode ? f->type[0] : *mode, type,
 	    &color_id, &diff);
 #if defined(TRACE)
-	fprintf(debug, "  col %d %c \"%s\"\n", right_col ? 1 : 0,
-	    *type, f->name);
+	fprintf(debug, "  col %d %c 0%o \"%s\"\n", right_col ? 1 : 0,
+	    *type, twocols && !fmode ? f->type[0] : *mode, f->name);
 #endif
 	disp_name(w, y, 0, twocols && !fmode ? llstw : mx, info, f, *type,
 	    color_id,
@@ -2889,7 +2889,8 @@ prtc2:
 			(wattr_set)(w, a, cp, NULL);
 			set_file_info(f, f->type[1], type+1, &color_id, &diff);
 #if defined(TRACE)
-			fprintf(debug, "  col R %c \"%s\"\n", type[1], f->name);
+			fprintf(debug, "  col R %c 0%o \"%s\"\n",
+			    type[1], f->type[1], f->name);
 #endif
 			disp_name(w, y, rlstx, mx, info, f, type[1], color_id,
 			    f->rlink, diff, 1);
