@@ -154,6 +154,19 @@ exec_mk_cmd(struct tool *tmptool, char *name, char *rnam, int tree)
 	struct strlst *args;
 	int c;
 
+#if defined(TRACE)
+	fprintf(debug,
+	    "->exec_mk_cmd tool(%s) flags(0x%x) name(%s) rnam(%s) tree(%d)",
+	    tmptool->tool, tmptool->flags, name, rnam, tree);
+	{
+		struct strlst *debug_lst;
+		for (debug_lst = tmptool->args; debug_lst;
+		    debug_lst = debug_lst->next) {
+			fprintf(debug, " arg(%s)", debug_lst->str);
+		}
+	}
+	fputs("\n", debug);
+#endif
 	nam2 = rnam ? rnam : name;
 
 	csiz = 2 * PATHSIZ;
@@ -191,19 +204,23 @@ exec_mk_cmd(struct tool *tmptool, char *name, char *rnam, int tree)
 		} while ((args = args->next));
 	} else {
 		if (tree != 3 && name && rnam) {
+			cmd[clen++] = ' ';
 			GRWCMD;
 			clen = add_path(cmd, clen,
 			    tree == 1 ? syspth[0] : syspth[1], name);
+			cmd[clen++] = ' ';
 			GRWCMD;
 			clen = add_path(cmd, clen,
 			    tree == 1 ? syspth[0] : syspth[1], rnam);
 		} else {
 			if (tree & 1) {
+				cmd[clen++] = ' ';
 				GRWCMD;
 				clen = add_path(cmd, clen, syspth[0], name);
 			}
 
 			if (tree & 2) {
+				cmd[clen++] = ' ';
 				GRWCMD;
 				clen = add_path(cmd, clen, syspth[1], nam2);
 			}
@@ -211,6 +228,9 @@ exec_mk_cmd(struct tool *tmptool, char *name, char *rnam, int tree)
 	}
 
 	cmd[clen] = 0;
+#if defined(TRACE)
+	fprintf(debug, "<-exec_mk_cmd (%s)\n", cmd);
+#endif
 	return cmd;
 }
 
