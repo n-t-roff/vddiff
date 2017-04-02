@@ -863,7 +863,16 @@ next_key:
 				mvwprintw(wlist, i, 5, "\"%ls\"", sh_str[i]);
 			}
 
-			anykey();
+			{
+				int lkey_ = anykey();
+
+				for (i = 0; i < FKEY_NUM; i++) {
+					if (lkey_ == KEY_F(i + 1)) {
+						ungetch(lkey_);
+						break;
+					}
+				}
+			}
 			break;
 
 		case 'r':
