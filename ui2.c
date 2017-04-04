@@ -1402,14 +1402,19 @@ ui_mv(int dst, long u, unsigned short num)
 	}
 
 	if (mmrkd[right_col]) {
+		int fs_retval_ = 0;
+
 		if (dialog(y_n_txt, NULL,
 		    "Really move %d files?",
 		    mmrkd[right_col]) != 'y') {
 			return 1;
 		}
 
-		while ((u = get_mmrk()) >= 0) {
-			fs_cp(dst, u, 1, 16 | 5, NULL);
+		while ((u = get_mmrk()) >= 0 &&
+		    !((fs_retval_ = fs_cp(dst, u, 1,
+		    16 | 5 | (fs_retval_ & 2 ? 0x40 : 0), NULL))
+		    /* Don't break loop on "ignore error" */
+		    & ~2)) {
 		}
 
 		rebuild_db(0);

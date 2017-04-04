@@ -465,6 +465,8 @@ exit:
 
 /* 0: Ok
  * 1: Cancel */
+/* 2: fs_error
+ * 4: fs_ign_errs */
 
 int
 fs_rm(
@@ -477,6 +479,7 @@ fs_rm(
     /* 1: Force */
     /* 2: Don't rebuild DB (for mmrk and fs_cp()) */
     /* 4: Don't reset 'fs_all' */
+    /* 8: fs_ign_errs */
     unsigned md)
 {
 	struct filediff *f;
@@ -490,7 +493,7 @@ fs_rm(
 	bool chg = FALSE;
 
 	fs_error = FALSE;
-	fs_ign_errs = FALSE;
+	fs_ign_errs = md & 8 ? TRUE : FALSE;
 
 	if (!(md & 4)) {
 		fs_all = FALSE;
@@ -687,13 +690,24 @@ ret:
 	pth1 = p0;
 	len1 = l0;
 	gstat[0] = st;
+
+	if (fs_error) {
+		rv |= 2;
+	}
+
+	if (fs_ign_errs) {
+		rv |= 4;
+	}
+
 #if defined(TRACE)
-	fprintf(debug, "<-fs_rm\n");
+	fprintf(debug, "<-fs_rm: 0x%x\n", rv);
 #endif
 	return rv;
 }
 
-int /* !0: Error */
+/* 1: General error
+ * 2: fs_ign_errs set */
+int
 fs_cp(
     /* 0: Auto-detect */
     /* 1: To left side
@@ -707,6 +721,7 @@ fs_cp(
     /* 8: Sync (update, 'U') */
     /* 16: Move (remove source after copy) */
     /* 32: Exchange */
+    /* 64 (0x40): Set fs_ign_errs */
     unsigned md,
     unsigned *sto_res_)
 {
@@ -722,11 +737,11 @@ fs_cp(
 	bool ofs = FALSE;
 
 	fs_error = FALSE;
-	fs_ign_errs = FALSE;
+	fs_ign_errs = md & 0x40 ? TRUE : FALSE;
 	fs_all = FALSE;
 	fs_none = FALSE;
 #if defined(TRACE)
-	fprintf(debug, "->fs_cp(to=%d u=%ld n=%d md=%u)\n",
+	fprintf(debug, "->fs_cp(to=%d u=%ld n=%d md=0x%x)\n",
 	    to, u, n, md);
 #endif
 
@@ -840,9 +855,10 @@ tpth:
 				fprintf(debug, "  Rename \"%s\" -> \"%s\"\n",
 				    pth1, pth2);
 #endif
-				if (rename(pth1, pth2) == -1) {
-					printerr(strerror(errno),
-					    "rename %s -> %s", pth1, pth2);
+				if (!fs_error && rename(pth1, pth2) == -1
+				    && !fs_ign_errs) {
+					fs_fwrap("rename %s -> %s: %s",
+					    pth1, pth2, strerror(errno));
 				}
 
 				chg = TRUE;
@@ -886,7 +902,10 @@ tpth:
 		}
 
 		if ((md & (16 | 32)) && !fs_error && !fs_none) {
-			fs_rm(-1, NULL, NULL, 0, 1, 4|3);
+			if (fs_rm(-1, NULL, NULL, 0, 1,
+			    4 | 3 | (fs_ign_errs ? 8 : 0)) & 4) {
+				fs_ign_errs = TRUE;
+			}
 		}
 
 		chg = TRUE;
@@ -922,7 +941,8 @@ next:
 		    ? 0 : sto << 1);
 	}
 
-	r = 0;
+	r = (fs_error    ? 1 : 0) |
+	    (fs_ign_errs ? 2 : 0) ;
 
 ret:
 	if (bmode) {
@@ -937,7 +957,7 @@ ret0:
 	}
 
 #if defined(TRACE)
-	fprintf(debug, "<-fs_cp\n");
+	fprintf(debug, "<-fs_cp: 0x%x\n", r);
 #endif
 	return r;
 }
@@ -1147,7 +1167,7 @@ cp_file(void)
 		if (fs_testBreak()) {
 			return 1;
 		}
-}
+	}
 
 	if (S_ISREG(gstat[0].st_mode)) {
 		return cp_reg();
