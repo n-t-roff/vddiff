@@ -114,6 +114,11 @@ include		{ rc_col += yyleng; incl = 1            ; }
 		BEGIN QSTR;
 	}
 
+<QSTR>\\\" {
+		rc_col += yyleng;
+		qstr_append(yytext + 1, 1);
+	}
+
 <QSTR>[^\"\\\n]+ |
 <QSTR>\\. {
 		rc_col += yyleng;
