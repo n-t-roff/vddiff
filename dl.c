@@ -115,7 +115,6 @@ static int
 bdl_add(char *s)
 {
 	int r = 1;
-	size_t l;
 #ifdef HAVE_LIBAVLBST
 	struct bst_node *n;
 	int i;
@@ -127,23 +126,19 @@ bdl_add(char *s)
 	fprintf(debug, "->bdl_add(%s)\n", s);
 #endif
 
-	if (!(l = strlen(s))) {
+	if (!(s = msgrealpath(s))) {
 		goto ret;
 	}
 
-	/* allow "/" (root dir) */
-	if (--l && s[l] == '/') {
-		s[l] = 0;
-	}
-
 #ifdef HAVE_LIBAVLBST
-	if ((i = str_db_srch(&bdl_db, s, &n))) {
-		str_db_add(&bdl_db, strdup(s), i, n);
+	if (!(i = str_db_srch(&bdl_db, s, &n))) {
+		free(s);
+	} else {
+		str_db_add(&bdl_db, s, i, n);
 		bdl_num++;
 		r = 0;
 	}
 #else
-	s = strdup(s);
 	s2 = str_db_add(&bdl_db, s);
 
 	if (s2 == s) {
