@@ -585,6 +585,7 @@ next_key:
 				add_mtime = TRUE;
 				add_owner = TRUE;
 				add_group = TRUE;
+				re_sort_list();
 				disp_fmode();
 				goto next_key;
 
