@@ -1414,7 +1414,8 @@ ui_mv(int dst, long u, unsigned short num)
 		    !((fs_retval_ = fs_cp(dst, u, 1,
 		    16 | 5 | (fs_retval_ & 2 ? 0x40 : 0), NULL))
 		    /* Don't break loop on "ignore error" */
-		    & ~2)) {
+		    & ~2))
+		{
 		}
 
 		rebuild_db(0);
@@ -1429,14 +1430,18 @@ int
 ui_dd(int t, long u, unsigned short num)
 {
 	if (mmrkd[right_col]) {
+		int fs_retval_ = 0;
+
 		if (dialog(y_n_txt, NULL,
 		    "Really delete %d files?",
 		    mmrkd[right_col]) != 'y') {
 			return 1;
 		}
 
-		while ((u = get_mmrk()) >= 0) {
-			fs_rm(t, NULL, NULL, u, 1, 3);
+		while ((u = get_mmrk()) >= 0 &&
+		    !((fs_retval_ = fs_rm(t, NULL, NULL, u, 1,
+		    (fs_retval_ & 4 ? 8 : 0) | 3)) & ~4))
+		{
 		}
 
 		rebuild_db(0);
