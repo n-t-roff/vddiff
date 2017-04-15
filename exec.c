@@ -80,6 +80,11 @@ tool(char *name, char *rnam, int tree,
 	if (mode & 2) {
 		static char *a[] = { NULL, NULL };
 
+		if (dialog(y_n_txt, NULL, "Really execute %s?",
+		    name) != 'y') {
+			goto ret;
+		}
+
 		pthcat(syspth[right_col], pthlen[right_col], name);
 		*a = syspth[right_col];
 		exec_cmd(a, TOOL_BG|TOOL_NOLIST, NULL, NULL);
