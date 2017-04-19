@@ -82,13 +82,13 @@ tool(char *name, char *rnam, int tree,
 
 		if (dialog(y_n_txt, NULL, "Really execute %s?",
 		    name) != 'y') {
+			mode &= ~2;
+		} else {
+			pthcat(syspth[right_col], pthlen[right_col], name);
+			*a = syspth[right_col];
+			exec_cmd(a, TOOL_BG|TOOL_NOLIST, NULL, NULL);
 			goto ret;
 		}
-
-		pthcat(syspth[right_col], pthlen[right_col], name);
-		*a = syspth[right_col];
-		exec_cmd(a, TOOL_BG|TOOL_NOLIST, NULL, NULL);
-		goto ret;
 	}
 
 	l = strlen(name);

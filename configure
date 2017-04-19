@@ -89,8 +89,10 @@ gen_mk () {
 	[ -n "$LIB_CURSES" ] && echo "LIB_CURSES=$LIB_CURSES" >> $OUTMK
 	[ -n "$LIB_AVLBST" ] && echo "LIB_AVLBST=$LIB_AVLBST" >> $OUTMK
 	[ -n "$LIB_LEX" ] && echo "LIB_LEX=$LIB_LEX" >> $OUTMK
-	[ -n "$__CDBG" ] && echo "__CDBG=$__CDBG" >> $OUTMK
-	[ -n "$__CLDBG" ] && echo "__CLDBG=$__CLDBG" >> $OUTMK
+	[ -n "$__CDBG"    ] && echo "__CDBG=$__CDBG" >> $OUTMK
+	[ -n "$__CXXDBG"  ] && echo "__CXXDBG=$__CXXDBG" >> $OUTMK
+	[ -n "$__CLDBG"   ] && echo "__CLDBG=$__CLDBG" >> $OUTMK
+	[ -n "$__CLXXDBG" ] && echo "__CLXXDBG=$__CLXXDBG" >> $OUTMK
 	cat $INMK >> $OUTMK || exit 1
 }
 check_make () {
@@ -121,36 +123,46 @@ EOT
 check_Sanitizer () {
 	check_for "CC Sanitizer"
 
-	__CDBG="-g -O0 -fno-omit-frame-pointer -fno-optimize-sibling-calls"
-	__CDBG="$__CDBG -Wall"
-	__CDBG="$__CDBG -Wextra"
-	__CDBG="$__CDBG -Wsign-compare"
-	__CDBG="$__CDBG -Wcast-align"
-	__CDBG="$__CDBG -Wcast-qual"
-	__CDBG="$__CDBG -Wmissing-prototypes"
-	__CDBG="$__CDBG -Wunused-parameter"
-	__CDBG="$__CDBG -Wunused-function"
-	__CDBG="$__CDBG -Wshadow"
-	__CLDBG="-fno-common -fsanitize=address -fsanitize=undefined"
-	#__CLDBG="$__CLDBG -fsanitize-address-use-after-scope"
+	__CDBG="-Wmissing-prototypes"
+	__CLDBG=
+	__CXXDBG="-g -O0 -fno-omit-frame-pointer -fno-optimize-sibling-calls"
+	__CXXDBG="$__CXXDBG -Wall"
+	__CXXDBG="$__CXXDBG -Wextra"
+	__CXXDBG="$__CXXDBG -Wsign-compare"
+	__CXXDBG="$__CXXDBG -Wcast-align"
+	__CXXDBG="$__CXXDBG -Wcast-qual"
+	__CXXDBG="$__CXXDBG -Wunused-parameter"
+	__CXXDBG="$__CXXDBG -Wunused-function"
+	__CXXDBG="$__CXXDBG -Wshadow"
+	__CXXDBG="$__CXXDBG -Wmissing-prototypes"
+	__CXXDBG="$__CXXDBG -Wstrict-prototypes"
+	#__CXXDBG="$__CXXDBG -Wwrite-strings"
+	__CLXXDBG="-fno-common -fsanitize=address"
 
 	[ -n "$CC" ] || CC=cc
 	VER=`$CC --version`
-	if echo $VER | grep -iq gcc || echo $VER | grep -iq 'Free Software Foundation'; then
-		printf "(gcc) "
-		#__CLDBG="$__CDBG -fprofile-arcs -ftest-coverage"
+
+	if echo $VER | grep -iq gcc || echo $VER | \
+	    grep -iq 'Free Software Foundation'; then
+		[ -z "$SFLAG" ] && printf "(gcc) "
+		#__CLDBG="$__CXXDBG -fprofile-arcs -ftest-coverage"
+		__CLDBG="$__CLDBG -fsanitize=undefined"
 		__CLDBG="$__CLDBG -fsanitize=float-divide-by-zero"
 		__CLDBG="$__CLDBG -fsanitize=float-cast-overflow"
 	elif echo $VER | grep -q clang; then
-		printf "(clang) "
-		__CDBG="$__CDBG -Wincompatible-pointer-types-discards-qualifiers"
-		__CDBG="$__CDBG -Wmissing-variable-declarations"
-		__CLDBG="$__CLDBG -fsanitize=unsigned-integer-overflow"
+		[ -z "$SFLAG" ] && printf "(clang) "
+		__CXXDBG="$__CXXDBG -Wincompatible-pointer-types-discards-qualifiers"
+		__CXXDBG="$__CXXDBG -Wmissing-variable-declarations"
+		__CLXXDBG="$__CLXXDBG -fsanitize=undefined"
+		__CLXXDBG="$__CLXXDBG -fsanitize=unsigned-integer-overflow"
+		__CLXXDBG="$__CLXXDBG -fsanitize-address-use-after-scope"
 	else
-		echo "Unknown compiler"
+		[ -z "$SFLAG" ] && echo "Unknown compiler"
 		return
 	fi
 
+	__CDBG="$__CXXDBG $__CDBG"
+	__CLDBG="$__CLXXDBG $__CLDBG"
 	cat <<EOT >$TMPC
 int
 main() {
@@ -163,7 +175,10 @@ $TMPNAM: ${TMPNAM}.o
 	\$(CC) \$(__CDBG) \$(__CLDBG) -o \$@ ${TMPNAM}.o
 EOT
 	compile
-	test_result || __CLDBG=
+	test_result || {
+		__CLDBG=
+		__CLXXDBG=
+	}
 }
 check_futimens () {
 	check_for "futimens(3)"
@@ -359,16 +374,21 @@ EOT
 
 curses_mk_compat_h () {
 	cat <<EOT >>compat.h
-#define _XOPEN_SOURCE_EXTENDED
-#if defined HAVE_NCURSESW_CURSES_H
+#ifndef _XOPEN_SOURCE_EXTENDED
+# define _XOPEN_SOURCE_EXTENDED
+#endif
+
+#if defined(HAVE_NCURSESW_CURSES_H)
 # include <ncursesw/curses.h>
-#elif defined HAVE_NCURSES_CURSES_H
+#elif defined(HAVE_NCURSES_CURSES_H)
 # include <ncurses/curses.h>
 #else
 # include <curses.h>
+
 # ifndef false
 #  define false 0
 # endif
+
 # ifndef true
 #  define true 1
 # endif
