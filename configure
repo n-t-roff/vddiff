@@ -155,7 +155,6 @@ check_Sanitizer () {
 		__CXXDBG="$__CXXDBG -Wmissing-variable-declarations"
 		__CLXXDBG="$__CLXXDBG -fsanitize=undefined"
 		__CLXXDBG="$__CLXXDBG -fsanitize=unsigned-integer-overflow"
-		__CLXXDBG="$__CLXXDBG -fsanitize-address-use-after-scope"
 	else
 		[ -z "$SFLAG" ] && echo "Unknown compiler"
 		return

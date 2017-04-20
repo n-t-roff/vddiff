@@ -8,7 +8,7 @@ LIBDIR=	$(PREFIX)/lib
 # installation of different tool versions.
 
 TRACE=	#-DTRACE='"/tmp/.$(BIN)_trace_"'
-DEBUG=	#-DDEBUG
+DEBUG=	#-DUNIMP -DDEBUG
 STRP=	-s
 
 OBJ=	main.o pars.o lex.o diff.o ui.o db.o exec.o fs.o ed.o uzp.o ver.o \

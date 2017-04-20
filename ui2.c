@@ -92,7 +92,7 @@ test_fkey(int c, unsigned short num)
 		if (fkey_cmd[i]) {
 			struct tool t;
 			unsigned ti;
-			unsigned short act;
+			unsigned act;
 			static char *keys =
 			    "<ENTER> execute, 'e' edit, 'n' no";
 
@@ -106,7 +106,7 @@ test_fkey(int c, unsigned short num)
 			     * to be updated by the command itself */
 			    TOOL_NOLIST |
 			    (fkey_flags[i] & FKEY_WAIT ? TOOL_WAIT : 0));
-			act = num > 1 ? 0 : 1;
+			act = num > 1 ? 8 : 9;
 
 			if ((force_exec || (fkey_flags[i] & FKEY_FORCE)) &&
 			    (force_multi || num <= 1)) {
@@ -148,7 +148,7 @@ exec:
 
 					while ((u = get_mmrk()) >= 0) {
 						top_idx[right_col] = u;
-						action(1, 3, act, FALSE);
+						action(3, act);
 					}
 
 					curs[right_col] = cu;
@@ -160,7 +160,7 @@ exec:
 				    num, fkey_cmd[i]);
 #endif
 				while (num--) {
-					action(1, 3, act, FALSE);
+					action(3, act);
 					top_idx[right_col]++; /* kludge */
 				}
 #if defined(TRACE)

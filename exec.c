@@ -65,11 +65,8 @@ tool(char *name, char *rnam, int tree,
     /* 2: execute */
     unsigned short mode)
 {
-	size_t l;
 	char *cmd;
 	struct tool *tmptool = NULL;
-	short skipped = 0;
-	int c;
 
 #ifdef TRACE
 	TRCPTH;
@@ -91,10 +88,6 @@ tool(char *name, char *rnam, int tree,
 		}
 	}
 
-	l = strlen(name);
-	cmd = lbuf + sizeof lbuf;
-	*--cmd = 0;
-
 	/* Make diff instead calling a type specific viewer */
 
 	if (tree == 3 ||
@@ -103,28 +96,13 @@ tool(char *name, char *rnam, int tree,
 	   (mode & 1))
 		goto settool;
 
-	while (l) {
-		*--cmd = tolower((int)name[--l]);
+	tmptool = check_ext_tool(name);
 
-		if (!skipped && *cmd == '.' &&
-		    !str_db_srch(&skipext_db, cmd + 1, NULL)) {
-			*cmd = 0;
-			skipped = 1;
-		}
-
-		if (cmd == lbuf)
-			break;
-	}
-
-	while ((c = *cmd++)) {
-		if (c == '.' && *cmd && (tmptool = db_srch_ext(cmd)))
-			break;
-	}
-
-	if (!tmptool)
+	if (!tmptool) {
 settool:
 		tmptool = (tree == 3 || (name && rnam)) && !(mode & 1) ?
 		    &difftool : &viewtool;
+	}
 
 	if (tmptool->flags & TOOL_SHELL) {
 		cmd = exec_mk_cmd(tmptool, name, rnam, tree);
@@ -148,6 +126,42 @@ ret:
 			cmd = realloc(cmd, csiz); \
 		} \
 	} while (0)
+
+/* Uses and modifies `lbuf` */
+
+struct tool *
+check_ext_tool(const char *name)
+{
+	size_t l;
+	char *cmd;
+	int c;
+	struct tool *tmptool = NULL;
+	short skipped = 0;
+
+	l = strlen(name);
+	cmd = lbuf + sizeof lbuf;
+	*--cmd = 0;
+
+	while (l) {
+		*--cmd = tolower((int)name[--l]);
+
+		if (!skipped && *cmd == '.' &&
+		    !str_db_srch(&skipext_db, cmd + 1, NULL)) {
+			*cmd = 0;
+			skipped = 1;
+		}
+
+		if (cmd == lbuf)
+			break;
+	}
+
+	while ((c = *cmd++)) {
+		if (c == '.' && *cmd && (tmptool = db_srch_ext(cmd)))
+			break;
+	}
+
+	return tmptool;
+}
 
 /* Only used for commands which are executed by /bin/sh (not exec() directly */
 

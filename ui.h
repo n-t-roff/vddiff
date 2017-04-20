@@ -38,7 +38,7 @@ int vdialog(const char *, const char *, const char *, va_list);
 void disp_list(unsigned);
 void center(unsigned);
 void no_file(void);
-void action(short, short, unsigned short, bool);
+void action(short, unsigned);
 void mark_global(void);
 void clr_mark(void);
 void disp_curs(int);

@@ -67,10 +67,8 @@ static const char *tmpdirbase;
 static struct uz_ext exttab[] = {
 	{ "bz2"    , UZ_BZ2 },
 	{ "gz"     , UZ_GZ  },
-	/*
 	{ "ods"    , UZ_ZIP },
 	{ "odt"    , UZ_ZIP },
-	*/
 	{ "tar"    , UZ_TAR },
 	{ "tar.bz2", UZ_TBZ },
 	{ "tar.gz" , UZ_TGZ },
@@ -219,6 +217,8 @@ unpack(const struct filediff *f, int tree, char **tmp,
     /* 1: Also unpack files, not just archives */
     /* 2: Non-curses mode */
     /* 4: Always set tmpdir */
+    /* 8: Check if viewer is set for extension. In this case the archive
+          is not unpacked. */
     int type)
 {
 	enum uz_id id;
@@ -236,6 +236,10 @@ unpack(const struct filediff *f, int tree, char **tmp,
 
 	s = f->name ? f->name : bmode ? gl_mark : tree == 1 ? mark_lnam :
 	    mark_rnam;
+
+	if ((type & 8) && check_ext_tool(s)) {
+		goto ret;
+	}
 
 	if ((id = check_ext(s, &i)) == UZ_NONE)
 		goto ret;

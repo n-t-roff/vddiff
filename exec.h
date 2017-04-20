@@ -28,6 +28,7 @@ extern char *nishell;
 extern bool wait_after_exec;
 
 void tool(char *, char *, int, unsigned short);
+struct tool *check_ext_tool(const char *);
 char *exec_mk_cmd(struct tool *, char *, char *, int);
 void free_tool(struct tool *);
 void set_tool(struct tool *, char *, tool_flags_t);

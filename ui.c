@@ -417,7 +417,7 @@ next_key:
 				break;
 			}
 
-			action(0, 3, c == '\n' ? 1 : 0 /* act */, FALSE);
+			action(3, c == '\n' ? 1 : 0);
 			/* Don't clear {c} above this line, it is read there */
 			c = 0;
 			break;
@@ -764,13 +764,13 @@ next_key:
 
 			if (S_ISREG(f->type[0]) && !S_ISREG(f->type[1])) {
 				c = 0;
-				action(0, 1, 0 /* act */, TRUE);
+				action(1, 2);
 				break;
 			}
 
 			if (S_ISREG(f->type[1]) && !S_ISREG(f->type[0])) {
 				c = 0;
-				action(0, 2, 0 /* act */, TRUE);
+				action(2, 2);
 				break;
 			}
 
@@ -793,12 +793,12 @@ next_key:
 
 			case 'v':
 				c = 0;
-				action(0, 1, 0 /* act */, TRUE);
+				action(1, 2);
 				goto next_key;
 
 			case 'o':
 				c = 0;
-				action(0, 1, 0 /* act */, FALSE);
+				action(1, 4);
 				goto next_key;
 
 			case 'e':
@@ -898,12 +898,12 @@ next_key:
 
 			case 'v':
 				c = 0;
-				action(0, 2, 0 /* act */, TRUE);
+				action(2, 2);
 				goto next_key;
 
 			case 'o':
 				c = 0;
-				action(0, 2, 0 /* act */, FALSE);
+				action(2, 4);
 				goto next_key;
 
 			case 'e':
@@ -1344,13 +1344,13 @@ next_key:
 
 			if (S_ISREG(f->type[0]) && !S_ISREG(f->type[1])) {
 				c = 0;
-				action(0, 1, 0 /* act */, FALSE);
+				action(1, 4);
 				break;
 			}
 
 			if (S_ISREG(f->type[1]) && !S_ISREG(f->type[0])) {
 				c = 0;
-				action(0, 2, 0 /* act */, FALSE);
+				action(2, 4);
 				break;
 			}
 
@@ -1976,7 +1976,7 @@ proc_mevent(int *c)
 			*c = 'V'; /* Fake key */
 
 		} else if (mevent.bstate & BUTTON1_DOUBLE_CLICKED) {
-			action(0, 3, 0 /* act */, FALSE);
+			action(3, 0);
 		}
 
 # if NCURSES_MOUSE_VERSION >= 2
@@ -2011,18 +2011,19 @@ proc_mevent(int *c)
 
 void
 action(
-    /* Used by function key starting with "$ ".
-     * Ignore file type and file name extension, just use plain file name.
-     * (Don't enter directories!) */
-    short ign_ext,
     short tree,
-    /* 0: <RIGHT> or double click: Enter directory
-     * 1: <ENTER>: Do a compare
-     * ! IF ACT==0 MARKS ARE IGNORED ! */
-    unsigned short act,
-    /* Used by 'v', "vl" and "vr":
-     * Unzip file but then view raw file using standard view tool. */
-    bool raw_cont)
+/*
+    0: <RIGHT> or double click: Enter directory
+    1: <ENTER>: Do a compare
+       ! IF !mode&1 MARKS ARE IGNORED !
+    2: Used by 'v', "vl" and "vr":
+       Unzip file but then view raw file using standard view tool.
+    4: Used by 'o', "ol" and "or"
+    8: Used by function key starting with "$ ".
+       Ignore file type and file name extension, just use plain file name.
+       (Don't enter directories!)
+*/
+    unsigned mode)
 {
 	struct filediff *f, *f1, *f2, *z1 = NULL, *z2 = NULL;
 	char *t1 = NULL, *t2 = NULL;
@@ -2030,13 +2031,18 @@ action(
 	static char *typerr = "Not a directory or regular file";
 	static char *typdif = "Different file type";
 	mode_t typ[2];
-	bool diff_act_ = !bmode && !fmode && tree == 3 && act;
-	bool exec_act_ = file_exec && !ign_ext && !raw_cont &&
-	    (bmode || fmode) && act;
+	bool diff_act_ = !bmode && !fmode && tree == 3 && (mode & 1);
+	bool exec_act_ = file_exec && !(mode & 8) && !(mode & 2) &&
+	    (bmode || fmode) && (mode & 1);
+	bool force_tool_ =
+	    /* Always in 'o' (open) mode */
+	    (mode & 4) ||
+	    /* In browse mode also ENTER is sufficient */
+	    ((bmode || fmode) && (mode & 1));
 
 #if defined(TRACE)
-	fprintf(debug, "->action(ignext=%d t=%d act=%u raw=%d) mark=%d\n",
-	    ign_ext, tree, act, raw_cont, mark ? 1 : 0);
+	fprintf(debug, "->action(ignext=%d t=%d act=%u raw=%u) mark=%d\n",
+	    (mode & 8), tree, (mode & 1), (mode & 2), mark ? 1 : 0);
 #endif
 	if (!db_num[right_col])
 		goto out;
@@ -2046,7 +2052,7 @@ action(
 #if defined(TRACE)
 	fprintf(debug, "  f1->name(%s)\n", f1->name);
 #endif
-	if (mark && act) {
+	if (mark && (mode & 1)) {
 		struct filediff *m;
 		mode_t ltyp = 0, rtyp = 0;
 		char *lnam, *rnam, *mnam;
@@ -2059,7 +2065,7 @@ action(
 		       m->type[1] ? mark_rnam :
 		       "<error>" ;
 
-		if (!ign_ext) {
+		if (!(mode & 8)) {
 			/* check if mark needs to be unzipped */
 			if ((z1 = unpack(m,
 			    m->type[0] && (f1->type[1] || !m->type[1]) ? 1 : 2,
@@ -2142,8 +2148,8 @@ action(
 		fprintf(debug, "  mark: lnam(%s) rnam(%s) t=%d\n",
 		    lnam, rnam, tree);
 #endif
-		if (ign_ext || (S_ISREG(ltyp) && S_ISREG(rtyp))) {
-			tool(lnam, rnam, tree, ign_ext || raw_cont ? 1 : 0);
+		if ((mode & 8) || (S_ISREG(ltyp) && S_ISREG(rtyp))) {
+			tool(lnam, rnam, tree, (mode & 8) || (mode & 2) ? 1 : 0);
 
 		} else if (S_ISDIR(ltyp) || S_ISDIR(rtyp)) {
 			if (!S_ISDIR(ltyp)) {
@@ -2184,11 +2190,13 @@ action(
 		goto ret;
 	}
 
-	if (!ign_ext) {
-		if (f1->type[0] && (z1 = unpack(f1, 1, &t1, 1)))
+	if (!(mode & 8)) {
+		if (f1->type[0] && (z1 = unpack(f1, 1, &t1,
+		    force_tool_ ? 9 : 1)))
 			f1 = z1;
 
-		if (f2->type[1] && (z2 = unpack(f2, 2, &t2, 1)))
+		if (f2->type[1] && (z2 = unpack(f2, 2, &t2,
+		    force_tool_ ? 9 : 1)))
 			f2 = z2;
 	}
 
@@ -2199,11 +2207,11 @@ action(
 	    (diff_act_ && S_ISDIR(typ[1]) && !S_ISDIR(typ[0])) ||
 	    /* Tested here to support "or" */
 	    tree == 2) {
-		if (S_ISREG(typ[1]) || ign_ext)
+		if (S_ISREG(typ[1]) || (mode & 8))
 			tool(f2->name, NULL, 2,
 			    exec_act_ && S_ISREG(typ[1]) &&
 			      (typ[1] & S_IXUSR) ? 2 :
-			    ign_ext || raw_cont ? 1 : 0);
+			    (mode & 8) || (mode & 2) ? 1 : 0);
 		else if (S_ISDIR(typ[1])) {
 			/* Used by fmode */
 
@@ -2220,11 +2228,11 @@ action(
 	} else if (!typ[1] ||
 	    (diff_act_ && S_ISDIR(typ[0]) && !S_ISDIR(typ[1])) ||
 	    tree == 1) {
-		if (S_ISREG(typ[0]) || ign_ext)
+		if (S_ISREG(typ[0]) || (mode & 8))
 			tool(f1->name, NULL, 1,
 			    exec_act_ && S_ISREG(typ[0]) &&
 			      (typ[0] & S_IXUSR) ? 2 :
-			    ign_ext || raw_cont ? 1 : 0);
+			    (mode & 8) || (mode & 2) ? 1 : 0);
 		else if (S_ISDIR(typ[0])) {
 			/* Used by bmode and fmode */
 
@@ -2239,7 +2247,7 @@ action(
 			goto ret;
 		}
 	} else if ((typ[0] & S_IFMT) == (typ[1] & S_IFMT)) {
-		if (ign_ext || raw_cont)
+		if ((mode & 8) || (mode & 2))
 			tool(f1->name, f2->name, 3, 1);
 		else if (S_ISREG(typ[0])) {
 			if (f1->diff == '!')

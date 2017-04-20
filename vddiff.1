@@ -13,7 +13,7 @@ LOSS OF USE, DATA OR PROFITS, WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE OR
 OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
 PERFORMANCE OF THIS SOFTWARE.
 ..
-.Dd March 29, 2017
+.Dd April 20, 2017
 .Dt VDDIFF 1
 .Sh NAME
 .Nm @vddiff@
@@ -56,16 +56,36 @@ These files are detected by their file name extension,
 the file contents are not (yet) checked.
 Currently the following file name extensions are
 supported:
-.Li bz2 ,
-.Li gz ,
-.Li tar ,
-.Li tbz ,
-.Li tgz ,
-.Li txz ,
-.Li xz ,
-.Li zip ,
+.Li .bz2 ,
+.Li .gz ,
+.Li .tar ,
+.Li .tbz ,
+.Li .tgz ,
+.Li .txz ,
+.Li .xz ,
+.Li .zip ,
 and
-.Li Z .
+.Li .Z .
+.Li .ods
+and
+.Li .odt
+are also treated as archives.
+If a view tool is set for them using the
+.Cm ext
+command,
+key
+.Sq Li o ,
+.Dq Li ol ,
+or
+.Dq Li or
+must be used to open the tool.
+In
+.Sy bmode
+and
+.Sy fmode
+(see below) also key
+.Aq Cm ENTER
+opens the configured tool.
 .Pp
 If one argument is a directory and the other is a
 non-directory, a diff is done between the non-directory
