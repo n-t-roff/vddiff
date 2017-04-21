@@ -497,6 +497,8 @@ dl_down(unsigned short d)
 	}
 
 	dl_curs(1);
+	/* Only necessary for old ncurses versions. */
+	touchwin(wlist);
 	wrefresh(wlist);
 }
 
@@ -520,6 +522,8 @@ dl_up(unsigned short d)
 	}
 
 	dl_curs(1);
+	/* Only necessary for old ncurses versions. */
+	touchwin(wlist);
 	wrefresh(wlist);
 }
 
