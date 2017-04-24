@@ -671,8 +671,8 @@ static void
 dl_curs(unsigned m)
 {
 	mvwchgat(wlist, dl_pos - dl_top, 0, -1,
-	    m == 0 || color ? A_NORMAL : A_REVERSE,
-	    m != 0 && color ? PAIR_CURSOR : 0,
+	    m ? get_curs_attr() : get_off_attr(),
+	    m ? get_curs_pair() : get_off_pair(),
 	    NULL);
 }
 

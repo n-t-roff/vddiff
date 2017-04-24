@@ -1116,9 +1116,7 @@ standoutc(WINDOW *w)
 void
 chgat_curs(WINDOW *w, int y)
 {
-	mvwchgat(w, y, 0, -1,
-	    color ? 0 : A_STANDOUT,
-	    color ? PAIR_CURSOR : 0, NULL);
+	mvwchgat(w, y, 0, -1, get_curs_attr(), get_curs_pair(), NULL);
 }
 
 void
@@ -1134,7 +1132,31 @@ standendc(WINDOW *w)
 void
 chgat_off(WINDOW *w, int y)
 {
-	mvwchgat(w, y, 0, -1, 0, color ? PAIR_NORMAL : 0, NULL);
+	mvwchgat(w, y, 0, -1, get_off_attr(), get_off_pair(), NULL);
+}
+
+attr_t
+get_curs_attr(void)
+{
+	return color ? 0 : A_STANDOUT;
+}
+
+attr_t
+get_off_attr(void)
+{
+	return 0;
+}
+
+short
+get_curs_pair(void)
+{
+	return color ? PAIR_CURSOR : 0;
+}
+
+short
+get_off_pair(void)
+{
+	return color ? PAIR_NORMAL : 0;
 }
 
 int
