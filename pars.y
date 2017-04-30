@@ -47,7 +47,7 @@ extern char *yytext;
 %token VIEWTOOL EXT BG FKEY BMODE HISTSIZE SKIPEXT NOIC MAGIC NOWS SCALE
 %token SHELL SH NORMAL_COLOR CURSOR_COLOR ERROR_COLOR MARK_COLOR BG_COLOR
 %token ALIAS TWOCOLUMN READONLY DISP_PERM DISP_OWNER DISP_GROUP DISP_HSIZE
-%token DISP_MTIME MMRK_COLOR LOCALE FILE_EXEC
+%token DISP_MTIME MMRK_COLOR LOCALE FILE_EXEC UZ_ADD
 %token <str>     STRING
 %token <integer> INTEGER
 %%
@@ -102,6 +102,7 @@ option:
 	| SH STRING                    { nishell = $2                     ; }
 	| ALIAS STRING STRING          { add_alias($2, $3, 0)             ; }
 	| ALIAS STRING BG STRING       { add_alias($2, $4, TOOL_BG)       ; }
+	| UZ_ADD STRING STRING         { ; }
 	| TWOCOLUMN                    { twocols = TRUE                   ; }
 	| READONLY                     { readonly = TRUE; nofkeys = TRUE  ; }
 	| DISP_PERM                    { add_mode = TRUE                  ; }

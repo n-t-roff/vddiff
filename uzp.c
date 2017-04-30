@@ -51,7 +51,7 @@ static char *zpths(const struct filediff *, struct filediff **, int, size_t *,
     int, int);
 
 char *tmp_dir;
-/* View path names used bei the UI.
+/* View path names used by the UI.
  * syspth[0] and syspth[1] are only used for file system access. */
 char *vpath[2];
 /* View path buffer size. Initially set by uz_init(). */
@@ -69,6 +69,7 @@ static struct uz_ext exttab[] = {
 	{ "gz"     , UZ_GZ  },
 	{ "ods"    , UZ_ZIP },
 	{ "odt"    , UZ_ZIP },
+	{ "pptx"   , UZ_ZIP },
 	{ "tar"    , UZ_TAR },
 	{ "tar.bz2", UZ_TBZ },
 	{ "tar.gz" , UZ_TGZ },
@@ -79,7 +80,8 @@ static struct uz_ext exttab[] = {
 	{ "txz"    , UZ_TXZ },
 	{ "xz"     , UZ_XZ  },
 	{ "Z"      , UZ_GZ  },
-	{ "zip"    , UZ_ZIP }
+	{ "zip"    , UZ_ZIP },
+	{ "xlsx"   , UZ_ZIP }
 };
 
 int
@@ -88,11 +90,13 @@ uz_init(void)
 	int i;
 	char *s;
 
-	for (i = 0; i < (ssize_t)(sizeof(exttab)/sizeof(*exttab)); i++)
-		uz_db_add(exttab + i);
+	for (i = 0; i < (ssize_t)(sizeof(exttab)/sizeof(*exttab)); i++) {
+		uz_db_add(strdup(exttab[i].str), exttab[i].id);
+	}
 
-	if (!(s = getenv("TMPDIR")))
+	if (!(s = getenv("TMPDIR"))) {
 		s = "/var/tmp";
+	}
 
 	if (!(tmpdirbase = realpath(s, NULL))) {
 		printerr(strerror(errno), LOCFMT

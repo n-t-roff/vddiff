@@ -492,10 +492,15 @@ free_scan_db(bool os)
  ****************/
 
 void
-uz_db_add(struct uz_ext *p)
+uz_db_add(const char *ext, enum uz_id id)
 {
+	struct uz_ext *p;
+
+	p = malloc(sizeof(struct uz_ext));
+	p->str = ext;
+	p->id = id;
 #ifdef HAVE_LIBAVLBST
-	avl_add(uz_ext_db, (union bst_val)(void *)p->str,
+	avl_add(uz_ext_db, (union bst_val)(const void *)p->str,
 	    (union bst_val)(void *)p);
 #else
 	tsearch(p, &uz_ext_db, uz_cmp);

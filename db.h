@@ -35,7 +35,7 @@ struct tool *db_srch_ext(char *);
 void db_set_curs(int, char *, unsigned, unsigned);
 unsigned *db_get_curs(int, char *);
 char *str_tolower(char *);
-void uz_db_add(struct uz_ext *);
+void uz_db_add(const char *, enum uz_id);
 enum uz_id uz_db_srch(char *);
 int ptr_db_add(void **, char *, void *);
 int ptr_db_srch(void **, char *, void **, void **);

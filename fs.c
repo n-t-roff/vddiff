@@ -1160,23 +1160,35 @@ rm_file(void)
 static int
 cp_file(void)
 {
+	int rv = 1;
+
+#if defined(TRACE)
+	fprintf(debug, "->cp_file\n");
+#endif
+
 	if ((fs_t2 = time(NULL)) - fs_t1) {
 		printerr(NULL, "Copy \"%s\" -> \"%s\"", pth1, pth2);
 		fs_t1 = fs_t2;
 
 		if (fs_testBreak()) {
-			return 1;
+			goto ret;
 		}
 	}
 
 	if (S_ISREG(gstat[0].st_mode)) {
-		return cp_reg();
+		rv = cp_reg();
 	} else if (S_ISLNK(gstat[0].st_mode)) {
-		return cp_link();
+		rv = cp_link();
 	} else {
 		printerr(NULL, "Not copied: \"%s\"", pth1);
-		return 0; /* Not an error */
+		rv = 0; /* Not an error */
 	}
+
+ret:
+#if defined(TRACE)
+	fprintf(debug, "<-cp_file: %d\n", rv);
+#endif
+	return rv;
 }
 
 /* !0: Break */
@@ -1277,6 +1289,8 @@ static int
 cp_reg(void)
 {
 	int f1, f2;
+	/* rv must only be set in code. Clearing rv may hide errors. */
+	int rv = 0;
 	ssize_t l1, l2;
 #ifdef HAVE_FUTIMENS
 	struct timespec ts[2];
@@ -1285,20 +1299,22 @@ cp_reg(void)
 #endif
 
 #if defined(TRACE)
-	fprintf(debug, "<>cp_reg \"%s\" -> \"%s\"\n", pth1, pth2);
+	fprintf(debug, "->cp_reg \"%s\" -> \"%s\"\n", pth1, pth2);
 #endif
+
 	if (!fs_stat(pth2, &gstat[1])) {
 		if (S_ISREG(gstat[1].st_mode)) {
 			bool ms = FALSE;
 
 			if (!cmp_file(pth1, gstat[0].st_size,
 			              pth2, gstat[1].st_size, 1)) {
-				return 0;
+				goto ret;
 			}
 
 			if (fs_deldialog(y_a_n_txt, "overwrite", "file ",
 			    pth2)) {
-				return 1;
+				rv = 1;
+				goto ret;
 			}
 test:
 			if (!access(pth2, W_OK)) {
@@ -1330,7 +1346,8 @@ test:
 			if (!followlinks &&
 			    fs_rm(0 /* tree */, "overwrite", NULL /* nam */,
 			    0 /* u */, 1 /* n */, 4|2 /* md */) == 1) {
-				return 1;
+				rv = 1;
+				goto ret;
 			}
 		}
 	}
@@ -1339,7 +1356,8 @@ copy:
 	if ((f2 = open(pth2, O_CREAT | O_TRUNC | O_WRONLY,
 	    gstat[0].st_mode & 07777)) == -1) {
 		printerr(strerror(errno), "create \"%s\"", pth2);
-		return -1;
+		rv = -1;
+		goto ret;
 	}
 
 	if (!gstat[0].st_size)
@@ -1347,12 +1365,14 @@ copy:
 
 	if ((f1 = open(pth1, O_RDONLY)) == -1) {
 		printerr(strerror(errno), "open \"%s\"", pth1);
+		rv = -1;
 		goto close2;
 	}
 
 	while (1) {
 		if ((l1 = read(f1, lbuf, sizeof lbuf)) == -1) {
 			printerr(strerror(errno), "read \"%s\"", pth1);
+			rv = -1;
 			break;
 		}
 
@@ -1361,11 +1381,13 @@ copy:
 
 		if ((l2 = write(f2, lbuf, l1)) == -1 && !fs_ign_errs) {
 			fs_fwrap("write \"%s\"", pth2, strerror(errno));
+			rv = -1;
 			break;
 		}
 
 		if (l2 != l1) {
 			fs_fwrap("\"%s\"", pth2, "write error");
+			rv = -1;
 			break; /* error */
 		}
 
@@ -1388,7 +1410,12 @@ setattr:
 
 close2:
 	close(f2);
-	return 0;
+
+ret:
+#if defined(TRACE)
+	fprintf(debug, "<-cp_reg: %d\n", rv);
+#endif
+	return rv;
 }
 
 static void
