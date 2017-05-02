@@ -45,15 +45,18 @@ PERFORMANCE OF THIS SOFTWARE.
 #include "dl.h"
 #include "misc.h"
 
+static void db_dl_free(char **);
 #ifdef HAVE_LIBAVLBST
 static void *db_new(int (*)(union bst_val, union bst_val));
 static int name_cmp(union bst_val, union bst_val);
 static int diff_cmp(union bst_val, union bst_val);
 static int ddl_cmp(union bst_val, union bst_val);
+static int bdl_cmp(union bst_val, union bst_val);
 static void mk_list(struct bst_node *);
 static void diff_db_delete(struct bst_node *);
 static void del_strs(struct bst_node *);
 static void mk_ddl(struct bst_node *);
+static void mk_bdl(struct bst_node *);
 static void mk_str_list(struct bst_node *);
 #else
 struct curs_pos {
@@ -68,8 +71,10 @@ static int ext_cmp(const void *, const void *);
 static int uz_cmp(const void *, const void *);
 static int ptr_db_cmp(const void *, const void *);
 static int ddl_cmp(const void *, const void *);
+static int bdl_cmp(const void *, const void *);
 static void mk_list(const void *, const VISIT, const int);
 static void mk_ddl(const void *, const VISIT, const int);
+static void mk_bdl(const void *, const VISIT, const int);
 static void mk_str_list(const void *, const VISIT, const int);
 #endif
 
@@ -89,7 +94,6 @@ void *name_db;
 void *skipext_db;
 void *uz_path_db;
 static void *alias_db;
-void *bdl_db;
 
 static void *curs_db[2];
 static void *ext_db;
@@ -102,9 +106,11 @@ static struct scan_db *scan_db_list;
 static struct bst diff_db[2] = { { NULL, diff_cmp },
                                  { NULL, diff_cmp } };
 static struct bst ddl_db = { NULL, ddl_cmp };
+static struct bst bdl_db = { NULL, bdl_cmp };
 #else
 static void *diff_db[2];
 static void *ddl_db;
+static void *bdl_db;
 #endif
 
 #ifdef HAVE_LIBAVLBST
@@ -120,7 +126,6 @@ db_init(void)
 	skipext_db = db_new(name_cmp);
 	uz_path_db = db_new(name_cmp);
 	alias_db   = db_new(name_cmp);
-	bdl_db     = db_new(name_cmp);
 }
 
 static void *
@@ -1101,7 +1106,7 @@ diff_db_delete(struct bst_node *n)
 #endif
 
 /*******************************
- * Diff mode directory list DB *
+ * Directory list DB *
  *******************************/
 
 #define STRSL(s) \
@@ -1115,46 +1120,57 @@ diff_db_delete(struct bst_node *n)
 /* 0: Was in DB, 1: Now added to DB */
 
 int
-ddl_add(char *d1, char *d2)
+db_dl_add(char *d1, char *d2, char *desc)
 {
 	char **da;
 	int rv = 0;
 	size_t l;
 #ifdef HAVE_LIBAVLBST
+	struct bst *db;
 	struct bst_node *n;
 	int br;
 #else
+	void *db;
 	void *vp;
 #endif
 
 #if defined(TRACE)
-	fprintf(debug, "->ddl_add(%d:%s,%s)\n", ddl_num, d1, d2);
+	fprintf(debug, "->db_dl_add(%s,%s,%s)\n", d1, d2, desc);
 #endif
 	STRSL(d1);
-	STRSL(d2);
 
-	da = malloc(sizeof(char *) * 2);
+	if (d2) {
+		STRSL(d2);
+		db = &ddl_db;
+	} else {
+		db = &bdl_db;
+	}
+
+	/* da[0] = dir or left dir
+	   da[1] = desc
+	   da[2] = NULL or right dir */
+	da = calloc(3, sizeof(char *));
+	da[1] = desc;
 
 	if (!(*da = msgrealpath(d1))) {
-		da[1] = NULL;
 		goto ret;
 	}
 
-	if (!(da[1] = msgrealpath(d2))) {
+	if (d2 && !(da[2] = msgrealpath(d2))) {
 		goto ret;
 	}
 
 #ifdef HAVE_LIBAVLBST
-	if (!(br = bst_srch(&ddl_db, (union bst_val)(void *)da, &n))) {
+	if (!(br = bst_srch(db, (union bst_val)(void *)da, &n))) {
 		goto ret;
 	}
 
-	avl_add_at(&ddl_db, (union bst_val)(void *)da,
+	avl_add_at(db, (union bst_val)(void *)da,
 	    (union bst_val)(int)0, br, n);
 	rv = 1;
 	goto ret;
 #else
-	vp = tsearch(da, &ddl_db, ddl_cmp);
+	vp = tsearch(da, db, d2 ? ddl_cmp : bdl_cmp);
 
 	if (*(char ***)vp != da) {
 		goto ret;
@@ -1166,15 +1182,22 @@ ddl_add(char *d1, char *d2)
 
 ret:
 	if (!rv) {
-		free(*da);
-		free(da[1]);
-		free(da);
+		db_dl_free(da);
 	}
 
 #if defined(TRACE)
-	fprintf(debug, "<-ddl_add:%s added\n", rv ? "" : " not");
+	fprintf(debug, "<-db_dl_add:%s added\n", rv ? "" : " not");
 #endif
 	return rv;
+}
+
+static void
+db_dl_free(char **k)
+{
+	free(*k);
+	free(k[1]);
+	free(k[2]);
+	free(k);
 }
 
 void
@@ -1188,9 +1211,21 @@ ddl_del(char **k)
 #else
 	tdelete(k, &ddl_db, ddl_cmp);
 #endif
-	free(*k);
-	free(k[1]);
-	free(k);
+	db_dl_free(k);
+}
+
+void
+bdl_del(char **k)
+{
+#ifdef HAVE_LIBAVLBST
+	struct bst_node *n;
+
+	bst_srch(&bdl_db, (union bst_val)(void *)k, &n);
+	avl_del_node(&bdl_db, n);
+#else
+	tdelete(k, &bdl_db, bdl_cmp);
+#endif
+	db_dl_free(k);
 }
 
 void
@@ -1206,6 +1241,22 @@ ddl_sort(void)
 	mk_ddl(ddl_db.root);
 #else
 	twalk(ddl_db, mk_ddl);
+#endif
+}
+
+void
+bdl_sort(void)
+{
+	if (!bdl_num) {
+		return;
+	}
+
+	bdl_list = malloc(sizeof(char **) * bdl_num);
+	db_idx = 0; /* shared with diff_db */
+#ifdef HAVE_LIBAVLBST
+	mk_bdl(bdl_db.root);
+#else
+	twalk(bdl_db, mk_bdl);
 #endif
 }
 
@@ -1238,6 +1289,35 @@ mk_ddl(const void *n, const VISIT which, const int depth)
 }
 #endif
 
+#ifdef HAVE_LIBAVLBST
+static void
+mk_bdl(struct bst_node *n)
+{
+	if (!n) {
+		return;
+	}
+
+	mk_bdl(n->left);
+	bdl_list[db_idx++] = n->key.p;
+	mk_bdl(n->right);
+}
+#else
+static void
+mk_bdl(const void *n, const VISIT which, const int depth)
+{
+	(void)depth;
+
+	switch (which) {
+	case postorder:
+	case leaf:
+		bdl_list[db_idx++] = *(char ** const *)n;
+		break;
+	default:
+		;
+	}
+}
+#endif
+
 static int
 ddl_cmp(
 #ifdef HAVE_LIBAVLBST
@@ -1262,11 +1342,37 @@ ddl_cmp(
 #endif
 
 	if (!i) {
-		i = strcmp(a1[1], a2[1]);
+		i = strcmp(a1[2], a2[2]);
 #if defined(TRACE) && 0
-		fprintf(debug, "  ddl_cmp(1:%s,%s): %d\n", a1[1], a2[1], i);
+		fprintf(debug, "  ddl_cmp(1:%s,%s): %d\n", a1[2], a2[2], i);
 #endif
 	}
+
+	return i;
+}
+
+static int
+bdl_cmp(
+#ifdef HAVE_LIBAVLBST
+    union bst_val a, union bst_val b
+#else
+    const void *a, const void *b
+#endif
+    )
+{
+	int i;
+#ifdef HAVE_LIBAVLBST
+	char **a1 = a.p,
+	     **a2 = b.p;
+#else
+	char *const *a1 = a,
+	     *const *a2 = b;
+#endif
+
+	i = strcmp(*a1, *a2);
+#if defined(TRACE) && 0
+	fprintf(debug, "  bdl_cmp(0:%s,%s): %d\n", *a1, *a2, i);
+#endif
 
 	return i;
 }

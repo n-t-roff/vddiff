@@ -44,6 +44,7 @@ static void remove_flock(int);
 static const char info_name[] = "." BIN "info.new";
 const char info_dir_txt[] = "dir";
 const char info_ddir_txt[] = "diffdir";
+const char info_desc_txt[] = "description";
 
 char *info_pth;
 static char *info_tpth;
@@ -400,16 +401,23 @@ ret:
 static void
 info_wr_bdl(FILE *fh)
 {
-	char **a;
 	unsigned i;
 
-	a = str_db_sort(bdl_db, bdl_num);
+	bdl_sort();
 
 	for (i = 0; i < bdl_num; i++) {
-		fprintf(fh, "%s\n%s\n", info_dir_txt, a[i]);
+		fprintf(fh, "%s\n", info_dir_txt);
+
+		if (bdl_list[i][1]) {
+			fprintf(fh, "%s\n", info_dir_txt);
+			fprintf(fh, "%s\n", bdl_list[i][1]);
+		}
+
+		fprintf(fh, "%s\n", bdl_list[i][0]);
 	}
 
-	free(a);
+	free(bdl_list);
+	bdl_list = NULL;
 }
 
 static void
@@ -421,7 +429,7 @@ info_wr_ddl(FILE *fh)
 
 	for (i = 0; i < ddl_num; i++) {
 		fprintf(fh, "%s\n%s\n%s\n", info_ddir_txt, ddl_list[i][0],
-		    ddl_list[i][1]);
+		    ddl_list[i][2]);
 	}
 
 	free(ddl_list);

@@ -47,7 +47,6 @@ static void dl_scrl_up(unsigned short);
 static void dl_pg_down(void);
 static void dl_pg_up(void);
 static void dl_del(void);
-static int bdl_add(char *);
 static void dl_act(void);
 static void dl_regcomp(void);
 static int dl_regexec(int);
@@ -66,8 +65,10 @@ static unsigned dl_num;
 static int dl_wnum;
 static unsigned bdl_top, ddl_top, dl_top;
 static unsigned bdl_pos, ddl_pos, dl_pos;
-static char **bdl_list;
+char ***bdl_list;
 char ***ddl_list;
+
+/* Called from ui.c when "Da" is pressed */
 
 void
 dl_add(void)
@@ -83,7 +84,8 @@ dl_add(void)
 			s = syspth[0];
 		}
 
-		if (!bdl_add(s)) {
+		if (db_dl_add(s, NULL, NULL) == 1) {
+			bdl_num++;
 			info_store();
 		}
 
@@ -97,83 +99,24 @@ dl_add(void)
 		syspth[1][pthlen[1]] = 0;
 		syspth[0][pthlen[0]] = 0;
 
-		if (ddl_add(syspth[0], syspth[1]) == 1) {
+		if (db_dl_add(syspth[0], syspth[1], NULL) == 1) {
 			ddl_num++;
 			info_store();
 		}
 
-		/* ddl_add() changes string length */
+		/* db_dl_add() changes string length */
 		pthlen[1] = strlen(syspth[1]);
 		pthlen[0] = strlen(syspth[0]);
 	}
 }
 
-/* 0: Not found -> now added */
-/* 1: Was already in DB -> *not* added */
-
-static int
-bdl_add(char *s)
-{
-	int r = 1;
-#ifdef HAVE_LIBAVLBST
-	struct bst_node *n;
-	int i;
-#else
-	char *s2;
-#endif
-
-#if defined(TRACE)
-	fprintf(debug, "->bdl_add(%s)\n", s);
-#endif
-
-	if (!(s = msgrealpath(s))) {
-		goto ret;
-	}
-
-#ifdef HAVE_LIBAVLBST
-	if (!(i = str_db_srch(&bdl_db, s, &n))) {
-		free(s);
-	} else {
-		str_db_add(&bdl_db, s, i, n);
-		bdl_num++;
-		r = 0;
-	}
-#else
-	s2 = str_db_add(&bdl_db, s);
-
-	if (s2 == s) {
-		bdl_num++;
-		r = 0;
-	} else {
-		free(s);
-	}
-#endif
-
-ret:
-#if defined(TRACE)
-	fprintf(debug, "<-bdl_add %sadded, num->%u\n",
-	    r ? "not " : "", bdl_num);
-#endif
-	return r;
-}
-
 static void
 dl_del(void)
 {
-#ifdef HAVE_LIBAVLBST
-	struct bst_node *n;
-#else
-	char *n;
-#endif
 	unsigned i;
 
 	if (bmode || fmode) {
-#ifdef HAVE_LIBAVLBST
-		str_db_srch(&bdl_db, bdl_list[dl_pos], &n);
-#else
-		n = bdl_list[dl_pos];
-#endif
-		str_db_del(&bdl_db, n);
+		bdl_del(bdl_list[dl_pos]);
 		bdl_num--;
 	} else {
 		ddl_del(ddl_list[dl_pos]);
@@ -218,7 +161,7 @@ dl_list(void)
 	}
 
 	if (bmode || fmode) {
-		bdl_list = str_db_sort(bdl_db, bdl_num);
+		bdl_sort();
 		dl_num = bdl_num;
 		dl_top = bdl_top;
 		dl_pos = bdl_pos;
@@ -468,12 +411,12 @@ dl_line(unsigned y, unsigned i)
 
 	if (bmode || fmode) {
 		wmove(wlist, y, dl_wnum);
-		putmbsra(wlist, bdl_list[i], 0);
+		putmbsra(wlist, bdl_list[i][0], 0);
 	} else {
 		wmove(wlist, y, dl_wnum);
 		putmbsra(wlist, ddl_list[i][0], llstw);
 		wmove(wlist, y, rlstx);
-		putmbsra(wlist, ddl_list[i][1], 0);
+		putmbsra(wlist, ddl_list[i][2], 0);
 	}
 }
 
@@ -718,7 +661,7 @@ static void
 dl_act(void)
 {
 	if (bmode || fmode) {
-		enter_dir(bdl_list[dl_pos], NULL, FALSE, FALSE, 0 LOCVAR);
+		enter_dir(bdl_list[dl_pos][0], NULL, FALSE, FALSE, 0 LOCVAR);
 	} else {
 		while (ui_stack) {
 			pop_state(0);
@@ -729,7 +672,7 @@ dl_act(void)
 		pthlen[0] = 0;
 		pthlen[1] = 0;
 		scan_subdir(ddl_list[dl_pos][0],
-		            ddl_list[dl_pos][1], 3);
+		            ddl_list[dl_pos][2], 3);
 		disp_list(1);
 	}
 }
@@ -812,9 +755,9 @@ dl_regexec(
 		}
 
 		if (bmode || fmode) {
-			    k = regexec(&re_dat, bdl_list[i]   , 0, NULL, 0);
+			    k = regexec(&re_dat, bdl_list[i][0], 0, NULL, 0);
 		} else if ((k = regexec(&re_dat, ddl_list[i][0], 0, NULL, 0))) {
-			    k = regexec(&re_dat, ddl_list[i][1], 0, NULL, 0);
+			    k = regexec(&re_dat, ddl_list[i][2], 0, NULL, 0);
 		}
 
 		if (!k) {
@@ -906,13 +849,30 @@ dl_2bot(void)
 void
 dl_info_bdl(FILE *fh)
 {
+	char *desc = NULL;
+	bool set_desc_ = FALSE;
+
+next:
 	if (!fgets(lbuf, BUF_SIZE, fh)) {
 		printerr("Too few arguments", "\"%s\" in \"%s\"",
 		    info_dir_txt, info_pth);
 	}
 
 	info_chomp(lbuf);
-	bdl_add(lbuf);
+
+	if (set_desc_) {
+		set_desc_ = FALSE;
+		free(desc);
+		desc = strdup(lbuf);
+		goto next;
+	} else if (!strcmp(lbuf, info_desc_txt)) {
+		set_desc_ = TRUE;
+		goto next;
+	}
+
+	if (db_dl_add(lbuf, NULL, desc) == 1) {
+		bdl_num++;
+	}
 }
 
 void
@@ -927,7 +887,7 @@ dl_info_ddl(FILE *fh)
 	info_chomp(lbuf);
 	info_chomp(rbuf);
 
-	if (ddl_add(lbuf, rbuf) == 1) {
+	if (db_dl_add(lbuf, rbuf, NULL) == 1) {
 		ddl_num++;
 	}
 }

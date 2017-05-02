@@ -46,9 +46,11 @@ void *str_db_get_node(void *);
 void push_scan_db(bool);
 void pop_scan_db(void);
 void free_scan_db(bool);
-int ddl_add(char *, char *);
+int db_dl_add(char *, char *, char *);
 void ddl_del(char **);
+void bdl_del(char **);
 void ddl_sort(void);
+void bdl_sort(void);
 
 extern enum sorting sorting;
 extern unsigned db_num[2];
@@ -61,4 +63,3 @@ extern void *scan_db;
 extern void *name_db;
 extern void *skipext_db;
 extern void *uz_path_db;
-extern void *bdl_db;
