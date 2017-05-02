@@ -398,6 +398,7 @@ ret:
 	return rv;
 }
 
+#define INFO_ADD(x) fprintf(fh, "%s\n", x)
 static void
 info_wr_bdl(FILE *fh)
 {
@@ -406,14 +407,14 @@ info_wr_bdl(FILE *fh)
 	bdl_sort();
 
 	for (i = 0; i < bdl_num; i++) {
-		fprintf(fh, "%s\n", info_dir_txt);
+		INFO_ADD(info_dir_txt);
 
 		if (bdl_list[i][1]) {
-			fprintf(fh, "%s\n", info_dir_txt);
-			fprintf(fh, "%s\n", bdl_list[i][1]);
+			INFO_ADD(info_desc_txt);
+			INFO_ADD(bdl_list[i][1]);
 		}
 
-		fprintf(fh, "%s\n", bdl_list[i][0]);
+		INFO_ADD(bdl_list[i][0]);
 	}
 
 	free(bdl_list);
@@ -428,8 +429,15 @@ info_wr_ddl(FILE *fh)
 	ddl_sort();
 
 	for (i = 0; i < ddl_num; i++) {
-		fprintf(fh, "%s\n%s\n%s\n", info_ddir_txt, ddl_list[i][0],
-		    ddl_list[i][2]);
+		INFO_ADD(info_ddir_txt);
+
+		if (ddl_list[i][1]) {
+			INFO_ADD(info_desc_txt);
+			INFO_ADD(ddl_list[i][1]);
+		}
+
+		INFO_ADD(ddl_list[i][0]);
+		INFO_ADD(ddl_list[i][2]);
 	}
 
 	free(ddl_list);

@@ -103,7 +103,8 @@ wchar_t *sh_str[FKEY_NUM];
 char *fkey_cmd[FKEY_NUM];
 unsigned fkey_flags[FKEY_NUM];
 
-static unsigned listw, help_top;
+unsigned listw;
+static unsigned help_top;
 unsigned listh;
 WINDOW *wlist;
 WINDOW *wstat;

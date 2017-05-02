@@ -56,6 +56,7 @@ static void dl_last(void);
 static void dl_2mid(void);
 static void dl_2top(void);
 static void dl_2bot(void);
+static void set_comment(void);
 #ifdef NCURSES_MOUSE_VERSION
 static int dl_mevent(void);
 #endif
@@ -216,6 +217,13 @@ dl_list(void)
 
 			break;
 #endif
+		case KEY_RESIZE:
+			set_win_dim();
+			endwin();
+			refresh();
+			dl_disp();
+			break;
+
 		case KEY_LEFT:
 		case 'q':
 			goto ret;
@@ -332,6 +340,11 @@ dl_list(void)
 		case CTRL('l'):
 			endwin();
 			refresh();
+			dl_disp();
+			break;
+
+		case 'A':
+			set_comment();
 			break;
 
 		default:
@@ -407,16 +420,31 @@ dl_disp(void)
 static void
 dl_line(unsigned y, unsigned i)
 {
+	ssize_t l;
+	unsigned x;
+
 	mvwprintw(wlist, y, 0, "%u", i + 1);
 
 	if (bmode || fmode) {
 		wmove(wlist, y, dl_wnum);
-		putmbsra(wlist, bdl_list[i][0], 0);
+		l = putmbsra(wlist, bdl_list[i][0], 0);
+
+		if (bdl_list[i][1] && l > 0 && (x = dl_wnum + l) < listw) {
+			wmove(wlist, y, x);
+			snprintf(lbuf, sizeof lbuf, " (%s)", bdl_list[i][1]);
+			putmbs(wlist, lbuf, -1);
+		}
 	} else {
 		wmove(wlist, y, dl_wnum);
 		putmbsra(wlist, ddl_list[i][0], llstw);
 		wmove(wlist, y, rlstx);
-		putmbsra(wlist, ddl_list[i][2], 0);
+		l = putmbsra(wlist, ddl_list[i][2], 0);
+
+		if (ddl_list[i][1] && l > 0 && (x = rlstx + l) < listw) {
+			wmove(wlist, y, x);
+			snprintf(lbuf, sizeof lbuf, " (%s)", ddl_list[i][1]);
+			putmbs(wlist, lbuf, -1);
+		}
 	}
 }
 
@@ -878,6 +906,9 @@ next:
 void
 dl_info_ddl(FILE *fh)
 {
+	char *desc = NULL;
+
+next:
 	if (!fgets(lbuf, BUF_SIZE, fh) ||
 	    !fgets(rbuf, BUF_SIZE, fh)) {
 		printerr("Too few arguments", "\"%s\" in \"%s\"",
@@ -887,7 +918,47 @@ dl_info_ddl(FILE *fh)
 	info_chomp(lbuf);
 	info_chomp(rbuf);
 
-	if (db_dl_add(lbuf, rbuf, NULL) == 1) {
+	if (!strcmp(lbuf, info_desc_txt)) {
+		free(desc);
+		desc = strdup(rbuf);
+		goto next;
+	}
+
+	if (db_dl_add(lbuf, rbuf, desc) == 1) {
 		ddl_num++;
+	}
+}
+
+static void
+set_comment(void)
+{
+	char **entry_;
+
+	if (!dl_num) {
+		return;
+	}
+
+	entry_ = bmode || fmode ? bdl_list[dl_pos] :
+	                          ddl_list[dl_pos] ;
+
+	if (!ed_dialog("Enter comment (<ESC> to cancel):",
+	    entry_[1], NULL, 0, NULL)) {
+		free(entry_[1]);
+
+		if (!*rbuf) {
+			entry_[1] = NULL;
+		} else {
+			entry_[1] = strdup(rbuf);
+		}
+
+		/* Clear line else trailing chars are not removed when
+		   comment is shortened */
+		wmove(wlist, dl_pos - dl_top, 0);
+		wclrtoeol(wlist);
+		dl_line(dl_pos - dl_top, dl_pos);
+		dl_curs(1);
+		touchwin(wlist);
+		wrefresh(wlist);
+		info_store();
 	}
 }

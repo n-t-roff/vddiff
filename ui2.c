@@ -1219,6 +1219,7 @@ rebuild_scr(void)
 	refr_scr();
 }
 
+/* Number of wide chars */
 ssize_t
 mbstowchs(WINDOW *w, char *s)
 {
@@ -1268,6 +1269,7 @@ putwcs(WINDOW *w, wchar_t *s,
 	wadd_wchnstr(w, ccbuf, n);
 }
 
+/* Number of wide chars */
 ssize_t
 putmbs(WINDOW *w, char *s,
     /* -1: unlimited */
@@ -1304,7 +1306,7 @@ addmbs(WINDOW *w, char *s, int mx)
 	(void)my;
 
 	if (cx >= mx)
-		return 1;
+		return -2; /* Not really an error */
 
 	if ((l = putmbs(w, s, n)) == -1)
 		return -1;
@@ -1317,6 +1319,8 @@ addmbs(WINDOW *w, char *s, int mx)
 	wmove(w, cy, cx);
 	return 0;
 }
+
+/* Number of wide chars */
 
 ssize_t
 putmbsra(WINDOW *w, char *s, int mx)
@@ -1334,7 +1338,7 @@ putmbsra(WINDOW *w, char *s, int mx)
 	(void)my;
 
 	if (cx >= mx)
-		return 1;
+		return -2; /* Not really an error */
 
 	if ((l = mbstowchs(w, s)) == -1)
 		return -1;
