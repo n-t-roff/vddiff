@@ -1,4 +1,4 @@
-#define TOOL_BG      1
+#define TOOL_BG      1 /* Run as background process */
 #define TOOL_NOARG   2
 #define TOOL_SHELL   4 /* Run command with "sh -c ..." */
 #define TOOL_WAIT    8 /* Wait for <ENTER> after command */

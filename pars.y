@@ -47,7 +47,7 @@ extern char *yytext;
 %token VIEWTOOL EXT BG FKEY BMODE HISTSIZE SKIPEXT NOIC MAGIC NOWS SCALE
 %token SHELL SH NORMAL_COLOR CURSOR_COLOR ERROR_COLOR MARK_COLOR BG_COLOR
 %token ALIAS TWOCOLUMN READONLY DISP_PERM DISP_OWNER DISP_GROUP DISP_HSIZE
-%token DISP_MTIME MMRK_COLOR LOCALE FILE_EXEC UZ_ADD UZ_DEL
+%token DISP_MTIME MMRK_COLOR LOCALE FILE_EXEC UZ_ADD UZ_DEL WAIT
 %token <str>     STRING
 %token <integer> INTEGER
 %%
@@ -58,13 +58,14 @@ option_list:
 	| option_list option
 	;
 option:
-	  DIFFTOOL STRING       { set_tool(&difftool, $2, 0)              ; }
-	| DIFFTOOL BG STRING    { set_tool(&difftool, $3, TOOL_BG)        ; }
-	| VIEWTOOL STRING       { set_tool(&viewtool, $2, 0)              ; }
-	| VIEWTOOL BG STRING    { set_tool(&viewtool, $3, TOOL_BG)        ; }
-	| EXT STRING STRING     { db_def_ext($2, $3, 0)                   ; }
-	| EXT STRING BG STRING  { db_def_ext($2, $4, TOOL_BG)             ; }
-	| SKIPEXT STRING        { str_db_add(&skipext_db, str_tolower($2)
+	  DIFFTOOL STRING        { set_tool(&difftool, $2, 0)             ; }
+	| DIFFTOOL BG STRING     { set_tool(&difftool, $3, TOOL_BG)       ; }
+	| VIEWTOOL STRING        { set_tool(&viewtool, $2, 0)             ; }
+	| VIEWTOOL BG STRING     { set_tool(&viewtool, $3, TOOL_BG)       ; }
+	| EXT STRING STRING      { db_def_ext($2, $3, 0)                  ; }
+	| EXT STRING BG STRING   { db_def_ext($2, $4, TOOL_BG)            ; }
+	| EXT STRING WAIT STRING { db_def_ext($2, $4, TOOL_BG|TOOL_WAIT)  ; }
+	| SKIPEXT STRING         { str_db_add(&skipext_db, str_tolower($2)
 #ifdef HAVE_LIBAVLBST
 	                              , 0, NULL
 #endif
@@ -102,6 +103,7 @@ option:
 	| SH STRING                    { nishell = $2                     ; }
 	| ALIAS STRING STRING          { add_alias($2, $3, 0)             ; }
 	| ALIAS STRING BG STRING       { add_alias($2, $4, TOOL_BG)       ; }
+	| ALIAS STRING WAIT STRING     { add_alias($2, $4, TOOL_BG|TOOL_WAIT); }
 	| UZ_ADD STRING STRING         { uz_add($2, $3)                   ; }
 	| UZ_DEL STRING                { uz_db_del($2)                    ; }
 	| TWOCOLUMN                    { twocols = TRUE                   ; }

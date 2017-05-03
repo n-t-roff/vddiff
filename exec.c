@@ -541,14 +541,20 @@ exec_cmd(char **av, tool_flags_t flags, char *path, char *msg)
 		fgetc(stdin);
 		_exit(77);
 	default:
-		if (!wait_after_exec && (flags & TOOL_BG)) {
+		if (!wait_after_exec /* key 'W' */
+		    && (flags & TOOL_BG)
+		    /* "ext wait ..." sets BG + WAIT */
+		    && !(flags & TOOL_WAIT)) {
 			break;
 		}
 
-		/* did always return "interrupted sys call" on OI */
-		waitpid(pid, &status, 0);
+		if (!(flags & TOOL_BG)) {
+			/* did always return "interrupted sys call" on OI */
+			waitpid(pid, &status, 0);
+		}
 
-		if (wait_after_exec || (flags & TOOL_WAIT)) {
+		if (wait_after_exec /* key 'W' */
+		    || (flags & TOOL_WAIT)) {
 			write(STDOUT_FILENO, prompt, sizeof prompt);
 			fgetc(stdin);
 		}

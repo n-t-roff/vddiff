@@ -62,6 +62,7 @@ viewtool	{ rc_col += yyleng; return VIEWTOOL     ; }
 ext		{ rc_col += yyleng; return EXT          ; }
 skipext		{ rc_col += yyleng; return SKIPEXT      ; }
 bg		{ rc_col += yyleng; return BG           ; }
+wait		{ rc_col += yyleng; return WAIT         ; }
 fkey		{ rc_col += yyleng; return FKEY         ; }
 filesfirst	{ rc_col += yyleng; return FILES        ; }
 mixed		{ rc_col += yyleng; return MIXED        ; }

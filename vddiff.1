@@ -1432,6 +1432,21 @@ after the keyword
 Start
 .Ar string
 as a background process.
+.It Li ext Ar extension Li wait Ar string
+Wait for a key pressed after starting
+.Ar string
+as a background process.
+If
+.Ar string
+should be started as background process
+but applied to a compressed file, the decompressed
+file may be removed before
+.Ar string
+is started.
+When using key word
+.Cm wait ,
+the tool waits for pressing a key before it continues
+(and removes the decompressed file).
 .It Li alias Ar name Ar string
 If a pipe of tools (like the nroff pipe above)
 or a command with options (like e.g.
@@ -1470,6 +1485,10 @@ ext mp3 audio
 .Ed
 .It Li alias Ar name Li bg Ar string
 Start
+.Ar string
+as a background process.
+.It Li alias Ar name Li wait Ar string
+Wait for pressing a key after starting
 .Ar string
 as a background process.
 .It Li skipext Ar extension
