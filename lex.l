@@ -100,6 +100,8 @@ disp_hsize	{ rc_col += yyleng; return DISP_HSIZE   ; }
 disp_mtime	{ rc_col += yyleng; return DISP_MTIME   ; }
 locale		{ rc_col += yyleng; return LOCALE       ; }
 file_exec	{ rc_col += yyleng; return FILE_EXEC    ; }
+uz_add		{ rc_col += yyleng; return UZ_ADD       ; }
+uz_del		{ rc_col += yyleng; return UZ_DEL       ; }
 include		{ rc_col += yyleng; incl = 1            ; }
 {S}+		{ rc_col += yyleng; }
 

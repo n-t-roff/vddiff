@@ -84,6 +84,18 @@ static struct uz_ext exttab[] = {
 	{ "xlsx"   , UZ_ZIP }
 };
 
+static struct uz_ext idtab[] = {
+	{ "bz2"    , UZ_BZ2 },
+	{ "gz"     , UZ_GZ  },
+	{ "tar"    , UZ_TAR },
+	{ "tar.Z"  , UZ_TAR_Z },
+	{ "tbz"    , UZ_TBZ },
+	{ "tgz"    , UZ_TGZ },
+	{ "txz"    , UZ_TXZ },
+	{ "xz"     , UZ_XZ  },
+	{ "zip"    , UZ_ZIP }
+};
+
 int
 uz_init(void)
 {
@@ -111,6 +123,32 @@ uz_init(void)
 	*vpath[1] = 0;
 #endif
 	return 0;
+}
+
+void
+uz_add(char *ext, char *str)
+{
+	int i;
+	enum uz_id id = UZ_NONE;
+
+	for (i = 0; i < (ssize_t)(sizeof(idtab)/sizeof(*idtab)); i++) {
+		if (!strcmp(str, idtab[i].str)) {
+			id = idtab[i].id;
+			break;
+		}
+	}
+
+	if (UZ_NONE == id) {
+		fprintf(stderr, "Invalid archive ID %s\n", str);
+		exit(1);
+	}
+
+	if (UZ_NONE != uz_db_srch(ext)) {
+		uz_db_del(ext);
+	}
+
+	uz_db_add(ext, id);
+	free(str);
 }
 
 void

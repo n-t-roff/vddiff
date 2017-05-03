@@ -13,7 +13,7 @@ LOSS OF USE, DATA OR PROFITS, WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE OR
 OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
 PERFORMANCE OF THIS SOFTWARE.
 ..
-.Dd May 2, 2017
+.Dd May 3, 2017
 .Dt VDDIFF 1
 .Sh NAME
 .Nm @vddiff@
@@ -1269,6 +1269,7 @@ Find previous matching pattern.
 Finish regex search.
 .It Sq Li A
 Add short description for a list entry.
+A description can be removed by entering an empty string.
 .It Aq Cm CTRL-l
 Rebuild screen.
 .El
@@ -1572,6 +1573,34 @@ expanded.
 (The include command does only work
 if @vddiff@ had been build with a lex version
 which supports buffer switching.)
+.It Li uz_add Ar file_extension Ar decompress_algorithm
+Assign new file extension to an implemented decompress algorithm.
+Currently the following file extensions are assigned:
+.Bl -column -offset indent ".Sy Extension" ".Sy Algorithm"
+.It Sy Extension Ta Sy Algorithm
+.It Li bz2     Ta Li bz2
+.It Li gz      Ta Li gz
+.It Li ods     Ta Li zip
+.It Li odt     Ta Li zip
+.It Li pptx    Ta Li zip
+.It Li tar     Ta Li tar
+.It Li tar.bz2 Ta Li tbz
+.It Li tar.gz  Ta Li tgz
+.It Li tar.xz  Ta Li txz
+.It Li tar.Z   Ta Li tar.Z
+.It Li tbz     Ta Li tbz
+.It Li tgz     Ta Li tgz
+.It Li txz     Ta Li txz
+.It Li xz      Ta Li xz
+.It Li Z       Ta Li gz
+.It Li zip     Ta Li zip
+.It Li xlsx    Ta Li zip
+.El
+.It Li uz_del Ar file_extension
+If it is not desired to decompress a file with a file extension
+listed above (or added with
+.Cm uz_add ) ,
+the file extension can be removed with this command.
 .It Li filesfirst
 Display directories at the end instead on top.
 .It Li mixed

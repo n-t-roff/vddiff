@@ -497,10 +497,13 @@ free_scan_db(bool os)
  ****************/
 
 void
-uz_db_add(const char *ext, enum uz_id id)
+uz_db_add(char *ext, enum uz_id id)
 {
 	struct uz_ext *p;
 
+#if defined(TRACE)
+	fprintf(debug, "<>uz_db_add(%s, %d)\n", ext, id);
+#endif
 	p = malloc(sizeof(struct uz_ext));
 	p->str = ext;
 	p->id = id;
@@ -517,13 +520,19 @@ uz_db_srch(char *str)
 {
 #ifdef HAVE_LIBAVLBST
 	struct bst_node *n;
-
-	if (!bst_srch(uz_ext_db, (union bst_val)(void *)str, &n))
-		return ((struct uz_ext *)n->data.p)->id;
 #else
 	struct uz_ext key;
 	void *vp;
+#endif
 
+#if defined(TRACE)
+	fprintf(debug, "<>uz_db_srch(%s)\n", str);
+#endif
+
+#ifdef HAVE_LIBAVLBST
+	if (!bst_srch(uz_ext_db, (union bst_val)(void *)str, &n))
+		return ((struct uz_ext *)n->data.p)->id;
+#else
 	key.str = str;
 
 	if ((vp = tfind(&key, &uz_ext_db, uz_cmp)))
@@ -533,13 +542,65 @@ uz_db_srch(char *str)
 		return UZ_NONE;
 }
 
+void
+uz_db_del(char *ext)
+{
+	struct uz_ext *ue;
+#ifdef HAVE_LIBAVLBST
+	struct bst_node *n;
+#else
+	struct uz_ext key;
+	void *vp;
+#endif
+
+#if defined(TRACE)
+	fprintf(debug, "->uz_db_del(%s)\n", ext);
+#endif
+
+#ifdef HAVE_LIBAVLBST
+	if (bst_srch(uz_ext_db, (union bst_val)(void *)ext, &n)) {
+		goto ret;
+	}
+
+	ue = n->data.p;
+	avl_del_node(uz_ext_db, n);
+#else
+	key.str = ext;
+#if defined(TRACE)
+	fprintf(debug, "  tfind...\n");
+#endif
+
+	if (!(vp = tfind(&key, &uz_ext_db, uz_cmp))) {
+		goto ret;
+	}
+
+#if defined(TRACE)
+	fprintf(debug, "  tdelete...\n");
+#endif
+	ue = *(struct uz_ext **)vp;
+	tdelete(ue, &uz_ext_db, uz_cmp);
+#endif
+	free(ue->str);
+	free(ue);
+
+ret:
+	free(ext);
+#if defined(TRACE)
+	fprintf(debug, "<-uz_db_del\n");
+#endif
+}
+
 #ifndef HAVE_LIBAVLBST
 static int
 uz_cmp(const void *a, const void *b)
 {
-	return strcmp(
-	    ((const struct uz_ext *)a)->str,
-	    ((const struct uz_ext *)b)->str);
+	const char *as = ((const struct uz_ext *)a)->str;
+	const char *bs = ((const struct uz_ext *)b)->str;
+
+#if defined(TRACE)
+	fprintf(debug, "<>uz_cmp(%p(%s),%p(%s))\n",a,as,b,bs);
+#endif
+	return strcmp(as, bs);
 }
 #endif
 
