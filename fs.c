@@ -48,7 +48,8 @@ struct str_list {
 	struct str_list *next;
 };
 
-static void proc_dir(void);
+static int proc_dir(void);
+static void rm_dir(void);
 static void rm_file(void);
 static int cp_file(void);
 static int creatdir(void);
@@ -65,7 +66,11 @@ static int fs_testBreak(void);
 static time_t fs_t1, fs_t2;
 static char *pth1, *pth2;
 static size_t len1, len2;
-static enum { TREE_RM, TREE_CP } tree_op;
+static enum {
+    TREE_RM, /* delete */
+    TREE_CP, /* copy */
+    TREE_NOT_EMPTY
+} tree_op;
 /* Ignores all syscall errors (continues on return value -1) */
 /* Set by fs_fwrap() on key 'i' */
 static bool fs_ign_errs;
@@ -491,6 +496,7 @@ fs_rm(
 	struct stat st;
 	int ntr = 0; /* next tree */
 	bool chg = FALSE;
+	bool empty_dir_;
 
 	fs_error = FALSE;
 	fs_ign_errs = md & 8 ? TRUE : FALSE;
@@ -637,12 +643,28 @@ ntr:
 			continue;
 		}
 
+		empty_dir_ = FALSE;
+
 		if (!(md & 1) && !m) {
+			char *typ = NULL;
+
+			if (S_ISDIR(gstat[0].st_mode)) {
+				int v;
+
+				tree_op = TREE_NOT_EMPTY;
+				v = proc_dir();
+
+				if (!v) {
+					empty_dir_ = TRUE;
+					typ = "directory ";
+				} else if (v > 0) {
+					typ = "non-empty directory ";
+				}
+			}
+
 			if (fs_deldialog(
 			    tree < 1 || nam || ntr ? y_a_n_txt : y_n_txt,
-			    txt ? txt : "delete",
-			    S_ISDIR(gstat[0].st_mode) ? "directory " : NULL,
-			    pth1)) {
+			    txt ? txt : "delete", typ, pth1)) {
 				rv = 1;
 				goto ret;
 			}
@@ -650,7 +672,9 @@ ntr:
 
 		chg = TRUE;
 
-		if (S_ISDIR(gstat[0].st_mode)) {
+		if (empty_dir_) {
+			rm_dir();
+		} else if (S_ISDIR(gstat[0].st_mode)) {
 			tree_op = TREE_RM;
 			proc_dir();
 		} else {
@@ -1026,21 +1050,23 @@ rebuild_db(
 #endif
 }
 
-static void
+/* Case "dir not empty": -1: error, 0: empty, 1: not empty */
+static int
 proc_dir(void)
 {
 	DIR *d;
 	struct dirent *ent;
 	char *name;
 	struct str_list *dirs = NULL;
+	int rv = 0;
 
 	if (tree_op == TREE_CP && creatdir()) {
-		return;
+		return -1;
 	}
 
 	if (!(d = opendir(pth1))) {
 		printerr(strerror(errno), "opendir %s failed", pth1);
-		return;
+		return -1;
 	}
 
 	while (!fs_error && !fs_none) {
@@ -1056,7 +1082,7 @@ proc_dir(void)
 			pth1[len1] = 0;
 			printerr(strerror(errno), "readdir %s failed", pth1);
 			closedir(d);
-			return;
+			return -1;
 		}
 
 		name = ent->d_name;
@@ -1064,6 +1090,11 @@ proc_dir(void)
 		if (*name == '.' && (!name[1] || (name[1] == '.' &&
 		    !name[2]))) {
 			continue;
+		}
+
+		if (tree_op == TREE_NOT_EMPTY) {
+			rv++;
+			break;
 		}
 
 		pthcat(pth1, len1, name);
@@ -1102,8 +1133,13 @@ closedir:
 	closedir(d);
 	pth1[len1] = 0;
 
-	if (tree_op == TREE_CP)
+	if (tree_op == TREE_NOT_EMPTY) {
+		return rv;
+	}
+
+	if (tree_op == TREE_CP) {
 		pth2[len2] = 0;
+	}
 
 	while (dirs) {
 		size_t l1, l2 = 0 /* silence warning */;
@@ -1131,8 +1167,21 @@ closedir:
 		free(p);
 	}
 
-	if (!fs_error && tree_op == TREE_RM &&
-	    rmdir(pth1) == -1 && !fs_ign_errs) {
+	if (tree_op == TREE_RM) {
+		rm_dir();
+	}
+
+	return rv;
+}
+
+static void
+rm_dir(void)
+{
+#if defined(TRACE)
+	fprintf(debug, "<>rm_dir(%s)\n", pth1);
+#endif
+
+	if (!fs_error && rmdir(pth1) == -1 && !fs_ign_errs) {
 
 		fs_fwrap("rmdir \"%s\": %s", pth1, strerror(errno));
 	}
