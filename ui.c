@@ -4176,6 +4176,8 @@ void
 printerr(const char *s2, const char *s1, ...)
 {
 	va_list ap;
+	char *buf;
+	static const size_t bufsiz = 4096;
 
 #if defined(TRACE)
 	fputs("<>printerr: ", debug);
@@ -4206,20 +4208,23 @@ printerr(const char *s2, const char *s1, ...)
 		return;
 	}
 
+	buf = malloc(bufsiz);
 	wstat_dirty = TRUE;
 	werase(wstat);
 	wmove(wstat, s2 ? 0 : 1, 0);
 
 	if (s1) {
 		va_start(ap, s1);
-		vwprintw(wstat, s1, ap);
+		vsnprintf(buf, bufsiz, s1, ap);
+		putmbs(wstat, buf, -1);
 		va_end(ap);
 	}
 
 	if (s2) {
 		wmove(wstat, 1, 0);
 		wclrtoeol(wstat);
-		wprintw(wstat, "%s", s2);
+		snprintf(buf, bufsiz, "%s", s2);
+		putmbs(wstat, buf, -1);
 		wrefresh(wstat);
 		getch();
 		werase(wstat);
@@ -4227,6 +4232,7 @@ printerr(const char *s2, const char *s1, ...)
 
 	filt_stat();
 	wrefresh(wstat);
+	free(buf);
 }
 
 int
