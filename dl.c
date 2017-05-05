@@ -68,6 +68,7 @@ static unsigned bdl_top, ddl_top, dl_top;
 static unsigned bdl_pos, ddl_pos, dl_pos;
 char ***bdl_list;
 char ***ddl_list;
+static bool disp_comment_only;
 
 /* Called from ui.c when "Da" is pressed */
 
@@ -347,6 +348,11 @@ dl_list(void)
 			set_comment();
 			break;
 
+		case '^':
+			disp_comment_only = disp_comment_only ? FALSE : TRUE;
+			dl_disp();
+			break;
+
 		default:
 			werase(wstat);
 			mvwprintw(wstat, 0, 0,
@@ -427,6 +433,12 @@ dl_line(unsigned y, unsigned i)
 
 	if (bmode || fmode) {
 		wmove(wlist, y, dl_wnum);
+
+		if (disp_comment_only && bdl_list[i][1]) {
+			putmbs(wlist, bdl_list[i][1], -1);
+			return;
+		}
+
 		l = putmbsra(wlist, bdl_list[i][0], 0);
 
 		if (bdl_list[i][1] && l > 0 && (x = dl_wnum + l) < listw) {
@@ -436,6 +448,12 @@ dl_line(unsigned y, unsigned i)
 		}
 	} else {
 		wmove(wlist, y, dl_wnum);
+
+		if (disp_comment_only && ddl_list[i][1]) {
+			putmbs(wlist, ddl_list[i][1], -1);
+			return;
+		}
+
 		putmbsra(wlist, ddl_list[i][0], llstw);
 		wmove(wlist, y, rlstx);
 		l = putmbsra(wlist, ddl_list[i][2], 0);
