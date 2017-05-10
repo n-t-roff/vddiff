@@ -273,7 +273,7 @@ ntr:
 		pthcat(pth1, len1, f->name);
 
 		if (chmod(pth1, m) == -1) {
-			printerr(strerror(errno), "chmod \"%s\"");
+			printerr(strerror(errno), "chmod \"%s\"", pth1);
 			goto exit;
 		}
 
