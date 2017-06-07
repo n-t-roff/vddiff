@@ -274,7 +274,17 @@ next_key:
 		}
 #endif
 
-		if (c == '.' && c2 && !*key) {
+		if (c == '') {
+			printerr(NULL,
+"Invalid escape sequence. Type <ENTER> to continue.");
+
+			while (getch() != '\n') {
+			}
+
+			printerr(NULL, NULL);
+			goto next_key;
+
+		} else if (c == '.' && c2 && !*key) {
 			if (!c2) {
 				goto next_key;
 			}
