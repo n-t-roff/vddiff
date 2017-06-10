@@ -3073,7 +3073,11 @@ disp_name(WINDOW *w, int y, int x, int mx,
 			}
 		} else {
 			if (ct) {
-				wattron(w, COLOR_PAIR(ct) | A_BOLD);
+				wattron(w, COLOR_PAIR(ct));
+
+				if (!nobold) {
+					wattron(w, A_BOLD);
+				}
 			} else {
 				/* not attrset, else bold is off */
 				wattron(w, COLOR_PAIR(PAIR_NORMAL));
