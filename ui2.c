@@ -1233,7 +1233,11 @@ mbstowchs(WINDOW *w, char *s)
 	l = mbstowcs(wcbuf, s, sizeof(wcbuf)/sizeof(*wcbuf));
 
 	if (l == (size_t)-1) {
-		printerr(NULL, "mbstowcs \"%s\" failed", s);
+		/* Don't use printerr() here, it would use mbstowcs() again */
+		werase(wstat);
+		mvwprintw(wstat, 0, 0, "\"%s\":", s);
+		mvwprintw(wstat, 1, 0, "mbstowcs(3) failed", s);
+		wrefresh(wstat);
 		return -1;
 
 	} else if (l == sizeof(wcbuf)/sizeof(*wcbuf)) {

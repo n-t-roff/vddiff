@@ -75,6 +75,11 @@ ed_append(char *txt)
 	}
 
 	l = mbstowcs(linebuf + linelen, txt, l + 1);
+
+	if (l == (size_t)-1) {
+		return;
+	}
+
 	linelen += l;
 	linepos = linelen;
 

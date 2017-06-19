@@ -3092,6 +3092,12 @@ disp_name(WINDOW *w, int y, int x, int mx,
 	}
 
 	j = addmbs(w, f->name, mx);
+
+	if (j) {
+		/* Likely mbstowcs(3) did fail */
+		waddstr(w, f->name);
+	}
+
 	standendc(w);
 
 	if (j) {

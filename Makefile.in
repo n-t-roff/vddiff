@@ -7,9 +7,9 @@ LIBDIR=	$(PREFIX)/lib
 # Does also set names of ~/.$(BIN)rc and ~/.$(BIN)info to allow parallel
 # installation of different tool versions.
 
-TRACE=	#-DTRACE='"/tmp/.$(BIN)_trace_"'
+TRACE=	-DTRACE='"/tmp/.$(BIN)_trace_"'
 DEBUG=	#-DUNIMP -DDEBUG
-STRP=	-s
+STRP=	#-s
 
 OBJ=	main.o pars.o lex.o diff.o ui.o db.o exec.o fs.o ed.o uzp.o ver.o \
 	ui2.o gq.o tc.o info.o dl.o cplt.o misc.o
