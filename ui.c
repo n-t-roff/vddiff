@@ -3100,10 +3100,6 @@ disp_name(WINDOW *w, int y, int x, int mx,
 
 	standendc(w);
 
-	if (j) {
-		return 1;
-	}
-
 	if (l) {
 		addmbs(w, " -> ", mx);
 		putmbsra(w, l, mx);

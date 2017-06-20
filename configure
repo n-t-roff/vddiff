@@ -622,7 +622,7 @@ rm -f $LOG
 gen_mk
 
 check_make
-check_Sanitizer
+#check_Sanitizer
 check_lex
 check_futimens
 check_netbsd_curses
