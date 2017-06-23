@@ -838,7 +838,11 @@ next_key:
 
 			case 'D':
 				c = 0;
-				dl_list();
+
+				if (dl_list()) {
+					return;
+				}
+
 				goto next_key;
 
 			case '\'':

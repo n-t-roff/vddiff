@@ -350,6 +350,9 @@ mk_str_list(struct bst_node *n)
 	}
 
 	mk_str_list(n->left);
+#if defined(TRACE)
+	fprintf(debug, "<>mk_str_list set [%u]\n", db_idx);
+#endif
 	str_list[db_idx++] = n->key.p;
 	mk_str_list(n->right);
 }
@@ -1229,15 +1232,11 @@ db_dl_add(char *d1, char *d2, char *desc)
 	avl_add_at(db, (union bst_val)(void *)da,
 	    (union bst_val)(int)0, br, n);
 	rv = 1;
-	goto ret;
 #else
 	vp = tsearch(da, db, d2 ? ddl_cmp : bdl_cmp);
 
-	if (*(char ***)vp != da) {
-		goto ret;
-	} else {
+	if (*(char ***)vp == da) {
 		rv = 1;
-		goto ret;
 	}
 #endif
 
@@ -1312,6 +1311,9 @@ bdl_sort(void)
 		return;
 	}
 
+#if defined(TRACE)
+	fprintf(debug, "<>bdl_sort() alloc %u elements\n", bdl_num);
+#endif
 	bdl_list = malloc(sizeof(char **) * bdl_num);
 	db_idx = 0; /* shared with diff_db */
 #ifdef HAVE_LIBAVLBST
@@ -1359,6 +1361,9 @@ mk_bdl(struct bst_node *n)
 	}
 
 	mk_bdl(n->left);
+#if defined(TRACE)
+	fprintf(debug, "<>mk_bdl() set element %u\n", db_idx);
+#endif
 	bdl_list[db_idx++] = n->key.p;
 	mk_bdl(n->right);
 }

@@ -146,11 +146,12 @@ dl_del(void)
 	dl_disp();
 }
 
-void
+int /* !0: Exit */
 dl_list(void)
 {
 	int c, c1;
 	unsigned num;
+	int ret_val_ = 0;
 	bool del = FALSE;
 	bool act = FALSE;
 
@@ -224,6 +225,10 @@ dl_list(void)
 			refresh();
 			dl_disp();
 			break;
+
+		case 'Q':
+			ret_val_ = 1;
+			/* fall-through */
 
 		case KEY_LEFT:
 		case 'q':
@@ -402,7 +407,7 @@ ret0:
 #if defined(TRACE)
 	fprintf(debug, "<-dl_list\n");
 #endif
-	return;
+	return ret_val_;
 }
 
 static void
