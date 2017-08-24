@@ -54,6 +54,7 @@ struct str_uint {
 static int srchcmp(const void *, const void *);
 static char *getnextarg(char *, unsigned);
 static void set_all(void);
+static void sig_cont(int);
 
 long mark_idx[2] = { -1, -1 };
 long mmrkd[2];
@@ -73,6 +74,8 @@ bool file_pattern; /* TRUE for -F or -G */
 bool excl_or;
 bool file_exec;
 bool nobold;
+static bool sig_loop;
+static bool loop_mode;
 
 int
 test_fkey(int c, unsigned short num)
@@ -601,8 +604,6 @@ cd_home:
 		return 0;
 	}
 
-	/* only bool options below */
-
 	if (!strncmp(buf, "se " , (skip = 3)) ||
 	    !strncmp(buf, "set ", (skip = 4))) {
 		if (!(buf = getnextarg(buf + skip, 1))) {
@@ -613,6 +614,17 @@ cd_home:
 			set_all();
 			return 0;
 		}
+	}
+
+	if (!strcmp(buf, "loop")) {
+		if (!sig_loop) {
+			inst_sighdl(SIGCONT, sig_cont);
+			sig_loop = TRUE;
+		}
+
+		loop_mode = TRUE;
+
+		return 0;
 	}
 
 	if (!strncmp(buf, "no", 2)) {
@@ -994,6 +1006,7 @@ tgl_mmrk(struct filediff *f)
 long
 get_mmrk(void)
 {
+start:
 	while (++prev_mmrk[right_col] < (long)db_num[right_col]) {
 		if ((db_list[right_col][prev_mmrk[right_col]])->fl &
 		    FDFL_MMRK) {
@@ -1002,6 +1015,10 @@ get_mmrk(void)
 	}
 
 	prev_mmrk[right_col] = -1;
+
+	if (loop_mode) {
+		goto start;
+	}
 ret:
 #if defined(TRACE)
 	fprintf(debug, "<>get_mmrk(%d): %ld\n", right_col,
@@ -1570,4 +1587,14 @@ list_jmrks(void)
 	}
 
 	disp_fmode();
+}
+
+static void
+sig_cont(int sig)
+{
+	(void)sig;
+#if defined(TRACE)
+	fprintf(debug, "<>sig_cont\n");
+#endif
+	loop_mode = FALSE;
 }
