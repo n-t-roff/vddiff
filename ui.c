@@ -1763,6 +1763,10 @@ help(void) {
 			help_mevent();
 			break;
 #endif
+		case ':':
+			ungetch(c);
+			/* fall-through */
+
 		case KEY_LEFT:
 		case 'q':
 			goto exit;

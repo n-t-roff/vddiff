@@ -234,6 +234,10 @@ dl_list(void)
 		case 'q':
 			goto ret;
 
+		case ':':
+			ungetch(c);
+			goto ret;
+
 		case KEY_DOWN:
 		case 'j':
 		case '+':
