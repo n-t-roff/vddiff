@@ -3461,17 +3461,17 @@ getfilesize(char *buf, size_t bufsiz, off_t size,
 		f = size / 1024.0;
 		unit = "K";
 
-		if (f >= 1000) {
+		if (f > 999.9) {
 			f /= 1024.0;
 			unit = "M";
 		}
 
-		if (f >= 1000) {
+		if (f > 999.9) {
 			f /= 1024.0;
 			unit = "G";
 		}
 
-		if (f >= 1000) {
+		if (f > 999.9) {
 			f /= 1024.0;
 			unit = "T";
 		}
