@@ -633,6 +633,10 @@ Show current relative work directory.
 Show command line directory arguments.
 .It Sq Li f
 Show full path.
+.It Ar n Ns Sq Li f
+Select alternate function key set.
+.Ar n
+must be between 1 and 9.
 .It Oo Ar n Oc Ns Dq Li <<
 Copy from second to first tree.
 If
@@ -1514,8 +1518,20 @@ which can be inserted later with this function key
 when entering a sh command using
 .Sq Li $ .
 This string is usually the name of a UNIX tool.
+.Pp
 .Ar number
-must be between 1 and 12 (inclusive).
+is basically between 1 and 12 (inclusive).
+To specify additinal sets of function key definitions,
+a number between 2 and 9 multiplied with 100 can be added
+(1 would has the same effect as 0).
+For example
+.Dq Li fkey 307 Ar string
+would define a string for F7 in set 3.
+One out of 9 sets is selected later by typing
+.Ar n Ns Li f
+where
+.Ar n
+is between 1 and 9.
 .Pp
 If
 .Ar string

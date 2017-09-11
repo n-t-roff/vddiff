@@ -2,8 +2,8 @@
 #define FKEY_FORCE 2
 
 #define FKEY_CMD_CHR(i) \
-	fkey_flags[i] & FKEY_WAIT  ? '!' : \
-	fkey_flags[i] & FKEY_FORCE ? '#' : '$'
+	fkey_flags[fkey_set][i] & FKEY_WAIT  ? '!' : \
+	fkey_flags[fkey_set][i] & FKEY_FORCE ? '#' : '$'
 
 extern long mark_idx[2];
 extern long mmrkd[2];
@@ -26,7 +26,7 @@ extern unsigned prev_pos[2];
 extern unsigned jmrk[2][32];
 
 int test_fkey(int, unsigned short);
-void set_fkey_cmd(int, char *, int);
+void set_fkey_cmd(int, int, char *, int);
 void ui_srch(void);
 int srch_file(char *, int);
 void disp_regex(void);

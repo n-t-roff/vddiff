@@ -134,6 +134,22 @@ set_fkey(int i, char *s)
 {
 	int ek;
 	size_t l;
+	int set = 0;
+
+	if (i >= 100) {
+		set = i/100;
+		i %= 100;
+
+		if (set > 0) {
+			set--;
+		}
+
+		if (set < 0 || set >= FKEY_MUX_NUM) {
+			printf("Function key set must be in range 0-%d\n",
+			    FKEY_MUX_NUM - 1);
+			exit(1);
+		}
+	}
 
 	if (i < 1 || i > FKEY_NUM) {
 		printf("Function key number must be in range 1-%d\n",
@@ -142,10 +158,10 @@ set_fkey(int i, char *s)
 	}
 
 	i--; /* key 1-12, storage 0-11 */
-	free(sh_str[i]);
-	sh_str[i] = NULL;
-	free(fkey_cmd[i]);
-	fkey_cmd[i] = NULL;
+	free(sh_str[set][i]);
+	sh_str[set][i] = NULL;
+	free(fkey_cmd[set][i]);
+	fkey_cmd[set][i] = NULL;
 
 	if (((ek = *s) == '$' || ek == '!' || ek == '#') &&
 	    isspace((int)s[1])) {
@@ -157,7 +173,7 @@ set_fkey(int i, char *s)
 		if (!c)
 			goto free; /* empty input */
 
-		set_fkey_cmd(i, p, ek);
+		set_fkey_cmd(set, i, p, ek);
 
 free:
 		free(s);
@@ -166,8 +182,8 @@ free:
 
 	/* wcslen(wcs) should be <= strlen(mbs) */
 	l = strlen(s) + 1;
-	sh_str[i] = malloc(l * sizeof(wchar_t));
-	mbstowcs(sh_str[i], s, l);
+	sh_str[set][i] = malloc(l * sizeof(wchar_t));
+	mbstowcs(sh_str[set][i], s, l);
 	free(s);
 }
 
@@ -264,16 +280,16 @@ next_key:
 			if (c != (wint_t)KEY_F(i + 1))
 				continue;
 
-			if (!sh_str[i])
+			if (!sh_str[fkey_set][i])
 				goto next_key;
-			l = wcslen(sh_str[i]);
+			l = wcslen(sh_str[fkey_set][i]);
 			if (linelen + l >= LINESIZ) {
 				printerr(NULL, "Line buffer overflow");
 				goto next_key;
 			}
 
 			linebuf_insch(l);
-			wmemcpy(linebuf + linepos, sh_str[i], l);
+			wmemcpy(linebuf + linepos, sh_str[fkey_set][i], l);
 			linepos += l;
 			disp_edit();
 			goto next_key;

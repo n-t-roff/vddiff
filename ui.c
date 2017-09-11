@@ -99,9 +99,10 @@ short color_leftonly  = COLOR_CYAN   ,
       color_bg        = COLOR_BLACK  ;
 unsigned top_idx[2], curs[2], statw;
 
-wchar_t *sh_str[FKEY_NUM];
-char *fkey_cmd[FKEY_NUM];
-unsigned fkey_flags[FKEY_NUM];
+wchar_t *sh_str[FKEY_MUX_NUM][FKEY_NUM];
+char *fkey_cmd[FKEY_MUX_NUM][FKEY_NUM];
+unsigned fkey_flags[FKEY_MUX_NUM][FKEY_NUM];
+int fkey_set;
 
 unsigned listw;
 static unsigned help_top;
@@ -574,6 +575,12 @@ next_key:
 
 			/* fall through */
 		case 'f':
+			if (num && num <= FKEY_MUX_NUM) {
+				c = 0;
+				fkey_set = num - 1;
+				break;
+			}
+
 			if (!bmode) {
 				c = 0;
 				syspth[0][pthlen[0]] = 0;
@@ -860,23 +867,24 @@ next_key:
 			c = 0;
 			standendc(wlist);
 			werase(wlist);
+			mvwprintw(wlist, 0, 0, "Set %d", fkey_set + 1);
 
-			for (i = 0;
-			    i < (ssize_t)(sizeof(sh_str)/sizeof(*sh_str));
-			    i++) {
-				mvwprintw(wlist, i, 0, "F%d", i + 1);
+			for (i = 0; i < FKEY_NUM; i++) {
+				int j = i + 2; /* display line */
+				mvwprintw(wlist, j, 0, "F%d", i + 1);
 
-				if (fkey_cmd[i]) {
-					mvwprintw(wlist, i, 5,
+				if (fkey_cmd[fkey_set][i]) {
+					mvwprintw(wlist, j, 5,
 					    "\"%c %s\"", FKEY_CMD_CHR(i),
-					    fkey_cmd[i]);
+					    fkey_cmd[fkey_set][i]);
 					continue;
 				}
 
-				if (!sh_str[i])
+				if (!sh_str[fkey_set][i])
 					continue;
 
-				mvwprintw(wlist, i, 5, "\"%ls\"", sh_str[i]);
+				mvwprintw(wlist, j, 5, "\"%ls\"",
+				    sh_str[fkey_set][i]);
 			}
 
 			{
@@ -1626,6 +1634,7 @@ static char *helptxt[] = {
        "p		Show current relative work directory",
        "a		Show command line directory arguments",
        "f		Show full path",
+       "<n>f		Switch to f-key set <n>",
        "[<n>]<<		Copy from second to first tree",
        "[<n>]>>		Copy from first to second tree",
        "'<<		Copy from second to first tree (range cursor...mark)",

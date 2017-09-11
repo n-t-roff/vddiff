@@ -283,6 +283,7 @@ retest:
 	switch ((pid = fork())) {
 	case -1:
 		printerr(strerror(errno), "fork");
+		break;
 
 	case 0:
 		exec_res_sig(&intr, &quit, &smsk);

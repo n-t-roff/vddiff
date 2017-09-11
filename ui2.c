@@ -93,7 +93,7 @@ test_fkey(int c, unsigned short num)
 			return 1;
 		}
 
-		if (fkey_cmd[i]) {
+		if (fkey_cmd[fkey_set][i]) {
 			struct tool t;
 			unsigned ti;
 			unsigned act;
@@ -105,21 +105,22 @@ test_fkey(int c, unsigned short num)
 			viewtool.args = NULL;
 			/* set_tool() reused here to process
 			 * embedded "$1" */
-			set_tool(&viewtool, strdup(fkey_cmd[i]),
+			set_tool(&viewtool, strdup(fkey_cmd[fkey_set][i]),
 			    /* A rebuild_db() is done, so the list need not
 			     * to be updated by the command itself */
 			    TOOL_NOLIST |
-			    (fkey_flags[i] & FKEY_WAIT ? TOOL_WAIT : 0));
+			    (fkey_flags[fkey_set][i] & FKEY_WAIT ? TOOL_WAIT :
+			    0));
 			act = num > 1 ? 8 : 9;
 
-			if ((force_exec || (fkey_flags[i] & FKEY_FORCE)) &&
-			    (force_multi || num <= 1)) {
+			if ((force_exec || (fkey_flags[fkey_set][i] &
+			    FKEY_FORCE)) && (force_multi || num <= 1)) {
 				goto exec;
 			}
 
 			werase(wstat);
 			mvwprintw(wstat, 0, 0, "Really execute \"%s\"",
-			    fkey_cmd[i]);
+			    fkey_cmd[fkey_set][i]);
 
 			if (mmrkd[right_col]) {
 				num = mmrkd[right_col];
@@ -161,7 +162,7 @@ exec:
 
 #if defined(TRACE)
 				fprintf(debug, "  test_fkey: ->%u x \"%s\"\n",
-				    num, fkey_cmd[i]);
+				    num, fkey_cmd[fkey_set][i]);
 #endif
 				while (num--) {
 					action(3, act);
@@ -169,7 +170,7 @@ exec:
 				}
 #if defined(TRACE)
 				fprintf(debug, "  test_fkey: <-\"%s\"\n",
-				    fkey_cmd[i]);
+				    fkey_cmd[fkey_set][i]);
 #endif
 
 restore:
@@ -199,15 +200,15 @@ restore:
 edit_fkey:
 		linelen = 0; /* Remove existing text */
 
-		if (fkey_cmd[i]) {
-			if (fkey_flags[i] & FKEY_WAIT)
+		if (fkey_cmd[fkey_set][i]) {
+			if (fkey_flags[fkey_set][i] & FKEY_WAIT)
 				ed_append("! ");
-			else if (fkey_flags[i] & FKEY_FORCE)
+			else if (fkey_flags[fkey_set][i] & FKEY_FORCE)
 				ed_append("# ");
 			else
 				ed_append("$ ");
 
-			ed_append(fkey_cmd[i]);
+			ed_append(fkey_cmd[fkey_set][i]);
 		}
 
 		if (ed_dialog(
@@ -215,10 +216,10 @@ edit_fkey:
 		    NULL, NULL, 1, NULL))
 			break;
 
-		free(sh_str[i]);
-		sh_str[i] = NULL;
-		free(fkey_cmd[i]);
-		fkey_cmd[i] = NULL;
+		free(sh_str[fkey_set][i]);
+		sh_str[fkey_set][i] = NULL;
+		free(fkey_cmd[fkey_set][i]);
+		fkey_cmd[fkey_set][i] = NULL;
 
 		if (((ek = *rbuf) == '$' || ek == '!' || ek == '#') &&
 		    isspace((int)rbuf[1])) {
@@ -230,16 +231,16 @@ edit_fkey:
 			if (!c2)
 				return 1; /* empty input */
 
-			set_fkey_cmd(i, rbuf + j, ek);
+			set_fkey_cmd(fkey_set, i, rbuf + j, ek);
 			clr_edit();
 			printerr(NULL, "%c %s saved for F%d",
-			    FKEY_CMD_CHR(i), fkey_cmd[i], i + 1);
+			    FKEY_CMD_CHR(i), fkey_cmd[fkey_set][i], i + 1);
 		} else {
-			sh_str[i] = linebuf;
+			sh_str[fkey_set][i] = linebuf;
 			linebuf = NULL; /* clr_edit(): free(linebuf) */
 			clr_edit();
 			printerr(NULL, "%ls"
-			    " saved for F%d", sh_str[i], i + 1);
+			    " saved for F%d", sh_str[fkey_set][i], i + 1);
 		}
 		return 1;
 	}
@@ -248,15 +249,19 @@ edit_fkey:
 }
 
 void
-set_fkey_cmd(int i, char *s, int ek)
+set_fkey_cmd(
+    int j, /* set */
+    int i, /* fkey number */
+    char *s, int ek)
 {
 #if defined(TRACE)
 	fprintf(debug, "<>set_fkey_cmd(%d '%c' \"%s\"\n", i, ek, s);
 #endif
-	fkey_cmd[i] = strdup(s);
-	fkey_flags[i] = ek == '!' ? FKEY_WAIT  : /* wait after command */
-			ek == '#' ? FKEY_FORCE : /* don't wait before command */
-				    0 ;
+	fkey_cmd[j][i] = strdup(s);
+	fkey_flags[j][i]
+	    = ek == '!' ? FKEY_WAIT  : /* wait after command */
+	      ek == '#' ? FKEY_FORCE : /* don't wait before command */
+	                  0 ;
 }
 
 void
