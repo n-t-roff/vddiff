@@ -1172,6 +1172,15 @@ Disable function keys.
 Set case-insensitive match.
 .It Li set noic
 Set case-sensitive match.
+.It Li set loop
+Set loop mode.
+If in this mode several files are marked and a
+function key command is started, the files are
+processed in a loop.
+This could make sense if the command is e.g. an
+audio player.
+.It Li set noloop
+End loop mode.
 .It Li set magic
 Use extended regular expressions.
 .It Li set nomagic

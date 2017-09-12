@@ -867,10 +867,13 @@ next_key:
 			c = 0;
 			standendc(wlist);
 			werase(wlist);
-			mvwprintw(wlist, 0, 0, "Set %d", fkey_set + 1);
+
+			if (fkey_set) {
+				mvwprintw(wlist, 0, 0, "Set %d", fkey_set + 1);
+			}
 
 			for (i = 0; i < FKEY_NUM; i++) {
-				int j = i + 2; /* display line */
+				int j = fkey_set ? i + 2 : i; /* display line */
 				mvwprintw(wlist, j, 0, "F%d", i + 1);
 
 				if (fkey_cmd[fkey_set][i]) {
@@ -1733,6 +1736,7 @@ static char *helptxt[] = {
        ":set nofkeys	Disable function keys",
        ":set ic		Case-insensitive match",
        ":set noic	Case-sensitive match",
+       ":set loop	Set loop mode",
        ":set magic	Use extended regular expressions",
        ":set nomaigc	Use basic regular expressions",
        ":set recursive",

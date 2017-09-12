@@ -619,25 +619,16 @@ cd_home:
 			set_all();
 			return 0;
 		}
-	}
 
-	if (!strcmp(buf, "loop")) {
-		if (!sig_loop) {
-			inst_sighdl(SIGCONT, sig_cont);
-			sig_loop = TRUE;
+		if (!strncmp(buf, "no", 2)) {
+			opt = buf + 2;
+			not = 1;
+		} else {
+			opt = buf;
+			not = 0;
 		}
-
-		loop_mode = TRUE;
-
-		return 0;
-	}
-
-	if (!strncmp(buf, "no", 2)) {
-		opt = buf + 2;
-		not = 1;
 	} else {
-		opt = buf;
-		not = 0;
+		opt = ""; /* force error */
 	}
 
 	if (!strcmp(opt, "file_exec")) {
@@ -646,6 +637,13 @@ cd_home:
 		nofkeys = not ? TRUE : FALSE;
 	} else if (!strcmp(opt, "ic")) {
 		noic = not;
+	} else if (!strcmp(opt, "loop")) {
+		if (!sig_loop) {
+			inst_sighdl(SIGCONT, sig_cont);
+			sig_loop = TRUE;
+		}
+
+		loop_mode = not ? FALSE : TRUE;
 	} else if (!strcmp(opt, "magic")) {
 		magic = not ? 0 : 1;
 	} else if (!strcmp(opt, "recursive")) {
