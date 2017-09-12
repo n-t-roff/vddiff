@@ -54,11 +54,11 @@ static void rm_file(void);
 static int cp_file(void);
 static int creatdir(void);
 static int cp_link(void);
-static int cp_reg(void);
+static int cp_reg(unsigned);
 static int ask_for_perms(mode_t *);
 static int fs_ro(void);
 static void fs_fwrap(const char *, ...);
-static int fs_stat(const char *, struct stat *);
+static int fs_stat(const char *, struct stat *, unsigned);
 static int fs_deldialog(const char *, const char *, const char *,
     const char *);
 static int fs_testBreak(void);
@@ -803,8 +803,8 @@ fs_cp(
 		syspth[0][pthlen[0]] = 0;
 		syspth[1][pthlen[1]] = 0;
 
-		if (fs_stat(syspth[0], &gstat[0]) == -1 ||
-		    fs_stat(syspth[1], &gstat[1]) == -1) {
+		if (fs_stat(syspth[0], &gstat[0], 0) == -1 ||
+		    fs_stat(syspth[1], &gstat[1], 0) == -1) {
 #if defined(TRACE)
 			fprintf(debug, "  stat \"%s\", \"%s\" error\n",
 			    syspth[0], syspth[1]);
@@ -851,7 +851,7 @@ next_xchg:
 		    pth1, f->name, right_col, u);
 #endif
 
-		if (fs_stat(pth1, &gstat[0]) == -1) {
+		if (fs_stat(pth1, &gstat[0], 0) == -1) {
 #if defined(TRACE)
 			fprintf(debug, "  no source\n");
 #endif
@@ -864,7 +864,7 @@ tpth:
 #if defined(TRACE)
 		fprintf(debug, "  fs_cp dst path(%s)\n", pth2);
 #endif
-		i = fs_stat(pth2, &gstat[1]);
+		i = fs_stat(pth2, &gstat[1], 0);
 
 		if (i == -1) { /* from stat */
 			if (errno != ENOENT) {
@@ -905,7 +905,7 @@ tpth:
 		fprintf(debug, "  Copy \"%s\" -> \"%s\"\n", pth1, pth2);
 #endif
 		if (md & 2) {
-			if (!fs_stat(pth2, &gstat[1]) &&
+			if (!fs_stat(pth2, &gstat[1], 0) &&
 			    fs_rm(0 /* tree */, "overwrite", NULL /* nam */,
 			    0 /* u */, 1 /* n */, 4|2 /* md */) == 1) {
 				goto ret;
@@ -984,6 +984,65 @@ ret0:
 	fprintf(debug, "<-fs_cp: 0x%x\n", r);
 #endif
 	return r;
+}
+
+void
+fs_cat(
+    /* index */
+    long u)
+{
+#if defined(TRACE)
+	fprintf(debug, "->fs_cat(%ld)\n", u);
+#endif
+	if (!(bmode || fmode)) {
+		printerr(NULL, "Append file not supported in diff mode");
+		goto ret;
+	}
+
+	if (u >= (long)db_num[right_col]) {
+		goto ret;
+	}
+
+	pth1 = db_list[right_col][u]->name;
+
+	if (!mark) {
+		printerr(NULL, "Single file mark not set");
+		goto ret;
+	}
+
+	pth2 = mark->name ? mark->name :
+	       bmode ? gl_mark :
+	       mark_lnam ? mark_lnam :
+	       mark_rnam ? mark_rnam :
+	       "<error>" ;
+
+	if (fs_stat(pth1, &gstat[0], 1) == -1 ||
+	    fs_stat(pth2, &gstat[1], 1)) {
+		goto ret;
+	}
+
+	if (!S_ISREG(gstat[0].st_mode) ||
+	    !S_ISREG(gstat[1].st_mode)) {
+		printerr(NULL,
+		    "Append file supported for regular files only");
+		goto ret;
+	}
+
+	if (gstat[0].st_ino == gstat[1].st_ino &&
+	    gstat[0].st_dev == gstat[1].st_dev) {
+		printerr(NULL, "Append file not supported for same file");
+		goto ret;
+	}
+
+	cp_reg(1);
+	/* in fmode both sides can show same directory */
+	rebuild_db(0);
+
+ret:
+#if defined(TRACE)
+	fprintf(debug, "<-fs_cat\n");
+#endif
+	return;
 }
 
 static int
@@ -1225,7 +1284,7 @@ cp_file(void)
 	}
 
 	if (S_ISREG(gstat[0].st_mode)) {
-		rv = cp_reg();
+		rv = cp_reg(0);
 	} else if (S_ISLNK(gstat[0].st_mode)) {
 		rv = cp_link();
 	} else {
@@ -1263,11 +1322,11 @@ fs_testBreak(void)
 static int
 creatdir(void)
 {
-	if (fs_stat(pth1, &gstat[0]) == -1) {
+	if (fs_stat(pth1, &gstat[0], 0) == -1) {
 		return -1;
 	}
 
-	if (!fs_stat(pth2, &gstat[1])) {
+	if (!fs_stat(pth2, &gstat[1], 0)) {
 		if (S_ISDIR(gstat[1].st_mode)) {
 			/* Respect write protected dirs, don't make them
 			 * writeable */
@@ -1312,7 +1371,7 @@ cp_link(void)
 
 	buf[l] = 0;
 
-	if (!fs_stat(pth2, &gstat[1]) &&
+	if (!fs_stat(pth2, &gstat[1], 0) &&
 	    fs_rm(0 /* tree */, "overwrite", NULL /* nam */,
 	    0 /* u */, 1 /* n */, 4|2 /* md */) == 1) {
 		r = 1;
@@ -1335,11 +1394,14 @@ exit:
 /* !0: Error */
 
 static int
-cp_reg(void)
+cp_reg(
+    /* 1: append */
+    unsigned mode)
 {
 	int f1, f2;
 	/* rv must only be set in code. Clearing rv may hide errors. */
 	int rv = 0;
+	int fl;
 	ssize_t l1, l2;
 #ifdef HAVE_FUTIMENS
 	struct timespec ts[2];
@@ -1348,10 +1410,10 @@ cp_reg(void)
 #endif
 
 #if defined(TRACE)
-	fprintf(debug, "->cp_reg \"%s\" -> \"%s\"\n", pth1, pth2);
+	fprintf(debug, "->cp_reg(%u) \"%s\" -> \"%s\"\n", mode, pth1, pth2);
 #endif
 
-	if (!fs_stat(pth2, &gstat[1])) {
+	if (!fs_stat(pth2, &gstat[1], 0)) {
 		if (S_ISREG(gstat[1].st_mode)) {
 			bool ms = FALSE;
 
@@ -1376,8 +1438,8 @@ test:
 			}
 
 			if (!ms && !(gstat[1].st_mode & S_IWUSR)) {
-				if (chmod(pth2, gstat[1].st_mode & S_IWUSR) == -1)
-				{
+				if (chmod(pth2, gstat[1].st_mode & S_IWUSR)
+				    == -1) {
 					printerr(strerror(errno),
 					    "chmod \"%s\"", pth2);
 				} else {
@@ -1402,8 +1464,9 @@ test:
 	}
 
 copy:
-	if ((f2 = open(pth2, O_CREAT | O_TRUNC | O_WRONLY,
-	    gstat[0].st_mode & 07777)) == -1) {
+	fl = mode & 1 ? O_APPEND | O_WRONLY :
+	                O_CREAT | O_TRUNC | O_WRONLY ;
+	if ((f2 = open(pth2, fl, gstat[0].st_mode & 07777)) == -1) {
 		printerr(strerror(errno), "create \"%s\"", pth2);
 		rv = -1;
 		goto ret;
@@ -1589,13 +1652,15 @@ fs_any_dst(long u, int n, unsigned m)
 }
 
 static int
-fs_stat(const char *p, struct stat *s)
+fs_stat(const char *p, struct stat *s,
+    /* 1: report ENOENT */
+    unsigned mode)
 {
 	int i;
 
 	if (( followlinks && (i =  stat(p, s)) == -1) ||
 	    (!followlinks && (i = lstat(p, s)) == -1)) {
-		if (errno != ENOENT) {
+		if (!(mode & 1) && errno != ENOENT) {
 			printerr(strerror(errno), LOCFMT "stat \"%s\""
 			    LOCVAR, p);
 		}

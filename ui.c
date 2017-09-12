@@ -1064,6 +1064,11 @@ next_key:
 			goto save_st;
 		}
 
+		case 'J':
+			c = 0;
+			fs_cat(u);
+			break;
+
 		case KEY_HOME:
 			c = 0;
 			curs_first();
@@ -1666,6 +1671,7 @@ static char *helptxt[] = {
        "'@		Create symlink in other tree (range cursor...mark)",
        "'@l		Create symlink in left tree (range cursor...mark)",
        "'@r		Create symlink in right tree (range cursor...mark)",
+       "J		Append to marked file",
        "en		Rename file",
        "eln		Rename left file",
        "ern		Rename right file",
