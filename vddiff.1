@@ -13,7 +13,7 @@ LOSS OF USE, DATA OR PROFITS, WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE OR
 OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
 PERFORMANCE OF THIS SOFTWARE.
 ..
-.Dd June 23, 2017
+.Dd September 27, 2017
 .Dt VDDIFF 1
 .Sh NAME
 .Nm @vddiff@
@@ -1770,6 +1770,16 @@ may be a full path or just the shell name.
 In the latter case
 .Li $PATH
 is searched to determine the full path.
+.Pp
+Since
+.Li sh
+is a keyword it would need to be enclosed with quotes
+to use it as an argument,
+else a syntax error is reported.
+.Ar string
+can have arguments (like
+.Li \(dqbash -l\(dq )
+to e.g. start a login shell.
 .It Li sh Ar string
 Set shell for the
 .Sq Li $

@@ -43,12 +43,17 @@ Uses system() signal code by W. Richard Stevens.
 const char *const vimdiff  = "vim -dR --";
 const char *const diffless = "diff -- $1 $2 | less";
 
+struct argvec {
+	char **begin;
+	char **end;
+};
+
 static size_t add_path(char *, size_t, char *, char *);
 static struct strlst *addarg(char *);
 static void exec_tool(struct tool *, char *, char *, int);
 static int shell_char(int);
 static int tmpbasecmp(const char *);
-static char **cmd2argvec(const char *);
+static void str2argvec(const char *, struct argvec *);
 
 struct tool difftool;
 struct tool viewtool;
@@ -361,14 +366,15 @@ shell_char(int c)
 static void
 exec_tool(struct tool *t, char *name, char *rnam, int tree)
 {
-	char **a, **av, *nam2, *s1, *s2;
+	char *nam2, *s1, *s2;
 	int status;
 	tool_flags_t flags;
+	struct argvec av;
 
 	nam2 = rnam ? rnam : name;
 
 	flags = t->flags | TOOL_TTY;
-	a = av = cmd2argvec(t->tool);
+	str2argvec(t->tool, &av);
 
 	if (!tmpbasecmp(name) || !tmpbasecmp(rnam))
 		flags &= ~TOOL_BG;
@@ -377,34 +383,34 @@ exec_tool(struct tool *t, char *name, char *rnam, int tree)
 
 	if ((tree & 1) || (tree != 3 && name && rnam)) {
 		if (*name == '/' || bmode) {
-			*a++ = name;
+			*av.end++ = name;
 
 		} else if (tree & 1) {
 			pthcat(syspth[0], pthlen[0], name);
-			*a++ = s1 = strdup(syspth[0]);
+			*av.end++ = s1 = strdup(syspth[0]);
 
 		} else if (tree == 2) {
 			pthcat(syspth[1], pthlen[1], name);
-			*a++ = s1 = strdup(syspth[1]);
+			*av.end++ = s1 = strdup(syspth[1]);
 		}
 	}
 
 	if ((tree & 2) || (tree != 3 && name && rnam)) {
 		if (*nam2 == '/' || bmode) {
-			*a++ = nam2;
+			*av.end++ = nam2;
 
 		} else if (tree & 2) {
 			pthcat(syspth[1], pthlen[1], nam2);
-			*a++ = s2 = strdup(syspth[1]);
+			*av.end++ = s2 = strdup(syspth[1]);
 
 		} else if (tree == 1) {
 			pthcat(syspth[0], pthlen[0], nam2);
-			*a++ = s2 = strdup(syspth[0]);
+			*av.end++ = s2 = strdup(syspth[0]);
 		}
 	}
 
-	*a = NULL;
-	status = exec_cmd(av, flags, NULL, NULL);
+	*av.end = NULL;
+	status = exec_cmd(av.begin, flags, NULL, NULL);
 	syspth[0][pthlen[0]] = 0;
 
 	if (tree & 2) {
@@ -413,8 +419,8 @@ exec_tool(struct tool *t, char *name, char *rnam, int tree)
 
 	free(s1);
 	free(s2);
-	free(*av);
-	free(av);
+	free(*av.begin);
+	free(av.begin);
 
 	if (WIFEXITED(status) && WEXITSTATUS(status) == 77 &&
 	    !strcmp(t->tool, vimdiff)) {
@@ -423,12 +429,12 @@ exec_tool(struct tool *t, char *name, char *rnam, int tree)
 	}
 }
 
-static char **
-cmd2argvec(const char *cmd)
+static void
+str2argvec(const char *cmd, struct argvec *av)
 {
 	int o, c;
-	char **a, **av, *s2;
 	const char *s;
+	char *s2;
 
 	s = cmd;
 	o = 0;
@@ -443,8 +449,8 @@ cmd2argvec(const char *cmd)
 
 	/* tool + any opt (= o) + 2 args + NULL = o + 4 */
 
-	a = av = malloc((o + 4) * sizeof(*av));
-	*a++ = s2 = strdup(cmd);
+	av->begin = av->end = malloc((o + 4) * sizeof(*av));
+	*av->end++ = s2 = strdup(cmd);
 
 	while (o) {
 		while ((c = *s2++) && !isblank(c));
@@ -452,10 +458,8 @@ cmd2argvec(const char *cmd)
 		s2[-1] = 0;
 		while ((c = *s2++) &&  isblank(c));
 		if (!c) break;
-		*a++ = s2 - 1;
+		*av->end++ = s2 - 1;
 	}
-
-	return av;
 }
 
 static int
@@ -684,7 +688,8 @@ open_sh(int tree)
 	struct filediff *f = NULL;
 	char *s;
 	struct passwd *pw;
-	char *av[2];
+	struct argvec av;
+	char *cmd;
 
 	/* Provide 's'/"sl"/"sr" functionallity in diff mode */
 	if (!bmode && !fmode && db_num[0]) {
@@ -710,19 +715,22 @@ open_sh(int tree)
 	}
 
 	if (ishell) {
-		*av = ishell;
+		cmd = ishell;
 	} else {
 		if (!(pw = getpwuid(getuid()))) {
 			printerr(strerror(errno), "getpwuid failed");
 			return;
 		}
 
-		*av = pw->pw_shell;
+		cmd = pw->pw_shell;
 	}
 
-	av[1] = NULL;
-	exec_cmd(av, TOOL_NOLIST | TOOL_TTY, s,
+	str2argvec(cmd, &av);
+	*av.end = NULL;
+	exec_cmd(av.begin, TOOL_NOLIST | TOOL_TTY, s,
 	    "\nType \"exit\" or '^D' to return to " BIN ".\n");
+	free(*av.begin);
+	free(av.begin);
 
 	/* exec_cmd() did likely create or delete files */
 	rebuild_db(0);
