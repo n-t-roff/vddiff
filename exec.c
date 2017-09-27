@@ -48,6 +48,7 @@ static struct strlst *addarg(char *);
 static void exec_tool(struct tool *, char *, char *, int);
 static int shell_char(int);
 static int tmpbasecmp(const char *);
+static char **cmd2argvec(const char *);
 
 struct tool difftool;
 struct tool viewtool;
@@ -360,43 +361,14 @@ shell_char(int c)
 static void
 exec_tool(struct tool *t, char *name, char *rnam, int tree)
 {
-	int o, c;
-	char *s, **a, **av, *nam2, *s1, *s2;
+	char **a, **av, *nam2, *s1, *s2;
 	int status;
 	tool_flags_t flags;
 
 	nam2 = rnam ? rnam : name;
 
 	flags = t->flags | TOOL_TTY;
-	s = t->tool;
-	o = 0;
-
-	while (1) {
-		while ((c = *s++) && !isblank(c));
-		if (!c) break;
-		while ((c = *s++) &&  isblank(c));
-		if (!c) break;
-		o++;
-	}
-
-	/* tool + any opt (= o) + 2 args + NULL = o + 4 */
-
-	a = av = malloc((o + 4) * sizeof(*av));
-
-	if (!o) {
-		*a++ = t->tool;
-	} else {
-		*a++ = s = strdup(t->tool);
-
-		while (1) {
-			while ((c = *s++) && !isblank(c));
-			if (!c) break;
-			s[-1] = 0;
-			while ((c = *s++) &&  isblank(c));
-			if (!c) break;
-			*a++ = s - 1;
-		}
-	}
+	a = av = cmd2argvec(t->tool);
 
 	if (!tmpbasecmp(name) || !tmpbasecmp(rnam))
 		flags &= ~TOOL_BG;
@@ -441,11 +413,7 @@ exec_tool(struct tool *t, char *name, char *rnam, int tree)
 
 	free(s1);
 	free(s2);
-
-	if (o) {
-		free(*av);
-	}
-
+	free(*av);
 	free(av);
 
 	if (WIFEXITED(status) && WEXITSTATUS(status) == 77 &&
@@ -453,6 +421,41 @@ exec_tool(struct tool *t, char *name, char *rnam, int tree)
 		set_tool(&difftool, strdup(diffless), 0);
 		tool(name, rnam, tree, 0);
 	}
+}
+
+static char **
+cmd2argvec(const char *cmd)
+{
+	int o, c;
+	char **a, **av, *s2;
+	const char *s;
+
+	s = cmd;
+	o = 0;
+
+	while (1) {
+		while ((c = *s++) && !isblank(c));
+		if (!c) break;
+		while ((c = *s++) &&  isblank(c));
+		if (!c) break;
+		o++;
+	}
+
+	/* tool + any opt (= o) + 2 args + NULL = o + 4 */
+
+	a = av = malloc((o + 4) * sizeof(*av));
+	*a++ = s2 = strdup(cmd);
+
+	while (o) {
+		while ((c = *s2++) && !isblank(c));
+		if (!c) break;
+		s2[-1] = 0;
+		while ((c = *s2++) &&  isblank(c));
+		if (!c) break;
+		*a++ = s2 - 1;
+	}
+
+	return av;
 }
 
 static int
