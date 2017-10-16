@@ -78,7 +78,13 @@ static bool sig_loop;
 static bool loop_mode;
 
 int
-test_fkey(int c, unsigned short num)
+test_fkey(
+    /* key code */
+    int c,
+    /* "vi" multiplier number typed before f-key */
+    unsigned short num,
+    /* cursor position */
+    long u)
 {
 	int i;
 	int ek;
@@ -145,14 +151,27 @@ exec:
 
 				if (mmrkd[right_col]) {
 					unsigned cu;
-					long u;
+					long ti2;
+					bool jump = loop_mode;
 
 					disp_curs(0);
 					cu = curs[right_col];
 					curs[right_col] = 0;
 
-					while ((u = get_mmrk()) >= 0) {
-						top_idx[right_col] = u;
+					while ((ti2 = get_mmrk()) >= 0) {
+						long relcp = u - ti2;
+
+						if (jump) {
+							if (relcp <= 0 ||
+							    relcp >=
+							    mmrkd[right_col]) {
+								jump = FALSE;
+							} else {
+								continue;
+							}
+						}
+
+						top_idx[right_col] = ti2;
 						action(3, act);
 					}
 

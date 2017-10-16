@@ -296,7 +296,11 @@ next_key:
 			num = num2;
 		}
 
-		if (test_fkey(c, num)) {
+		if (!us) {
+			u = top_idx[right_col] + curs[right_col];
+		}
+
+		if (test_fkey(c, num, u)) {
 			c = 0;
 
 			if (nofkeys) { /* read-only mode active */
@@ -314,10 +318,6 @@ next_key:
 			fprintf(debug, "  ui_ctrl: num := %u\n", num);
 #endif
 			goto next_key;
-		}
-
-		if (!us) {
-			u = top_idx[right_col] + curs[right_col];
 		}
 
 		switch (c) {

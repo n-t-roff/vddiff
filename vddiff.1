@@ -13,7 +13,7 @@ LOSS OF USE, DATA OR PROFITS, WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE OR
 OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
 PERFORMANCE OF THIS SOFTWARE.
 ..
-.Dd September 27, 2017
+.Dd October 5, 2017
 .Dt VDDIFF 1
 .Sh NAME
 .Nm @vddiff@
@@ -645,15 +645,19 @@ is given,
 .Ar n
 files starting from the current selection are copied.
 .Pp
+.de Macro1
 If symbolic links in source and target are followed
 or not is toggled with
 .Sq Li F .
+..
+.Macro1
 Following links is signaled with letter F
 on the right side of the status line.
 Asks for a name for the copy
 if source and destination directory are the same.
 .It Oo Ar n Oc Ns Dq Li >>
 Copy from first to second tree.
+.Macro1
 .It Dq Li \(aq<<
 Copy all files between the cursor and the local mark (inclusive)
 from second to first tree.
@@ -661,14 +665,18 @@ After any
 .Sq Li \(aq
 command the cursor is set to the mark position
 if it had been below the mark.
+.Macro1
 .It Dq Li \(aq>>
 Copy all files between the cursor and the local mark (inclusive)
 from first to second tree.
+.Macro1
 .It Oo Ar n Oc Ns Sq Li C
 Copy to other side.
+.Macro1
 .It Dq Li \(aqC
 Copy all files between the cursor and the local mark (inclusive)
 to other side.
+.Macro1
 .It Oo Ar n Oc Ns Sq Li U
 Update files:
 Overwrite older files.

@@ -25,7 +25,7 @@ extern bool nobold;
 extern unsigned prev_pos[2];
 extern unsigned jmrk[2][32];
 
-int test_fkey(int, unsigned short);
+int test_fkey(int, unsigned short, long);
 void set_fkey_cmd(int, int, char *, int);
 void ui_srch(void);
 int srch_file(char *, int);
