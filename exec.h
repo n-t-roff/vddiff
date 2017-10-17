@@ -26,6 +26,7 @@ extern struct tool viewtool;
 extern char *ishell;
 extern char *nishell;
 extern bool wait_after_exec;
+extern bool exec_nocurs;
 
 void tool(char *, char *, int, unsigned short);
 struct tool *check_ext_tool(const char *);

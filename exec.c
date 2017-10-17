@@ -60,6 +60,7 @@ struct tool viewtool;
 char *ishell;
 char *nishell;
 bool wait_after_exec;
+bool exec_nocurs;
 
 /* If tree==3 and only name is given, name is applied to both trees.
  * If tree!=3 but name and rnam are given, both names are applied to the
@@ -503,6 +504,7 @@ exec_cmd(char **av, tool_flags_t flags, char *path, char *msg)
 	    flags & TOOL_UDSCR ? " TOOL_UDSCR" : "");
 #endif
 	if (wstat && !(flags & TOOL_NOCURS)) {
+		exec_nocurs = TRUE;
 		erase();
 		refresh();
 		def_prog_mode();
@@ -533,15 +535,24 @@ exec_cmd(char **av, tool_flags_t flags, char *path, char *msg)
 		if (flags & TOOL_SHELL) {
 			char *shell = nishell ? nishell : "sh";
 
+#if defined(TRACE)
+			fprintf(debug, "  execlp(%s -c %s)\n",
+			    shell, *av);
+#endif
 			if (execlp(shell, shell, "-c", *av, NULL) == -1) {
 				/* only seen when vddiff exits later */
 				printf("exec %s -c \"%s\": %s\n",
 				    shell, *av, strerror(errno));
 			}
-		} else if (execvp(*av, av) == -1) {
-			/* only seen when vddiff exits later */
-			printf("exec \"%s\": %s\n", *av,
-			    strerror(errno));
+		} else {
+#if defined(TRACE)
+			fprintf(debug, "  execvp(%s)\n", *av);
+#endif
+			if (execvp(*av, av) == -1) {
+				/* only seen when vddiff exits later */
+				printf("exec \"%s\": %s\n", *av,
+				    strerror(errno));
+			}
 		}
 
 		write(STDOUT_FILENO, prompt, sizeof prompt);
@@ -556,8 +567,20 @@ exec_cmd(char **av, tool_flags_t flags, char *path, char *msg)
 		}
 
 		if (!(flags & TOOL_BG)) {
+			pid_t wpid;
 			/* did always return "interrupted sys call" on OI */
-			waitpid(pid, &status, 0);
+			while (-1 == (wpid = waitpid(pid, &status, 0)) &&
+			    EINTR == errno) {
+#if defined(TRACE)
+				fprintf(debug,
+				    "  waitpid(%d,%d)->%d errno=%s\n",
+				    pid, status, wpid, strerror(errno));
+#endif
+			}
+#if defined(TRACE)
+			fprintf(debug, "  waitpid(%d,%d)->%d\n",
+			    pid, status, wpid);
+#endif
 		}
 
 		if (wait_after_exec /* key 'W' */
@@ -583,6 +606,8 @@ exec_cmd(char **av, tool_flags_t flags, char *path, char *msg)
 		} else if (!(flags & TOOL_NOLIST)) {
 			disp_fmode();
 		}
+
+		exec_nocurs = TRUE;
 	}
 
 #if defined(TRACE)

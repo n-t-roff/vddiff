@@ -4330,6 +4330,15 @@ vdialog(const char *quest, const char *answ, const char *fmt, va_list ap)
 static void
 ui_resize(void)
 {
+#if defined(TRACE)
+	fprintf(debug, "->ui_resize\n");
+#endif
+	if (exec_nocurs) {
+		/* In this case curses is not active.
+		 * So don't even call set_win_dim() */
+		goto ret;
+	}
+
 	if (fmode) {
 		close2cwins();
 	}
@@ -4345,11 +4354,19 @@ ui_resize(void)
 	} else {
 		disp_fmode();
 	}
+
+ret:
+#if defined(TRACE)
+	fprintf(debug, "<-ui_resize\n");
+#endif
 }
 
 void
 set_win_dim(void)
 {
+#if defined(TRACE)
+	fprintf(debug, "->set_win_dim\n");
+#endif
 	statw = COLS;
 	listh = LINES - 2;
 	listw = COLS;
@@ -4363,4 +4380,7 @@ set_win_dim(void)
 
 	rlstw = COLS - rlstx;
 	llstw = rlstx - 1;
+#if defined(TRACE)
+	fprintf(debug, "<-set_win_dim\n");
+#endif
 }

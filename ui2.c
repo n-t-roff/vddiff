@@ -158,6 +158,10 @@ exec:
 					cu = curs[right_col];
 					curs[right_col] = 0;
 
+#if defined(TRACE)
+					fprintf(debug, "  test_fkey: ->while"
+					    " (get_mmrk())\n");
+#endif
 					while ((ti2 = get_mmrk()) >= 0) {
 						long relcp = u - ti2;
 
@@ -174,6 +178,10 @@ exec:
 						top_idx[right_col] = ti2;
 						action(3, act);
 					}
+#if defined(TRACE)
+					fprintf(debug, "  test_fkey: <-while"
+					    " (get_mmrk())\n");
+#endif
 
 					curs[right_col] = cu;
 					goto restore;
