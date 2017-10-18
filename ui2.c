@@ -39,7 +39,7 @@ PERFORMANCE OF THIS SOFTWARE.
 #include "cplt.h"
 
 const char y_n_txt[] = "'y' yes, 'n' no";
-const char y_a_n_txt[] = "'y' yes, 'a' all, 'n' no, 'N' none";
+const char y_a_n_txt[] = "'y' yes, 'a' all, 'n' no, 'N' none, <ESC> cancel";
 const char ign_txt[] = "'i' ignore errors, <ENTER> continue";
 const char ign_esc_txt[] = "<ENTER> continue, <ESC> cancel, 'i' ignore errors";
 const char any_txt[] = "Press any key to continue";
@@ -706,11 +706,12 @@ static void
 set_all(void)
 {
 	static char nofile_exec_str[] = "nofile_exec\n";
-	static char nofkeys_str[] = "nofkeys\n";
-	static char noic_str[] = "noic\n";
-	static char nomagic_str[] = "nomagic\n";
-	static char norecurs_str[] = "norecursive\n";
-	static char nows_str[] = "nows\n";
+	static char nofkeys_str[]     = "nofkeys\n";
+	static char noic_str[]        = "noic\n";
+	static char noloop_str[]      = "noloop\n";
+	static char nomagic_str[]     = "nomagic\n";
+	static char norecurs_str[]    = "norecursive\n";
+	static char nows_str[]        = "nows\n";
 
 	werase(wlist);
 	wattrset(wlist, A_NORMAL);
@@ -718,6 +719,7 @@ set_all(void)
 	waddstr(wlist, file_exec ? nofile_exec_str + 2 : nofile_exec_str);
 	waddstr(wlist, nofkeys ? nofkeys_str : nofkeys_str + 2);
 	waddstr(wlist, noic ? noic_str : noic_str + 2);
+	waddstr(wlist, loop_mode ? noloop_str + 2 : noloop_str);
 	waddstr(wlist, magic ? nomagic_str + 2 : nomagic_str);
 	waddstr(wlist, recursive ? norecurs_str + 2 : norecurs_str);
 	waddstr(wlist, nows ? nows_str : nows_str + 2);

@@ -81,7 +81,10 @@ static bool fs_error;
 /* Reset at start of each fs_rm() and fs_cp() */
 /* Has the same meaning as force_fs */
 static bool fs_all;
+/* Don't delete or overwrite any file */
 static bool fs_none;
+/* Abort operation */
+static bool fs_abort;
 
 void
 fs_mkdir(short tree)
@@ -504,6 +507,7 @@ fs_rm(
 	if (!(md & 4)) {
 		fs_all = FALSE;
 		fs_none = FALSE;
+		fs_abort = FALSE;
 	}
 
 	if (fs_ro()) {
@@ -764,6 +768,7 @@ fs_cp(
 	fs_ign_errs = md & 0x40 ? TRUE : FALSE;
 	fs_all = FALSE;
 	fs_none = FALSE;
+	fs_abort = FALSE;
 #if defined(TRACE)
 	fprintf(debug, "->fs_cp(to=%d u=%ld n=%d md=0x%x)\n",
 	    to, u, n, md);
@@ -925,7 +930,7 @@ tpth:
 			}
 		}
 
-		if ((md & (16 | 32)) && !fs_error && !fs_none) {
+		if ((md & (16 | 32)) && !fs_error && !fs_none && !fs_abort) {
 			if (fs_rm(-1, NULL, NULL, 0, 1,
 			    4 | 3 | (fs_ign_errs ? 8 : 0)) & 4) {
 				fs_ign_errs = TRUE;
@@ -1128,7 +1133,7 @@ proc_dir(void)
 		return -1;
 	}
 
-	while (!fs_error && !fs_none) {
+	while (!fs_error && !fs_abort) {
 		int i;
 
 		errno = 0;
@@ -1253,6 +1258,7 @@ rm_file(void)
 		printerr(NULL, "Delete \"%s\"", pth1);
 		fs_t1 = fs_t2;
 
+		/* Test for ESC once a second */
 		if (fs_testBreak()) {
 			return;
 		}
@@ -1271,13 +1277,14 @@ cp_file(void)
 	int rv = 1;
 
 #if defined(TRACE)
-	fprintf(debug, "->cp_file\n");
+	fprintf(debug, "->cp_file \"%s\" -> \"%s\"\n", pth1, pth2);
 #endif
 
 	if ((fs_t2 = time(NULL)) - fs_t1) {
 		printerr(NULL, "Copy \"%s\" -> \"%s\"", pth1, pth2);
 		fs_t1 = fs_t2;
 
+		/* Test for ESC once a second */
 		if (fs_testBreak()) {
 			goto ret;
 		}
@@ -1311,7 +1318,7 @@ fs_testBreak(void)
 	nodelay(stdscr, TRUE);
 
 	if (getch() == 27 /* ESC */) {
-		fs_none = TRUE;
+		fs_abort = TRUE;
 		b = 1;
 	}
 
@@ -1414,11 +1421,18 @@ cp_reg(
 #endif
 
 	if (!fs_stat(pth2, &gstat[1], 0)) {
+#if defined(TRACE)
+		fprintf(debug, "  Already exists: %s\n", pth2);
+#endif
 		if (S_ISREG(gstat[1].st_mode)) {
 			bool ms = FALSE;
 
 			if (!cmp_file(pth1, gstat[0].st_size,
 			              pth2, gstat[1].st_size, 1)) {
+#if defined(TRACE)
+				fprintf(debug, "  But equal: %s and %s\n",
+				    pth1, pth2);
+#endif
 				goto ret;
 			}
 
@@ -1555,7 +1569,7 @@ static int
 fs_deldialog(const char *menu, const char *op, const char *typ,
     const char *nam)
 {
-	if (fs_none) {
+	if (fs_none || fs_abort) {
 		return 1;
 	}
 
@@ -1571,6 +1585,10 @@ fs_deldialog(const char *menu, const char *op, const char *typ,
 
 	case 'y':
 		return 0;
+
+	case '':
+		fs_abort = 1;
+		return 1;
 
 	case 'N':
 		fs_none = TRUE;
