@@ -122,7 +122,10 @@ exit:
 }
 
 void
-fs_rename(int tree)
+fs_rename(int tree, long u, int num,
+    /* 1: Force */
+    /* 2: Don't rebuild DB (for mmrk) */
+    unsigned md)
 {
 	struct filediff *f;
 	char *s;
@@ -133,75 +136,87 @@ fs_rename(int tree)
 	fs_ign_errs = FALSE;
 
 	if (fs_ro() || !db_num[right_col]) {
-		return;
+		goto ret;
 	}
 
-	f = db_list[right_col][top_idx[right_col] + curs[right_col]];
+	if (!force_multi && !(md & 1) && num > 1 && dialog(y_n_txt, NULL,
+	    "Rename %d files?", num) != 'y')
+		goto ret;
 
-	if ((tree == 1 && !f->type[0]) ||
-	    (tree == 2 && !f->type[1]))
-		return;
+	while (num-- && u < (long)db_num[right_col]) {
+		f = db_list[right_col][u++];
 
-	if (tree == 3 && f->type[0] && f->type[1]) {
-		tree = 1;
-		ntr = 2;
-	}
+		if ((tree == 1 && !f->type[0]) ||
+		    (tree == 2 && !f->type[1]))
+			goto ret;
 
-	if (ed_dialog("Enter new name (<ESC> to cancel):", f->name, NULL, 0,
-	    NULL))
-		return;
+		if (tree == 3 && f->type[0] && f->type[1]) {
+			tree = 1;
+			ntr = 2;
+		}
 
-ntr:
-	if ((tree & 2) && f->type[1]) {
-		pth1 = syspth[1];
-		len1 = pthlen[1];
-	} else {
-		pth1 = syspth[0];
-		len1 = pthlen[0];
-	}
+		if (ed_dialog("Enter new name (<ESC> to cancel):", f->name,
+		    NULL, 0, NULL))
+			goto ret;
 
-	l = len1;
-	len1 = pthcat(pth1, len1, rbuf);
-	s = strdup(pth1);
+ntr: /* next tree */
+		if ((tree & 2) && f->type[1]) {
+			pth1 = syspth[1];
+			len1 = pthlen[1];
+		} else {
+			pth1 = syspth[0];
+			len1 = pthlen[0];
+		}
 
-	if (lstat(pth1, &gstat[0]) == -1) {
-		if (errno != ENOENT)
-			printerr(strerror(errno), "lstat \"%s\" failed", pth1);
-	} else {
-		if (!force_fs && dialog(y_n_txt, NULL,
-		    "Delete existing %s \"%s\"?", S_ISDIR(gstat[0].st_mode) ?
-		    "directory" : "file", pth1) != 'y')
+		l = len1;
+		len1 = pthcat(pth1, len1, rbuf);
+		s = strdup(pth1);
+
+		if (lstat(pth1, &gstat[0]) == -1) {
+			if (errno != ENOENT)
+				printerr(strerror(errno),
+				    "lstat \"%s\" failed", pth1);
+		} else {
+			if (!force_fs && dialog(y_n_txt, NULL,
+			    "Delete existing %s \"%s\"?",
+			    S_ISDIR(gstat[0].st_mode) ?
+			    "directory" : "file", pth1) != 'y')
+				goto exit;
+
+			if (S_ISDIR(gstat[0].st_mode)) {
+				tree_op = TREE_RM;
+				proc_dir();
+			} else
+				rm_file();
+		}
+
+		len1 = l;
+		pthcat(pth1, len1, f->name);
+
+		if (rename(pth1, s) == -1) {
+			printerr(strerror(errno), "rename \"%s\" failed");
 			goto exit;
+		}
 
-		if (S_ISDIR(gstat[0].st_mode)) {
-			tree_op = TREE_RM;
-			proc_dir();
-		} else
-			rm_file();
+		if (ntr) {
+			tree = ntr;
+			ntr = 0;
+			free(s);
+			goto ntr;
+		}
 	}
 
-	len1 = l;
-	pthcat(pth1, len1, f->name);
-
-	if (rename(pth1, s) == -1) {
-		printerr(strerror(errno), "rename \"%s\" failed");
-		goto exit;
+	if (!(md & 2)) {
+		rebuild_db(0);
 	}
-
-	if (ntr) {
-		tree = ntr;
-		ntr = 0;
-		free(s);
-		goto ntr;
-	}
-
-	rebuild_db(0);
 exit:
 	free(s);
 	syspth[0][pthlen[0]] = 0;
 
 	if (!bmode)
 		syspth[1][pthlen[1]] = 0;
+ret:
+	return;
 }
 
 void
@@ -802,6 +817,8 @@ fs_cp(
 	}
 
 	if (bmode) {
+		/* Case: Make a copy of a file with a new name
+		 * (not just rename a file) */
 		memcpy(syspth[0], syspth[1], pthlen[1]);
 		pthlen[0] = pthlen[1];
 	} else if (md & (16 | 32)) {

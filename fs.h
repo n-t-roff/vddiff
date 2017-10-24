@@ -1,5 +1,5 @@
 void fs_mkdir(short tree);
-void fs_rename(int);
+void fs_rename(int, long, int, unsigned);
 void fs_chmod(int, long, int, unsigned);
 void fs_chown(int, int, long, int, unsigned);
 int fs_rm(int, char *, char *, long, int, unsigned);

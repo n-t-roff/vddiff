@@ -1470,15 +1470,23 @@ ui_cp(int t, long u, unsigned short num, unsigned md)
 	return 0;
 }
 
+/* Only called on 'T' */
+
 int
 ui_mv(int dst, long u, unsigned short num)
 {
-	syspth[0][pthlen[0]] = 0;
-	syspth[1][pthlen[1]] = 0;
+	{
+		bool same_dir;
 
-	if (bmode || !strcmp(syspth[0], syspth[1])) {
-		fs_rename(3);
-		return 0;
+		syspth[0][pthlen[0]] = 0;
+		syspth[1][pthlen[1]] = 0;
+		same_dir = !strcmp(syspth[0], syspth[1]);
+
+		if (bmode || same_dir) {
+			int multi = mmrkd[right_col];
+			ui_rename(3, u, num);
+			return multi;
+		}
 	}
 
 	if (mmrkd[right_col]) {
@@ -1492,7 +1500,7 @@ ui_mv(int dst, long u, unsigned short num)
 
 		while ((u = get_mmrk()) >= 0 &&
 		    !((fs_retval_ = fs_cp(dst, u, 1,
-		    16 | 5 | (fs_retval_ & 2 ? 0x40 : 0), NULL))
+		    16 /* move */ | 5 | (fs_retval_ & 2 ? 0x40 : 0), NULL))
 		    /* Don't break loop on "ignore error" */
 		    & ~2))
 		{
@@ -1502,7 +1510,7 @@ ui_mv(int dst, long u, unsigned short num)
 		return 1;
 	}
 
-	fs_cp(dst, u, num, 16, NULL);
+	fs_cp(dst, u, num, 16 /* move */, NULL);
 	return 0;
 }
 
@@ -1530,6 +1538,40 @@ ui_dd(int t, long u, unsigned short num)
 
 	fs_rm(t, NULL, NULL, u, num, 0);
 	return 0;
+}
+
+int
+ui_rename(int t, long u, unsigned short num)
+{
+	int rv = 1;
+#if defined(TRACE)
+	fprintf(debug, "->ui_rename\n");
+#endif
+	if (mmrkd[right_col]) {
+		if (dialog(y_n_txt, NULL,
+		    "Really rename %d files?",
+		    mmrkd[right_col]) != 'y') {
+			goto ret;
+		}
+
+		while ((u = get_mmrk()) >= 0) {
+#if defined(TRACE)
+			fprintf(debug, "  u=%ld\n", u);
+#endif
+			fs_rename(t, u, 1, 3);
+		}
+
+		rebuild_db(0);
+		goto ret;
+	}
+
+	fs_rename(t, u, num, 0);
+	rv = 0;
+ret:
+#if defined(TRACE)
+	fprintf(debug, "<-ui_rename\n");
+#endif
+	return rv;
 }
 
 int

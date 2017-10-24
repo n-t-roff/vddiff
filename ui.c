@@ -649,16 +649,16 @@ next_key:
 				break;
 
 			} else if (*key == 'e') {
-				fs_rename(3);
+				ui_rename(3, u, num);
 				goto save_st;
 
 			} else if (key[1] == 'e') {
 				if (*key == 'l') {
-					fs_rename(1);
+					ui_rename(1, u, num);
 					goto save_st;
 
 				} else if (*key == 'r') {
-					fs_rename(2);
+					ui_rename(2, u, num);
 					goto save_st;
 				}
 			}
@@ -4359,6 +4359,7 @@ ret:
 #if defined(TRACE)
 	fprintf(debug, "<-ui_resize\n");
 #endif
+	return;
 }
 
 void

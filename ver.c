@@ -6,7 +6,7 @@
  *            features.  This may not be detected before alpha test phase.
  *
  *     |      All planned features are implemented, changes are done,
- *     v      TODO list is empty.
+ *     v      "to do" list is empty.
  *
  * alpha:     Test phase.  Tool usability and all features are tested on
  *            all target operating systems.  This may result in new
@@ -24,5 +24,5 @@
 
 const char version[] =
 "1.11.0-alpha "
-"2017-10-18 15:18"
+"2017-10-24 13:51"
 ;
