@@ -799,11 +799,6 @@ fs_cp(
 	m = n > 1;
 
 	if (!(force_fs && force_multi) && m && !(md & 4)) {
-		if (bmode) {
-			/* Multiple files don't make sense in bmode */
-			goto ret;
-		}
-
 		if (dialog(y_n_txt, NULL,
 		    "Really %s %d files?",
 		    md &  2 ? "create symlink to" :
