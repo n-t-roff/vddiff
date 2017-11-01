@@ -55,6 +55,7 @@ static int srchcmp(const void *, const void *);
 static char *getnextarg(char *, unsigned);
 static void set_all(void);
 static void sig_cont(int);
+static void long_shuffle(long *, const long);
 
 long mark_idx[2] = { -1, -1 };
 long mmrkd[2];
@@ -76,6 +77,7 @@ bool file_exec;
 bool nobold;
 static bool sig_loop;
 static bool loop_mode;
+static bool rnd_mode;
 
 int
 test_fkey(
@@ -152,7 +154,8 @@ exec:
 				if (mmrkd[right_col]) {
 					unsigned cu;
 					long ti2;
-					bool jump = loop_mode;
+					bool jump = loop_mode && !rnd_mode;
+					long *rnd_idx;
 
 					disp_curs(0);
 					cu = curs[right_col];
@@ -162,7 +165,44 @@ exec:
 					fprintf(debug, "  test_fkey: ->while"
 					    " (get_mmrk())\n");
 #endif
-					while ((ti2 = get_mmrk()) >= 0) {
+					if (rnd_mode) {
+						bool tloop = loop_mode;
+						long j = 0;
+
+						loop_mode = FALSE;
+						rnd_idx = malloc(
+						    sizeof(*rnd_idx) *
+						    mmrkd[right_col]);
+
+						while ((ti2 =
+						    get_mmrk()) >= 0) {
+#if defined(TRACE)
+	fprintf(debug, "  rnd_idx[%ld]=%ld\n", j, ti2);
+#endif
+							rnd_idx[j++] = ti2;
+						}
+
+						loop_mode = tloop;
+
+						do {
+							long_shuffle(rnd_idx,
+							    mmrkd[right_col]);
+
+							for (j = 0;
+							    j < mmrkd[right_col];
+							    j++) {
+#if defined(TRACE)
+	fprintf(debug, "  rnd_idx[%ld]==%ld\n", j, rnd_idx[j]);
+#endif
+								top_idx[right_col] =
+								    rnd_idx[j];
+								action(3, act);
+							}
+						} while (loop_mode);
+
+						free(rnd_idx);
+					} else {
+					    while ((ti2 = get_mmrk()) >= 0) {
 						long relcp = u - ti2;
 
 						if (jump) {
@@ -177,6 +217,7 @@ exec:
 
 						top_idx[right_col] = ti2;
 						action(3, act);
+					    }
 					}
 #if defined(TRACE)
 					fprintf(debug, "  test_fkey: <-while"
@@ -671,6 +712,8 @@ cd_home:
 		}
 
 		loop_mode = not ? FALSE : TRUE;
+	} else if (!strcmp(opt, "random")) {
+		rnd_mode = not ? FALSE : TRUE;
 	} else if (!strcmp(opt, "magic")) {
 		magic = not ? 0 : 1;
 	} else if (!strcmp(opt, "recursive")) {
@@ -710,6 +753,7 @@ set_all(void)
 	static char noic_str[]        = "noic\n";
 	static char noloop_str[]      = "noloop\n";
 	static char nomagic_str[]     = "nomagic\n";
+	static char norandom_str[]    = "norandom\n";
 	static char norecurs_str[]    = "norecursive\n";
 	static char nows_str[]        = "nows\n";
 
@@ -721,6 +765,7 @@ set_all(void)
 	waddstr(wlist, noic ? noic_str : noic_str + 2);
 	waddstr(wlist, loop_mode ? noloop_str + 2 : noloop_str);
 	waddstr(wlist, magic ? nomagic_str + 2 : nomagic_str);
+	waddstr(wlist, rnd_mode ? norandom_str + 2 : norandom_str);
 	waddstr(wlist, recursive ? norecurs_str + 2 : norecurs_str);
 	waddstr(wlist, nows ? nows_str : nows_str + 2);
 
@@ -1671,4 +1716,18 @@ sig_cont(int sig)
 	fprintf(debug, "<>sig_cont\n");
 #endif
 	loop_mode = FALSE;
+}
+
+static void
+long_shuffle(long *array, const long n_elem)
+{
+	long i;
+
+	for (i = n_elem - 1; i >= 1; i--) {
+		long j = random() % (i + 1);
+		long t = array[j];
+
+		array[j] = array[i];
+		array[i] = t;
+	}
 }

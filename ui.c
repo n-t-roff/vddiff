@@ -139,6 +139,7 @@ build_ui(void)
 	if (qdiff)
 		goto do_diff;
 
+	srandom(time(NULL));
 	initscr();
 
 	if (color && (!has_colors() || start_color() == ERR))
