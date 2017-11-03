@@ -541,25 +541,27 @@ int
 parsopt(char *buf)
 {
 	const char dmode_cd_txt[] = "cd not supported in diff mode";
-	char *opt;
+	char *bufend;
 	short not;
 	short skip;
+	bool need_arg;
+	bool next_arg;
 
 #if defined(TRACE)
 	fprintf(debug, "<->parsopt(%s)\n", buf);
 #endif
-	opt = buf + strlen(buf); /* reuse opt */
+	bufend = buf + strlen(buf);
 
 	while (1) {
-		if (opt == buf) {
+		if (bufend == buf) {
 			return 0;
 		}
 
-		if (*--opt != ' ') {
+		if (*--bufend != ' ') {
 			break;
 		}
 
-		*opt = 0;
+		*bufend = 0;
 	}
 
 	if (*buf == '!') {
@@ -677,51 +679,74 @@ cd_home:
 		return 0;
 	}
 
-	if (!strncmp(buf, "se " , (skip = 3)) ||
-	    !strncmp(buf, "set ", (skip = 4))) {
-		if (!(buf = getnextarg(buf + skip, 1))) {
-			return 0;
-		}
-
-		if (!strcmp(buf, "all")) {
-			set_all();
-			return 0;
-		}
-
-		if (!strncmp(buf, "no", 2)) {
-			opt = buf + 2;
-			not = 1;
-		} else {
-			opt = buf;
-			not = 0;
-		}
-	} else {
-		opt = ""; /* force error */
+	if (strncmp(buf, "se " , (skip = 3)) &&
+	    strncmp(buf, "set ", (skip = 4))) {
+		goto unkn_opt;
 	}
 
-	if (!strcmp(opt, "file_exec")) {
+	need_arg = TRUE;
+next_opt:
+	if (!(buf = getnextarg(buf + skip, need_arg ? 1 : 0))) {
+		return 0;
+	}
+
+	need_arg = FALSE;
+	skip = 0;
+	next_arg = FALSE;
+#if defined(TRACE)
+	fprintf(debug, "  set arg \"%s\"\n", buf);
+#endif
+
+	if (!strcmp(buf, "all")) {
+		set_all();
+		return 0;
+	}
+
+	if (!strncmp(buf, "no", 2)) {
+		buf += 2;
+		not = 1;
+	} else {
+		not = 0;
+	}
+
+	if (!strcmp(buf, "file_exec") ||
+	    (!strncmp(buf, "file_exec ", (skip = 10)) &&
+	    (next_arg = TRUE))) {
 		file_exec = not ? FALSE : TRUE;
-	} else if (!strcmp(opt, "fkeys")) {
+	} else if (!strcmp(buf, "fkeys") ||
+	    (!strncmp(buf, "fkeys ", (skip = 6)) &&
+	    (next_arg = TRUE))) {
 		nofkeys = not ? TRUE : FALSE;
-	} else if (!strcmp(opt, "ic")) {
+	} else if (!strcmp(buf, "ic") ||
+	    (!strncmp(buf, "ic ", (skip = 3)) &&
+	    (next_arg = TRUE))) {
 		noic = not;
-	} else if (!strcmp(opt, "loop")) {
+	} else if (!strcmp(buf, "loop") ||
+	    (!strncmp(buf, "loop ", (skip = 5)) &&
+	    (next_arg = TRUE))) {
 		if (!sig_loop) {
 			inst_sighdl(SIGCONT, sig_cont);
 			sig_loop = TRUE;
 		}
 
 		loop_mode = not ? FALSE : TRUE;
-	} else if (!strcmp(opt, "random")) {
+	} else if (!strcmp(buf, "random") ||
+	    (!strncmp(buf, "random ", (skip = 7)) &&
+	    (next_arg = TRUE))) {
 		rnd_mode = not ? FALSE : TRUE;
-	} else if (!strcmp(opt, "magic")) {
+	} else if (!strcmp(buf, "magic")) {
 		magic = not ? 0 : 1;
-	} else if (!strcmp(opt, "recursive")) {
+	} else if (!strcmp(buf, "recursive")) {
 		recursive = not ? 0 : 1;
-	} else if (!strcmp(opt, "ws")) {
+	} else if (!strcmp(buf, "ws")) {
 		nows = not;
 	} else if (*buf) {
+unkn_opt:
 		printerr(NULL, "Unknown option \"%s\"", buf);
+	}
+
+	if (next_arg) {
+		goto next_opt;
 	}
 
 	return 0;
