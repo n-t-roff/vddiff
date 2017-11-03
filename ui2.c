@@ -545,7 +545,7 @@ parsopt(char *buf)
 	short not;
 	short skip;
 	bool need_arg;
-	bool next_arg;
+	bool next_arg = FALSE;
 
 #if defined(TRACE)
 	fprintf(debug, "<->parsopt(%s)\n", buf);
@@ -734,11 +734,17 @@ next_opt:
 	    (!strncmp(buf, "random ", (skip = 7)) &&
 	    (next_arg = TRUE))) {
 		rnd_mode = not ? FALSE : TRUE;
-	} else if (!strcmp(buf, "magic")) {
+	} else if (!strcmp(buf, "magic") ||
+	    (!strncmp(buf, "magic ", (skip = 6)) &&
+	    (next_arg = TRUE))) {
 		magic = not ? 0 : 1;
-	} else if (!strcmp(buf, "recursive")) {
+	} else if (!strcmp(buf, "recursive") ||
+	    (!strncmp(buf, "recursive ", (skip = 10)) &&
+	    (next_arg = TRUE))) {
 		recursive = not ? 0 : 1;
-	} else if (!strcmp(buf, "ws")) {
+	} else if (!strcmp(buf, "ws") ||
+	    (!strncmp(buf, "ws ", (skip = 3)) &&
+	    (next_arg = TRUE))) {
 		nows = not;
 	} else if (*buf) {
 unkn_opt:
