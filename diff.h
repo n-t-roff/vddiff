@@ -16,6 +16,7 @@ struct filediff {
 
 extern short followlinks;
 extern bool one_scan;
+extern bool dotdot;
 
 int build_diff_db(int);
 int scan_subdir(char *, char *, int);

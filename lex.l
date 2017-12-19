@@ -104,6 +104,7 @@ locale		{ rc_col += yyleng; return LOCALE       ; }
 file_exec	{ rc_col += yyleng; return FILE_EXEC    ; }
 uz_add		{ rc_col += yyleng; return UZ_ADD       ; }
 uz_del		{ rc_col += yyleng; return UZ_DEL       ; }
+dotdot		{ rc_col += yyleng; return DOTDOT       ; }
 include		{ rc_col += yyleng; incl = 1            ; }
 {S}+		{ rc_col += yyleng; }
 

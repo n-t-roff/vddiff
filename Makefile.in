@@ -1,11 +1,11 @@
+# Does also set names of ~/.$(BIN)rc and ~/.$(BIN)info to allow parallel
+# installation of different tool versions.
 BIN=	vddiff
 PREFIX=	/usr/local
 BINDIR=	$(PREFIX)/bin
 MANDIR=	$(PREFIX)/share/man
 INCDIR=	$(PREFIX)/include
 LIBDIR=	$(PREFIX)/lib
-# Does also set names of ~/.$(BIN)rc and ~/.$(BIN)info to allow parallel
-# installation of different tool versions.
 
 TRACE=	#-DTRACE='"/tmp/.$(BIN)_trace_"'
 DEBUG=	#-DUNIMP -DDEBUG

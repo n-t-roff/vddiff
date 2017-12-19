@@ -47,6 +47,7 @@ struct scan_dir {
 static struct filediff *alloc_diff(char *);
 static void add_diff_dir(short);
 static char *read_link(char *, off_t);
+static size_t pthadd(char *, size_t, const char *);
 static size_t pthcut(char *, size_t);
 static void ini_int(void);
 
@@ -57,6 +58,7 @@ static char *last_path;
 short followlinks;
 
 bool one_scan;
+bool dotdot;
 static bool stopscan;
 static bool ign_diff_errs;
 
@@ -165,9 +167,11 @@ build_diff_db(
 #endif
 		name = ent->d_name;
 
-		if (*name == '.' && (!name[1] || (name[1] == '.' &&
-		    !name[2])))
+		if (*name == '.' && (!name[1] ||
+		    (!((bmode || fmode) && dotdot) &&
+		     name[1] == '.' && !name[2]))) {
 			continue;
+		}
 
 		if (!(bmode || fmode)) {
 			str_db_add(&name_db, strdup(name)
@@ -177,7 +181,7 @@ build_diff_db(
 			    );
 		}
 
-		pthcat(syspth[0], pthlen[0], name);
+		pthadd(syspth[0], pthlen[0], name);
 #if defined(TRACE) && 1
 		fprintf(debug,
 		    "  found L \"%s\" \"%s\" strlen=%zu pthlen=%zu\n",
@@ -526,8 +530,9 @@ right_tree:
 #endif
 		name = ent->d_name;
 
-		if (*name == '.' && (!name[1] || (name[1] == '.' &&
-		    !name[2]))) {
+		if (*name == '.' && (!name[1] ||
+		    (!((bmode || fmode) && dotdot) &&
+		     name[1] == '.' && !name[2]))) {
 			continue;
 		}
 
@@ -545,7 +550,7 @@ right_tree:
 			break;
 		}
 
-		pthcat(syspth[1], pthlen[1], name);
+		pthadd(syspth[1], pthlen[1], name);
 #if defined(TRACE) && 1
 		fprintf(debug,
 		    "  found R \"%s\" \"%s\" strlen=%zu pthlen=%zu\n",
@@ -1109,10 +1114,25 @@ free_diff(struct filediff *f)
 size_t
 pthcat(char *p, size_t l, const char *n)
 {
-	size_t ln = strlen(n);
-
+#if defined(TRACE)
+	{
+		char *s = malloc(l + 1);
+		memcpy(s, p, l);
+		s[l] = 0;
+		fprintf(debug, "->pthcat(%s, %zu, %s)\n", s, l, n);
+		free(s);
+	}
+#endif
 	if (*n == '.' && n[1] == '.' && !n[2])
 		return pthcut(p, l);
+
+	return pthadd(p, l, n);
+}
+
+static size_t
+pthadd(char *p, size_t l, const char *n)
+{
+	size_t ln = strlen(n);
 
 	if (l + ln + 2 > PATHSIZ) {
 		printerr(NULL, "Path buffer overflow");
@@ -1131,6 +1151,15 @@ pthcat(char *p, size_t l, const char *n)
 static size_t
 pthcut(char *p, size_t l)
 {
+#if defined(TRACE)
+	{
+		char *s = malloc(l + 1);
+		memcpy(s, p, l);
+		s[l] = 0;
+		fprintf(debug, "->pthcut(%s, %zu)\n", s, l);
+		free(s);
+	}
+#endif
 	if (l == 1)
 		return l;
 

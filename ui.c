@@ -4367,7 +4367,9 @@ void
 set_win_dim(void)
 {
 #if defined(TRACE)
-	fprintf(debug, "->set_win_dim\n");
+	fprintf(debug,
+"->set_win_dim statw=%d listh=%d listw=%d rlstx=%d rlstw=%d llstw=%d\n",
+	    statw, listh, listw, rlstx, rlstw, llstw);
 #endif
 	statw = COLS;
 	listh = LINES - 2;
@@ -4383,6 +4385,8 @@ set_win_dim(void)
 	rlstw = COLS - rlstx;
 	llstw = rlstx - 1;
 #if defined(TRACE)
-	fprintf(debug, "<-set_win_dim\n");
+	fprintf(debug,
+"<-set_win_dim statw=%d listh=%d listw=%d rlstx=%d rlstw=%d llstw=%d\n",
+	    statw, listh, listw, rlstx, rlstw, llstw);
 #endif
 }

@@ -47,7 +47,7 @@ extern char *yytext;
 %token VIEWTOOL EXT BG FKEY BMODE HISTSIZE SKIPEXT NOIC MAGIC NOWS SCALE
 %token SHELL SH NORMAL_COLOR CURSOR_COLOR ERROR_COLOR MARK_COLOR BG_COLOR
 %token ALIAS TWOCOLUMN READONLY DISP_PERM DISP_OWNER DISP_GROUP DISP_HSIZE
-%token DISP_MTIME MMRK_COLOR LOCALE FILE_EXEC UZ_ADD UZ_DEL WAIT NOBOLD
+%token DISP_MTIME MMRK_COLOR LOCALE FILE_EXEC UZ_ADD UZ_DEL WAIT NOBOLD DOTDOT
 %token <str>     STRING
 %token <integer> INTEGER
 %%
@@ -115,6 +115,7 @@ option:
 	| DISP_HSIZE                   { add_hsize = TRUE                 ; }
 	| DISP_MTIME                   { add_mtime = TRUE                 ; }
 	| FILE_EXEC                    { file_exec = TRUE                 ; }
+	| DOTDOT                       { dotdot = TRUE                    ; }
 	| LOCALE STRING {
 			if (!setlocale(LC_ALL, $2)) {
 				printf("locale LC_ALL=%s cannot be set\n",

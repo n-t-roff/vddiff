@@ -13,7 +13,7 @@ LOSS OF USE, DATA OR PROFITS, WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE OR
 OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
 PERFORMANCE OF THIS SOFTWARE.
 ..
-.Dd November 3, 2017
+.Dd December 19, 2017
 .Dt VDDIFF 1
 .Sh NAME
 .Nm @vddiff@
@@ -294,8 +294,10 @@ all patterns can be removed with the
 command.
 .It Fl g
 Use
-.Nm gvim
-as diff and view tool.
+.Dq Li gvim -dR
+as diff tool and
+.Dq Li gvim -R
+as view tool.
 .It Fl I
 Use case-sensitive pattern match.
 .It Fl i
@@ -1832,6 +1834,10 @@ can be placed at the end of the RC file.
 Set locale
 .Ar locale_name .
 .end_comment
+.It Li dotdot
+Browse mode only:
+Show directory entry
+.Dq Li .. .
 .El
 .Sh VDDIFF MODES
 .Nm
