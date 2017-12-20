@@ -1061,8 +1061,20 @@ diff_cmp(
 	    *f1 = a,
 	    *f2 = b;
 #endif
+	const char *name1 = f1->name;
+	const char *name2 = f2->name;
+	const bool dotdot2 =
+	    name2[0] == '.' && name2[1] == '.' && !name2[2] ? TRUE : FALSE;
 
-	if (sorting == SORTMTIME) {
+	if (name1[0] == '.' && name1[1] == '.' && !name1[2]) {
+		if (dotdot2) {
+			return 0;
+		} else {
+			return -1;
+		}
+	} else if (dotdot2) {
+		return 1;
+	} else if (sorting == SORTMTIME) {
 		time_t t1, t2;
 
 		t1 = f1->type[0] ? f1->mtim[0] : f1->mtim[1];
@@ -1101,7 +1113,7 @@ diff_cmp(
 		}
 	}
 
-	return strcmp(f1->name, f2->name);
+	return strcmp(name1, name2);
 }
 
 void
