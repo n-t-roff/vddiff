@@ -1544,13 +1544,13 @@ copy:
 			break;
 
 		if ((l2 = write(f2, lbuf, l1)) == -1 && !fs_ign_errs) {
-			fs_fwrap("write \"%s\"", pth2, strerror(errno));
+			fs_fwrap("write \"%s\": %s", pth2, strerror(errno));
 			rv = -1;
 			break;
 		}
 
 		if (l2 != l1) {
-			fs_fwrap("\"%s\"", pth2, "write error");
+			fs_fwrap("%s: \"%s\"", "Write error", pth2);
 			rv = -1;
 			break; /* error */
 		}
