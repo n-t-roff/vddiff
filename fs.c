@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2016-2017, Carsten Kunze <carsten.kunze@arcor.de>
+Copyright (c) 2016-2018, Carsten Kunze <carsten.kunze@arcor.de>
 
 Permission to use, copy, modify, and/or distribute this software for any
 purpose with or without fee is hereby granted, provided that the above
@@ -42,6 +42,7 @@ PERFORMANCE OF THIS SOFTWARE.
 #include "fs.h"
 #include "ed.h"
 #include "tc.h"
+#include "misc.h"
 
 struct str_list {
 	char *s;
@@ -145,6 +146,10 @@ fs_rename(int tree, long u, int num,
 
 	while (num-- && u < (long)db_num[right_col]) {
 		f = db_list[right_col][u++];
+
+		if (str_eq_dotdot(f->name)) {
+			goto ret;
+		}
 
 		if ((tree == 1 && !f->type[0]) ||
 		    (tree == 2 && !f->type[1]))
@@ -250,6 +255,10 @@ fs_chmod(int tree, long u, int num,
 
 	while (num-- && u < (long)db_num[right_col]) {
 		f = db_list[right_col][u++];
+
+		if (str_eq_dotdot(f->name)) {
+			continue;
+		}
 
 		if ((tree == 1 && !f->type[0]) ||
 		    (tree == 2 && !f->type[1]))
@@ -402,6 +411,10 @@ fs_chown(int tree, int op, long u, int num,
 
 	while (num-- && u < (long)db_num[right_col]) {
 		f = db_list[right_col][u++];
+
+		if (str_eq_dotdot(f->name)) {
+			continue;
+		}
 
 		if ((tree == 1 && !f->type[0]) ||
 		    (tree == 2 && !f->type[1]))
@@ -633,6 +646,10 @@ fs_rm(
 			}
 		}
 
+		if (str_eq_dotdot(fn)) {
+			continue;
+		}
+
 ntr:
 		if (tree == 1) {
 			pth1 = syspth[0];
@@ -861,6 +878,11 @@ next_xchg:
 		}
 
 		f = db_list[right_col][u];
+
+		if (str_eq_dotdot(f->name)) {
+			continue;
+		}
+
 		pthcat(pth1, len1, f->name);
 #if defined(TRACE)
 		fprintf(debug, "  fs_cp src path(%s) f->name(%s) "
@@ -1021,6 +1043,10 @@ fs_cat(
 	}
 
 	pth1 = db_list[right_col][u]->name;
+
+	if (str_eq_dotdot(pth1)) {
+		goto ret;
+	}
 
 	if (!mark) {
 		printerr(NULL, "Single file mark not set");

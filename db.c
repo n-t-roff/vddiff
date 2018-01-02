@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2016-2017, Carsten Kunze <carsten.kunze@arcor.de>
+Copyright (c) 2016-2018, Carsten Kunze <carsten.kunze@arcor.de>
 
 Permission to use, copy, modify, and/or distribute this software for any
 purpose with or without fee is hereby granted, provided that the above
@@ -1063,10 +1063,9 @@ diff_cmp(
 #endif
 	const char *name1 = f1->name;
 	const char *name2 = f2->name;
-	const bool dotdot2 =
-	    name2[0] == '.' && name2[1] == '.' && !name2[2] ? TRUE : FALSE;
+	const bool dotdot2 = str_eq_dotdot(name2);
 
-	if (name1[0] == '.' && name1[1] == '.' && !name1[2]) {
+	if (str_eq_dotdot(name1)) {
 		if (dotdot2) {
 			return 0;
 		} else {

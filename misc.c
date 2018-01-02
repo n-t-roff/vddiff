@@ -38,3 +38,12 @@ msgrealpath(const char *p)
 
 	return s;
 }
+
+bool
+str_eq_dotdot(const char *s) {
+	if (s && *s == '.' && s[1] == '.' && !s[2]) {
+		return TRUE;
+	}
+
+	return FALSE;
+}

@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2016-2017, Carsten Kunze <carsten.kunze@arcor.de>
+Copyright (c) 2016-2018, Carsten Kunze <carsten.kunze@arcor.de>
 
 Permission to use, copy, modify, and/or distribute this software for any
 purpose with or without fee is hereby granted, provided that the above
@@ -39,6 +39,7 @@ Uses system() signal code by W. Richard Stevens.
 #include "fs.h"
 #include "tc.h"
 #include "info.h"
+#include "misc.h"
 
 const char *const vimdiff  = "vim -dR --";
 const char *const diffless = "diff -- $1 $2 | less";
@@ -80,6 +81,10 @@ tool(char *name, char *rnam, int tree,
 	fprintf(debug, "->tool(%s,%s,%d,%d) lp(%s) rp(%s)\n",
 	    name, rnam, tree, mode, trcpth[0], trcpth[1]);
 #endif
+
+	if (str_eq_dotdot(name) || str_eq_dotdot(rnam)) {
+		goto ret;
+	}
 
 	if (mode & 2) {
 		static char *a[] = { NULL, NULL };

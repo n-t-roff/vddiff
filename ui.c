@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2016-2017, Carsten Kunze <carsten.kunze@arcor.de>
+Copyright (c) 2016-2018, Carsten Kunze <carsten.kunze@arcor.de>
 
 Permission to use, copy, modify, and/or distribute this software for any
 purpose with or without fee is hereby granted, provided that the above
@@ -47,6 +47,7 @@ PERFORMANCE OF THIS SOFTWARE.
 #include "tc.h"
 #include "dl.h"
 #include "cplt.h"
+#include "misc.h"
 
 static void ui_ctrl(void);
 static void page_down(void);
@@ -3524,10 +3525,17 @@ gettimestr(char *buf, size_t bufsiz, time_t *t)
 static void
 set_mark(void)
 {
+	struct filediff *f;
 #if defined(TRACE)
 	fprintf(debug, "->set_mark\n");
 #endif
 	if (!db_num[right_col]) {
+		goto ret;
+	}
+
+	f = db_list[right_col][top_idx[right_col] + curs[right_col]];
+
+	if (str_eq_dotdot(f->name)) {
 		goto ret;
 	}
 
@@ -4018,6 +4026,10 @@ enter_dir(char *name, char *rnam, bool lzip, bool rzip, short tree
 # endif
 	    name, rnam, lzip, rzip, tree, trcpth[0], trcpth[1]);
 #endif
+	if (str_eq_dotdot(name) || str_eq_dotdot(rnam)) {
+		goto ret;
+	}
+
 	if (!twocols) {
 		dir_change = TRUE;
 	}
@@ -4210,6 +4222,8 @@ enter_dir(char *name, char *rnam, bool lzip, bool rzip, short tree
 
 disp:
 	disp_list(1);
+
+ret:
 #ifdef TRACE
 	TRCPTH;
 	fprintf(debug, "<-enter_dir lp(%s) rp(%s)\n", trcpth[0], trcpth[1]);

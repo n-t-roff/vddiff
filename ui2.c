@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2016-2017, Carsten Kunze <carsten.kunze@arcor.de>
+Copyright (c) 2016-2018, Carsten Kunze <carsten.kunze@arcor.de>
 
 Permission to use, copy, modify, and/or distribute this software for any
 purpose with or without fee is hereby granted, provided that the above
@@ -37,6 +37,7 @@ PERFORMANCE OF THIS SOFTWARE.
 #include "tc.h"
 #include "gq.h"
 #include "cplt.h"
+#include "misc.h"
 
 const char y_n_txt[] = "'y' yes, 'n' no";
 const char y_a_n_txt[] = "'y' yes, 'a' all, 'n' no, 'N' none, <ESC> cancel";
@@ -1105,7 +1106,7 @@ tgl_mmrk(struct filediff *f)
 	if (f->fl & FDFL_MMRK) {
 		f->fl &= ~FDFL_MMRK;
 		mmrkd[right_col]--;
-	} else {
+	} else if (!str_eq_dotdot(f->name)) {
 		f->fl |= FDFL_MMRK;
 		mmrkd[right_col]++;
 	}
