@@ -1,3 +1,4 @@
+void clr_fs_err(void);
 void fs_mkdir(short tree);
 void fs_rename(int, long, int, unsigned);
 void fs_chmod(int, long, int, unsigned);

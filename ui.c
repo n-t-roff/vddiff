@@ -257,6 +257,7 @@ ui_ctrl(void)
 /* {continue} may be dangerous when a {for} loop is put around the statement
  * later. */
 next_key:
+		clr_fs_err();
 		key[1] = *key;
 		*key = c;
 
@@ -4026,7 +4027,8 @@ enter_dir(char *name, char *rnam, bool lzip, bool rzip, short tree
 # endif
 	    name, rnam, lzip, rzip, tree, trcpth[0], trcpth[1]);
 #endif
-	if (str_eq_dotdot(name) || str_eq_dotdot(rnam)) {
+	if (   (str_eq_dotdot(name) && rnam) /* enter_dir("..", NULL, ...) is used to change to the parent directory */
+	    || (str_eq_dotdot(rnam) && name)) { /* Same goes for enter_dir(NULL, "..", ...) */
 		goto ret;
 	}
 
@@ -4228,6 +4230,7 @@ ret:
 	TRCPTH;
 	fprintf(debug, "<-enter_dir lp(%s) rp(%s)\n", trcpth[0], trcpth[1]);
 #endif
+	return;
 }
 
 void

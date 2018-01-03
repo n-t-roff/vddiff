@@ -88,11 +88,17 @@ static bool fs_none;
 static bool fs_abort;
 
 void
+clr_fs_err(void) {
+	fs_ign_errs = FALSE;
+	fs_error = FALSE;
+	fs_all = FALSE;
+	fs_none = FALSE;
+	fs_abort = FALSE;
+}
+
+void
 fs_mkdir(short tree)
 {
-	fs_error = FALSE;
-	fs_ign_errs = FALSE;
-
 	if (fs_ro()) {
 		return;
 	}
@@ -132,9 +138,6 @@ fs_rename(int tree, long u, int num,
 	char *s;
 	size_t l;
 	int ntr = 0;
-
-	fs_error = FALSE;
-	fs_ign_errs = FALSE;
 
 	if (fs_ro() || !db_num[right_col]) {
 		goto ret;
@@ -235,9 +238,6 @@ fs_chmod(int tree, long u, int num,
 	static mode_t m;
 	int ntr = 0;
 	bool have_mode;
-
-	fs_error = FALSE;
-	fs_ign_errs = FALSE;
 
 #if defined(TRACE)
 	fprintf(debug, "->fs_chmod(t=%i u=%li n=%i) c=%u\n",
@@ -396,9 +396,6 @@ fs_chown(int tree, int op, long u, int num,
 	int ntr = 0;
 	bool have_owner;
 
-	fs_error = FALSE;
-	fs_ign_errs = FALSE;
-
 	if (fs_ro() || !db_num[right_col]) {
 		return;
 	}
@@ -528,15 +525,6 @@ fs_rm(
 	int ntr = 0; /* next tree */
 	bool chg = FALSE;
 	bool empty_dir_;
-
-	fs_error = FALSE;
-	fs_ign_errs = md & 8 ? TRUE : FALSE;
-
-	if (!(md & 4)) {
-		fs_all = FALSE;
-		fs_none = FALSE;
-		fs_abort = FALSE;
-	}
 
 	if (fs_ro()) {
 		return 0;
@@ -796,11 +784,6 @@ fs_cp(
 	bool chg = FALSE;
 	bool ofs = FALSE;
 
-	fs_error = FALSE;
-	fs_ign_errs = md & 0x40 ? TRUE : FALSE;
-	fs_all = FALSE;
-	fs_none = FALSE;
-	fs_abort = FALSE;
 #if defined(TRACE)
 	fprintf(debug, "->fs_cp(to=%d u=%ld n=%d md=0x%x)\n",
 	    to, u, n, md);
