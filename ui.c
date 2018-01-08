@@ -4322,9 +4322,12 @@ vdialog(const char *quest, const char *answ, const char *fmt, va_list ap)
 	const char *s;
 
 	wstat_dirty = TRUE;
-	werase(wstat);
 
 	if (fmt) {
+		/* werase() must not be used if `fmt` is NULL.
+		 * This way it is possible to write something to `wstat`
+		 * and the call vdialog(). */
+		werase(wstat);
 		wmove(wstat, 0, 0);
 		vwprintw(wstat, fmt, ap);
 	}
