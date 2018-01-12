@@ -42,7 +42,7 @@ Uses system() signal code by W. Richard Stevens.
 #include "misc.h"
 
 const char *const vimdiff  = "vim -dR --";
-const char *const diffless = "diff -- $1 $2 | less";
+const char *const diffless = "diff -- $1 $2 | less -Q";
 
 struct argvec {
 	char **begin;

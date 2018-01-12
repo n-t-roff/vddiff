@@ -39,7 +39,7 @@ It is a simple text terminal directory diff tool using
 .Xr vim 1
 for the actual diff operation.
 (If vim is not installed,
-.Dq Li diff Ar file_1 Ar file_2 Li | less
+.Dq Li diff Ar file_1 Ar file_2 Li | less -Q
 is used instead.
 Other diff tools can be configured as well.)
 A file browser displays the names found in the directories
@@ -181,7 +181,7 @@ is used only those directories are shown
 which contain differences.
 .It Fl d
 Use
-.Dq Li diff $1 $2 | less
+.Dq Li diff $1 $2 | less -Q
 as diff tool.
 (If a specific diff tool (other than
 .Li vim -d )
