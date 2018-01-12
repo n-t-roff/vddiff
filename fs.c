@@ -518,8 +518,8 @@ fs_rm(
 	struct filediff *f;
 	unsigned short m;
 	int rv = 0;
-	char *fn;
-	char *p0, *s[2];
+	char *fn = NULL;
+	char *p0 = NULL, *s[2] = { NULL, NULL };
 	size_t l0;
 	struct stat st;
 	int ntr = 0; /* next tree */
