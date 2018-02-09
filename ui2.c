@@ -1703,11 +1703,38 @@ ui_chown(int t, int op, long u, unsigned short num)
 void
 prt_ln_num(void)
 {
-	if (db_num[right_col]) {
-		printerr(NULL, "File %lu of %lu",
-		    DB_LST_IDX + 1, db_num[right_col]);
+	if (bmode || fmode) {
+		char *path;
+
+		if (bmode) {
+			if (!getcwd(syspth[1], sizeof syspth[1])) {
+				printerr(strerror(errno), "getcwd failed");
+			}
+
+			path = syspth[1];
+		} else {
+			syspth[right_col][pthlen[right_col]] = 0;
+			path = syspth[right_col];
+		}
+
+		if (db_num[right_col]) {
+			printerr(NULL, "File %lu of %lu (%s)",
+			    DB_LST_IDX + 1, db_num[right_col], path);
+		} else {
+			printerr(NULL, "No file (%s)", path);
+		}
 	} else {
-		printerr(NULL, "No file");
+		syspth[0][pthlen[0]] = 0;
+		syspth[1][pthlen[1]] = 0;
+
+		if (db_num[right_col]) {
+			printerr(NULL, "File %lu of %lu (%s, %s)",
+			    DB_LST_IDX + 1, db_num[right_col],
+			    syspth[0], syspth[1]);
+		} else {
+			printerr(NULL, "No file (%s, %s)",
+			    syspth[0], syspth[1]);
+		}
 	}
 }
 
