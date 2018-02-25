@@ -270,13 +270,12 @@ edit_fkey:
 		linelen = 0; /* Remove existing text */
 
 		if (fkey_cmd[fkey_set][i]) {
-			if (fkey_flags[fkey_set][i] & FKEY_WAIT)
-				ed_append("! ");
-			else if (fkey_flags[fkey_set][i] & FKEY_FORCE)
-				ed_append("# ");
-			else
-				ed_append("$ ");
+			static char pf[3];
 
+			pf[0] = FKEY_CMD_CHR(i);
+			pf[1] = ' ';
+			pf[2] = '\0';
+			ed_append(pf);
 			ed_append(fkey_cmd[fkey_set][i]);
 		}
 
@@ -289,9 +288,9 @@ edit_fkey:
 		sh_str[fkey_set][i] = NULL;
 		free(fkey_cmd[fkey_set][i]);
 		fkey_cmd[fkey_set][i] = NULL;
+		ek = *rbuf;
 
-		if (((ek = *rbuf) == '$' || ek == '!' || ek == '#') &&
-		    isspace((int)rbuf[1])) {
+		if (is_fkey_cmd(rbuf)) {
 			int c2;
 			int j = 0;
 
@@ -317,6 +316,14 @@ edit_fkey:
 	return 0;
 }
 
+bool
+is_fkey_cmd(char *s) {
+	int ek;
+
+	return ((ek = *s) == '$' || ek == '!' || ek == '#' || ek == '%') &&
+	    isspace((int)s[1]);
+}
+
 void
 set_fkey_cmd(
     int j, /* set */
@@ -327,10 +334,11 @@ set_fkey_cmd(
 	fprintf(debug, "<>set_fkey_cmd(%d '%c' \"%s\"\n", i, ek, s);
 #endif
 	fkey_cmd[j][i] = strdup(s);
-	fkey_flags[j][i]
-	    = ek == '!' ? FKEY_WAIT  : /* wait after command */
-	      ek == '#' ? FKEY_FORCE : /* don't wait before command */
-	                  0 ;
+	fkey_flags[j][i] =
+	    ek == '%' ? (FKEY_WAIT | FKEY_FORCE) :
+	    ek == '!' ? FKEY_WAIT  : /* wait after command */
+	    ek == '#' ? FKEY_FORCE : /* don't wait before command */
+	                0 ;
 }
 
 void

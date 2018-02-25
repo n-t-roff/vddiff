@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2016-2017, Carsten Kunze <carsten.kunze@arcor.de>
+Copyright (c) 2016-2018, Carsten Kunze <carsten.kunze@arcor.de>
 
 Permission to use, copy, modify, and/or distribute this software for any
 purpose with or without fee is hereby granted, provided that the above
@@ -132,7 +132,7 @@ disp_edit(void)
 void
 set_fkey(int i, char *s)
 {
-	int ek;
+	int ek = *s;
 	size_t l;
 	int set = 0;
 
@@ -163,8 +163,7 @@ set_fkey(int i, char *s)
 	free(fkey_cmd[set][i]);
 	fkey_cmd[set][i] = NULL;
 
-	if (((ek = *s) == '$' || ek == '!' || ek == '#') &&
-	    isspace((int)s[1])) {
+	if (is_fkey_cmd(s)) {
 		int c;
 		char *p = s;
 

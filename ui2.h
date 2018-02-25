@@ -1,7 +1,9 @@
-#define FKEY_WAIT  1
-#define FKEY_FORCE 2
+#define FKEY_WAIT  1 /* Wait after executing the command to check the command output.
+                      * Used by '!' and '%'. */
+#define FKEY_FORCE 2 /* Immediately start execution. Used by '#' and '%'. */
 
 #define FKEY_CMD_CHR(i) \
+	(fkey_flags[fkey_set][i] & (FKEY_WAIT | FKEY_FORCE)) == (FKEY_WAIT | FKEY_FORCE) ? '%' : \
 	fkey_flags[fkey_set][i] & FKEY_WAIT  ? '!' : \
 	fkey_flags[fkey_set][i] & FKEY_FORCE ? '#' : '$'
 
@@ -26,6 +28,7 @@ extern unsigned prev_pos[2];
 extern unsigned jmrk[2][32];
 
 int test_fkey(int, unsigned short, long);
+bool is_fkey_cmd(char *);
 void set_fkey_cmd(int, int, char *, int);
 void ui_srch(void);
 int srch_file(char *, int);
