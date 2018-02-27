@@ -130,7 +130,7 @@ disp_edit(void)
 }
 
 void
-set_fkey(int i, char *s)
+set_fkey(int i, char *s, char *comment)
 {
 	int ek = *s;
 	size_t l;
@@ -172,7 +172,7 @@ set_fkey(int i, char *s)
 		if (!c)
 			goto free; /* empty input */
 
-		set_fkey_cmd(set, i, p, ek);
+		set_fkey_cmd(set, i, p, ek, comment);
 
 free:
 		free(s);

@@ -29,7 +29,7 @@ extern unsigned jmrk[2][32];
 
 int test_fkey(int, unsigned short, long);
 bool is_fkey_cmd(char *);
-void set_fkey_cmd(int, int, char *, int);
+void set_fkey_cmd(int, int, char *, int, char *);
 void ui_srch(void);
 int srch_file(char *, int);
 void disp_regex(void);

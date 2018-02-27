@@ -80,6 +80,7 @@ extern char *gl_mark, *mark_lnam, *mark_rnam;
 #define FKEY_MUX_NUM 9
 extern wchar_t *sh_str[FKEY_MUX_NUM][FKEY_NUM];
 extern char *fkey_cmd[FKEY_MUX_NUM][FKEY_NUM];
+extern char *fkey_comment[FKEY_MUX_NUM][FKEY_NUM];
 extern unsigned fkey_flags[FKEY_MUX_NUM][FKEY_NUM];
 extern int fkey_set;
 extern struct ui_state *ui_stack;

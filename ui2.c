@@ -299,7 +299,7 @@ edit_fkey:
 			if (!c2)
 				return 1; /* empty input */
 
-			set_fkey_cmd(fkey_set, i, rbuf + j, ek);
+			set_fkey_cmd(fkey_set, i, rbuf + j, ek, NULL);
 			clr_edit();
 			printerr(NULL, "%c %s saved for F%d",
 			    FKEY_CMD_CHR(i), fkey_cmd[fkey_set][i], i + 1);
@@ -326,14 +326,15 @@ is_fkey_cmd(char *s) {
 
 void
 set_fkey_cmd(
-    int j, /* set */
+    int j, /* the set number */
     int i, /* fkey number */
-    char *s, int ek)
+    char *s, int ek, char *comment)
 {
 #if defined(TRACE)
 	fprintf(debug, "<>set_fkey_cmd(%d '%c' \"%s\"\n", i, ek, s);
 #endif
 	fkey_cmd[j][i] = strdup(s);
+	fkey_comment[j][i] = comment;
 	fkey_flags[j][i] =
 	    ek == '%' ? (FKEY_WAIT | FKEY_FORCE) :
 	    ek == '!' ? FKEY_WAIT  : /* wait after command */

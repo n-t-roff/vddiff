@@ -102,6 +102,7 @@ unsigned top_idx[2], curs[2], statw;
 
 wchar_t *sh_str[FKEY_MUX_NUM][FKEY_NUM];
 char *fkey_cmd[FKEY_MUX_NUM][FKEY_NUM];
+char *fkey_comment[FKEY_MUX_NUM][FKEY_NUM];
 unsigned fkey_flags[FKEY_MUX_NUM][FKEY_NUM];
 int fkey_set;
 
@@ -880,9 +881,15 @@ next_key:
 				mvwprintw(wlist, j, 0, "F%d", i + 1);
 
 				if (fkey_cmd[fkey_set][i]) {
-					mvwprintw(wlist, j, 5,
-					    "\"%c %s\"", FKEY_CMD_CHR(i),
-					    fkey_cmd[fkey_set][i]);
+					if (fkey_comment[fkey_set][i]) {
+						mvwprintw(wlist, j, 5, "\"%c %s\" (%s)",
+						    FKEY_CMD_CHR(i), fkey_cmd[fkey_set][i],
+						    fkey_comment[fkey_set][i]);
+					} else {
+						mvwprintw(wlist, j, 5, "\"%c %s\"",
+						    FKEY_CMD_CHR(i), fkey_cmd[fkey_set][i]);
+					}
+
 					continue;
 				}
 

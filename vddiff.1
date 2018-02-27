@@ -13,7 +13,7 @@ LOSS OF USE, DATA OR PROFITS, WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE OR
 OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
 PERFORMANCE OF THIS SOFTWARE.
 ..
-.Dd February 25, 2018
+.Dd February 27, 2018
 .Dt VDDIFF 1
 .Sh NAME
 .Nm @vddiff@
@@ -1548,13 +1548,18 @@ would remove
 .Dq Li .old
 from the end of each filename before checking the
 extension.
-.It Li fkey Ar number Ar string
+.It Li fkey Ar number Ar string Op Ar comment
 Define
 .Ar string
 which can be inserted later with this function key
 when entering a sh command using
 .Sq Li $ .
 This string is usually the name of a UNIX tool.
+When
+.Ar comment
+is given, it is displayed in the list of the
+.Sq Li l
+command.
 .Pp
 .Ar number
 is basically between 1 and 12 (inclusive).

@@ -70,7 +70,8 @@ option:
 	                              , 0, NULL
 #endif
 	                              ); }
-	| FKEY INTEGER STRING          { nofkeys = FALSE; set_fkey($2, $3); }
+	| FKEY INTEGER STRING          { nofkeys = FALSE; set_fkey($2, $3, NULL); }
+	| FKEY INTEGER STRING STRING   { nofkeys = FALSE; set_fkey($2, $3, $4); }
 	| FILES                        { sorting = FILESFIRST             ; }
 	| MIXED                        { sorting = SORTMIXED              ; }
 	| FOLLOW                       { followlinks = 1;                 ; }
