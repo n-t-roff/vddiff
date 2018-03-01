@@ -268,6 +268,8 @@ next_key:
 			us = FALSE;
 		}
 
+		flushinp();
+
 		while ((c = getch()) == ERR) {
 		}
 
@@ -1786,6 +1788,8 @@ help(void) {
 	disp_help();
 
 	while (1) {
+		flushinp();
+
 		switch (c = getch()) {
 #if NCURSES_MOUSE_VERSION >= 2
 		case KEY_MOUSE:
@@ -4294,6 +4298,7 @@ printerr(const char *s2, const char *s1, ...)
 		snprintf(buf, bufsiz, "%s", s2);
 		putmbs(wstat, buf, -1);
 		wrefresh(wstat);
+		flushinp();
 		getch();
 		werase(wstat);
 	}
@@ -4343,6 +4348,7 @@ vdialog(const char *quest, const char *answ, const char *fmt, va_list ap)
 	wrefresh(wstat);
 
 	do {
+		flushinp();
 		c = getch();
 		for (s = answ; s && (c2 = *s); s++)
 			if (c == c2)

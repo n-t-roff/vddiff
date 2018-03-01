@@ -1068,6 +1068,14 @@ or
 .Sq Li %
 instead, the command is started immediately.)
 .Pp
+Summery:
+.Bl -column -offset indent ".Sq Li %"
+.It So Li $   Sc Ta Confirm command execution (e.g. for dangerous commands with no diagnostic output)
+.It So Li #   Sc Ta Just run command (e.g. for GUI tools)
+.It So Li \&! Sc Ta Confirm command execution and check output
+.It So Li %   Sc Ta Start command immediately but check output
+.El
+.Pp
 To save a command for a function key which does not take
 the selected filename as argument, add a space followed
 by an octothorpe

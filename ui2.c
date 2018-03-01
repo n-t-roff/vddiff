@@ -1302,6 +1302,7 @@ anykey(void)
 
 	wrefresh(wlist);
 	printerr(NULL, any_txt);
+	flushinp();
 	c = getch();
 	disp_fmode();
 	return c;

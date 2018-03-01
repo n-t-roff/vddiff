@@ -191,6 +191,7 @@ dl_list(void)
 		}
 
 		c1 = c;
+		flushinp();
 
 		while ((c = getch()) == ERR) {
 		}
