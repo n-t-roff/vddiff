@@ -268,7 +268,7 @@ next_key:
 			us = FALSE;
 		}
 
-		flushinp();
+		opt_flushinp();
 
 		while ((c = getch()) == ERR) {
 		}
@@ -907,7 +907,7 @@ next_key:
 
 				for (i = 0; i < FKEY_NUM; i++) {
 					if (lkey_ == KEY_F(i + 1)) {
-						ungetch(lkey_);
+						keep_ungetch(lkey_);
 						break;
 					}
 				}
@@ -1788,7 +1788,7 @@ help(void) {
 	disp_help();
 
 	while (1) {
-		flushinp();
+		opt_flushinp();
 
 		switch (c = getch()) {
 #if NCURSES_MOUSE_VERSION >= 2
@@ -1797,7 +1797,7 @@ help(void) {
 			break;
 #endif
 		case ':':
-			ungetch(c);
+			keep_ungetch(c);
 			/* fall-through */
 
 		case KEY_LEFT:
@@ -4298,7 +4298,7 @@ printerr(const char *s2, const char *s1, ...)
 		snprintf(buf, bufsiz, "%s", s2);
 		putmbs(wstat, buf, -1);
 		wrefresh(wstat);
-		flushinp();
+		opt_flushinp();
 		getch();
 		werase(wstat);
 	}
@@ -4348,7 +4348,7 @@ vdialog(const char *quest, const char *answ, const char *fmt, va_list ap)
 	wrefresh(wstat);
 
 	do {
-		flushinp();
+		opt_flushinp();
 		c = getch();
 		for (s = answ; s && (c2 = *s); s++)
 			if (c == c2)

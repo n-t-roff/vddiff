@@ -811,7 +811,7 @@ set_all(void)
 	waddstr(wlist, nows ? nows_str : nows_str + 2);
 
 	if (anykey() == ':') {
-		ungetch(':');
+		keep_ungetch(':');
 	}
 }
 
@@ -1302,7 +1302,7 @@ anykey(void)
 
 	wrefresh(wlist);
 	printerr(NULL, any_txt);
-	flushinp();
+	opt_flushinp();
 	c = getch();
 	disp_fmode();
 	return c;
@@ -1771,7 +1771,7 @@ list_jmrks(void)
 	wrefresh(wlist);
 
 	if ((c = getch()) >= '0' && c <= '9') {
-		ungetch(c);
+		keep_ungetch(c);
 	}
 
 	disp_fmode();
@@ -1799,4 +1799,22 @@ long_shuffle(long *array, const long n_elem)
 		array[j] = array[i];
 		array[i] = t;
 	}
+}
+
+static bool skip_flushinp;
+
+int
+keep_ungetch(int c) {
+	skip_flushinp = TRUE;
+	return ungetch(c);
+}
+
+int
+opt_flushinp(void) {
+	if (skip_flushinp) {
+		skip_flushinp = FALSE;
+		return OK;
+	}
+
+	return flushinp();
 }

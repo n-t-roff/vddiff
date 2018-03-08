@@ -191,7 +191,7 @@ dl_list(void)
 		}
 
 		c1 = c;
-		flushinp();
+		opt_flushinp();
 
 		while ((c = getch()) == ERR) {
 		}
@@ -236,7 +236,7 @@ dl_list(void)
 			goto ret;
 
 		case ':':
-			ungetch(c);
+			keep_ungetch(c);
 			goto ret;
 
 		case KEY_DOWN:

@@ -79,3 +79,5 @@ int ui_chmod(int, long, unsigned short);
 int ui_chown(int, int, long, unsigned short);
 void prt_ln_num(void);
 void list_jmrks(void);
+int keep_ungetch(int);
+int opt_flushinp(void);
