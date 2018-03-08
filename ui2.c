@@ -1713,8 +1713,19 @@ ui_chown(int t, int op, long u, unsigned short num)
 void
 prt_ln_num(void)
 {
+	unsigned file_num = db_num[right_col];
+	unsigned file_idx = DB_LST_IDX;
+
 	if (bmode || fmode) {
 		char *path;
+
+		if (dotdot) {
+			if (file_num) {
+				file_num--;
+			}
+		} else {
+			file_idx++;
+		}
 
 		if (bmode) {
 			if (!getcwd(syspth[1], sizeof syspth[1])) {
@@ -1727,20 +1738,26 @@ prt_ln_num(void)
 			path = syspth[right_col];
 		}
 
-		if (db_num[right_col]) {
+		if (file_idx) {
 			printerr(NULL, "File %lu of %lu (%s)",
-			    DB_LST_IDX + 1, db_num[right_col], path);
+			    file_idx, file_num, path);
+		} else if (file_num) {
+			printerr(NULL, "%lu file(s) (%s)", file_num, path);
 		} else {
 			printerr(NULL, "No file (%s)", path);
 		}
 	} else {
+		file_idx++;
 		syspth[0][pthlen[0]] = 0;
 		syspth[1][pthlen[1]] = 0;
 
-		if (db_num[right_col]) {
+		if (file_idx) {
 			printerr(NULL, "File %lu of %lu (%s, %s)",
-			    DB_LST_IDX + 1, db_num[right_col],
+			    file_idx, file_num,
 			    syspth[0], syspth[1]);
+		} else if (file_num) {
+			printerr(NULL, "%lu file(s) (%s, %s)",
+			  file_num, syspth[0], syspth[1]);
 		} else {
 			printerr(NULL, "No file (%s, %s)",
 			    syspth[0], syspth[1]);
