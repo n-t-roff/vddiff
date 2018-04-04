@@ -411,7 +411,7 @@ zcat(const char *cmd, const struct filediff *f, int tree, int i)
 	exec_cmd(&s, TOOL_SHELL, NULL, NULL);
 	free(s);
 
-	if (lstat(s2, &st) == -1) {
+	if (lstat(z->name, &st) == -1) {
 		if (errno == ENOENT)
 			printerr("", "Unpacked file \"%s\" not found", s2);
 		else
@@ -460,6 +460,9 @@ unzip(const struct filediff *f, int tree, int i,
 	exec_cmd(av, 0, NULL, NULL);
 	return z;
 }
+
+/* Sets lbuf (to original (packed) source file) and rbuf
+ * (to temporary unpacked target file)! */
 
 static char *
 zpths(const struct filediff *f, struct filediff **z2, int tree, size_t *l2,
