@@ -13,7 +13,7 @@ LOSS OF USE, DATA OR PROFITS, WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE OR
 OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
 PERFORMANCE OF THIS SOFTWARE.
 ..
-.Dd February 27, 2018
+.Dd May 10, 2018
 .Dt VDDIFF 1
 .Sh NAME
 .Nm @vddiff@
@@ -531,8 +531,16 @@ and
 keys.
 .It Dq Li \&Sd
 Sort files with directories on top.
+(See also rc file option
+.Cm sortic
+and ex command
+.Cm set sortic . )
 .It Dq Li \&Sm
 Sort files by name only (ignoring file type).
+(See also rc file option
+.Cm sortic
+and ex command
+.Cm set sortic . )
 .It Dq Li \&SS
 Sort files by size with directories on top,
 smallest file first.
@@ -1225,6 +1233,10 @@ End random mode.
 Use recursive diff, find and grep operations.
 .It Li set norecursive
 Use directory local diff, find and grep.
+.It Li set sortic
+Sort files case-insensitive.
+.It Li set nosortic
+Sort files case-sensitive.
 .It Li set ws
 File name searches wrap around top and bottom.
 .It Li set nows
@@ -1608,6 +1620,8 @@ the selected filename as argument, add a space followed
 by an octothorpe
 .Pq Dq Li " #"
 at the end of the string.
+.It Li sortic
+Sort files case-insensitive.
 .It Li mono
 Disable colors.
 .It Li followlinks

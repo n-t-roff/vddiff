@@ -723,14 +723,17 @@ next_opt:
 	    (!strncmp(buf, "file_exec ", (skip = 10)) &&
 	    (next_arg = TRUE))) {
 		file_exec = not ? FALSE : TRUE;
+
 	} else if (!strcmp(buf, "fkeys") ||
 	    (!strncmp(buf, "fkeys ", (skip = 6)) &&
 	    (next_arg = TRUE))) {
 		nofkeys = not ? TRUE : FALSE;
+
 	} else if (!strcmp(buf, "ic") ||
 	    (!strncmp(buf, "ic ", (skip = 3)) &&
 	    (next_arg = TRUE))) {
 		noic = not;
+
 	} else if (!strcmp(buf, "loop") ||
 	    (!strncmp(buf, "loop ", (skip = 5)) &&
 	    (next_arg = TRUE))) {
@@ -740,22 +743,34 @@ next_opt:
 		}
 
 		loop_mode = not ? FALSE : TRUE;
+
 	} else if (!strcmp(buf, "random") ||
 	    (!strncmp(buf, "random ", (skip = 7)) &&
 	    (next_arg = TRUE))) {
 		rnd_mode = not ? FALSE : TRUE;
+
 	} else if (!strcmp(buf, "magic") ||
 	    (!strncmp(buf, "magic ", (skip = 6)) &&
 	    (next_arg = TRUE))) {
 		magic = not ? 0 : 1;
+
 	} else if (!strcmp(buf, "recursive") ||
 	    (!strncmp(buf, "recursive ", (skip = 10)) &&
 	    (next_arg = TRUE))) {
 		recursive = not ? 0 : 1;
+
+	} else if (!strcmp(buf, "sortic") ||
+	         (!strncmp(buf, "sortic ", (skip = 7)) &&
+		 (next_arg = TRUE)))
+	{
+		sortic = not ? FALSE : TRUE ;
+		rebuild_db(1);
+
 	} else if (!strcmp(buf, "ws") ||
 	    (!strncmp(buf, "ws ", (skip = 3)) &&
 	    (next_arg = TRUE))) {
 		nows = not;
+
 	} else if (*buf) {
 unkn_opt:
 		printerr(NULL, "Unknown option \"%s\"", buf);

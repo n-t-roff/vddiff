@@ -94,6 +94,7 @@ void *name_db;
 void *skipext_db;
 void *uz_path_db;
 static void *alias_db;
+bool sortic;
 
 static void *curs_db[2];
 static void *ext_db;
@@ -1064,6 +1065,7 @@ diff_cmp(
 	const char *name1 = f1->name;
 	const char *name2 = f2->name;
 	const bool dotdot2 = str_eq_dotdot(name2);
+	int case_cmp_result;
 
 	if (str_eq_dotdot(name1)) {
 		if (dotdot2) {
@@ -1112,7 +1114,11 @@ diff_cmp(
 		}
 	}
 
-	return strcmp(name1, name2);
+	if (sortic && (case_cmp_result = strcasecmp(name1, name2))) {
+		return case_cmp_result;
+	} else {
+		return strcmp(name1, name2);
+	}
 }
 
 void

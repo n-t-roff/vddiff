@@ -55,8 +55,10 @@ static const char *set_opts[] = {
 	"nomagic",
 	"norandom",
 	"norecursive",
+	"nosortic",
 	"nows",
 	"recursive",
+	"sortic",
 	"ws",
 	NULL
 };
