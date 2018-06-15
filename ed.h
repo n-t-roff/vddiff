@@ -14,9 +14,9 @@ struct history {
 	short have_ent;
 };
 
-void ed_append(char *);
+void ed_append(const char *const);
 void disp_edit(void);
-int ed_dialog(const char *, char *, int (*)(char *, int), int,
+int ed_dialog(const char *const, const char *const, int (*)(char *, int), int,
     struct history *);
 void clr_edit(void);
 void set_fkey(int, char *, char *);

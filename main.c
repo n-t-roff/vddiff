@@ -69,11 +69,11 @@ static void usage(void);
 static void runs2x(void);
 
 const char rc_name[] = "." BIN "rc";
-static char *usage_txt =
+static const char *const usage_txt =
 "Usage: %s [-u [<RC file>]] [-BbCcdEefgIiklMmNnoqRrVWXy] [-F <pattern>]\n"
 "	[-G <pattern>] [-P <last_wd_file>] [-t <diff_tool>] [-v <view_tool>]\n"
 "	[<file or directory 1> [<file or directory 2>]]\n";
-static char *getopt_arg = "BbCcdEeF:fG:gIiklMmNnoP:qRrt:Vv:WXy";
+static const char *const getopt_arg = "BbCcdEeF:fG:gIiklMmNnoP:qRrt:Vv:WXy";
 
 char *printwd;
 bool bmode;

@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2017, Carsten Kunze <carsten.kunze@arcor.de>
+Copyright (c) 2017-2018, Carsten Kunze <carsten.kunze@arcor.de>
 
 Permission to use, copy, modify, and/or distribute this software for any
 purpose with or without fee is hereby granted, provided that the above
@@ -79,7 +79,8 @@ static const char *ex_cmds[] = {
 int
 complet(char *s, int c)
 {
-	char *e, *b, *d, *dn, *bn, *fn, *m = NULL;
+	char *e, *b, *d, *dn, *fn, *m = NULL;
+	const char *bn;
 	DIR *dh;
 	struct dirent *de;
 	size_t ld, lb, ln;

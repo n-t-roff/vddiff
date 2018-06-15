@@ -106,7 +106,7 @@ test_fkey(
 			struct tool t;
 			unsigned ti;
 			unsigned act;
-			static char *keys =
+			static const char *keys =
 			    "<ENTER> execute, 'e' edit, 'n' no";
 
 			t = viewtool;
@@ -1373,7 +1373,7 @@ rebuild_scr(void)
 
 /* Number of wide chars */
 ssize_t
-mbstowchs(WINDOW *w, char *s)
+mbstowchs(WINDOW *w, const char *s)
 {
 	size_t l;
 
@@ -1427,7 +1427,7 @@ putwcs(WINDOW *w, wchar_t *s,
 
 /* Number of wide chars */
 ssize_t
-putmbs(WINDOW *w, char *s,
+putmbs(WINDOW *w, const char *const s,
     /* -1: unlimited */
     int n)
 {
@@ -1445,7 +1445,7 @@ putmbs(WINDOW *w, char *s,
 }
 
 int
-addmbs(WINDOW *w, char *s, int mx)
+addmbs(WINDOW *w, const char *const s, int mx)
 {
 	int cy, cx, my;
 	ssize_t l;

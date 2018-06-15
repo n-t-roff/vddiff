@@ -60,7 +60,7 @@ static void curs_up(void);
 static void disp_line(unsigned, unsigned, int);
 static void push_state(char *, char *, unsigned);
 static void help(void);
-static char *type_name(mode_t);
+static const char *type_name(mode_t);
 static void ui_resize(void);
 static void statcol(int);
 static void file_stat(struct filediff *, struct filediff *);
@@ -1590,7 +1590,7 @@ save_st:
 	goto next_key;
 }
 
-static char *helptxt[] = {
+static const char *const helptxt[] = {
        "Type 'q' to quit help, scroll with <DOWN>, <UP>, <PAGE-DOWN>, and <PAGE-UP>.",
        "",
        "Q		Quit " BIN,
@@ -2079,9 +2079,9 @@ action(
 {
 	struct filediff *f, *f1, *f2, *z1 = NULL, *z2 = NULL;
 	char *t1 = NULL, *t2 = NULL;
-	char *err = NULL;
-	static char *typerr = "Not a directory or regular file";
-	static char *typdif = "Different file type";
+	const char *err = NULL;
+	static const char *const typerr = "Not a directory or regular file";
+	static const char *const typdif = "Different file type";
 	mode_t typ[2];
 	bool diff_act_ = !bmode && !fmode && tree == 3 && (mode & 1);
 	bool exec_act_ = file_exec && !(mode & 8) && !(mode & 2) &&
@@ -3233,7 +3233,7 @@ statcol(
 	standendc(wstat);
 }
 
-static char *
+static const char *
 type_name(mode_t m)
 {
 	if      (S_ISREG(m))  return "regular file";
@@ -3481,7 +3481,7 @@ getfilesize(char *buf, size_t bufsiz, off_t size,
     /* 2: don't group */
     unsigned md)
 {
-	char *unit;
+	const char *unit;
 	float f;
 
 	if (!md) {

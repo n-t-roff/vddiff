@@ -49,9 +49,10 @@ struct argvec {
 	char **end;
 };
 
-static size_t add_path(char *, size_t, char *, char *);
+static size_t add_path(char *, size_t, const char *const, const char *const);
 static struct strlst *addarg(char *);
-static void exec_tool(struct tool *, char *, char *, int);
+static void exec_tool(struct tool *, const char *const, const char *const,
+	int);
 static int shell_char(int);
 static int tmpbasecmp(const char *);
 static void str2argvec(const char *, struct argvec *);
@@ -68,7 +69,7 @@ bool exec_nocurs;
  * tree side. */
 
 void
-tool(char *name, char *rnam, int tree,
+tool(const char *const name, const char *const rnam, int tree,
     /* 1: ignore extension */
     /* 2: execute */
     unsigned short mode)
@@ -178,10 +179,12 @@ check_ext_tool(const char *name)
 /* Only used for commands which are executed by /bin/sh (not exec() directly */
 
 char *
-exec_mk_cmd(struct tool *tmptool, char *name, char *rnam, int tree)
+exec_mk_cmd(struct tool *tmptool, const char *const name,
+	const char *const rnam, int tree)
 {
 	size_t csiz, clen, l;
-	char *cmd, *s, *nam2;
+	char *cmd, *s;
+	const char *nam2;
 	struct strlst *args;
 	int c;
 
@@ -266,7 +269,7 @@ exec_mk_cmd(struct tool *tmptool, char *name, char *rnam, int tree)
 }
 
 static size_t
-add_path(char *cmd, size_t l0, char *path, char *name)
+add_path(char *cmd, size_t l0, const char *const path, const char *const name)
 {
 	size_t l;
 
@@ -370,9 +373,11 @@ shell_char(int c)
 }
 
 static void
-exec_tool(struct tool *t, char *name, char *rnam, int tree)
+exec_tool(struct tool *t, const char *const name, const char *const rnam,
+	int tree)
 {
-	char *nam2, *s1, *s2;
+	const char *nam2;
+	char *s1, *s2;
 	int status;
 	tool_flags_t flags;
 	struct argvec av;
@@ -494,7 +499,7 @@ tmpbasecmp(const char *p)
 }
 
 int
-exec_cmd(char **av, tool_flags_t flags, char *path, char *msg)
+exec_cmd(char **av, tool_flags_t flags, char *path, const char *const msg)
 {
 	pid_t pid;
 	int status = 0;
@@ -538,7 +543,7 @@ exec_cmd(char **av, tool_flags_t flags, char *path, char *msg)
 		}
 
 		if (flags & TOOL_SHELL) {
-			char *shell = nishell ? nishell : "sh";
+			const char *const shell = nishell ? nishell : "sh";
 
 #if defined(TRACE)
 			fprintf(debug, "  execlp(%s -c %s)\n",
@@ -673,7 +678,7 @@ exec_res_sig(struct sigaction *intr, struct sigaction *quit, sigset_t *smsk)
 }
 
 size_t
-shell_quote(char *to, char *from, size_t siz)
+shell_quote(char *to, const char *from, size_t siz)
 {
 	int c;
 	size_t len = 0;

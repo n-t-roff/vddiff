@@ -1,6 +1,6 @@
 #!/bin/sh
 
-# Copyright (c) 2016-2017, Carsten Kunze <carsten.kunze@arcor.de>
+# Copyright (c) 2016-2018, Carsten Kunze <carsten.kunze@arcor.de>
 #
 # Permission to use, copy, modify, and/or distribute this software for any
 # purpose with or without fee is hereby granted, provided that the above
@@ -143,6 +143,7 @@ check_Sanitizer () {
 	__CCXXDBG="$__CCXXDBG -Wshadow"
 	__CCXXDBG="$__CCXXDBG -Wwrite-strings"
 	__CLXXDBG="$__CLXXDBG -fno-common -fsanitize=address -fsanitize=undefined"
+	#__CLXXDBG="$__CLXXDBG -fsanitize-recover=all"
 
 	[ -n "$CC" ] || CC=cc
 	VER=`$CC --version`
@@ -150,13 +151,12 @@ check_Sanitizer () {
 	if echo $VER | grep -iq gcc || echo $VER | \
 	    grep -iq 'Free Software Foundation'; then
 		[ -z "$SFLAG" ] && printf "(gcc) "
-		__CDBG="$__CDBG -Wno-discarded-qualifiers" # "vddiff" only
 		#__CLXXDBG="$__CLXXDBG -fprofile-arcs -ftest-coverage"
 		__CLXXDBG="$__CLXXDBG -fsanitize=float-divide-by-zero"
 		__CLXXDBG="$__CLXXDBG -fsanitize=float-cast-overflow"
 	elif echo $VER | grep -q clang; then
 		[ -z "$SFLAG" ] && printf "(clang) "
-		__CCXXDBG="$__CCXXDBG -Wno-incompatible-pointer-types-discards-qualifiers" # disabled for "vddiff"
+		__CCXXDBG="$__CCXXDBG -Wincompatible-pointer-types-discards-qualifiers"
 		__CCXXDBG="$__CCXXDBG -Wmissing-variable-declarations"
 		__CXXDBG="$__CXXDBG -Wunused-private-field"
 		__CLXXDBG="$__CLXXDBG -fsanitize=unsigned-integer-overflow"

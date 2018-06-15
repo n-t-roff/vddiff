@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2016-2017, Carsten Kunze <carsten.kunze@arcor.de>
+Copyright (c) 2016-2018, Carsten Kunze <carsten.kunze@arcor.de>
 
 Permission to use, copy, modify, and/or distribute this software for any
 purpose with or without fee is hereby granted, provided that the above
@@ -44,7 +44,7 @@ struct pthofs {
 static int mktmpdirs(void);
 static enum uz_id check_ext(char *, int *);
 static struct filediff *zcat(const char *, const struct filediff *, int, int);
-static struct filediff *tar(char *, const struct filediff *, int, int,
+static struct filediff *tar(const char *const, const struct filediff *, int, int,
     unsigned);
 static struct filediff *unzip(const struct filediff *, int, int, unsigned);
 static char *zpths(const struct filediff *, struct filediff **, int, size_t *,
@@ -100,7 +100,7 @@ int
 uz_init(void)
 {
 	int i;
-	char *s;
+	const char *s;
 
 	for (i = 0; i < (ssize_t)(sizeof(exttab)/sizeof(*exttab)); i++) {
 		uz_db_add(strdup(exttab[i].str), exttab[i].id);
@@ -427,7 +427,7 @@ zcat(const char *cmd, const struct filediff *f, int tree, int i)
 }
 
 static struct filediff *
-tar(char *opt, const struct filediff *f, int tree, int i,
+tar(const char *const opt, const struct filediff *f, int tree, int i,
     /* 1: set tmpdir */
     unsigned m)
 {

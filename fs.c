@@ -506,7 +506,7 @@ fs_rm(
     /* 1: "dl", 2: "dr", 3: "dd" (detect which file exists)
      * 0: Use pth2, ignore nam and u. n must be 1. */
     /* -1: Use pth1 */
-    int tree, char *txt,
+    int tree, const char *const txt,
     /* File name. If nam is given, u is not used. n must be 1. */
     char *nam, long u, int n,
     /* 1: Force */
@@ -670,7 +670,7 @@ ntr:
 		empty_dir_ = FALSE;
 
 		if (!(md & 1) && !m) {
-			char *typ = NULL;
+			const char *typ = NULL;
 
 			if (S_ISDIR(gstat[0].st_mode)) {
 				int v;
@@ -779,7 +779,7 @@ fs_cp(
 	int eto; /* Effective dest side */
 	unsigned sto = 0; /* OR sum dest side */
 	char *tnam;
-	static char *tmpnam_ = "." BIN ".X";
+	static const char *const tmpnam_ = "." BIN ".X";
 	bool m;
 	bool chg = FALSE;
 	bool ofs = FALSE;

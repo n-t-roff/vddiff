@@ -60,7 +60,7 @@ static void proc_mevent(void);
 #endif
 
 void
-ed_append(char *txt)
+ed_append(const char *const txt)
 {
 	size_t l;
 
@@ -187,9 +187,9 @@ free:
 }
 
 int
-ed_dialog(const char *msg,
+ed_dialog(const char *const msg,
     /* NULL: leave buffer as-is */
-    char *ini, int (*callback)(char *, int), int keep_buf, struct history *hist)
+    const char *const ini, int (*callback)(char *, int), int keep_buf, struct history *hist)
 {
 	if (!edit)
 		init_edit(); /* conditional, else rbuf is cleared! */
