@@ -15,7 +15,7 @@ extern size_t spthofs[2];
 extern size_t vpthofs[2];
 
 struct filediff *unpack(const struct filediff *, int, char **, int);
-void rmtmpdirs(char *, tool_flags_t);
+void rmtmpdirs(const char *, tool_flags_t);
 int uz_init(void);
 void uz_add(char *, char *);
 void uz_exit(void);

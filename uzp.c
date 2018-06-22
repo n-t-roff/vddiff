@@ -236,10 +236,10 @@ mktmpdirs(void)
 }
 
 void
-rmtmpdirs(char *s, tool_flags_t tf)
+rmtmpdirs(const char *s, tool_flags_t tf)
 {
-	static char *cm[] = { "chmod", "-R" , "700", NULL, NULL };
-	static char *rm[] = { "rm"   , "-rf", NULL , NULL };
+	static const char *cm[] = { "chmod", "-R" , "700", NULL, NULL };
+	static const char *rm[] = { "rm"   , "-rf", NULL , NULL };
 
 #if defined(TRACE) && 0
 	fprintf(debug, "->rmtmpdirs(%s)\n", s);
@@ -432,7 +432,7 @@ tar(const char *const opt, const struct filediff *f, int tree, int i,
     unsigned m)
 {
 	struct filediff *z;
-	static char *av[] = { "tar", NULL, NULL, "-C", NULL, NULL };
+	static const char *av[] = { "tar", NULL, NULL, "-C", NULL, NULL };
 
 	zpths(f, &z, tree, NULL, i, m & 1 ? 2 : 0);
 	av[1] = opt;
@@ -452,7 +452,7 @@ unzip(const struct filediff *f, int tree, int i,
     unsigned m)
 {
 	struct filediff *z;
-	static char *av[] = { "unzip", "-qq", NULL, "-d", NULL, NULL };
+	static const char *av[] = { "unzip", "-qq", NULL, "-d", NULL, NULL };
 
 	zpths(f, &z, tree, NULL, i, m & 1 ? 2 : 0);
 	av[2] = lbuf;

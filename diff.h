@@ -19,7 +19,7 @@ extern bool one_scan;
 extern bool dotdot;
 
 int build_diff_db(int);
-int scan_subdir(char *, char *, int);
+int scan_subdir(const char *, const char *, int);
 int is_diff_dir(struct filediff *);
 int is_diff_pth(const char *, unsigned);
 size_t pthcat(char *, size_t, const char *);

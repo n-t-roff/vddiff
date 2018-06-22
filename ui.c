@@ -58,7 +58,7 @@ static int last_line_is_disp(void);
 static int first_line_is_top(void);
 static void curs_up(void);
 static void disp_line(unsigned, unsigned, int);
-static void push_state(char *, char *, unsigned);
+static void push_state(const char *, const char *, unsigned);
 static void help(void);
 static const char *type_name(mode_t);
 static void ui_resize(void);
@@ -3807,7 +3807,7 @@ center(unsigned idx)
 }
 
 static void
-push_state(char *name, char *rnam,
+push_state(const char *name, const char *rnam,
     /* 1: lzip */
     /* 2: rzip */
     /* 4: don't push state */
@@ -4011,7 +4011,7 @@ ret:
 }
 
 void
-enter_dir(char *name, char *rnam, bool lzip, bool rzip, short tree
+enter_dir(const char *name, char *rnam, bool lzip, bool rzip, short tree
 #ifdef DEBUG
     , char *_file, unsigned _line
 #endif

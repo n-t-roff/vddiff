@@ -719,7 +719,7 @@ ini_int(void)
 }
 
 int
-scan_subdir(char *name, char *rnam, int tree)
+scan_subdir(const char *name, const char *rnam, int tree)
 {
 	int i;
 #if defined(TRACE)
