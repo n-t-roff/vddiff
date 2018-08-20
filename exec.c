@@ -809,9 +809,12 @@ sig_child(int signo)
 			/* Normally this test is not necessary. waitpid should
 			 * return 0 if there are no further child processes.
 			 * This is maybe a Linux bug */
+#if defined(TRACE)
 			if (errno != ECHILD) {
-				printerr(strerror(errno), "waitpid");
+				fprintf(debug, "  sig_child(): waitpid(): %s\n",
+					strerror(errno));
 			}
+#endif
 			/* fall through */
 		case 0:
 			goto last;
