@@ -58,3 +58,4 @@ extern bool nofkeys;
 
 char *add_home_pth(const char *);
 void sig_term(int);
+void remove_tmp_dirs(void);

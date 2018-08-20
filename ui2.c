@@ -77,7 +77,7 @@ bool excl_or;
 bool file_exec;
 bool nobold;
 static bool sig_loop;
-static bool loop_mode;
+static volatile sig_atomic_t loop_mode;
 static bool rnd_mode;
 
 int
@@ -167,10 +167,10 @@ exec:
 					    " (get_mmrk())\n");
 #endif
 					if (rnd_mode) {
-						bool tloop = loop_mode;
+						bool tloop = loop_mode ? TRUE : FALSE;
 						long j = 0;
 
-						loop_mode = FALSE;
+						loop_mode = 0;
 						rnd_idx = malloc(
 						    sizeof(*rnd_idx) *
 						    mmrkd[right_col]);
@@ -183,7 +183,7 @@ exec:
 							rnd_idx[j++] = ti2;
 						}
 
-						loop_mode = tloop;
+						loop_mode = tloop ? 1 : 0;
 
 						do {
 							long_shuffle(rnd_idx,
@@ -738,11 +738,14 @@ next_opt:
 	    (!strncmp(buf, "loop ", (skip = 5)) &&
 	    (next_arg = TRUE))) {
 		if (!sig_loop) {
+			/* The signal handler is only installed when needed.
+			 * If `sig_loop` is FALSE the handler is not yet installed.
+			 * `sig_loop` is never reset. */
 			inst_sighdl(SIGCONT, sig_cont);
 			sig_loop = TRUE;
 		}
 
-		loop_mode = not ? FALSE : TRUE;
+		loop_mode = not ? 0 : 1;
 
 	} else if (!strcmp(buf, "random") ||
 	    (!strncmp(buf, "random ", (skip = 7)) &&
@@ -1816,7 +1819,7 @@ sig_cont(int sig)
 #if defined(TRACE)
 	fprintf(debug, "<>sig_cont\n");
 #endif
-	loop_mode = FALSE;
+	loop_mode = 0;
 }
 
 static void

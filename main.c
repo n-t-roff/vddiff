@@ -27,6 +27,7 @@ PERFORMANCE OF THIS SOFTWARE.
 #include <unistd.h>
 #include <signal.h>
 #include <stdarg.h>
+#include <setjmp.h>
 #include "compat.h"
 #include "main.h"
 #include "y.tab.h"
@@ -85,6 +86,8 @@ bool force_exec, force_fs, force_multi;
 bool readonly;
 bool nofkeys;
 static bool run2x;
+static sigjmp_buf term_jmp_buf;
+static volatile sig_atomic_t term_jmp_buf_valid;
 
 int
 main(int argc, char **argv)
@@ -367,7 +370,26 @@ main(int argc, char **argv)
 	pwd  = syspth[0] + pthlen[0];
 	rpwd = syspth[1] + pthlen[1];
 	info_load();
-	build_ui();
+
+	if (!sigsetjmp(term_jmp_buf,
+		/* keep signal masked */
+		0))
+	{
+		term_jmp_buf_valid = 1;
+		build_ui();
+		/* Ignore signals from now on.
+		 * Race does not matter, if signal wins program is exited
+		 * before code is executed twice. */
+		term_jmp_buf_valid = 0;
+	}
+
+	if (!qdiff) {
+		remove_tmp_dirs();
+		bkgd(A_NORMAL);
+		erase();
+		refresh();
+		endwin();
+	}
 
 	if (printwd) {
 		wr_last_path();
@@ -542,7 +564,7 @@ stat:
 			exit(1);
 		}
 
-		if (!zipfile[i]) { /* break loop */
+		if (!zipfile[i]) { /* break "goto stat" loop */
 			f.name = s;
 			f.type[i] = gstat[i].st_mode;
 
@@ -648,13 +670,24 @@ usage(void)
 void
 sig_term(int sig)
 {
-	int e;
+	(void)sig;
 
-	e = errno;
+	if (!term_jmp_buf_valid) {
+		return;
+	}
+
 #if defined(TRACE)
 	fprintf(debug, "->sig_term(%d)\n", sig);
 #endif
+	siglongjmp(term_jmp_buf, 1);
+}
 
+void
+remove_tmp_dirs(void)
+{
+#if defined(TRACE)
+	fprintf(debug, "->remove_tmp_dirs()\n");
+#endif
 	/* Change out of tmpdirs before deleting them. */
 	if (chdir("/") == -1) {
 		printerr(strerror(errno), "chdir \"/\" failed");
@@ -667,14 +700,7 @@ sig_term(int sig)
 
 	/* if bmode: remove tmp_dirs */
 	uz_exit();
-
 #if defined(TRACE)
-	fprintf(debug, "<-sig_term\n");
+	fprintf(debug, "<-remove_tmp_dirs()\n");
 #endif
-	if (sig) {
-		endwin();
-		exit(1);
-	}
-
-	errno = e;
 }

@@ -187,7 +187,7 @@ do_diff:
 	if (bmode || fmode) {
 		if (chdir(syspth[0]) == -1) {
 			printerr(strerror(errno), "chdir \"%s\":", syspth[0]);
-			goto exit;
+			return;
 		}
 
 		if (bmode) {
@@ -211,14 +211,6 @@ do_diff:
 
 	disp_fmode();
 	ui_ctrl();
-
-	sig_term(0); /* remove tmp dirs */
-
-exit:
-	bkgd(A_NORMAL);
-	erase();
-	refresh();
-	endwin();
 }
 
 static int
