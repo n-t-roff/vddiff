@@ -55,11 +55,11 @@ static void rm_file(void);
 static int cp_file(void);
 static int creatdir(void);
 static int cp_link(void);
-static int cp_reg(unsigned);
+static int cp_reg(const unsigned);
 static int ask_for_perms(mode_t *);
 static int fs_ro(void);
 static void fs_fwrap(const char *, ...);
-static int fs_stat(const char *, struct stat *, unsigned);
+static int fs_stat(const char *, struct stat *, const unsigned);
 static int fs_deldialog(const char *, const char *, const char *,
     const char *);
 static int fs_testBreak(void);
@@ -1424,13 +1424,15 @@ exit:
 static int
 cp_reg(
     /* 1: append */
-    unsigned mode)
+    const unsigned mode)
 {
-	int f1, f2;
+	int f1 = -1; /* read file descriptor */
+	int f2 = -1; /* write file descriptor */
 	/* rv must only be set in code. Clearing rv may hide errors. */
-	int rv = 0;
-	int fl;
-	ssize_t l1, l2;
+	int rv = 0; /* return value */
+	int fl = 0; /* open(2) flags */
+	ssize_t l1 = -1; /* read(2) return value */
+	ssize_t l2 = -1; /* write(2) return value */
 #ifdef HAVE_FUTIMENS
 	struct timespec ts[2];
 #else
@@ -1441,7 +1443,7 @@ cp_reg(
 	fprintf(debug, "->cp_reg(%u) \"%s\" -> \"%s\"\n", mode, pth1, pth2);
 #endif
 
-	if (!fs_stat(pth2, &gstat[1], 0)) {
+	if (!fs_stat(pth2, &gstat[1], 0)) { /* target file exists */
 #if defined(TRACE)
 		fprintf(debug, "  Already exists: %s\n", pth2);
 #endif
@@ -1496,7 +1498,7 @@ test:
 				goto ret;
 			}
 		}
-	}
+	} /* if (!fs_stat(pth2)) */
 
 copy:
 	fl = mode & 1 ? O_APPEND | O_WRONLY :
@@ -1692,14 +1694,16 @@ fs_any_dst(long u, int n, unsigned m)
 
 static int
 fs_stat(const char *p, struct stat *s,
-    /* 1: report ENOENT */
-    unsigned mode)
+    /* 1: also report ENOENT */
+    const unsigned mode)
 {
 	int i;
 
 	if (( followlinks && (i =  stat(p, s)) == -1) ||
 	    (!followlinks && (i = lstat(p, s)) == -1)) {
-		if (!(mode & 1) && errno != ENOENT) {
+		if (errno != ENOENT /* report any error that is not ENOENT */
+		    || (mode & 1)) /* report even ENOENT when `mode & 1` */
+		{
 			printerr(strerror(errno), LOCFMT "stat \"%s\""
 			    LOCVAR, p);
 		}
