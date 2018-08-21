@@ -49,11 +49,9 @@ struct str_list {
 
 static int proc_dir(void);
 static void rm_dir(void);
-static void rm_file(void);
 static int cp_file(void);
 static int creatdir(void);
 static int cp_link(void);
-static int cp_reg(const unsigned);
 static int ask_for_perms(mode_t *);
 static int fs_ro(void);
 static void fs_fwrap(const char *, ...);
@@ -61,8 +59,8 @@ static int fs_deldialog(const char *, const char *, const char *,
     const char *);
 static int fs_testBreak(void);
 
-static time_t fs_t1, fs_t2;
-static char *pth1, *pth2;
+time_t fs_t1, fs_t2;
+char *pth1, *pth2;
 static size_t len1, len2;
 static enum {
     TREE_RM, /* delete */
@@ -1269,9 +1267,13 @@ rm_dir(void)
 	}
 }
 
-static void
+void
 rm_file(void)
 {
+#if defined(TRACE) && (defined(TEST) || 0)
+	fprintf(debug, "<>rm_file(path=%s)\n", pth1);
+#endif
+
 	if ((fs_t2 = time(NULL)) - fs_t1) {
 		printerr(NULL, "Delete \"%s\"", pth1);
 		fs_t1 = fs_t2;
@@ -1309,7 +1311,7 @@ cp_file(void)
 	}
 
 	if (S_ISREG(gstat[0].st_mode)) {
-		rv = cp_reg(0);
+		rv = cp_reg(0) < 0 ? rv : 0;
 	} else if (S_ISLNK(gstat[0].st_mode)) {
 		rv = cp_link();
 	} else {
@@ -1416,9 +1418,12 @@ exit:
 	return r;
 }
 
-/* !0: Error */
+/*  1: Files are equal */
+/*  0: Successfully copied */
+/* -1: System call failed */
+/* -2: User abort */
 
-static int
+int
 cp_reg(
     /* 1: append */
     const unsigned mode)
@@ -1453,12 +1458,13 @@ cp_reg(
 				fprintf(debug, "  But equal: %s and %s\n",
 				    pth1, pth2);
 #endif
-				goto ret;
+				rv = 1;
+				goto ret; /* if (*src == *dest) no copy is done */
 			}
 
 			if (fs_deldialog(y_a_n_txt, "overwrite", "file ",
 			    pth2)) {
-				rv = 1;
+				rv = -2;
 				goto ret;
 			}
 test:
@@ -1491,7 +1497,7 @@ test:
 			if (!followlinks &&
 			    fs_rm(0 /* tree */, "overwrite", NULL /* nam */,
 			    0 /* u */, 1 /* n */, 4|2 /* md */) == 1) {
-				rv = 1;
+				rv = -2;
 				goto ret;
 			}
 		}
@@ -1696,6 +1702,11 @@ fs_stat(const char *p, struct stat *s,
 {
 	int i;
 
+#if defined(TRACE) && (defined(TEST) || 0)
+	fprintf(debug, "->fs_stat(path=%s mode=%u) follow=%d\n",
+		p, mode, followlinks);
+#endif
+
 	if (( followlinks && (i =  stat(p, s)) == -1) ||
 	    (!followlinks && (i = lstat(p, s)) == -1)) {
 		if (errno != ENOENT /* report any error that is not ENOENT */
@@ -1706,5 +1717,8 @@ fs_stat(const char *p, struct stat *s,
 		}
 	}
 
+#if defined(TRACE) && (defined(TEST) || 0)
+	fprintf(debug, "<-fs_stat(): %d\n", i);
+#endif
 	return i;
 }

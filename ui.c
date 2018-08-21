@@ -4314,7 +4314,16 @@ dialog(const char *quest, const char *answ, const char *fmt, ...)
 		va_start(ap, fmt);
 	}
 
+#if defined(TEST)
+	fputs("<>dialog: ", debug);
+	va_start(ap, fmt);
+	vfprintf(debug, fmt, ap);
+	va_end(ap);
+	fputc('\n', debug);
+	r = 0;
+#else
 	r = vdialog(quest, answ, fmt, ap);
+#endif
 
 	if (fmt) {
 		va_end(ap);

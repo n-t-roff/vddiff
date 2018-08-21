@@ -23,7 +23,8 @@ int scan_subdir(const char *, const char *, int);
 int is_diff_dir(struct filediff *);
 int is_diff_pth(const char *, unsigned);
 size_t pthcat(char *, size_t, const char *);
-int cmp_file(char *, off_t, char *, off_t, unsigned);
+int cmp_file(const char *const, const off_t, const char *const, const off_t,
+	const unsigned);
 void free_diff(struct filediff *);
 void do_scan(void);
 void save_last_path(char *);

@@ -998,29 +998,42 @@ read_link(char *path, off_t size)
  *  1  Diff */
 
 int
-cmp_file(char *lpth, off_t lsiz, char *rpth, off_t rsiz,
-    /* 1 (!0): force compare, no getch */
-    unsigned md)
+cmp_file(
+	const char *const lpth,
+	const off_t lsiz,
+	const char *const rpth,
+	const off_t rsiz,
+    /* !0: force compare, no getch */
+    const unsigned md)
 {
-	int rv = 0, f1, f2;
-	ssize_t l1, l2;
+	int rv = 0, f1 = -1, f2 = -1;
+	ssize_t l1 = -1, l2 = -1;
+
+#if defined(TRACE) && (defined(TEST) || 0)
+	fprintf(debug, "->cmp_file(name1=%s size1=%ju name2=%s size2=%ju mode=%u)\n",
+		lpth, (intmax_t)lsiz, rpth, (intmax_t)rsiz, md);
+#endif
 
 	if (lsiz != rsiz) {
-		return 1;
+		rv = 1;
+		goto ret;
 	}
 
 	if (!lsiz) {
-		return 0;
+		rv = 0;
+		goto ret;
 	}
 
 	if (!md) {
 		if (dontcmp) {
-			return 0;
+			rv = 0;
+			goto ret;
 		}
 
 		if (getch() == '%') {
 			dontcmp = TRUE;
-			return 0;
+			rv = 0;
+			goto ret;
 		}
 	}
 
@@ -1029,7 +1042,8 @@ cmp_file(char *lpth, off_t lsiz, char *rpth, off_t rsiz,
 		    "open \"%s\": %s", lpth, strerror(errno)) == 'i')
 			ign_diff_errs = TRUE;
 
-		return -1;
+		rv = -1;
+		goto ret;
 	}
 
 	if ((f2 = open(rpth, O_RDONLY)) == -1) {
@@ -1082,8 +1096,9 @@ cmp_file(char *lpth, off_t lsiz, char *rpth, off_t rsiz,
 	close(f2);
 close_f1:
 	close(f1);
-#if defined(TRACE) && 0
-fprintf(debug, "<>cmp_file: %d: %s, %s\n", rv, lpth, rpth);
+ret:
+#if defined(TRACE) && (defined(TEST) || 0)
+	fprintf(debug, "<-cmp_file(): %d\n", rv);
 #endif
 	return rv;
 }
