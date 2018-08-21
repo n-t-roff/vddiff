@@ -20,6 +20,8 @@ _LDFLAGS=$(LDFLAGS) $(__CLDBG) -L${LIBDIR} -Wl,-rpath,${LIBDIR} \
 	$(RPATH_CURSES) $(STRP) $(LIBDIR_CURSES)
 LDADD=	$(LIB_AVLBST) $(LIB_CURSES)
 
+TEST_OBJ = $(OBJ) test.o fs_test.o
+
 all: $(BIN) $(BIN).1.out
 
 install: $(BINDIR) $(MANDIR)/man1
@@ -31,8 +33,9 @@ uninstall:
 	rm -f $(MANDIR)/man1/$(BIN).1
 
 clean:
-	rm -f $(BIN) $(OBJ) y.tab.? *.1.html *.1.pdf \
-	    /tmp/.$(BIN).err /tmp/.$(BIN).toc *.gc?? *.1.out lex.yy.c
+	rm -f $(BIN) $(TEST_OBJ) y.tab.? *.1.html *.1.pdf \
+	    /tmp/.$(BIN).err /tmp/.$(BIN).toc *.gc?? *.1.out lex.yy.c \
+		test
 
 distclean: clean
 	rm -f Makefile config.log compat.h
@@ -42,6 +45,12 @@ $(BINDIR) $(MANDIR)/man1:
 
 $(BIN): $(OBJ)
 	$(CC) $(_CFLAGS) $(_LDFLAGS) -o $@ $(OBJ) $(LDADD)
+
+# ./configure -DTEST
+# make test
+
+test: $(TEST_OBJ)
+	$(CC) $(_CFLAGS) $(_LDFLAGS) -o $@ $(TEST_OBJ) $(LDADD)
 
 .y.o:
 	$(YACC) $(YFLAGS) $<

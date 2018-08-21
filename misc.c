@@ -1,11 +1,9 @@
 #include <string.h>
 #include <errno.h>
 #include <sys/types.h>
-#include <sys/stat.h>
 #include <unistd.h>
 #include <limits.h>
 #include <stdlib.h>
-#include <regex.h>
 #include <stdarg.h>
 #include "compat.h"
 #include "misc.h"

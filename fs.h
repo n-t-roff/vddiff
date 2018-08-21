@@ -9,3 +9,5 @@ void fs_cat(long);
 void rebuild_db(short);
 int fs_get_dst(long, unsigned);
 int fs_any_dst(long, int, unsigned);
+
+int fs_stat(const char *, struct stat *, const unsigned);

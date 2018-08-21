@@ -18,12 +18,10 @@ PERFORMANCE OF THIS SOFTWARE.
 #include <string.h>
 #include <stdlib.h>
 #include <sys/types.h>
-#include <sys/stat.h>
 #include <pwd.h>
 #include <grp.h>
 #include <ctype.h>
 #include <search.h>
-#include <regex.h>
 #include <stdarg.h>
 #include <signal.h>
 #ifdef USE_SYS_SYSMACROS_H

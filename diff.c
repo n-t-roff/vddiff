@@ -16,14 +16,12 @@ PERFORMANCE OF THIS SOFTWARE.
 
 #include <stdlib.h>
 #include <sys/types.h>
-#include <sys/stat.h>
 #include <sys/param.h>
 #include <fcntl.h>
 #include <unistd.h>
 #include <dirent.h>
 #include <errno.h>
 #include <string.h>
-#include <regex.h>
 #include <time.h>
 #include <stdarg.h>
 #include <signal.h>

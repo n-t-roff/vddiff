@@ -22,9 +22,7 @@ PERFORMANCE OF THIS SOFTWARE.
 #include <errno.h>
 #include <unistd.h>
 #include <sys/types.h>
-#include <sys/stat.h>
 #include <fcntl.h>
-#include <regex.h>
 #include <stdarg.h>
 #include "compat.h"
 #include "diff.h"

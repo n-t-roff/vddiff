@@ -1,3 +1,6 @@
+#include <sys/stat.h>
+#include <regex.h>
+
 #define PATHSIZ  (1024*16)
 #define BUF_SIZE PATHSIZ
 

@@ -17,14 +17,12 @@ PERFORMANCE OF THIS SOFTWARE.
 #include <stdarg.h>
 #include <errno.h>
 #include <sys/types.h>
-#include <sys/stat.h>
 #include <pwd.h>
 #include <unistd.h>
 #include <signal.h>
 #include <dirent.h>
 #include <ctype.h>
 #include <stdlib.h>
-#include <regex.h>
 #include <string.h>
 #include <libgen.h>
 #include "compat.h"

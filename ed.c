@@ -15,11 +15,9 @@ PERFORMANCE OF THIS SOFTWARE.
 */
 
 #include <sys/types.h>
-#include <sys/stat.h>
 #include <string.h>
 #include <ctype.h>
 #include <stdlib.h>
-#include <regex.h>
 #include <stdarg.h>
 #include <signal.h>
 #include "compat.h"

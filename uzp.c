@@ -19,10 +19,8 @@ PERFORMANCE OF THIS SOFTWARE.
 #include <errno.h>
 #include <stdlib.h>
 #include <sys/types.h>
-#include <sys/stat.h>
 #include <unistd.h>
 #include <ctype.h>
-#include <regex.h>
 #include <stdarg.h>
 #include <signal.h>
 #include "compat.h"

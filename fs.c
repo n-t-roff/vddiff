@@ -21,11 +21,9 @@ PERFORMANCE OF THIS SOFTWARE.
 #include <sys/types.h>
 #include <grp.h>
 #include <pwd.h>
-#include <sys/stat.h>
 #include <dirent.h>
 #include <fcntl.h>
 #include <unistd.h>
-#include <regex.h>
 #include <time.h>
 #include <signal.h>
 #ifndef HAVE_FUTIMENS
@@ -59,7 +57,6 @@ static int cp_reg(const unsigned);
 static int ask_for_perms(mode_t *);
 static int fs_ro(void);
 static void fs_fwrap(const char *, ...);
-static int fs_stat(const char *, struct stat *, const unsigned);
 static int fs_deldialog(const char *, const char *, const char *,
     const char *);
 static int fs_testBreak(void);
@@ -1692,7 +1689,7 @@ fs_any_dst(long u, int n, unsigned m)
 	return 0;
 }
 
-static int
+int
 fs_stat(const char *p, struct stat *s,
     /* 1: also report ENOENT */
     const unsigned mode)

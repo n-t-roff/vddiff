@@ -18,11 +18,9 @@ PERFORMANCE OF THIS SOFTWARE.
 #include <string.h>
 #include <stdlib.h>
 #include <sys/types.h>
-#include <sys/stat.h>
 #include <unistd.h>
 #include <errno.h>
 #include <locale.h>
-#include <regex.h>
 #include <termios.h>
 #include <unistd.h>
 #include <signal.h>
@@ -42,6 +40,9 @@ PERFORMANCE OF THIS SOFTWARE.
 #include "tc.h"
 #include "info.h"
 #include "lex.h"
+#ifdef TEST
+# include "test.h"
+#endif
 
 int yyparse(void);
 
@@ -120,6 +121,11 @@ main(int argc, char **argv)
 
 		setbuf(debug, NULL);
 	}
+#endif
+
+#ifdef TEST
+	test();
+	return 0;
 #endif
 
 #ifdef HAVE_LIBAVLBST

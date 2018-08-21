@@ -15,8 +15,10 @@
 # PERFORMANCE OF THIS SOFTWARE.
 
 usage () {
-	echo "Usage: $0 [-s]"
+	echo "Usage: $0 [-s] [-D<define> ...]"
 	echo "	-s	Silence output"
+	echo "	-D<define>"
+	echo "		Add define to CFLAGS"
 	exit $1
 }
 
@@ -29,10 +31,16 @@ cat /dev/null > compat.h
 
 while [ $# -gt 0 ]; do
 	case $1 in
-	-s) SFLAG=1;;
+	-s)
+		SFLAG=1
+		;;
+	-D*)
+		DEFS="$DEFS $1"
+		;;
 	*)
 		echo "$0: $1: Unknown option" >&2
-		usage 1;;
+		usage 1
+		;;
 	esac
 	shift
 done

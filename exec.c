@@ -22,11 +22,9 @@ Uses system() signal code by W. Richard Stevens.
 #include <ctype.h>
 #include <errno.h>
 #include <sys/types.h>
-#include <sys/stat.h>
 #include <pwd.h>
 #include <sys/wait.h>
 #include <signal.h>
-#include <regex.h>
 #include <stdarg.h>
 #include "compat.h"
 #include "main.h"

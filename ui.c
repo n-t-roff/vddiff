@@ -19,13 +19,11 @@ PERFORMANCE OF THIS SOFTWARE.
 #include <string.h>
 #include <stdlib.h>
 #include <sys/types.h>
-#include <sys/stat.h>
 #include <pwd.h>
 #include <grp.h>
 #include <time.h>
 #include <ctype.h>
 #include <errno.h>
-#include <regex.h>
 #include <time.h>
 #include <signal.h>
 #ifdef USE_SYS_SYSMACROS_H
@@ -48,6 +46,9 @@ PERFORMANCE OF THIS SOFTWARE.
 #include "dl.h"
 #include "cplt.h"
 #include "misc.h"
+#ifdef TEST
+# include "test.h"
+#endif
 
 static void ui_ctrl(void);
 static void page_down(void);
@@ -4243,6 +4244,9 @@ printerr(const char *s2, const char *s1, ...)
 	char *buf;
 	static const size_t bufsiz = 4096;
 
+#ifdef TEST
+	printerr_called = TRUE;
+#endif
 #if defined(TRACE)
 	fputs("<>printerr: ", debug);
 	if (s1) {
