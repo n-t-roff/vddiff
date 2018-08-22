@@ -1,3 +1,7 @@
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /* File marked (for delete, copy, etc.) */
 #define FDFL_MMRK 1
 
@@ -29,3 +33,7 @@ void free_diff(struct filediff *);
 void do_scan(void);
 void save_last_path(char *);
 void wr_last_path(void);
+
+#ifdef __cplusplus
+}
+#endif

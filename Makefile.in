@@ -16,11 +16,15 @@ OBJ=	main.o pars.o lex.o diff.o ui.o db.o exec.o fs.o ed.o uzp.o ver.o \
 YFLAGS=	-d
 _CFLAGS=$(CFLAGS) $(CPPFLAGS) $(DEFINES) $(INCDIR_CURSES) -I$(INCDIR) \
 	$(__CDBG) $(__CLDBG) $(TRACE) $(DEBUG) -DBIN='"$(BIN)"'
+_CXXFLAGS = \
+	$(CXXFLAGS) $(__CXXDBG) $(__CLXXDBG) -std=c++17 \
+	$(TRACE)
 _LDFLAGS=$(LDFLAGS) $(__CLDBG) -L${LIBDIR} -Wl,-rpath,${LIBDIR} \
 	$(RPATH_CURSES) $(STRP) $(LIBDIR_CURSES)
 LDADD=	$(LIB_AVLBST) $(LIB_CURSES)
 
 TEST_OBJ = $(OBJ) test.o fs_test.o
+TEST_OUT = test TEST/test
 
 all: $(BIN) $(BIN).1.out
 
@@ -35,7 +39,7 @@ uninstall:
 clean:
 	rm -f $(BIN) $(TEST_OBJ) y.tab.? *.1.html *.1.pdf \
 	    /tmp/.$(BIN).err /tmp/.$(BIN).toc *.gc?? *.1.out lex.yy.c \
-		test
+		$(TEST_OUT)
 
 distclean: clean
 	rm -f Makefile config.log compat.h
@@ -50,7 +54,7 @@ $(BIN): $(OBJ)
 # make test
 
 test: $(TEST_OBJ)
-	$(CC) $(_CFLAGS) $(_LDFLAGS) -o $@ $(TEST_OBJ) $(LDADD)
+	$(CXX) $(_CFLAGS) $(_LDFLAGS) -o $@ $(TEST_OBJ) $(LDADD)
 
 .y.o:
 	$(YACC) $(YFLAGS) $<
@@ -64,6 +68,9 @@ test: $(TEST_OBJ)
 
 .c.o:
 	$(CC) $(_CFLAGS) -c $<
+
+.cpp.o:
+	$(CXX) $(_CXXFLAGS) -c $<
 
 $(BIN).1.out: vddiff.1
 	UCBIN=`echo $(BIN)|tr '[:lower:]' '[:upper:]'`; \

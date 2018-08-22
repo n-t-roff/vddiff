@@ -1,3 +1,7 @@
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 void clr_fs_err(void);
 void fs_mkdir(short tree);
 void fs_rename(int, long, int, unsigned);
@@ -18,3 +22,7 @@ extern char *pth1, *pth2;
 void rm_file(void);
 int cp_reg(const unsigned);
 int fs_stat(const char *, struct stat *, const unsigned);
+
+#ifdef __cplusplus
+}
+#endif
