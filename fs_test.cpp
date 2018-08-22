@@ -18,7 +18,6 @@ void FsTest::run() const {
 
 void FsTest::fsStatTest() const {
 	fprintf(debug, "->fs_stat_test\n");
-
 	fsStatTestCase(0, enoent, 1, 1, -1);
 	fsStatTestCase(0, enoent, 0, 0, -1);
 	fsStatTestCase(0, eacces, 0, 1, -1);
@@ -27,7 +26,6 @@ void FsTest::fsStatTest() const {
 	fsStatTestCase(1, deadlink, 0, 0, -1);
 	fsStatTestCase(0, deadlink, 0, 0, 0);
 	fsStatTestCase(1, symlink, 0, 0, 0);
-
 	fprintf(debug, "<-fs_stat_test\n");
 }
 
@@ -47,38 +45,63 @@ void FsTest::fsStatTestCase(
 	v = fs_stat(path, &st, mode);
 	fprintf(debug, "\t<- msg: %d\n", printerr_called);
     if (printerr_called != msg || v != ret_val)
-        throw std::runtime_error{"fs_stat() failed"};
+        FATAL_ERROR;
 }
 
 void FsTest::cpRegTest() const {
 	fprintf(debug, "->cp_reg_test\n");
+    copyLargeFile();
+    fprintf(debug, "<-cp_reg_test\n");
+}
 
-	/* Successfully copy large file */
+void FsTest::copyLargeFile() const {
+    fprintf(debug, "->copyLargeFile\n");
+
+    // Successfully copy large file
 
     pth1 = const_cast<char *>("test");
     pth2 = const_cast<char *>("TEST/test");
     if (fs_stat(pth1, &gstat[0], 0))
-        throw std::runtime_error{"stat test failed"};
+        FATAL_ERROR;
     if (cp_reg(0)) // Copy file
-        throw std::runtime_error{"cp_reg failed"};
+        FATAL_ERROR;
     if (cp_reg(0) != 1) // Files are equal -> do nothing
-        throw std::runtime_error{"cp_reg equal file failed"};
+        FATAL_ERROR;
+
+    // Append empty file
 
     pth1 = const_cast<char *>(empty);
     if (fs_stat(pth1, &gstat[0], 0))
-        throw std::runtime_error{"stat empty failed"};
-    if (cp_reg(1)) // Append empty file
-        throw std::runtime_error{"cp_reg append failed"};
+        FATAL_ERROR;
+    if (cp_reg(3)) // Append empty file
+        FATAL_ERROR;
+
+    // Compare files after append
+
+    pth1 = const_cast<char *>("test");
+    if (fs_stat(pth1, &gstat[0], 0))
+        FATAL_ERROR;
     if (cmp_file(pth1, gstat[0].st_size,
-	             pth2, gstat[1].st_size, 1)) exit(1);
+                 pth2, gstat[1].st_size, 1))
+        FATAL_ERROR;
+
+    if (cp_reg(3)) // Append file to equal contents file
+        FATAL_ERROR;
+
+    // remove copy of file
 
     pth1 = pth2;
     if (fs_stat(pth1, &gstat[0], 0))
-        throw std::runtime_error{"stat existing TEST/test failed"};
+        FATAL_ERROR;
     fs_t1 = time(NULL);
     rm_file();
     if (fs_stat(pth1, &gstat[0], 0) != -1)
-        throw std::runtime_error{"stat removed TEST/test failed"};
+        FATAL_ERROR;
 
-	fprintf(debug, "<-cp_reg_test\n");
+    fprintf(debug, "<-copyLargeFile\n");
+}
+
+void FsTest::appendFile() const {
+    fprintf(debug, "->appendFile\n");
+    fprintf(debug, "<-appendFile\n");
 }

@@ -5,6 +5,12 @@
 extern "C" {
 #endif
 
+#define FATAL_ERROR \
+    throw std::runtime_error{ \
+        __FILE__ + \
+        std::string{" "} + \
+        std::to_string(__LINE__)}
+
 extern bool printerr_called;
 
 void test(void);

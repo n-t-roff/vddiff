@@ -1426,6 +1426,7 @@ exit:
 int
 cp_reg(
     /* 1: append */
+    /* 2: force (currently used by software test only) */
     const unsigned mode)
 {
 	int f1 = -1; /* read file descriptor */
@@ -1452,21 +1453,22 @@ cp_reg(
 		if (S_ISREG(gstat[1].st_mode)) {
 			bool ms = FALSE;
 
-			if (!cmp_file(pth1, gstat[0].st_size,
-			              pth2, gstat[1].st_size, 1)) {
+            if (!(mode & 1) && /* file contents are not relevant in append mode */
+                    !cmp_file(pth1, gstat[0].st_size,
+                              pth2, gstat[1].st_size, 1)) {
 #if defined(TRACE)
-				fprintf(debug, "  But equal: %s and %s\n",
-				    pth1, pth2);
+                fprintf(debug, "  But equal: %s and %s\n", pth1, pth2);
 #endif
-				rv = 1;
-				goto ret; /* if (*src == *dest) no copy is done */
-			}
+                rv = 1;
+                goto ret; /* if (*src == *dest) no copy is done */
+            }
 
-			if (fs_deldialog(y_a_n_txt, "overwrite", "file ",
-			    pth2)) {
-				rv = -2;
-				goto ret;
-			}
+            if (!(mode & 2) &&
+                    fs_deldialog(y_a_n_txt, "overwrite", "file ", pth2))
+            {
+                rv = -2;
+                goto ret;
+            }
 test:
 			if (!access(pth2, W_OK)) {
 				goto copy;

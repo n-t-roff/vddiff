@@ -15,6 +15,8 @@ private:
 	void fsStatTestCase(const int, const char *const, const int, const int,
 		const int) const;
 	void cpRegTest() const;
+    void copyLargeFile() const;
+    void appendFile() const;
 
 	const char *const enoent { "Non-existing file" };
 	const char *const eacces { "/root/No access permissions" };
