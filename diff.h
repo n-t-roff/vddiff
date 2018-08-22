@@ -6,7 +6,7 @@ extern "C" {
 #define FDFL_MMRK 1
 
 struct filediff {
-	char   *name;
+    const char *name;
 	char   *llink, *rlink;
 	mode_t  type[2];
 	uid_t   uid[2];

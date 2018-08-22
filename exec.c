@@ -43,8 +43,8 @@ const char *const vimdiff  = "vim -dR --";
 const char *const diffless = "diff -- $1 $2 | less -Q";
 
 struct argvec {
-	char **begin;
-	char **end;
+    const char **begin;
+    const char **end;
 };
 
 static size_t add_path(char *, size_t, const char *const, const char *const);
@@ -72,7 +72,7 @@ tool(const char *const name, const char *const rnam, int tree,
     /* 2: execute */
     unsigned short mode)
 {
-	char *cmd;
+    const char *cmd;
 	struct tool *tmptool = NULL;
 
 #ifdef TRACE
@@ -86,7 +86,7 @@ tool(const char *const name, const char *const rnam, int tree,
 	}
 
 	if (mode & 2) {
-		static char *a[] = { NULL, NULL };
+        static const char *a[] = { NULL, NULL };
 
 		if (dialog(y_n_txt, NULL, "Really execute %s?",
 		    name) != 'y') {
@@ -497,7 +497,7 @@ tmpbasecmp(const char *p)
 }
 
 int
-exec_cmd(char **av, tool_flags_t flags, char *path, const char *const msg)
+exec_cmd(const char **av, tool_flags_t flags, char *path, const char *const msg)
 {
 	pid_t pid;
 	int status = 0;

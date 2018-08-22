@@ -47,7 +47,7 @@ PERFORMANCE OF THIS SOFTWARE.
 int yyparse(void);
 
 static char *prog;
-char *pwd, *rpwd, *arg[2];
+const char *pwd, *rpwd, *arg[2];
 size_t pthlen[2];
 char syspth[2][PATHSIZ], lbuf[BUF_SIZE], rbuf[BUF_SIZE];
 struct stat gstat[2];
@@ -64,7 +64,7 @@ static char *zipdir[2];
 static void arg_diff(int);
 static void check_args(int, char **);
 static void cmp_inodes(void);
-static void get_arg(char *, int);
+static void get_arg(const char *, int);
 static int read_rc(char *);
 static void ttcharoff(void);
 static void usage(void);
@@ -511,14 +511,14 @@ ret:
 static void
 check_args(int argc, char **argv)
 {
-	char *s;
+    const char *s;
 
 	if (argc) {
 		s = *argv++;
 		argc--;
 	} else if (!(s = getenv("PWD"))) {
 		printf("PWD not set\n");
-		s = ".";
+        s = ".";
 	}
 
 	get_arg(s, 0);
@@ -551,9 +551,9 @@ cmp_inodes(void)
 }
 
 static void
-get_arg(char *s, int i)
+get_arg(const char *s, int i)
 {
-	char *s2;
+    char *s2;
 	struct filediff f;
 
 	arg[i] = s;

@@ -41,7 +41,7 @@ struct strlst {
 extern const char rc_name[];
 extern struct stat gstat[2];
 extern size_t pthlen[2];
-extern char *pwd, *rpwd, *arg[];
+extern const char *pwd, *rpwd, *arg[];
 extern char syspth[2][PATHSIZ], lbuf[BUF_SIZE], rbuf[BUF_SIZE];
 extern regex_t fn_re;
 extern char *printwd;

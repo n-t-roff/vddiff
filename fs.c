@@ -513,8 +513,8 @@ fs_rm(
 	struct filediff *f;
 	unsigned short m;
 	int rv = 0;
-	char *fn = NULL;
-	char *p0 = NULL, *s[2] = { NULL, NULL };
+    const char *fn = NULL;
+    const char *p0 = NULL, *s[2] = { NULL, NULL };
 	size_t l0;
 	struct stat st;
 	int ntr = 0; /* next tree */
@@ -773,7 +773,7 @@ fs_cp(
 	int r = 1;
 	int eto; /* Effective dest side */
 	unsigned sto = 0; /* OR sum dest side */
-	char *tnam;
+    const char *tnam;
 	static const char *const tmpnam_ = "." BIN ".X";
 	bool m;
 	bool chg = FALSE;

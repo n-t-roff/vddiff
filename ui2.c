@@ -46,7 +46,7 @@ const char enter_regex_txt[] = "Enter regular expression (<ESC> to cancel):";
 const char no_match_txt[] = "No match";
 
 struct str_uint {
-	char *s;
+    const char *s;
 	unsigned int u;
 };
 
@@ -397,7 +397,7 @@ srch_file(char *pattern, int c)
 	unsigned idx;
 	int o, oo;
 	size_t l;
-	char *s;
+    const char *s;
 
 	if (c || !*pattern || !db_num[right_col])
 		return 0;
@@ -838,7 +838,7 @@ bindiff(void)
 	char *t1 = NULL, *t2 = NULL;
 	struct filediff *m = mark;
 	mode_t ltyp = 0, rtyp = 0;
-	char *lnam, *rnam, *olnam, *ornam;
+    const char *lnam, *rnam, *olnam, *ornam;
 	off_t lsiz, rsiz;
 	int val = -1;
 	bool ml;
@@ -978,7 +978,7 @@ ret:
 }
 
 int
-chk_mark(char *file,
+chk_mark(const char *file,
     /* Can be 0 for global mark */
     short tree)
 {
@@ -1480,7 +1480,7 @@ addmbs(WINDOW *w, const char *const s, int mx)
 /* Number of wide chars */
 
 ssize_t
-putmbsra(WINDOW *w, char *s, int mx)
+putmbsra(WINDOW *w, const char *s, int mx)
 {
 	int cy, cx, my;
 	ssize_t l;

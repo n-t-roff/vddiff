@@ -423,7 +423,7 @@ stmove(int i)
 }
 
 void
-stmbsra(char *s1, char *s2)
+stmbsra(const char *s1, const char *s2)
 {
 	stmove(0);
 	putmbsra(wstat, s1, twocols ? llstw : 0);

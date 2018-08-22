@@ -36,7 +36,7 @@ void set_tool(struct tool *, char *, tool_flags_t);
 void inst_sighdl(int, void (*)(int));
 size_t shell_quote(char *, const char *, size_t);
 void open_sh(int);
-int exec_cmd(char **, tool_flags_t, char *, const char *const);
+int exec_cmd(const char **, tool_flags_t, char *, const char *const);
 void exec_set_sig(struct sigaction *, struct sigaction *, sigset_t *);
 void exec_res_sig(struct sigaction *, struct sigaction *, sigset_t *);
 void sig_child(int);

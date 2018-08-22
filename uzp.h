@@ -21,5 +21,5 @@ void uz_add(char *, char *);
 void uz_exit(void);
 const char *gettmpdirbase(void);
 void setvpth(int);
-void setpthofs(int, char *, char *);
+void setpthofs(int, const char *, const char *);
 void respthofs(int);

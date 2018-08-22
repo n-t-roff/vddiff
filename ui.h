@@ -42,7 +42,7 @@ void action(short, unsigned);
 void mark_global(void);
 void clr_mark(void);
 void disp_curs(int);
-void enter_dir(const char *, char *, bool, bool, short
+void enter_dir(const char *, const char *, bool, bool, short
 #ifdef DEBUG
     , char *, unsigned
 #endif

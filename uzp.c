@@ -40,7 +40,7 @@ struct pthofs {
 };
 
 static int mktmpdirs(void);
-static enum uz_id check_ext(char *, int *);
+static enum uz_id check_ext(const char *, int *);
 static struct filediff *zcat(const char *, const struct filediff *, int, int);
 static struct filediff *tar(const char *const, const struct filediff *, int, int,
     unsigned);
@@ -264,7 +264,7 @@ unpack(const struct filediff *f, int tree, char **tmp,
 	enum uz_id id;
 	struct filediff *z = NULL;
 	int i;
-	char *s;
+    const char *s;
 
 #if defined(TRACE) && 0
 	fprintf(debug, "->unpack(f->name=%s, tree=%d)\n", f->name, tree);
@@ -357,7 +357,7 @@ ret:
 }
 
 static enum uz_id
-check_ext(char *name, int *pos)
+check_ext(const char *name, int *pos)
 {
 	size_t l;
 	char *s;
@@ -397,7 +397,8 @@ check_ext(char *name, int *pos)
 static struct filediff *
 zcat(const char *cmd, const struct filediff *f, int tree, int i)
 {
-	char *s, *s2;
+    char *s;
+    const char *s2;
 	size_t l;
 	struct filediff *z;
 	struct stat st;
@@ -469,7 +470,8 @@ zpths(const struct filediff *f, struct filediff **z2, int tree, size_t *l2,
     /* 2: keep tmpdir */
     int fn)
 {
-	char *s, *s2;
+    char *s;
+    const char *s2;
 	size_t l, l3;
 	struct filediff *z;
 
@@ -595,8 +597,8 @@ setpthofs(
     /* 0/1: side, 2: side 1 only */
     /* 4: Started from main() */
     int i,
-    char *fn, /* archive file name */
-    char *tn) /* temp dir name */
+    const char *fn, /* archive file name */
+    const char *tn) /* temp dir name */
 {
 	size_t l;
 	struct pthofs *p;

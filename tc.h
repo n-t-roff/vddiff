@@ -24,7 +24,7 @@ void fmode_dmode(void);
 void dmode_fmode(unsigned);
 void restore_fmode(void);
 void stmove(int);
-void stmbsra(char *, char *);
+void stmbsra(const char *, const char *);
 void fmode_chdir(void);
 void mk_abs_pth(char *, size_t *);
 #ifdef NCURSES_MOUSE_VERSION

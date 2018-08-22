@@ -2,6 +2,8 @@
 extern "C" {
 #endif
 
+#include <sys/stat.h>
+
 void clr_fs_err(void);
 void fs_mkdir(short tree);
 void fs_rename(int, long, int, unsigned);

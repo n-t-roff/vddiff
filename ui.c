@@ -1143,7 +1143,7 @@ next_key:
 			    NULL,
 			    NULL, 0,
 			    &sh_cmd_hist) && *rbuf) {
-				char *s = rbuf;
+                const char *s = rbuf;
 
 				exec_cmd(&s, TOOL_WAIT | TOOL_NOLIST |
 				    TOOL_TTY | TOOL_SHELL, NULL, NULL);
@@ -2100,7 +2100,7 @@ action(
 	if (mark && (mode & 1)) {
 		struct filediff *m;
 		mode_t ltyp = 0, rtyp = 0;
-		char *lnam, *rnam, *mnam;
+        const char *lnam, *rnam, *mnam;
 
 		m = mark;
 
@@ -4004,7 +4004,7 @@ ret:
 }
 
 void
-enter_dir(const char *name, char *rnam, bool lzip, bool rzip, short tree
+enter_dir(const char *name, const char *rnam, bool lzip, bool rzip, short tree
 #ifdef DEBUG
     , char *_file, unsigned _line
 #endif
@@ -4200,15 +4200,17 @@ enter_dir(const char *name, char *rnam, bool lzip, bool rzip, short tree
 	}
 
 	if (n) {
-		size_t l;
+        size_t l;
+        /* `rnam` is const but modified below */
+        char *s = rnam;
 
-		l = strlen(rnam);
+        l = strlen(s);
 
-		if (gl_mark && !strncmp(rnam, gl_mark, l))
+        if (gl_mark && !strncmp(s, gl_mark, l))
 			clr_mark();
 
-		rnam[l - 2] = 0; /* remove "/[lr]" */
-		rmtmpdirs(rnam, TOOL_NOLIST); /* does a free() */
+        s[l - 2] = 0; /* remove "/[lr]" */
+        rmtmpdirs(s, TOOL_NOLIST); /* does free(rnam) */
 		respthofs(bmode || right_col ? 1 : 0);
 
 		if (bmode)
