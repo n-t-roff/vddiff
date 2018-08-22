@@ -166,7 +166,7 @@ build_diff_db(
 		name = ent->d_name;
 
 		if (*name == '.' && (!name[1] ||
-		    (!((bmode || fmode) && dotdot) &&
+            (!((bmode || fmode) && (dotdot && !scan)) &&
 		     name[1] == '.' && !name[2]))) {
 			continue;
 		}
@@ -529,7 +529,7 @@ right_tree:
 		name = ent->d_name;
 
 		if (*name == '.' && (!name[1] ||
-		    (!((bmode || fmode) && dotdot) &&
+            (!((bmode || fmode) && (dotdot && !scan)) &&
 		     name[1] == '.' && !name[2]))) {
 			continue;
 		}
@@ -1184,14 +1184,14 @@ pthcut(char *p, size_t l)
 void
 do_scan(void)
 {
-#if defined(TRACE) && 0
+#if defined(TRACE) && 1
 	fprintf(debug, "->do_scan lp(%s) rp(%s)\n", syspth[0], syspth[1]);
 #endif
 	scan = 1;
 	build_diff_db(bmode ? 1 : 3);
 	stopscan = FALSE;
 	scan = 0;
-#if defined(TRACE) && 0
+#if defined(TRACE) && 1
 	fprintf(debug, "<-do_scan\n");
 #endif
 }
