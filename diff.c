@@ -44,7 +44,6 @@ struct scan_dir {
 
 static struct filediff *alloc_diff(char *);
 static void add_diff_dir(short);
-static char *read_link(char *, off_t);
 static size_t pthadd(char *, size_t, const char *);
 static size_t pthcut(char *, size_t);
 static void ini_int(void);
@@ -60,7 +59,6 @@ bool dotdot;
 static bool stopscan;
 static bool ign_diff_errs;
 
-/* !0: Error */
 int
 build_diff_db(
     /* 1: Proc left dir
@@ -129,18 +127,23 @@ build_diff_db(
 		}
 	}
 
-	ini_int();
+    if (!qdiff) {
+        ini_int();
+    }
 
 #if defined(TRACE) && 1
 	fprintf(debug, "  opendir lp(%s)%s\n", syspth[0], scan ? " scan" : "");
 #endif
 	if (!(d = opendir(syspth[0]))) {
-		if (!ign_diff_errs && dialog(ign_txt, NULL,
-		    "opendir \"%s\": %s", syspth[0],
-		    strerror(errno)) == 'i')
+        if (!ign_diff_errs &&
+                dialog(ign_txt, NULL, "opendir \"%s\": %s",
+                       syspth[0], strerror(errno))
+                == 'i')
+        {
 			ign_diff_errs = TRUE;
+        }
 
-		retval = -1;
+        retval |= 2;
 		goto dir_scan_end;
 	}
 
@@ -156,7 +159,7 @@ build_diff_db(
 			syspth[0][pthlen[0]] = 0;
 			printerr(strerror(errno), "readdir \"%s\"", syspth[0]);
 			closedir(d);
-			retval = -1;
+            retval |= 2;
 			goto dir_scan_end;
 		}
 
@@ -210,6 +213,7 @@ build_diff_db(
 				}
 
 				file_err = TRUE;
+                retval |= 2;
 
 				if (scan || qdiff)
 					continue;
@@ -244,6 +248,7 @@ build_diff_db(
 				}
 
 				file_err = TRUE;
+                retval |= 2;
 
 				if (scan || qdiff)
 					continue;
@@ -252,8 +257,8 @@ build_diff_db(
 no_tree2:
 			if (qdiff) {
 				syspth[0][pthlen[0]] = 0;
-				printf("Only in %s: %s\n", syspth[0],
-				    name);
+                printf("Only in %s: %s\n", syspth[0], name);
+                retval |= 1;
 				continue;
 			}
 
@@ -309,20 +314,20 @@ no_tree2:
 				continue;
 			}
 
-			if (S_ISREG(gstat[0].st_mode) &&
-			    S_ISREG(gstat[1].st_mode)) {
-				if (cmp_file(syspth[0], gstat[0].st_size,
-				    syspth[1], gstat[1].st_size, 0) == 1) {
-					if (qdiff) {
-						printf(
-						    "Files %s and %s differ\n",
-						    syspth[0], syspth[1]);
-					} else {
-						dir_diff = 1;
-					}
-				}
-				continue;
-			}
+            if (S_ISREG(gstat[0].st_mode) &&
+                    S_ISREG(gstat[1].st_mode)) {
+                if (cmp_file(syspth[0], gstat[0].st_size,
+                             syspth[1], gstat[1].st_size, 0) == 1) {
+                    if (qdiff) {
+                        printf("Files %s and %s differ\n",
+                               syspth[0], syspth[1]);
+                        retval |= 1;
+                    } else {
+                        dir_diff = 1;
+                    }
+                }
+                continue;
+            }
 
 			if (S_ISLNK(gstat[0].st_mode) &&
 			    S_ISLNK(gstat[1].st_mode)) {
@@ -334,15 +339,15 @@ no_tree2:
 				if (!(b = read_link(syspth[1], gstat[1].st_size)))
 					goto free_a;
 
-				if (strcmp(a, b)) {
-					if (qdiff)
-						printf(
-						    "Symbolic links "
-						    "%s and %s differ\n",
-						    syspth[0], syspth[1]);
-					else
-						dir_diff = 1;
-				}
+                if (strcmp(a, b)) {
+                    if (qdiff) {
+                        printf("Symbolic links differ: %s -> %s, %s -> %s\n",
+                               syspth[0], a, syspth[1], b);
+                        retval |= 1;
+                    } else {
+                        dir_diff = 1;
+                    }
+                }
 
 				free(b);
 
@@ -354,15 +359,19 @@ free_a:
 			if (real_diff)
 				continue;
 
-			if (!gstat[0].st_mode || !gstat[1].st_mode ||
-			     gstat[0].st_mode !=  gstat[1].st_mode) {
-				if (qdiff)
-					printf("Different file type: "
-					    "%s and %s\n", syspth[0], syspth[1]);
-				else
-					dir_diff = 1;
-				continue;
-			}
+            if (!gstat[0].st_mode || !gstat[1].st_mode ||
+                 gstat[0].st_mode !=  gstat[1].st_mode)
+            {
+                if (qdiff) {
+                    printf("Different file type: %s and %s\n",
+                           syspth[0], syspth[1]);
+                    retval |= 1;
+                } else {
+                    dir_diff = 1;
+                }
+
+                continue;
+            }
 
 			continue;
 		}
@@ -460,7 +469,7 @@ db_add_file:
 		}
 
 		free(diff);
-	}
+    } /* readdir() loop */
 
 	closedir(d);
 	syspth[0][pthlen[0]] = 0;
@@ -495,18 +504,21 @@ right_tree:
 
 	ini_int();
 
-#if defined(TRACE) && 0
+#if defined(TRACE) && 1
 	fprintf(debug, "  opendir rp(%s)%s\n", syspth[1], scan ? " scan" : "");
 #endif
-	if (!(d = opendir(syspth[1]))) {
-		if (!ign_diff_errs && dialog(ign_txt, NULL,
-		    "opendir \"%s\" failed: %s", syspth[1],
-		    strerror(errno)) == 'i')
-			ign_diff_errs = TRUE;
+    if (!(d = opendir(syspth[1]))) {
+        if (!ign_diff_errs &&
+                dialog(ign_txt, NULL, "opendir \"%s\": %s",
+                       syspth[1], strerror(errno))
+                == 'i')
+        {
+            ign_diff_errs = TRUE;
+        }
 
-		retval = -1;
-		goto dir_scan_end;
-	}
+        retval |= 2;
+        goto dir_scan_end;
+    }
 
 	while (1) {
 		int i;
@@ -519,7 +531,7 @@ right_tree:
 			printerr(strerror(errno), "readdir \"%s\" failed",
 			    syspth[1]);
 			closedir(d);
-			retval = -1;
+            retval |= 2;
 			goto dir_scan_end;
 		}
 
@@ -542,6 +554,7 @@ right_tree:
 		if (qdiff) {
 			syspth[1][pthlen[1]] = 0;
 			printf("Only in %s: %s\n", syspth[1], name);
+            retval |= 1;
 			continue;
 		} else if (scan && !file_pattern) {
 			dir_diff = 1;
@@ -578,6 +591,7 @@ right_tree:
 				}
 
 				file_err = TRUE;
+                retval |= 2;
 			}
 
 			gstat[1].st_mode = 0;
@@ -674,7 +688,7 @@ dir_scan_end:
 
 		l1 = pthlen[0];
 		l2 = pthlen[1];
-		scan_subdir(dirs->s, NULL, dirs->tree);
+        retval |= scan_subdir(dirs->s, NULL, dirs->tree);
 		/* Not done in scan_subdirs(), since there are cases where
 		 * scan_subdirs() must not reset the path */
 		syspth[0][pthlen[0] = l1] = 0;
@@ -688,8 +702,8 @@ dir_scan_end:
 
 exit:
 	nodelay(stdscr, FALSE);
-#if defined(TRACE) && 0
-	fprintf(debug, "<-build_diff_db%s\n", scan ? " scan" : "");
+#if defined(TRACE) && 1
+    fprintf(debug, "<-build_diff_db%s retval=%d\n", scan ? " scan" : "", retval);
 #endif
 	return retval;
 }
@@ -972,23 +986,27 @@ ret:
 	return v;
 }
 
-static char *
+char *
 read_link(char *path, off_t size)
 {
-	char *l = malloc(size + 1);
+    char *l = malloc(size + 1);
 
-	if ((size = readlink(path, l, size)) == -1) {
-		if (!ign_diff_errs && dialog(ign_txt, NULL,
-		    "readlink \"%s\" failed: %s", path,
-		    strerror(errno)) == 'i')
-			ign_diff_errs = TRUE;
+    if ((size = readlink(path, l, size)) == -1) {
+        if (!ign_diff_errs &&
+                dialog(ign_txt, NULL,
+                       "readlink \"%s\": %s",
+                       path, strerror(errno))
+                == 'i')
+        {
+            ign_diff_errs = TRUE;
+        }
 
-		free(l);
-		return NULL;
-	}
+        free(l);
+        return NULL;
+    }
 
-	l[size] = 0;
-	return l;
+    l[size] = 0;
+    return l;
 }
 
 /* WARNING: Overwrites `lbuf` and `rbuf`! */
@@ -1134,7 +1152,7 @@ pthcat(char *p, size_t l, const char *n)
 		char *s = malloc(l + 1);
 		memcpy(s, p, l);
 		s[l] = 0;
-        fprintf(debug, "->pthcat(old=\"%s\", size=%zu, add=\"%s\")\n", s, l, n);
+        fprintf(debug, "->pthcat(\"%s\" (length %zu) + \"%s\")\n", s, l, n);
 		free(s);
 	}
 #endif
@@ -1183,17 +1201,20 @@ pthcut(char *p, size_t l)
     return l;
 }
 
-void
+int
 do_scan(void)
 {
+    int return_value = 0;
+
 #if defined(TRACE) && 1
 	fprintf(debug, "->do_scan lp(%s) rp(%s)\n", syspth[0], syspth[1]);
 #endif
 	scan = 1;
-	build_diff_db(bmode ? 1 : 3);
+    return_value |= build_diff_db(bmode ? 1 : 3);
 	stopscan = FALSE;
 	scan = 0;
 #if defined(TRACE) && 1
-	fprintf(debug, "<-do_scan\n");
+    fprintf(debug, "<-do_scan: %d\n", return_value);
 #endif
+    return return_value;
 }

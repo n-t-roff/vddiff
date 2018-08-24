@@ -31,7 +31,12 @@ struct ui_state {
 	struct ui_state *next;
 };
 
-void build_ui(void);
+/* Returns:
+ *   1 in "-q" (qdiff) mode when a difference was detected
+ *   2 in qdiff mode when an error was detected
+ *   0 else */
+
+int build_ui(void);
 void printerr(const char *, const char *, ...);
 int dialog(const char *, const char *, const char *, ...);
 int vdialog(const char *, const char *, const char *, va_list);

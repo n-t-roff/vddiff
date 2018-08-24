@@ -136,59 +136,65 @@ bool add_mtime;
 bool add_owner;
 bool add_group;
 
-void
+int
 build_ui(void)
 {
-	if (qdiff)
-		goto do_diff;
+    int return_value = 0;
 
-	srandom(time(NULL));
-	initscr();
+#if defined(TRACE) && 1
+    fprintf(debug, "->build_ui\n");
+#endif
 
-	if (color && (!has_colors() || start_color() == ERR))
-		color = 0;
+    if (!qdiff) {
+        srandom(time(NULL));
+        initscr();
 
-	if (color) {
-		init_pair(PAIR_LEFTONLY , color_leftonly , color_bg       );
-		init_pair(PAIR_RIGHTONLY, color_rightonly, color_bg       );
-		init_pair(PAIR_DIFF     , color_diff     , color_bg       );
-		init_pair(PAIR_DIR      , color_dir      , color_bg       );
-		init_pair(PAIR_UNKNOWN  , color_unknown  , color_bg       );
-		init_pair(PAIR_LINK     , color_link     , color_bg       );
-		init_pair(PAIR_NORMAL   , color_normal   , color_bg       );
-		init_pair(PAIR_CURSOR   , color_cursor_fg, color_cursor_bg);
-		init_pair(PAIR_ERROR    , color_error_fg , color_error_bg );
-		init_pair(PAIR_MARK     , color_mark_fg  , color_mark_bg  );
-		init_pair(PAIR_MMRK     , color_mmrk_fg  , color_mmrk_bg  );
-		bkgd(   COLOR_PAIR(PAIR_NORMAL));
-		bkgdset(COLOR_PAIR(PAIR_NORMAL));
-	}
+        if (color && (!has_colors() || start_color() == ERR))
+            color = 0;
 
-	cbreak();
-	noecho();
-	keypad(stdscr, TRUE);
-	curs_set(0);
-	set_def_mouse_msk();
-	refresh();
+        if (color) {
+            init_pair(PAIR_LEFTONLY , color_leftonly , color_bg       );
+            init_pair(PAIR_RIGHTONLY, color_rightonly, color_bg       );
+            init_pair(PAIR_DIFF     , color_diff     , color_bg       );
+            init_pair(PAIR_DIR      , color_dir      , color_bg       );
+            init_pair(PAIR_UNKNOWN  , color_unknown  , color_bg       );
+            init_pair(PAIR_LINK     , color_link     , color_bg       );
+            init_pair(PAIR_NORMAL   , color_normal   , color_bg       );
+            init_pair(PAIR_CURSOR   , color_cursor_fg, color_cursor_bg);
+            init_pair(PAIR_ERROR    , color_error_fg , color_error_bg );
+            init_pair(PAIR_MARK     , color_mark_fg  , color_mark_bg  );
+            init_pair(PAIR_MMRK     , color_mmrk_fg  , color_mmrk_bg  );
+            bkgd(   COLOR_PAIR(PAIR_NORMAL));
+            bkgdset(COLOR_PAIR(PAIR_NORMAL));
+        }
 
-	if (openwins()) {
-		return;
-	}
+        cbreak();
+        noecho();
+        keypad(stdscr, TRUE);
+        curs_set(0);
+        set_def_mouse_msk();
+        refresh();
 
-do_diff:
+        if (openwins()) {
+            return_value |= 2;
+            goto ret;
+        }
+    } /* if (!qdiff) */
+
 	/* Not in main since build_diff_db() uses printerr() */
 	if (recursive) {
-		do_scan();
+        return_value |= do_scan();
 
 		if (qdiff) {
-			return;
+            goto ret;
 		}
-	}
+    }
 
 	if (bmode || fmode) {
 		if (chdir(syspth[0]) == -1) {
 			printerr(strerror(errno), "chdir \"%s\":", syspth[0]);
-			return;
+            return_value |= 2;
+            goto ret;
 		}
 
 		if (bmode) {
@@ -198,20 +204,27 @@ do_diff:
 		}
 	}
 
-	if (bmode)
+    if (bmode) {
 		build_diff_db(1);
-	else if (fmode) {
+    } else if (fmode) {
 		build_diff_db(1);
 		build_diff_db(2);
-	} else
-		build_diff_db(3);
+    } else {
+        return_value |= build_diff_db(3);
+    }
 
-	if (qdiff) {
-		return;
-	}
+    if (qdiff) {
+        goto ret;
+    }
 
-	disp_fmode();
+    disp_fmode();
 	ui_ctrl();
+
+ret:
+#if defined(TRACE) && 1
+    fprintf(debug, "<-build_ui: %d\n", return_value);
+#endif
+    return return_value;
 }
 
 static int
@@ -4187,7 +4200,7 @@ enter_dir(const char *name, const char *rnam, bool lzip, bool rzip, short tree
 	if (fmode) {
 		free(name);
 
-		if (i) {
+        if (i & 2) { /* build_diff_db() return an error */
 			/* sp is absolut. So reset length to place sp at
 			 * begin of string. */
 			*lp = 0;
@@ -4316,16 +4329,23 @@ dialog(const char *quest, const char *answ, const char *fmt, ...)
 		va_start(ap, fmt);
 	}
 
-#if defined(TEST)
+#if defined(TRACE)
 	fputs("<>dialog: ", debug);
 	va_start(ap, fmt);
 	vfprintf(debug, fmt, ap);
 	va_end(ap);
 	fputc('\n', debug);
-	r = 0;
-#else
-	r = vdialog(quest, answ, fmt, ap);
 #endif
+
+    if (!wstat) {
+        va_start(ap, fmt);
+        vfprintf(stderr, fmt, ap);
+        va_end(ap);
+        fputc('\n', stderr);
+        r = 0;
+    } else {
+        r = vdialog(quest, answ, fmt, ap);
+    }
 
 	if (fmt) {
 		va_end(ap);

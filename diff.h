@@ -22,7 +22,18 @@ extern short followlinks;
 extern bool one_scan;
 extern bool dotdot;
 
+/* Returns a compination of:
+ *   1 difference found
+ *   2 on error
+ *   0 else */
+
 int build_diff_db(int);
+
+/* Returns a compination of:
+ *   1 difference found
+ *   2 on error
+ *   0 else */
+
 int scan_subdir(const char *, const char *, int);
 int is_diff_dir(struct filediff *);
 int is_diff_pth(const char *, unsigned);
@@ -30,7 +41,14 @@ size_t pthcat(char *, size_t, const char *);
 int cmp_file(const char *const, const off_t, const char *const, const off_t,
 	const unsigned);
 void free_diff(struct filediff *);
-void do_scan(void);
+char *read_link(char *, off_t);
+
+/* Returns a compination of:
+ *   1 difference found
+ *   2 on error
+ *   0 else */
+
+int do_scan(void);
 void save_last_path(char *);
 void wr_last_path(void);
 

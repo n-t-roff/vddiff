@@ -44,6 +44,9 @@ PERFORMANCE OF THIS SOFTWARE.
 # include "test.h"
 #endif
 
+#define EXIT_STATUS_DIFF  1
+#define EXIT_STATUS_ERROR 2
+
 int yyparse(void);
 
 static char *prog;
@@ -61,21 +64,30 @@ char trcpth[2][PATHSIZ];
 static struct filediff *zipfile[2];
 static char *zipdir[2];
 
-static void arg_diff(int);
+/* Handles case of compare of a file and a directory
+ * according POSIX diff(1).
+ *
+ * i:
+ *   0: Dir is 1st argument, file is 2nd
+ *   1: File is 1st argument, dir is 2nd */
+
+static void arg_diff(int i);
 static void check_args(int, char **);
 static void cmp_inodes(void);
 static void get_arg(const char *, int);
 static int read_rc(char *);
 static void ttcharoff(void);
+static void q_opt_err(void);
 static void usage(void);
 static void runs2x(void);
 
 const char rc_name[] = "." BIN "rc";
 static const char *const usage_txt =
-"Usage: %s [-u [<RC file>]] [-BbCcdEefgIiklMmNnoqRrVWXy] [-F <pattern>]\n"
+"Usage: %s [-u [<RC file>]] [-BbCcdEefgIikLlMmNnoqRrVWXy] [-F <pattern>]\n"
 "	[-G <pattern>] [-P <last_wd_file>] [-t <diff_tool>] [-v <view_tool>]\n"
 "	[<file or directory 1> [<file or directory 2>]]\n";
-static const char *const getopt_arg = "BbCcdEeF:fG:gIiklMmNnoP:qRrt:Vv:WXy";
+static const char *const getopt_arg =
+        "BbCcdEeF:fG:gIikLlMmNnoP:qRrt:Vv:WXy";
 
 char *printwd;
 bool bmode;
@@ -89,12 +101,14 @@ bool nofkeys;
 static bool run2x;
 static sigjmp_buf term_jmp_buf;
 static volatile sig_atomic_t term_jmp_buf_valid;
+static bool lstat_args;
 
 int
 main(int argc, char **argv)
 {
 	int opt;
 	int i;
+    int exit_status = EXIT_SUCCESS;
 
 	prog = *argv;
 	setlocale(LC_ALL, "");
@@ -116,7 +130,7 @@ main(int argc, char **argv)
 
 		if (!(debug = fopen(lbuf, "w"))) {
 			printf("fopen \"%s\": %s\n", lbuf, strerror(errno));
-			return 1;
+            return EXIT_STATUS_ERROR;
 		}
 
 		setbuf(debug, NULL);
@@ -125,7 +139,7 @@ main(int argc, char **argv)
 
 #ifdef TEST
 	test();
-	return 0;
+    return EXIT_SUCCESS;
 #endif
 
 #ifdef HAVE_LIBAVLBST
@@ -140,14 +154,14 @@ main(int argc, char **argv)
 
 	if (argc < 2 || argv[1][0] != '-' || argv[1][1] != 'u') {
 		if (read_rc(NULL))
-			return 1;
+            return EXIT_STATUS_ERROR;
 	} else {
 		argc--; argv++;
 
 		if (argc > 1 && argv[1][0] != '-' &&
 		    stat(argv[1], &gstat[0]) == 0 && S_ISREG(gstat[0].st_mode)) {
 			if (read_rc(argv[1]))
-				return 1;
+                return EXIT_STATUS_ERROR;
 
 			argc--; argv++;
 		}
@@ -156,6 +170,10 @@ main(int argc, char **argv)
 	while ((opt = getopt(argc, argv, getopt_arg)) != -1) {
 		switch (opt) {
 		case 'B':
+            if (qdiff) {
+                q_opt_err();
+            }
+
 			dontdiff = TRUE;
 			break;
 		case 'b':
@@ -181,7 +199,7 @@ main(int argc, char **argv)
 
 		case 'F':
 			if (fn_init(optarg)) {
-				return 1;
+                return EXIT_STATUS_ERROR;
 			}
 
 			break;
@@ -192,7 +210,7 @@ main(int argc, char **argv)
 
 		case 'G':
 			if (gq_init(optarg)) {
-				return 1;
+                return EXIT_STATUS_ERROR;
 			}
 
 			break;
@@ -210,6 +228,11 @@ main(int argc, char **argv)
 		case 'k':
 			set_tool(&difftool, strdup("tkdiff"), TOOL_BG);
 			break;
+
+        case 'L':
+            lstat_args = TRUE;
+            break;
+
 		case 'l':
 			followlinks = 1;
 			break;
@@ -238,7 +261,11 @@ main(int argc, char **argv)
 			break;
 
 		case 'q':
-			qdiff = TRUE;
+            if (dontdiff) {
+                q_opt_err();
+            }
+
+            qdiff = TRUE;
 			break;
 
 		case 'R':
@@ -275,7 +302,7 @@ main(int argc, char **argv)
 			    "tsearch"
 #endif
 			    "\n", version);
-			exit(0);
+            return EXIT_SUCCESS;
 		case 'v':
 			set_tool(&viewtool, strdup(optarg), 0);
 			break;
@@ -315,7 +342,7 @@ main(int argc, char **argv)
 			fmode = TRUE;
 		else
 			bmode = TRUE;
-	} else if (dontdiff) { /* Exactly 2 args */
+    } else if (dontdiff) { /* Exactly 2 args + option -B */
 		twocols = TRUE;
 		fmode = TRUE;
 	}
@@ -337,7 +364,39 @@ main(int argc, char **argv)
 			setpthofs(6, arg[1], zipfile[1]->name);
 		}
 
-		if (!S_ISDIR(gstat[0].st_mode)) {
+        if (S_ISLNK(gstat[0].st_mode) ||
+            S_ISLNK(gstat[0].st_mode))
+        { /* Possible with -L only */
+            if (!S_ISLNK(gstat[0].st_mode) ||
+                !S_ISLNK(gstat[0].st_mode))
+            {
+                printf("Different file type: %s and %s\n",
+                       syspth[0], syspth[1]);
+                exit_status = EXIT_STATUS_DIFF;
+            } else {
+                char *a, *b;
+
+                a = read_link(syspth[0], gstat[0].st_size);
+                b = read_link(syspth[1], gstat[1].st_size);
+
+                if (!a || !b) {
+                    exit_status = EXIT_STATUS_ERROR;
+                } else if (strcmp(a, b)) {
+                    printf("Symbolic links differ: %s -> %s, %s -> %s\n",
+                           syspth[0], a, syspth[1], b);
+                    exit_status = EXIT_STATUS_DIFF;
+                } else {
+                    printf("Equal symbolic links %s and %s -> %s\n",
+                           syspth[0], syspth[1], a);
+                }
+
+                free(a);
+                free(b);
+            }
+
+            goto rmtmp;
+
+        } else if (!S_ISDIR(gstat[0].st_mode)) {
 			if (argc < 2) {
 				tool(syspth[0], NULL, 1, 0);
 			/* check_args() uses stat(), hence type can't
@@ -345,7 +404,23 @@ main(int argc, char **argv)
 			} else if (S_ISREG(gstat[0].st_mode)
 			        && S_ISREG(gstat[1].st_mode))
 			{
-				tool("", "", 3, 0);
+                if (qdiff) {
+                    int v = cmp_file(syspth[0], gstat[0].st_size,
+                            syspth[1], gstat[1].st_size, 1);
+
+                    switch (v) {
+                    case -1:
+                        exit_status = EXIT_STATUS_ERROR;
+                        break;
+                    case 1:
+                        printf("Files %s and %s differ\n",
+                               syspth[0], syspth[1]);
+                        exit_status = EXIT_STATUS_DIFF;
+                        break;
+                    }
+                } else {
+                    tool("", "", 3, 0);
+                }
 			} else {
 				/* get_arg() already checks for supported
 				 * file types */
@@ -367,7 +442,7 @@ main(int argc, char **argv)
 		if (!getcwd(syspth[0], sizeof syspth[0])) {
 			printf("getcwd failed: %s\n",
 			    strerror(errno));
-			exit(1);
+            return EXIT_STATUS_ERROR;
 		}
 
 		pthlen[0] = strlen(syspth[0]);
@@ -381,8 +456,17 @@ main(int argc, char **argv)
 		/* keep signal masked */
 		0))
 	{
+        int v;
+
 		term_jmp_buf_valid = 1;
-		build_ui();
+        v = build_ui();
+
+        if (v == 1) {
+            exit_status = EXIT_STATUS_DIFF;
+        } else if (v) {
+            exit_status = EXIT_STATUS_ERROR;
+        }
+
 		/* Ignore signals from now on.
 		 * Race does not matter, if signal wins program is exited
 		 * before code is executed twice. */
@@ -413,10 +497,8 @@ rmtmp:
 #endif
 	}
 
-	return 0;
+    return exit_status;
 }
-
-/* according POSIX diff(1) */
 
 static void
 arg_diff(int i)
@@ -431,7 +513,7 @@ arg_diff(int i)
 	if (stat(syspth[i], &gstat[i]) == -1) {
 		printf(LOCFMT "stat \"%s\": %s\n" LOCVAR,
 		    syspth[i], strerror(errno));
-		exit(1);
+        exit(EXIT_STATUS_ERROR);
 	}
 
 	cmp_inodes();
@@ -546,7 +628,7 @@ cmp_inodes(void)
 	    gstat[0].st_dev == gstat[1].st_dev) {
 		printf("\"%s\" and \"%s\" are the same file\n",
 		    syspth[0], syspth[1]);
-		exit(0);
+        exit(EXIT_SUCCESS);
 	}
 }
 
@@ -559,26 +641,31 @@ get_arg(const char *s, int i)
 	arg[i] = s;
 
 stat:
-	if (stat(s, &gstat[i]) == -1) {
+    if (( lstat_args && lstat(s, &gstat[i]) == -1) ||
+        (!lstat_args &&  stat(s, &gstat[i]) == -1))
+    {
 		printf(LOCFMT "stat \"%s\": %s\n" LOCVAR, s, strerror(errno));
-		exit(1);
+        exit(EXIT_STATUS_ERROR);
 	}
 
-	if (!S_ISDIR(gstat[i].st_mode)) {
+    if (!S_ISDIR(gstat[i].st_mode) &&
+        !S_ISLNK(gstat[i].st_mode))
+    {
 		if (!S_ISREG(gstat[i].st_mode)) {
 			printf("\"%s\": Unsupported file type\n", s);
-			exit(1);
+            exit(EXIT_STATUS_ERROR);
 		}
 
 		if (!zipfile[i]) { /* break "goto stat" loop */
 			f.name = s;
 			f.type[i] = gstat[i].st_mode;
 
-			if ((zipfile[i] = unpack(&f, i ? 2 : 1,
-			    &zipdir[i], 4|2|1))) {
-				s = zipfile[i]->name;
-				goto stat;
-			}
+            if ((zipfile[i] = unpack(&f, i ? 2 : 1,
+                                     &zipdir[i], 4|2|1)))
+            {
+                s = zipfile[i]->name;
+                goto stat;
+            }
 		}
 	}
 
@@ -586,15 +673,18 @@ stat:
 		if (!(s2 = realpath(s, NULL))) {
 			printf(LOCFMT "realpath \"%s\": %s\n" LOCVAR, s,
 			    strerror(errno));
-			exit(1);
+            exit(EXIT_STATUS_ERROR);
 		}
 	} else {
 		s2 = s;
 	}
 
+    /* Set path length in pthlen[i]
+     * and copy command line argument to syspth[i] */
+
 	if ((pthlen[i] = strlen(s2)) >= PATHSIZ - 1) {
 		printf("Path too long: %s\n", s2);
-		exit(1);
+        exit(EXIT_STATUS_ERROR);
 	}
 
 	while (pthlen[i] > 1 && s2[pthlen[i] - 1] == '/') {
@@ -657,7 +747,7 @@ runs2x(void)
 			printf(
 BIN " is already running in this terminal.  Type \"exit\" or ^D (CTRL-d)\n"
 "to return to " BIN " or use option -N to start a new " BIN " instance.\n");
-			exit(1);
+            exit(EXIT_STATUS_ERROR);
 		}
 	}
 
@@ -666,11 +756,18 @@ BIN " is already running in this terminal.  Type \"exit\" or ^D (CTRL-d)\n"
 	}
 }
 
+static void q_opt_err(void) {
+    fprintf(stderr,
+            "%s: Option -B is incompatible with -q\n",
+            prog);
+    exit(EXIT_STATUS_ERROR);
+}
+
 static void
 usage(void)
 {
 	printf(usage_txt, prog);
-	exit(1);
+    exit(EXIT_STATUS_ERROR);
 }
 
 void
