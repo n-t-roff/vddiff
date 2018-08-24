@@ -4325,31 +4325,38 @@ dialog(const char *quest, const char *answ, const char *fmt, ...)
 	va_list ap;
 	int r;
 
-	if (fmt) {
-		va_start(ap, fmt);
-	}
-
 #if defined(TRACE)
-	fputs("<>dialog: ", debug);
-	va_start(ap, fmt);
-	vfprintf(debug, fmt, ap);
-	va_end(ap);
+    fprintf(debug, "<>dialog: quest=\"%s\" answ=\"%s\"", quest, answ);
+
+    if (fmt) {
+        va_start(ap, fmt);
+        vfprintf(debug, fmt, ap);
+        va_end(ap);
+    }
+
 	fputc('\n', debug);
 #endif
 
     if (!wstat) {
-        va_start(ap, fmt);
-        vfprintf(stderr, fmt, ap);
-        va_end(ap);
-        fputc('\n', stderr);
+        if (fmt) {
+            va_start(ap, fmt);
+            vfprintf(stderr, fmt, ap);
+            va_end(ap);
+            fputc('\n', stderr);
+        }
+
         r = 0;
     } else {
-        r = vdialog(quest, answ, fmt, ap);
-    }
+        if (fmt) {
+            va_start(ap, fmt);
+        }
 
-	if (fmt) {
-		va_end(ap);
-	}
+        r = vdialog(quest, answ, fmt, ap);
+
+        if (fmt) {
+            va_end(ap);
+        }
+    }
 
 	return r;
 }

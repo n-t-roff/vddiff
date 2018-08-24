@@ -994,6 +994,7 @@ read_link(char *path, off_t size)
 
     if (!l) {
         fprintf(stderr, oom_msg);
+        printerr(strerror(errno), LOCFMT "malloc(%zu)" LOCVAR, size + 1);
         return NULL;
     }
 
