@@ -27,6 +27,7 @@ PERFORMANCE OF THIS SOFTWARE.
 .Op Fl P Ar last wd file
 .Op Fl t Ar diff_tool
 .Op Fl v Ar view_tool
+.Op Fl -
 .Oo
 .Ar directory_1 Ns Li | Ns Ar file_1
 .Op Ar directory_2 Ns Li | Ns Ar file_2
@@ -139,6 +140,10 @@ File type
 .El
 .Sh OPTIONS
 .Bl -tag -width 12n
+.It Fl -
+All following arguments (if any) are not recognized as options
+even when starting with a
+.Sq Fl "" .
 .It Fl B
 Force two-column file browser mode even if two arguments are given.
 Normally diff mode is started with two arguments.

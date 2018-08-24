@@ -35,6 +35,7 @@ PERFORMANCE OF THIS SOFTWARE.
 #include "ui2.h"
 #include "gq.h"
 #include "tc.h"
+#include "misc.h"
 
 struct scan_dir {
 	char *s;
@@ -991,10 +992,14 @@ read_link(char *path, off_t size)
 {
     char *l = malloc(size + 1);
 
+    if (!l) {
+        fprintf(stderr, oom_msg);
+        return NULL;
+    }
+
     if ((size = readlink(path, l, size)) == -1) {
         if (!ign_diff_errs &&
-                dialog(ign_txt, NULL,
-                       "readlink \"%s\": %s",
+                dialog(ign_txt, NULL, "readlink \"%s\": %s",
                        path, strerror(errno))
                 == 'i')
         {

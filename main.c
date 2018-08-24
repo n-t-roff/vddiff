@@ -385,7 +385,7 @@ main(int argc, char **argv)
                     printf("Symbolic links differ: %s -> %s, %s -> %s\n",
                            syspth[0], a, syspth[1], b);
                     exit_status = EXIT_STATUS_DIFF;
-                } else {
+                } else if (!qdiff) { /* Don't report equal files with -q */
                     printf("Equal symbolic links %s and %s -> %s\n",
                            syspth[0], syspth[1], a);
                 }

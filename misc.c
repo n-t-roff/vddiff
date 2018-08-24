@@ -10,6 +10,8 @@
 #include "main.h"
 #include "ui.h"
 
+const char oom_msg[] = "malloc failed: Out of memory\n";
+
 int
 getuwidth(unsigned long u)
 {
