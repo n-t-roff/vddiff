@@ -1,3 +1,7 @@
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #define TOOL_BG      1 /* Run as background process */
 #define TOOL_NOARG   2
 #define TOOL_SHELL   4 /* Run command with "sh -c ..." */
@@ -40,3 +44,7 @@ int exec_cmd(const char **, tool_flags_t, char *, const char *const);
 void exec_set_sig(struct sigaction *, struct sigaction *, sigset_t *);
 void exec_res_sig(struct sigaction *, struct sigaction *, sigset_t *);
 void sig_child(int);
+
+#ifdef __cplusplus
+}
+#endif

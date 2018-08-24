@@ -527,8 +527,8 @@ fs_rm(
 
 #if defined(TRACE)
 	TRCPTH;
-	fprintf(debug, "->fs_rm(tree=%d txt(%s) nam(%s) u=%ld n=%d md=%u) "
-	    "lp(%s) rp(%s)\n", tree, txt, nam, u, n, md, trcpth[0], trcpth[1]);
+    fprintf(debug, "->fs_rm(tree=%d txt=\"%s\" nam=\"%s\" u=%ld n=%d md=%u) "
+        "lp=\"%s\" rp=\"%s\"\n", tree, txt, nam, u, n, md, trcpth[0], trcpth[1]);
 #endif
 	/* Save what is used by fs_cp() too */
 	p0 = pth1;
@@ -1418,6 +1418,8 @@ exit:
 	return r;
 }
 
+/* WARNING: Overwrites `lbuf` and (via cmp_file()) `rbuf`! */
+
 /*  1: Files are equal */
 /*  0: Successfully copied */
 /* -1: System call failed */
@@ -1451,7 +1453,10 @@ cp_reg(
 		fprintf(debug, "  Already exists: %s\n", pth2);
 #endif
 		if (S_ISREG(gstat[1].st_mode)) {
-			bool ms = FALSE;
+            /* target file is a regular file
+             * or a followed symlink to a regular file */
+
+            bool ms = FALSE; /* mode set after access(2) error */
 
             if (!(mode & 1) && /* file contents are not relevant in append mode */
                     !cmp_file(pth1, gstat[0].st_size,
@@ -1470,35 +1475,46 @@ cp_reg(
                 goto ret;
             }
 test:
-			if (!access(pth2, W_OK)) {
+            if (access(pth2, W_OK) != -1) {
 				goto copy;
 			}
+            /* Access error */
 
 			if (errno != EACCES) {
-				printerr(strerror(errno),
-				    "access \"%s\"", pth2);
+                /* Unexpected system call error */
+
+                printerr(strerror(errno), "access \"%s\"", pth2);
 			}
+            /* Access permission error -> try chmod(2) */
 
 			if (!ms && !(gstat[1].st_mode & S_IWUSR)) {
-				if (chmod(pth2, gstat[1].st_mode & S_IWUSR)
-				    == -1) {
-					printerr(strerror(errno),
-					    "chmod \"%s\"", pth2);
+                if (chmod(pth2, gstat[1].st_mode & S_IWUSR) == -1) {
+                    printerr(strerror(errno), "chmod \"%s\"", pth2);
 				} else {
 					ms = TRUE;
 					goto test;
 				}
 			}
+            /* mode could not be set or didn't help -> try to remove target */
 
 			if (unlink(pth2) == -1) {
 				printerr(strerror(errno), "unlink \"%s\"",
 				    pth2);
 			}
 		} else {
+            /* target file is a not followed symlink,
+             * a directory or anything else */
+
 			/* Don't delete symlinks! They must be followed. */
 			if (!followlinks &&
-			    fs_rm(0 /* tree */, "overwrite", NULL /* nam */,
-			    0 /* u */, 1 /* n */, 4|2 /* md */) == 1) {
+                fs_rm(0, /* tree: Use pth2, ignore nam and u. n must be 1. */
+                      "overwrite", /* Dialog text */
+                      NULL, /* nam: See `tree`. */
+                      0, /* u: See `tree`. */
+                      1, /* n: See `tree`. */
+                      4|2) /* md: Don't reset error, don't rebuild DB. */
+                    == 1) /* == Cancel */
+            {
 				rv = -2;
 				goto ret;
 			}

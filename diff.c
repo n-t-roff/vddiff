@@ -991,6 +991,8 @@ read_link(char *path, off_t size)
 	return l;
 }
 
+/* WARNING: Overwrites `lbuf` and `rbuf`! */
+
 /* Input: gstat[0], gstat[1], syspth[0], syspth[1]
  * Output:
  * -1  Error, don't make DB entry
@@ -1132,7 +1134,7 @@ pthcat(char *p, size_t l, const char *n)
 		char *s = malloc(l + 1);
 		memcpy(s, p, l);
 		s[l] = 0;
-		fprintf(debug, "->pthcat(%s, %zu, %s)\n", s, l, n);
+        fprintf(debug, "->pthcat(old=\"%s\", size=%zu, add=\"%s\")\n", s, l, n);
 		free(s);
 	}
 #endif
@@ -1178,7 +1180,7 @@ pthcut(char *p, size_t l)
 
 	while (l > 1 && p[--l] != '/');
 	p[l] = 0;
-	return l;
+    return l;
 }
 
 void

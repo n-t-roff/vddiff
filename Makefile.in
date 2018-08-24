@@ -1,11 +1,14 @@
 # Does also set names of ~/.$(BIN)rc and ~/.$(BIN)info to allow parallel
 # installation of different tool versions.
+
 BIN=	vddiff
+TEST_BIN = test
 PREFIX=	/usr/local
 BINDIR=	$(PREFIX)/bin
 MANDIR=	$(PREFIX)/share/man
 INCDIR=	$(PREFIX)/include
 LIBDIR=	$(PREFIX)/lib
+TEST_DIR = .TMP_TEST_DIR
 
 TRACE=	#-DTRACE='"/tmp/.$(BIN)_trace_"'
 DEBUG=	#-DUNIMP -DDEBUG
@@ -13,18 +16,16 @@ STRP=	-s
 
 OBJ=	main.o pars.o lex.o diff.o ui.o db.o exec.o fs.o ed.o uzp.o ver.o \
 	ui2.o gq.o tc.o info.o dl.o cplt.o misc.o
+TEST_OBJ = $(OBJ) test.o fs_test.o
 YFLAGS=	-d
 _CFLAGS=$(CFLAGS) $(CPPFLAGS) $(DEFINES) $(INCDIR_CURSES) -I$(INCDIR) \
 	$(__CDBG) $(__CLDBG) $(TRACE) $(DEBUG) -DBIN='"$(BIN)"'
 _CXXFLAGS = \
 	$(CXXFLAGS) $(__CXXDBG) $(__CLXXDBG) -std=c++17 \
-	$(TRACE)
+	$(TRACE) -DTEST_DIR='"$(TEST_DIR)"'
 _LDFLAGS=$(LDFLAGS) $(__CLDBG) -L${LIBDIR} -Wl,-rpath,${LIBDIR} \
 	$(RPATH_CURSES) $(STRP) $(LIBDIR_CURSES)
 LDADD=	$(LIB_AVLBST) $(LIB_CURSES)
-
-TEST_OBJ = $(OBJ) test.o fs_test.o
-TEST_OUT = test TEST/test
 
 all: $(BIN) $(BIN).1.out
 
@@ -39,7 +40,8 @@ uninstall:
 clean:
 	rm -f $(BIN) $(TEST_OBJ) y.tab.? *.1.html *.1.pdf \
 	    /tmp/.$(BIN).err /tmp/.$(BIN).toc *.gc?? *.1.out lex.yy.c \
-		$(TEST_OUT)
+		$(TEST_BIN)
+	rm -rf $(TEST_DIR)
 
 distclean: clean
 	rm -f Makefile config.log compat.h
@@ -50,10 +52,22 @@ $(BINDIR) $(MANDIR)/man1:
 $(BIN): $(OBJ)
 	$(CC) $(_CFLAGS) $(_LDFLAGS) -o $@ $(OBJ) $(LDADD)
 
-# ./configure -DTEST
-# make test
+# $(TEST_BIN) is intented for development purposes only. Don't use it!
+# Unit test is started with:
+#
+#   $ ./configure -DTEST
+#   $ make test
+#   $ ./test
+#   $ echo $?
+#
+# Applies file tree delete operations!
+# May recursively delete any accessible local and remote file and directory
+# in case of a software bug!
+#
+# Temporarily copies project directory to /tmp.
+# Uses rlcmp(1) to compare symbolic links (not possible with POSIX diff(1)).
 
-test: $(TEST_OBJ)
+$(TEST_BIN): $(TEST_OBJ)
 	$(CXX) $(_CFLAGS) $(_LDFLAGS) -o $@ $(TEST_OBJ) $(LDADD)
 
 .y.o:

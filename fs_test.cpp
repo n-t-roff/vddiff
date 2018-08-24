@@ -1,6 +1,7 @@
 #include <exception>
 #include <stdexcept>
 #include <cstdlib>
+#include <cstring>
 #include <time.h>
 #include "compat.h"
 #include "fs_test.h"
@@ -8,11 +9,16 @@
 #include "fs.h"
 #include "test.h"
 #include "diff.h"
+#include "tc.h"
+#include "exec.h"
+#include "uzp.h"
+#include "db.h"
 
 void FsTest::run() const {
 	fprintf(debug, "->fs_test\n");
 	fsStatTest();
 	cpRegTest();
+    copyTree();
 	fprintf(debug, "<-fs_test\n");
 }
 
@@ -51,6 +57,7 @@ void FsTest::fsStatTestCase(
 void FsTest::cpRegTest() const {
 	fprintf(debug, "->cp_reg_test\n");
     copyLargeFile();
+    copy2FollowLink();
     fprintf(debug, "<-cp_reg_test\n");
 }
 
@@ -59,18 +66,27 @@ void FsTest::copyLargeFile() const {
 
     // Successfully copy large file
 
-    pth1 = const_cast<char *>("test");
-    pth2 = const_cast<char *>("TEST/test");
+    memcpy(lbuf, "test", strlen("test") + 1);
+    pth1 = lbuf;
+    memcpy(rbuf, TEST_DIR "/test", strlen(TEST_DIR "/test") + 1);
+    pth2 = rbuf;
+
     if (fs_stat(pth1, &gstat[0], 0))
         FATAL_ERROR;
     if (cp_reg(0)) // Copy file
         FATAL_ERROR;
+
+    memcpy(lbuf, "test", strlen("test") + 1);
+
     if (cp_reg(0) != 1) // Files are equal -> do nothing
         FATAL_ERROR;
 
     // Append empty file
 
-    pth1 = const_cast<char *>(empty);
+    memcpy(lbuf, empty, strlen(empty) + 1);
+    // cmp_file() had been called
+    memcpy(rbuf, TEST_DIR "/test", strlen(TEST_DIR "/test") + 1);
+
     if (fs_stat(pth1, &gstat[0], 0))
         FATAL_ERROR;
     if (cp_reg(3)) // Append empty file
@@ -78,12 +94,19 @@ void FsTest::copyLargeFile() const {
 
     // Compare files after append
 
-    pth1 = const_cast<char *>("test");
+    memcpy(lbuf, "test", strlen("test") + 1);
+    memcpy(rbuf, TEST_DIR "/test", strlen(TEST_DIR "/test") + 1);
+
     if (fs_stat(pth1, &gstat[0], 0))
         FATAL_ERROR;
     if (cmp_file(pth1, gstat[0].st_size,
                  pth2, gstat[1].st_size, 1))
         FATAL_ERROR;
+
+    memcpy(lbuf, "test", strlen("test") + 1);
+    pth1 = lbuf;
+    memcpy(rbuf, TEST_DIR "/test", strlen(TEST_DIR "/test") + 1);
+    pth2 = rbuf;
 
     if (cp_reg(3)) // Append file to equal contents file
         FATAL_ERROR;
@@ -101,7 +124,94 @@ void FsTest::copyLargeFile() const {
     fprintf(debug, "<-copyLargeFile\n");
 }
 
+void FsTest::copy2FollowLink() const {
+    fprintf(debug, "->copy2FollowLink\n");
+
+    // Copy file to dead symlink
+
+    memcpy(lbuf, file1, strlen(file1) + 1);
+    pth1 = lbuf;
+    memcpy(rbuf, deadlink, strlen(deadlink) + 1);
+    pth2 = rbuf;
+
+    if (fs_stat(pth1, &gstat[0], 0))
+        FATAL_ERROR;
+    if (cp_reg(0)) // Copy file
+        FATAL_ERROR;
+
+    memcpy(lbuf, file1, strlen(file1) + 1);
+
+    if (cp_reg(0) != 1) // Files are equal -> do nothing
+        FATAL_ERROR;
+
+    // Copy file to directory containing a symlink
+    fprintf(debug, "<-copy2FollowLink\n");
+}
+
 void FsTest::appendFile() const {
     fprintf(debug, "->appendFile\n");
     fprintf(debug, "<-appendFile\n");
+}
+
+void FsTest::copyTree() const {
+    fprintf(debug, "->copyTree\n");
+
+    // copy project tree using fs_cp()
+
+    const char src[] { ".." };
+    pthlen[0] = strlen(src);
+    memcpy(syspth[0], src, pthlen[0] + 1);
+
+    const char dest[] { "/tmp" };
+    pthlen[1] = strlen(dest);
+    memcpy(syspth[1], dest, pthlen[1] + 1);
+
+    filediff f;
+    f.name = "vddiff";
+    filediff *fl[] = { &f };
+    db_list[0] = fl;
+    db_list[1] = fl; // for fs_rm()
+    db_num[0] = 1;
+    db_num[1] = 1; // for fs_rm()
+
+    followlinks = 0;
+    right_col = 0;
+    unsigned sto;
+    bmode = FALSE;
+    fmode = TRUE; // for fs_rm()
+
+    if (fs_cp(2, // to right side
+              0, // u
+              1, // n
+              1|4, // !rebuild|force
+              &sto))
+    {
+        FATAL_ERROR;
+    }
+
+    // verify
+
+    if (system("rlcmp . /tmp/vddiff"))
+        FATAL_ERROR;
+
+    // delete copy
+
+    if (fs_rm(2, // tree: "dr"
+              "delete", // txt
+              nullptr, // nam
+              0, // u
+              1, // n
+              1 | 2 | 4)) // force|!rebuild|!reset err
+    {
+        FATAL_ERROR;
+    }
+
+    // test if delete was successful
+
+    if (fs_stat("/tmp/vddiff", &gstat[0], 0) != -1)
+        FATAL_ERROR;
+    if (errno != ENOENT)
+        FATAL_ERROR;
+
+    fprintf(debug, "<-copyTree\n");
 }

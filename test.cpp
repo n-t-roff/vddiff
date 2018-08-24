@@ -1,22 +1,61 @@
 #include <exception>
 #include <iostream>
 #include <cstdlib>
+#include <cstring>
 #include "compat.h"
 #include "test.h"
 #include "fs_test.h"
 #include "main.h"
+#include "fs.h"
+#include "diff.h"
 
 bool printerr_called;
 
-void test(void)
+static void rmTestDir()
 {
-	fprintf(debug, "-> test\n");
+    fprintf(debug, "->rmTestDir\n");
+    followlinks = 0;
+    struct stat st;
 
-    try {
-        { FsTest test; test.run(); }
-    } catch (std::exception &e) {
-        std::cout << "Error: " << e.what() << std::endl;
-        exit(1);
+    if (!fs_stat(TEST_DIR, &st, 0)) {
+        // TEST_DIR exists, remove it
+
+        memcpy(lbuf, TEST_DIR, strlen(TEST_DIR) + 1);
+        pth1 = lbuf;
+
+        if (fs_rm(-1, // tree: Use pth1
+                  "", // txt
+                  nullptr, // nam
+                  0, // u
+                  1, // n
+                  1 | 2 | 4)) // force|!rebuild|!reset err
+        {
+            FATAL_ERROR;
+        }
+
+        if (fs_stat(TEST_DIR, &st, 0) != -1)
+            FATAL_ERROR;
     }
-	fprintf(debug, "<- test\n");
+
+    if (errno != ENOENT)
+        FATAL_ERROR;
+
+    fprintf(debug, "<-rmTestDir\n");
+}
+
+void test(void)
+try {
+    fprintf(debug, "->test\n");
+    rmTestDir();
+
+    if (system("./gen_test_dat.sh " TEST_DIR))
+        FATAL_ERROR;
+
+    { FsTest test; test.run(); }
+
+    rmTestDir();
+    fprintf(debug, "<-test\n");
+} catch (std::exception &e) {
+    std::cout << "Error: " << e.what() << std::endl;
+    exit(1);
 }
