@@ -83,11 +83,11 @@ static void runs2x(void);
 
 const char rc_name[] = "." BIN "rc";
 static const char *const usage_txt =
-"Usage: %s [-u [<RC file>]] [-BbCcdEefgIikLlMmNnoqRrVWXy] [-F <pattern>]\n"
+"Usage: %s [-u [<RC file>]] [<OPTIONS>] [-F <pattern>]\n"
 "	[-G <pattern>] [-P <last_wd_file>] [-t <diff_tool>] [-v <view_tool>]\n"
 "	[<file or directory 1> [<file or directory 2>]]\n";
 static const char *const getopt_arg =
-        "BbCcdEeF:fG:gIikLlMmNnoP:qRrt:Vv:WXy";
+        "BbCcdEeF:fG:gIikLlMmNnoP:qRrst:Vv:WXy";
 
 char *printwd;
 bool bmode;
@@ -102,6 +102,7 @@ static bool run2x;
 static sigjmp_buf term_jmp_buf;
 static volatile sig_atomic_t term_jmp_buf_valid;
 static bool lstat_args;
+bool summary;
 
 int
 main(int argc, char **argv)
@@ -276,6 +277,11 @@ main(int argc, char **argv)
 		case 'r':
 			recursive = 1;
 			break;
+
+        case 's':
+            summary = TRUE;
+            break;
+
 		case 't':
 			set_tool(&difftool, strdup(optarg), 0);
 			break;
@@ -473,7 +479,10 @@ main(int argc, char **argv)
 		term_jmp_buf_valid = 0;
 	}
 
-	if (!qdiff) {
+    if (qdiff) {
+        printf("%'ju bytes in %'ld files compared\n",
+               (uintmax_t)tot_cmp_byte_count, tot_cmp_file_count);
+    } else {
 		remove_tmp_dirs();
 		bkgd(A_NORMAL);
 		erase();

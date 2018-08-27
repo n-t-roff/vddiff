@@ -52,6 +52,8 @@ static void ini_int(void);
 static struct filediff *diff;
 static off_t lsiz1, lsiz2;
 static char *last_path;
+off_t tot_cmp_byte_count;
+long tot_cmp_file_count;
 
 short followlinks;
 
@@ -333,14 +335,27 @@ no_tree2:
 			if (S_ISLNK(gstat[0].st_mode) &&
 			    S_ISLNK(gstat[1].st_mode)) {
 				char *a, *b;
+                bool symlink_diff = FALSE;
 
-				if (!(a = read_link(syspth[0], gstat[0].st_size)))
-					continue;
+                if (gstat[0].st_size != gstat[1].st_size) {
+                    symlink_diff = TRUE;
+                } else if (gstat[0].st_size) {
+                    if (!(a = read_link(syspth[0], gstat[0].st_size)))
+                        continue;
 
-				if (!(b = read_link(syspth[1], gstat[1].st_size)))
-					goto free_a;
+                    if (!(b = read_link(syspth[1], gstat[1].st_size)))
+                        goto free_a;
 
-                if (strcmp(a, b)) {
+                    if (strcmp(a, b)) {
+                        symlink_diff = TRUE;
+                    }
+
+                    /* Count successfully compared links only. */
+                    ++tot_cmp_file_count;
+                    tot_cmp_byte_count += gstat[0].st_size;
+                }
+
+                if (symlink_diff) {
                     if (qdiff) {
                         printf("Symbolic links differ: %s -> %s, %s -> %s\n",
                                syspth[0], a, syspth[1], b);
@@ -1015,16 +1030,7 @@ read_link(char *path, off_t size)
     return l;
 }
 
-/* WARNING: Overwrites `lbuf` and `rbuf`! */
-
-/* Input: gstat[0], gstat[1], syspth[0], syspth[1]
- * Output:
- * -1  Error, don't make DB entry
- *  0  No diff
- *  1  Diff */
-
-int
-cmp_file(
+int cmp_file(
 	const char *const lpth,
 	const off_t lsiz,
 	const char *const rpth,
@@ -1040,7 +1046,7 @@ cmp_file(
 		lpth, (intmax_t)lsiz, rpth, (intmax_t)rsiz, md);
 #endif
 
-	if (lsiz != rsiz) {
+    if (lsiz != rsiz) {
 		rv = 1;
 		goto ret;
 	}
@@ -1063,7 +1069,7 @@ cmp_file(
 		}
 	}
 
-	if ((f1 = open(lpth, O_RDONLY)) == -1) {
+    if ((f1 = open(lpth, O_RDONLY)) == -1) {
 		if (!ign_diff_errs && dialog(ign_txt, NULL,
 		    "open \"%s\": %s", lpth, strerror(errno)) == 'i')
 			ign_diff_errs = TRUE;
@@ -1117,9 +1123,16 @@ cmp_file(
 
 		if (l1 < (ssize_t)(sizeof lbuf))
 			break;
-	}
 
-	close(f2);
+        /* Count successfully compared bytes only. */
+        tot_cmp_byte_count += l1;
+    }
+
+    /* Count really and successfully compared files only,
+     * not zero size files, nor different files. */
+    ++tot_cmp_file_count;
+
+    close(f2);
 close_f1:
 	close(f1);
 ret:

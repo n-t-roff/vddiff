@@ -18,6 +18,8 @@ struct filediff {
 	char    diff;
 };
 
+extern off_t tot_cmp_byte_count;
+extern long tot_cmp_file_count;
 extern short followlinks;
 extern bool one_scan;
 extern bool dotdot;
@@ -38,6 +40,15 @@ int scan_subdir(const char *, const char *, int);
 int is_diff_dir(struct filediff *);
 int is_diff_pth(const char *, unsigned);
 size_t pthcat(char *, size_t, const char *);
+
+/* WARNING: Overwrites `lbuf` and `rbuf`!
+ *
+ * Input: gstat[0], gstat[1], syspth[0], syspth[1]
+ * Output:
+ * -1  Error, don't make DB entry
+ *  0  No diff
+ *  1  Diff */
+
 int cmp_file(const char *const, const off_t, const char *const, const off_t,
 	const unsigned);
 void free_diff(struct filediff *);

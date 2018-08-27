@@ -13,7 +13,7 @@ LOSS OF USE, DATA OR PROFITS, WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE OR
 OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
 PERFORMANCE OF THIS SOFTWARE.
 ..
-.Dd August 24, 2018
+.Dd August 27, 2018
 .Dt VDDIFF 1
 .Sh NAME
 .Nm @vddiff@
@@ -21,7 +21,7 @@ PERFORMANCE OF THIS SOFTWARE.
 .Sh SYNOPSIS
 .Nm
 .Op Fl u Op Ar "RC file"
-.Op Fl BbCcdEefgIikLlMmnoqRrVWXy
+.Op Ar OPTIONS
 .Op Fl F Ar file name pattern
 .Op Fl G Ar file content pattern
 .Op Fl P Ar last wd file
@@ -379,6 +379,10 @@ combined with
 Pressing key
 .Sq c
 enables to view all files in this mode.
+.It Fl s
+When used with option
+.Fl q :
+Output summary how many files and bytes have been successfully compared.
 .It Fl t Ar diff_tool
 Specify diff tool on the command line.
 The filenames to compare are appended to the given string.
