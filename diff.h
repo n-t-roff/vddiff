@@ -51,6 +51,26 @@ size_t pthcat(char *, size_t, const char *);
 
 int cmp_file(const char *const, const off_t, const char *const, const off_t,
 	const unsigned);
+
+/* Input:
+ *   syspth[0]
+ *   syspth[1]
+ *   gstat[0]
+ *   gstat[1]
+ *
+ * Output: Combination of:
+ *   0  No difference
+ *   1  Difference
+ *   2  Error
+ *
+ * Usage:
+ *   char *a = NULL;
+ *   char *b = NULL;
+ *   cmp_symlink();
+ *   free(b);
+ *   free(a);
+ */
+int cmp_symlink(char **, char **);
 void free_diff(struct filediff *);
 char *read_link(char *, off_t);
 

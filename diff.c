@@ -280,9 +280,9 @@ no_tree2:
 				goto dir_scan_end;
 			}
 
-			if (S_ISDIR(gstat[0].st_mode) &&
-			    (S_ISDIR(gstat[1].st_mode) || bmode || fmode)) {
-
+            if ( S_ISDIR(gstat[0].st_mode) &&
+                (S_ISDIR(gstat[1].st_mode) || bmode || fmode))
+            {
 				struct scan_dir *se;
 
 				if (!scan) {
@@ -322,7 +322,8 @@ no_tree2:
 			}
 
             if (S_ISREG(gstat[0].st_mode) &&
-                    S_ISREG(gstat[1].st_mode)) {
+                S_ISREG(gstat[1].st_mode))
+            {
                 if (cmp_file(syspth[0], gstat[0].st_size,
                              syspth[1], gstat[1].st_size, 0) == 1) {
                     if (qdiff) {
@@ -333,47 +334,31 @@ no_tree2:
                         dir_diff = 1;
                     }
                 }
+
                 continue;
             }
 
 			if (S_ISLNK(gstat[0].st_mode) &&
-			    S_ISLNK(gstat[1].st_mode)) {
-				char *a, *b;
-                bool symlink_diff = FALSE;
+                S_ISLNK(gstat[1].st_mode))
+            {
+                char *a = NULL;
+                char *b = NULL;
 
-                if (gstat[0].st_size != gstat[1].st_size) {
-                    symlink_diff = TRUE;
-                } else if (gstat[0].st_size) {
-                    if (!(a = read_link(syspth[0], gstat[0].st_size)))
-                        continue;
+                int v = cmp_symlink(&a, &b);
+                retval |= v;
 
-                    if (!(b = read_link(syspth[1], gstat[1].st_size)))
-                        goto free_a;
-
-                    if (strcmp(a, b)) {
-                        symlink_diff = TRUE;
-                    }
-
-                    /* Count successfully compared links only. */
-                    ++tot_cmp_file_count;
-                    tot_cmp_byte_count += gstat[0].st_size;
-                }
-
-                if (symlink_diff) {
+                if (v == 1) {
                     if (qdiff) {
                         printf("Symbolic links differ: %s -> %s, %s -> %s\n",
                                syspth[0], a, syspth[1], b);
-                        retval |= 1;
                     } else {
                         dir_diff = 1;
                     }
                 }
 
-				free(b);
-
-free_a:
-				free(a);
-				continue;
+                free(b);
+                free(a);
+                continue;
 			}
 
 			if (real_diff)
@@ -1032,6 +1017,32 @@ read_link(char *path, off_t size)
 
     l[size] = 0;
     return l;
+}
+
+int cmp_symlink(char **a, char **b) {
+    int return_value = 0;
+
+    if (gstat[0].st_size != gstat[1].st_size) {
+        return_value |= 1;
+
+    } else if (gstat[0].st_size) {
+        if (!(*a = read_link(syspth[0], gstat[0].st_size))) {
+            return_value |= 2;
+
+        } else if (!(*b = read_link(syspth[1], gstat[1].st_size))) {
+            return_value |= 2;
+        } else {
+            if (strcmp(*a, *b)) {
+                return_value |= 1;
+            } else {
+                /* Count successfully compared links only. */
+                ++tot_cmp_file_count;
+                tot_cmp_byte_count += gstat[0].st_size;
+            }
+        }
+    }
+
+    return return_value;
 }
 
 int cmp_file(

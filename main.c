@@ -380,24 +380,26 @@ main(int argc, char **argv)
                        syspth[0], syspth[1]);
                 exit_status = EXIT_STATUS_DIFF;
             } else {
-                char *a, *b;
+                char *a = NULL;
+                char *b = NULL;
 
-                a = read_link(syspth[0], gstat[0].st_size);
-                b = read_link(syspth[1], gstat[1].st_size);
-
-                if (!a || !b) {
-                    exit_status = EXIT_STATUS_ERROR;
-                } else if (strcmp(a, b)) {
+                switch (cmp_symlink(&a, &b)) {
+                case 0:
+                    if (!qdiff) { /* Don't report equal files with -q */
+                        printf("Equal symbolic links %s and %s -> %s\n",
+                               syspth[0], syspth[1], a);
+                    }
+                case 1:
                     printf("Symbolic links differ: %s -> %s, %s -> %s\n",
                            syspth[0], a, syspth[1], b);
                     exit_status = EXIT_STATUS_DIFF;
-                } else if (!qdiff) { /* Don't report equal files with -q */
-                    printf("Equal symbolic links %s and %s -> %s\n",
-                           syspth[0], syspth[1], a);
+                    break;
+                default: /* 2 or 3 */
+                    exit_status = EXIT_STATUS_ERROR;
                 }
 
-                free(a);
                 free(b);
+                free(a);
             }
 
             goto rmtmp;
