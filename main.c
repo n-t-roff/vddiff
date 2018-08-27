@@ -78,17 +78,9 @@ static void get_arg(const char *, int);
 static int read_rc(char *);
 static void ttcharoff(void);
 static void q_opt_err(void);
-static void usage(void);
 static void runs2x(void);
 
-const char rc_name[] = "." BIN "rc";
-static const char *const usage_txt =
-"Usage: %s [-u [<RC file>]] [<OPTIONS>] [-F <pattern>]\n"
-"	[-G <pattern>] [-P <last_wd_file>] [-t <diff_tool>] [-v <view_tool>]\n"
-"	[<file or directory 1> [<file or directory 2>]]\n";
-static const char *const getopt_arg =
-        "BbCcdEeF:fG:gIikLlMmNnoP:qRrst:Vv:WXy";
-
+static const char rc_name[] = "." BIN "rc";
 char *printwd;
 bool bmode;
 bool qdiff;
@@ -168,7 +160,11 @@ main(int argc, char **argv)
 		}
 	}
 
-	while ((opt = getopt(argc, argv, getopt_arg)) != -1) {
+    while ((opt =
+            getopt(argc, argv,
+                   "BbCcdEeF:fG:gIikLlMmNnoP:qRrst:Vv:WXy")
+            ) != -1)
+    {
 		switch (opt) {
 		case 'B':
             if (qdiff) {
@@ -326,7 +322,7 @@ main(int argc, char **argv)
 			break;
 
 		default:
-			usage();
+            exit(EXIT_STATUS_ERROR);
 		}
 	}
 
@@ -339,7 +335,7 @@ main(int argc, char **argv)
 
 	if (argc > 2 || (qdiff && argc != 2)) {
 		printf("Two arguments expected\n");
-		usage();
+        exit(EXIT_STATUS_ERROR);
 		/* not reached */
 	}
 
@@ -772,13 +768,6 @@ static void q_opt_err(void) {
     fprintf(stderr,
             "%s: Option -B is incompatible with -q\n",
             prog);
-    exit(EXIT_STATUS_ERROR);
-}
-
-static void
-usage(void)
-{
-	printf(usage_txt, prog);
     exit(EXIT_STATUS_ERROR);
 }
 
