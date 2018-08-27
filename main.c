@@ -415,14 +415,15 @@ main(int argc, char **argv)
                             syspth[1], gstat[1].st_size, 1);
 
                     switch (v) {
-                    case -1:
-                        exit_status = EXIT_STATUS_ERROR;
+                    case 0:
                         break;
                     case 1:
                         printf("Files %s and %s differ\n",
                                syspth[0], syspth[1]);
                         exit_status = EXIT_STATUS_DIFF;
                         break;
+                    default: /* 2 or 3 */
+                        exit_status = EXIT_STATUS_ERROR;
                     }
                 } else {
                     tool("", "", 3, 0);

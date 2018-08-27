@@ -48,6 +48,10 @@ static void add_diff_dir(short);
 static size_t pthadd(char *, size_t, const char *);
 static size_t pthcut(char *, size_t);
 static void ini_int(void);
+/* Returns file descriptor or -1 on error. */
+static int dlg_open_ro(const char *const pth);
+static ssize_t dlg_read(int fd, void *buf, size_t count,
+                        const char* const pth);
 
 static struct filediff *diff;
 static off_t lsiz1, lsiz2;
@@ -452,9 +456,6 @@ free_a:
 
 			switch (cmp_file(syspth[0], gstat[0].st_size, syspth[1],
 			    gstat[1].st_size, 0)) {
-			case -1:
-				diff->diff = '-';
-				goto db_add_file;
 			case 1:
 				diff->diff = '!';
 				/* fall through */
@@ -462,7 +463,10 @@ free_a:
 db_add_file:
 				diff_db_add(diff, 0);
 				continue;
-			}
+            default: /* 2 or 3 */
+                diff->diff = '-';
+                goto db_add_file;
+            }
 
 		} else if (S_ISDIR(gstat[0].st_mode)) {
 
@@ -1047,69 +1051,48 @@ int cmp_file(
 #endif
 
     if (lsiz != rsiz) {
-		rv = 1;
+        rv |= 1;
 		goto ret;
 	}
 
 	if (!lsiz) {
-		rv = 0;
 		goto ret;
 	}
 
 	if (!md) {
 		if (dontcmp) {
-			rv = 0;
 			goto ret;
 		}
 
 		if (getch() == '%') {
 			dontcmp = TRUE;
-			rv = 0;
 			goto ret;
 		}
 	}
 
-    if ((f1 = open(lpth, O_RDONLY)) == -1) {
-		if (!ign_diff_errs && dialog(ign_txt, NULL,
-		    "open \"%s\": %s", lpth, strerror(errno)) == 'i')
-			ign_diff_errs = TRUE;
-
-		rv = -1;
+    if ((f1 = dlg_open_ro(lpth)) == -1) {
+        rv |= 2;
 		goto ret;
 	}
 
-	if ((f2 = open(rpth, O_RDONLY)) == -1) {
-		if (!ign_diff_errs && dialog(ign_txt, NULL,
-		    "open \"%s\": %s", rpth, strerror(errno)) == 'i')
-			ign_diff_errs = TRUE;
-
-		rv = -1;
+    if ((f2 = dlg_open_ro(rpth)) == -1) {
+        rv |= 2;
 		goto close_f1;
 	}
 
 	while (1) {
-		if ((l1 = read(f1, lbuf, sizeof lbuf)) == -1) {
-			if (!ign_diff_errs && dialog(ign_txt, NULL,
-			    "read \"%s\": %s", lpth,
-			    strerror(errno)) == 'i')
-				ign_diff_errs = TRUE;
-
-			rv = -1;
+        if ((l1 = dlg_read(f1, lbuf, sizeof lbuf, lpth)) == -1) {
+            rv |= 2;
 			break;
 		}
 
-		if ((l2 = read(f2, rbuf, sizeof rbuf)) == -1) {
-			if (!ign_diff_errs && dialog(ign_txt, NULL,
-			    "read \"%s\": %s", rpth,
-			    strerror(errno)) == 'i')
-				ign_diff_errs = TRUE;
-
-			rv = -1;
+        if ((l2 = dlg_read(f2, rbuf, sizeof rbuf, rpth)) == -1) {
+            rv |= 2;
 			break;
 		}
 
 		if (l1 != l2) {
-			rv = 1;
+            rv |= 1;
 			break;
 		}
 
@@ -1117,7 +1100,7 @@ int cmp_file(
 			break;
 
 		if (memcmp(lbuf, rbuf, l1)) {
-			rv = 1;
+            rv |= 1;
 			break;
 		}
 
@@ -1140,6 +1123,40 @@ ret:
 	fprintf(debug, "<-cmp_file(): %d\n", rv);
 #endif
 	return rv;
+}
+
+static int dlg_open_ro(const char *const pth) {
+    int fd;
+
+    if ((fd = open(pth, O_RDONLY)) == -1) {
+        if (!ign_diff_errs &&
+                dialog(ign_txt, NULL, "open \"%s\": %s",
+                       pth, strerror(errno))
+                == 'i')
+        {
+            ign_diff_errs = TRUE;
+        }
+    }
+
+    return fd;
+}
+
+static ssize_t dlg_read(int fd, void *buf, size_t count,
+                        const char* const pth)
+{
+    ssize_t l;
+
+    if ((l = read(fd, buf, count)) == -1) {
+        if (!ign_diff_errs &&
+                dialog(ign_txt, NULL, "read \"%s\": %s",
+                       pth, strerror(errno))
+                == 'i')
+        {
+            ign_diff_errs = TRUE;
+        }
+    }
+
+    return l;
 }
 
 static struct filediff *
