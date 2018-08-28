@@ -30,7 +30,7 @@ const char *buf_basename(char *const buf, size_t *bufsiz);
  * opt:
  *   1  move instead of copy (remove source after copy operation)
  */
-int do_cli_cp(const unsigned opt);
+int do_cli_cp(int argc, char **argv, const unsigned opt);
 
 #ifdef __cplusplus
 }

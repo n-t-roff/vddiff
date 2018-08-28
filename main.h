@@ -60,5 +60,26 @@ extern bool nofkeys;
 extern bool summary;
 
 char *add_home_pth(const char *);
+/*
+ * Input:
+ *   Global:
+ *     zipfile[i]
+ *     zipdir[i]
+ *     lstat_args
+ *     fmode
+ *   Arguments:
+ *     s: CLI argument
+ *     i: 0: Left side, 1: Right Side
+ *
+ * Output:
+ *   Global:
+ *     arg[i]
+ *     gstat[i]
+ *     pthlen[i]
+ *     syspth[i]
+ *
+ * Terminates using exit() in case of an error.
+ */
+void get_arg(const char *s, int i);
 void sig_term(int);
 void remove_tmp_dirs(void);

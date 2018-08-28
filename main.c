@@ -76,7 +76,6 @@ static char *zipdir[2];
 static void arg_diff(int i);
 static void check_args(int, char **);
 static void cmp_inodes(void);
-static void get_arg(const char *, int);
 static int read_rc(char *);
 static void ttcharoff(void);
 static void q_opt_err(void);
@@ -99,6 +98,8 @@ static bool lstat_args;
 bool summary;
 static bool cli_cp;
 static bool cli_mv;
+static bool cli_rm;
+static bool cli_mode;
 
 int
 main(int argc, char **argv)
@@ -172,6 +173,7 @@ main(int argc, char **argv)
 		switch (opt) {
         case 'A':
             cli_cp = TRUE;
+            cli_mode = TRUE;
             break;
 
 		case 'B':
@@ -192,6 +194,12 @@ main(int argc, char **argv)
 		case 'c':
 			real_diff = 1;
 			break;
+
+        case 'D':
+            cli_rm = TRUE;
+            cli_mode = TRUE;
+            break;
+
 		case 'd':
 			set_tool(&difftool, strdup(diffless), 0);
 			break;
@@ -289,6 +297,7 @@ main(int argc, char **argv)
         case 'T':
             cli_cp = TRUE;
             cli_mv = TRUE;
+            cli_mode = TRUE;
             break;
 
         case 't':
@@ -346,15 +355,26 @@ main(int argc, char **argv)
 	argc -= optind;
 	argv += optind;
 
-    if (argc > 2 ||
-            ((qdiff || cli_cp) && argc != 2))
-    {
-		printf("Two arguments expected\n");
+    if (cli_rm) {
+        if (argc < 1) { /* -D */
+            printf("At least one argument expected\n");
+            exit(EXIT_STATUS_ERROR);
+            /* not reached */
+        }
+    } else if (cli_cp) {
+        if (argc < 2) { /* -A || -T */
+            printf("At least two arguments expected\n");
+            exit(EXIT_STATUS_ERROR);
+            /* not reached */
+        }
+    } else if (argc > 2 || (qdiff && argc != 2)) {
+        printf("Two arguments expected\n");
         exit(EXIT_STATUS_ERROR);
-		/* not reached */
-	}
+        /* not reached */
+    }
 
-	if (argc < 2) {
+    if (cli_mode) {
+    } else if (argc < 2) {
 		if (twocols)
 			fmode = TRUE;
 		else
@@ -369,19 +389,22 @@ main(int argc, char **argv)
 	inst_sighdl(SIGTERM, sig_term);
 	ttcharoff();
 
-	if (argc || fmode) {
+    if ((argc || fmode) &&
+            /* Process manually, can have more than two arguments.
+             * Don't unpack archives (not expected). */
+            !(cli_cp || cli_rm))
+    {
 		check_args(argc, argv);
 
-		if (zipfile[0]) {
-			setpthofs(bmode ? 5 : 4, arg[0], zipfile[0]->name);
-		}
+        if (zipfile[0]) {
+            setpthofs(bmode ? 5 : 4, arg[0], zipfile[0]->name);
+        }
 
-		if (zipfile[1]) {
-			/* 2: don't set vpath[0] */
-			setpthofs(6, arg[1], zipfile[1]->name);
-		}
+        if (zipfile[1]) {
+            /* 2: don't set vpath[0] */
+            setpthofs(6, arg[1], zipfile[1]->name);
+        }
 
-        if (cli_cp) {} else
         if (S_ISLNK(gstat[0].st_mode) ||
             S_ISLNK(gstat[0].st_mode))
         { /* Possible with -L only */
@@ -481,7 +504,7 @@ main(int argc, char **argv)
 		term_jmp_buf_valid = 1;
 
         if (cli_cp) {
-            do_cli_cp(cli_mv ? 1 : 0);
+            do_cli_cp(argc, argv, cli_mv ? 1 : 0);
         } else {
             int v = build_ui();
 
@@ -660,7 +683,7 @@ cmp_inodes(void)
 	}
 }
 
-static void
+void
 get_arg(const char *s, int i)
 {
     char *s2;

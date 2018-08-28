@@ -109,51 +109,61 @@ ret:
 
 /* DEBUG CODE */
 
-int do_cli_cp(const unsigned opt) {
+int do_cli_cp(int argc, char **argv, const unsigned opt) {
     struct filediff f[2];
     struct filediff *pf[] = { &f[0], &f[1] };
     int ret_val = 0;
     unsigned md = 1|4; /* !rebuild|force */
 
-    f[0].name = NULL;
-    f[1].name = NULL;
+    while (!ret_val && argc >= 2) {
+        get_arg(argv[0], 0);
+        get_arg(argv[argc - 1], 1);
+        f[0].name = NULL;
+        f[1].name = NULL;
 #if defined(TRACE)
-    fprintf(debug, "<>do_cli_cp(\"%s\" -> \"%s\")\n", syspth[0], syspth[1]);
+        fprintf(debug, "<>do_cli_cp(\"%s\" -> \"%s\")\n", syspth[0], syspth[1]);
 #endif
-
-    if (!(f[0].name = buf_basename(syspth[0], &pthlen[0]))) {
-        ret_val |= 1;
-        goto ret;
-    }
-
-    if (!gstat[1].st_mode) { /* target is to be created */
-        if (!(f[1].name = buf_basename(syspth[1], &pthlen[1])))
-        {
-            ret_val |= 1;
-            goto ret;
+        if (summary) {
+            printf("\"%s\" -> \"%s\"\n", syspth[0], syspth[1]);
         }
 
-        md |= 128;
+        if (!(f[0].name = buf_basename(syspth[0], &pthlen[0]))) {
+            ret_val |= 1;
+            goto abort;
+        }
+
+        if (!gstat[1].st_mode) { /* target is to be created */
+            if (!(f[1].name = buf_basename(syspth[1], &pthlen[1])))
+            {
+                ret_val |= 1;
+                goto abort;
+            }
+
+            md |= 128;
+        }
+
+        db_list[0] = &pf[0];
+        db_list[1] = &pf[1];
+        db_num[0] = 1;
+        db_num[1] = 1;
+        right_col = 0;
+        fmode = TRUE; /* for fs_rm() */
+
+        if (fs_cp(2, /* to right side */
+                  0, /* u */
+                  1, /* n */
+                  md,
+                  NULL)) /* &sto */
+        {
+            ret_val |= 1;
+        }
+
+abort:
+        free(f[1].name);
+        free(f[0].name);
+        ++argv;
+        --argc;
     }
 
-    db_list[0] = &pf[0];
-    db_list[1] = &pf[1];
-    db_num[0] = 1;
-    db_num[1] = 1;
-    right_col = 0;
-    fmode = TRUE; /* for fs_rm() */
-
-    if (fs_cp(2, /* to right side */
-              0, /* u */
-              1, /* n */
-              md,
-              NULL)) /* &sto */
-    {
-        ret_val |= 1;
-    }
-
-ret:
-    free(f[1].name);
-    free(f[0].name);
     return ret_val;
 }
