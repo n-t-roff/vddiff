@@ -9,7 +9,35 @@ void fs_mkdir(short tree);
 void fs_rename(int, long, int, unsigned);
 void fs_chmod(int, long, int, unsigned);
 void fs_chown(int, int, long, int, unsigned);
-int fs_rm(int, const char *const, char *, long, int, unsigned);
+/*
+ * Input:
+ *   Global:
+ *     syspth[]
+ *     bmode
+ *     fmode
+ *
+ *   Argument:
+ *     tree:
+ *        1: "dl", 2: "dr", 3: "dd" (detect which file exists)
+ *        0: Use pth2, ignore nam and u. n must be 1.
+ *       -1: Use pth1
+ *     nam:
+ *       File name. `fmode` only. Ignored for `tree <= 0` or `!fmode`.
+ *       If `nam` is not NULL, `u` is not used. `n` must be 1.
+ *     md:
+ *       1: Force
+ *       2: Don't rebuild DB (for mmrk and fs_cp())
+ *       4: Don't reset 'fs_all'
+ *       8: fs_ign_errs
+ *
+ * Return value:
+ *   0: Ok
+ *   1: Cancel
+ *   2: fs_error
+ *   4: fs_ign_errs
+ */
+int fs_rm(int tree, const char *const txt, char *nam, long u, int n,
+          unsigned md);
 /*
  * to:
  *   0: Auto-detect
@@ -37,6 +65,10 @@ void fs_cat(long);
 void rebuild_db(short);
 int fs_get_dst(long, unsigned);
 int fs_any_dst(long, int, unsigned);
+
+
+extern bool fs_none; /* Don't delete or overwrite any file */
+extern bool fs_abort; /* Abort operation */
 
 /* global for software test: */
 

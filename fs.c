@@ -55,8 +55,18 @@ static int cp_link(void);
 static int ask_for_perms(mode_t *);
 static int fs_ro(void);
 static void fs_fwrap(const char *, ...);
-static int fs_deldialog(const char *, const char *, const char *,
-    const char *);
+/*
+ * Input:
+ *   menu:
+ *   op:
+ *   typ:
+ *   nam:
+ *
+ * Output:
+ *   0: yes
+ */
+static int fs_deldialog(const char *menu, const char *op, const char *typ,
+    const char *nam);
 static int fs_testBreak(void);
 
 time_t fs_t1, fs_t2;
@@ -77,10 +87,8 @@ static bool fs_error;
 /* Reset at start of each fs_rm() and fs_cp() */
 /* Has the same meaning as force_fs */
 static bool fs_all;
-/* Don't delete or overwrite any file */
-static bool fs_none;
-/* Abort operation */
-static bool fs_abort;
+bool fs_none;
+bool fs_abort;
 
 void
 clr_fs_err(void) {
@@ -491,32 +499,17 @@ exit:
 		syspth[1][pthlen[1]] = 0;
 }
 
-/* 0: Ok
- * 1: Cancel */
-/* 2: fs_error
- * 4: fs_ign_errs */
-
-int
-fs_rm(
-    /* 1: "dl", 2: "dr", 3: "dd" (detect which file exists)
-     * 0: Use pth2, ignore nam and u. n must be 1. */
-    /* -1: Use pth1 */
-    int tree, const char *const txt,
-    /* File name. If nam is given, u is not used. n must be 1. */
-    char *nam, long u, int n,
-    /* 1: Force */
-    /* 2: Don't rebuild DB (for mmrk and fs_cp()) */
-    /* 4: Don't reset 'fs_all' */
-    /* 8: fs_ign_errs */
-    unsigned md)
+int fs_rm(int tree, const char *const txt, char *nam, long u, int n,
+          unsigned md)
 {
 	struct filediff *f;
 	unsigned short m;
 	int rv = 0;
     const char *fn = NULL;
-    const char *p0 = NULL, *s[2] = { NULL, NULL };
-	size_t l0;
-	struct stat st;
+    const char *const p0 = pth1; /* Save what is used by fs_cp() too */
+    const char *s[2] = { NULL, NULL };
+    const size_t l0 = len1; /* Save what is used by fs_cp() too */
+    struct stat st = gstat[0]; /* Save what is used by fs_cp() too */
 	int ntr = 0; /* next tree */
 	bool chg = FALSE;
 	bool empty_dir_;
@@ -531,11 +524,8 @@ fs_rm(
         "lp=\"%s\" rp=\"%s\"\n", tree, txt, nam, u, n, md, trcpth[0], trcpth[1]);
 #endif
 	/* Save what is used by fs_cp() too */
-	p0 = pth1;
-	l0 = len1;
 	s[0] = strdup(syspth[0]);
 	s[1] = strdup(syspth[1]);
-	st = gstat[0];
 	m = n > 1;
 
 	/* case: Multiple files (not from fs_cp(), instead from <n>dd */
@@ -1262,7 +1252,7 @@ rm_file(void)
 	fprintf(debug, "<>rm_file(path=%s)\n", pth1);
 #endif
 
-	if ((fs_t2 = time(NULL)) - fs_t1) {
+    if (wstat && (fs_t2 = time(NULL)) - fs_t1) {
 		printerr(NULL, "Delete \"%s\"", pth1);
 		fs_t1 = fs_t2;
 
@@ -1595,40 +1585,57 @@ fs_fwrap(const char *f, ...)
 	va_end(a);
 }
 
-/* 0: yes */
-
 static int
 fs_deldialog(const char *menu, const char *op, const char *typ,
     const char *nam)
 {
-	if (fs_none || fs_abort) {
-		return 1;
+    int retval = 0; /* "yes" */
+
+#if defined(TRACE)
+    fprintf(debug, "->fs_deldialog\n");
+#endif
+
+    if (fs_none || fs_abort) {
+        retval = 1;
+        goto ret;
 	}
 
 	if (force_fs || fs_all) {
-		return 0;
+        goto ret;
 	}
 
-	switch (dialog(menu, NULL,
-	    "Really %s %s\"%s\"?", op, typ ? typ : "", nam)) {
+    switch (dialog(menu, /* Answers as text */
+                   NULL, /* Answer char array */
+                   "Really %s %s\"%s\"?",
+                   op, /* Operation, e.g. "delete" */
+                   typ ? typ : "", /* File type, e.g. "symlink" */
+                   nam)) /* File name */
+    {
 	case 'a':
 		fs_all = TRUE;
 		/* fall through */
 
 	case 'y':
-		return 0;
+        goto ret;
 
 	case '':
 		fs_abort = 1;
-		return 1;
+        retval = 1;
+        goto ret;
 
 	case 'N':
 		fs_none = TRUE;
 		/* fall through */
 
 	default:
-		return 1;
+        retval = 1;
 	}
+
+ret:
+#if defined(TRACE)
+    fprintf(debug, "<-fs_deldialog: %d\n", retval);
+#endif
+    return retval;
 }
 
 /* 0: Error

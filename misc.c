@@ -109,6 +109,41 @@ ret:
 
 /* DEBUG CODE */
 
+int do_cli_rm(int argc, char **argv) {
+    int ret_val = 0;
+
+    while (!ret_val &&
+           !fs_none && /* Delete none */
+           !fs_abort && /* Abort */
+           argc)
+    {
+        get_arg(argv[0], 0);
+        pth2 = syspth[0];
+#if defined(TRACE)
+        fprintf(debug, "<>do_cli_rm(\"%s\")\n", syspth[0]);
+#endif
+        if (summary) {
+            printf("Delete \"%s\"\n", syspth[0]);
+        }
+
+        if (fs_rm(0, /* tree */
+                  "delete",
+                  NULL, /* nam */
+                  0, /* u */
+                  1, /* n */
+                  2) /* md */
+                & ~1) /* delete "cancel" flag */
+        {
+            ret_val |= 1;
+        }
+
+        ++argv;
+        --argc;
+    }
+
+    return ret_val;
+}
+
 int do_cli_cp(int argc, char **argv, const unsigned opt) {
     struct filediff f[2];
     struct filediff *pf[] = { &f[0], &f[1] };

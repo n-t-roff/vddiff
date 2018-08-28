@@ -4326,7 +4326,7 @@ dialog(const char *quest, const char *answ, const char *fmt, ...)
 	int r;
 
 #if defined(TRACE)
-    fprintf(debug, "<>dialog: quest=\"%s\" answ=\"%s\"", quest, answ);
+    fprintf(debug, "->dialog: quest=\"%s\" answ=\"%s\" ", quest, answ);
 
     if (fmt) {
         va_start(ap, fmt);
@@ -4340,13 +4340,18 @@ dialog(const char *quest, const char *answ, const char *fmt, ...)
     if (!wstat) {
         if (fmt) {
             va_start(ap, fmt);
-            vfprintf(STDOUT_FILENO, fmt, ap);
+            vfprintf(stdout, fmt, ap);
             va_end(ap);
-            fputc('\n', STDOUT_FILENO);
+            fputc('\n', stdout);
         }
 
-        fprintf(STDOUT_FILENO, "%s: ", quest);
-        r = fgetc(STDIN_FILENO);
+        fprintf(stdout, "%s: ", quest);
+        r = fgetc(stdin);
+
+        if (r != '\n') {
+            while (fgetc(stdin) != '\n') {
+            }
+        }
     } else {
         if (fmt) {
             va_start(ap, fmt);
@@ -4359,7 +4364,10 @@ dialog(const char *quest, const char *answ, const char *fmt, ...)
         }
     }
 
-	return r;
+#if defined(TRACE)
+    fprintf(debug, "<-dialog: '%c'\t(%d)\n", r, r);
+#endif
+    return r;
 }
 
 int

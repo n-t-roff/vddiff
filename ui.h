@@ -38,6 +38,12 @@ struct ui_state {
 
 int build_ui(void);
 void printerr(const char *, const char *, ...);
+/*
+ * Input:
+ *   quest: Possible answers as human readable text
+ *   answ: Possible answers as char array
+ *   fmt: Dialog text
+ */
 int dialog(const char *, const char *, const char *, ...);
 int vdialog(const char *, const char *, const char *, va_list);
 void disp_list(unsigned);

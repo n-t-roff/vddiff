@@ -167,7 +167,7 @@ main(int argc, char **argv)
 
     while ((opt =
             getopt(argc, argv,
-                   "ABbCcdEeF:fG:gIikLlMmNnoP:qRrsTt:Vv:WXy")
+                   "ABbDCcdEeF:fG:gIikLlMmNnoP:qRrsTt:Vv:WXy")
             ) != -1)
     {
 		switch (opt) {
@@ -503,7 +503,9 @@ main(int argc, char **argv)
 	{
 		term_jmp_buf_valid = 1;
 
-        if (cli_cp) {
+        if (cli_rm) {
+            do_cli_rm(argc, argv);
+        } else if (cli_cp) {
             do_cli_cp(argc, argv, cli_mv ? 1 : 0);
         } else {
             int v = build_ui();
