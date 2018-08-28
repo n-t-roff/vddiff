@@ -26,6 +26,7 @@ PERFORMANCE OF THIS SOFTWARE.
 #include <signal.h>
 #include <stdarg.h>
 #include <setjmp.h>
+#include <stdint.h>
 #include "compat.h"
 #include "main.h"
 #include "y.tab.h"
@@ -40,6 +41,7 @@ PERFORMANCE OF THIS SOFTWARE.
 #include "tc.h"
 #include "info.h"
 #include "lex.h"
+#include "misc.h"
 #ifdef TEST
 # include "test.h"
 #endif
@@ -95,6 +97,8 @@ static sigjmp_buf term_jmp_buf;
 static volatile sig_atomic_t term_jmp_buf_valid;
 static bool lstat_args;
 bool summary;
+static bool cli_cp;
+static bool cli_mv;
 
 int
 main(int argc, char **argv)
@@ -162,10 +166,14 @@ main(int argc, char **argv)
 
     while ((opt =
             getopt(argc, argv,
-                   "BbCcdEeF:fG:gIikLlMmNnoP:qRrst:Vv:WXy")
+                   "ABbCcdEeF:fG:gIikLlMmNnoP:qRrsTt:Vv:WXy")
             ) != -1)
     {
 		switch (opt) {
+        case 'A':
+            cli_cp = TRUE;
+            break;
+
 		case 'B':
             if (qdiff) {
                 q_opt_err();
@@ -278,7 +286,12 @@ main(int argc, char **argv)
             summary = TRUE;
             break;
 
-		case 't':
+        case 'T':
+            cli_cp = TRUE;
+            cli_mv = TRUE;
+            break;
+
+        case 't':
 			set_tool(&difftool, strdup(optarg), 0);
 			break;
 		case 'V':
@@ -333,7 +346,9 @@ main(int argc, char **argv)
 	argc -= optind;
 	argv += optind;
 
-	if (argc > 2 || (qdiff && argc != 2)) {
+    if (argc > 2 ||
+            ((qdiff || cli_cp) && argc != 2))
+    {
 		printf("Two arguments expected\n");
         exit(EXIT_STATUS_ERROR);
 		/* not reached */
@@ -366,6 +381,7 @@ main(int argc, char **argv)
 			setpthofs(6, arg[1], zipfile[1]->name);
 		}
 
+        if (cli_cp) {} else
         if (S_ISLNK(gstat[0].st_mode) ||
             S_ISLNK(gstat[0].st_mode))
         { /* Possible with -L only */
@@ -385,6 +401,7 @@ main(int argc, char **argv)
                         printf("Equal symbolic links %s and %s -> %s\n",
                                syspth[0], syspth[1], a);
                     }
+                    break;
                 case 1:
                     printf("Symbolic links differ: %s -> %s, %s -> %s\n",
                            syspth[0], a, syspth[1], b);
@@ -426,7 +443,7 @@ main(int argc, char **argv)
                 } else {
                     tool("", "", 3, 0);
                 }
-			} else {
+            } else {
 				/* get_arg() already checks for supported
 				 * file types */
 				arg_diff(1);
@@ -461,15 +478,18 @@ main(int argc, char **argv)
 		/* keep signal masked */
 		0))
 	{
-        int v;
-
 		term_jmp_buf_valid = 1;
-        v = build_ui();
 
-        if (v == 1) {
-            exit_status = EXIT_STATUS_DIFF;
-        } else if (v) {
-            exit_status = EXIT_STATUS_ERROR;
+        if (cli_cp) {
+            do_cli_cp(cli_mv ? 1 : 0);
+        } else {
+            int v = build_ui();
+
+            if (v == 1) {
+                exit_status = EXIT_STATUS_DIFF;
+            } else if (v) {
+                exit_status = EXIT_STATUS_ERROR;
+            }
         }
 
 		/* Ignore signals from now on.
@@ -652,6 +672,12 @@ stat:
     if (( lstat_args && lstat(s, &gstat[i]) == -1) ||
         (!lstat_args &&  stat(s, &gstat[i]) == -1))
     {
+        if (cli_cp && i && errno == ENOENT) {
+            /* second argument is to be created */
+            gstat[i].st_mode = 0; /* remember that file does not exist */
+            goto set_path;
+        }
+
 		printf(LOCFMT "stat \"%s\": %s\n" LOCVAR, s, strerror(errno));
         exit(EXIT_STATUS_ERROR);
 	}
@@ -677,6 +703,7 @@ stat:
 		}
 	}
 
+set_path:
 	if (fmode && *s != '/') {
 		if (!(s2 = realpath(s, NULL))) {
 			printf(LOCFMT "realpath \"%s\": %s\n" LOCVAR, s,

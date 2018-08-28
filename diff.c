@@ -123,7 +123,7 @@ build_diff_db(
 			printerr(NULL, "Reading directory \"%s\"", syspth[1]);
 			lpt = lpt2;
 		}
-	} else if (!qdiff) {
+    } else if (wstat) {
 		if (printwd && fmode && !scan) {
 			save_last_path(syspth[0]);
 		}

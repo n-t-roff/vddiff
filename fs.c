@@ -748,34 +748,16 @@ ret:
 	return rv;
 }
 
-/* 1: General error
- * 2: fs_ign_errs set */
-int
-fs_cp(
-    /* 0: Auto-detect */
-    /* 1: To left side
-     * 2: To right side */
-    int to,
-    long u, /* initial index */
-    int n,
-    /* 1: don't rebuild DB */
-    /* 2: Symlink instead of copying */
-    /* 4: Force */
-    /* 8: Sync (update, 'U') */
-    /* 16: Move (remove source after copy) */
-    /* 32: Exchange */
-    /* 64 (0x40): Set fs_ign_errs */
-    unsigned md,
-    unsigned *sto_res_)
+int fs_cp(int to, long u, int n, unsigned md, unsigned *sto_res_)
 {
-	struct filediff *f;
-	int i;
+    struct filediff *f = NULL, *f2 = NULL;
+    int i = 0;
 	int r = 1;
-	int eto; /* Effective dest side */
+    int eto = 0; /* Effective dest side */
 	unsigned sto = 0; /* OR sum dest side */
-    const char *tnam;
+    const char *tnam = NULL;
 	static const char *const tmpnam_ = "." BIN ".X";
-	bool m;
+    bool m = FALSE;
 	bool chg = FALSE;
 	bool ofs = FALSE;
 
@@ -857,6 +839,10 @@ next_xchg:
 
 		f = db_list[right_col][u];
 
+        if (md & 128) {
+            f2 = db_list[right_col ? 0 : 1][u];
+        }
+
 		if (str_eq_dotdot(f->name)) {
 			continue;
 		}
@@ -875,7 +861,9 @@ next_xchg:
 			continue;
 		}
 
-		tnam = ((md & 32) && eto == 3) ? tmpnam_ : f->name;
+        tnam = ((md & 128) && f2)       ? f2->name :
+               ((md &  32) && eto == 3) ? tmpnam_  :
+                                          f->name;
 tpth:
 		pthcat(pth2, len2, tnam);
 #if defined(TRACE)
@@ -1300,7 +1288,7 @@ cp_file(void)
 	fprintf(debug, "->cp_file \"%s\" -> \"%s\"\n", pth1, pth2);
 #endif
 
-	if ((fs_t2 = time(NULL)) - fs_t1) {
+    if (wstat && (fs_t2 = time(NULL)) - fs_t1) {
 		printerr(NULL, "Copy \"%s\" -> \"%s\"", pth1, pth2);
 		fs_t1 = fs_t2;
 

@@ -8,6 +8,7 @@
 #include "main.h"
 #include "fs.h"
 #include "diff.h"
+#include "misc_test.h"
 
 bool printerr_called;
 
@@ -51,7 +52,8 @@ try {
     if (system("./gen_test_dat.sh " TEST_DIR))
         FATAL_ERROR;
 
-    { FsTest test; test.run(); }
+    { FsTest   test; test.run(); }
+    { MiscTest test; test.run(); }
 
     rmTestDir();
     fprintf(debug, "<-test\n");

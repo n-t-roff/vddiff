@@ -24,7 +24,6 @@ Uses system() signal code by W. Richard Stevens.
 #include <sys/types.h>
 #include <pwd.h>
 #include <sys/wait.h>
-#include <signal.h>
 #include <stdarg.h>
 #include "compat.h"
 #include "main.h"

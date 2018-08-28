@@ -1,14 +1,19 @@
 #include <string.h>
 #include <errno.h>
-#include <sys/types.h>
 #include <unistd.h>
 #include <limits.h>
 #include <stdlib.h>
 #include <stdarg.h>
 #include "compat.h"
+#include "tc.h"
+#include "ui.h"
+#include "exec.h"
+#include "uzp.h"
 #include "misc.h"
 #include "main.h"
-#include "ui.h"
+#include "diff.h"
+#include "db.h"
+#include "fs.h"
 
 const char oom_msg[] = "malloc failed: Out of memory\n";
 
@@ -46,4 +51,109 @@ str_eq_dotdot(const char *s) {
 	}
 
 	return FALSE;
+}
+
+const char *buf_basename(char *const buf, size_t *bufsiz) {
+    size_t l = 0;
+    char *base = NULL;
+
+#if defined(TRACE)
+    fprintf(debug, "->buf_basename(\"%s\" len=%zu)\n", buf, bufsiz ? *bufsiz : 0);
+#endif
+
+    /* Check for valid input */
+
+    if (!buf || !*buf || !bufsiz || !(l = *bufsiz)) {
+        return NULL;
+    }
+
+    /* remove trailing '/' (but not at *buf) */
+
+    while (l > 1 && buf[l - 1] == '/') {
+        buf[--l] = 0;
+    }
+
+    /* case buf == "/": Keep buf and return "/" */
+
+    if (l == 1 && *buf == '/') {
+        base = strdup(buf);
+        goto ret;
+    }
+
+    /* search last '/' */
+
+    while (l && buf[--l] != '/') {
+    }
+
+    if (buf[l] == '/') {
+        base = strdup(buf + l + 1);
+
+        if (l) {
+            buf[l] = 0; /* cut at '/' */
+        } else { /* file in root dir */
+            buf[++l] = 0; /* cut after '/' */
+        }
+    } else { /* buf did not contain '/' */
+        base = strdup(buf + l);
+        buf[l++] = '.';
+        buf[l] = 0;
+    }
+
+ret:
+    *bufsiz = l;
+#if defined(TRACE)
+    fprintf(debug, "<-buf_basename dir=\"%s\" file=\"%s\"\n", buf, base);
+#endif
+    return base;
+}
+
+/* DEBUG CODE */
+
+int do_cli_cp(const unsigned opt) {
+    struct filediff f[2];
+    struct filediff *pf[] = { &f[0], &f[1] };
+    int ret_val = 0;
+    unsigned md = 1|4; /* !rebuild|force */
+
+    f[0].name = NULL;
+    f[1].name = NULL;
+#if defined(TRACE)
+    fprintf(debug, "<>do_cli_cp(\"%s\" -> \"%s\")\n", syspth[0], syspth[1]);
+#endif
+
+    if (!(f[0].name = buf_basename(syspth[0], &pthlen[0]))) {
+        ret_val |= 1;
+        goto ret;
+    }
+
+    if (!gstat[1].st_mode) { /* target is to be created */
+        if (!(f[1].name = buf_basename(syspth[1], &pthlen[1])))
+        {
+            ret_val |= 1;
+            goto ret;
+        }
+
+        md |= 128;
+    }
+
+    db_list[0] = &pf[0];
+    db_list[1] = &pf[1];
+    db_num[0] = 1;
+    db_num[1] = 1;
+    right_col = 0;
+    fmode = TRUE; /* for fs_rm() */
+
+    if (fs_cp(2, /* to right side */
+              0, /* u */
+              1, /* n */
+              md,
+              NULL)) /* &sto */
+    {
+        ret_val |= 1;
+    }
+
+ret:
+    free(f[1].name);
+    free(f[0].name);
+    return ret_val;
 }

@@ -4340,12 +4340,13 @@ dialog(const char *quest, const char *answ, const char *fmt, ...)
     if (!wstat) {
         if (fmt) {
             va_start(ap, fmt);
-            vfprintf(stderr, fmt, ap);
+            vfprintf(STDOUT_FILENO, fmt, ap);
             va_end(ap);
-            fputc('\n', stderr);
+            fputc('\n', STDOUT_FILENO);
         }
 
-        r = 0;
+        fprintf(STDOUT_FILENO, "%s: ", quest);
+        r = fgetc(STDIN_FILENO);
     } else {
         if (fmt) {
             va_start(ap, fmt);

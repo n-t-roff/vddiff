@@ -18,7 +18,7 @@ void FsTest::run() const {
 	fprintf(debug, "->fs_test\n");
 	fsStatTest();
 	cpRegTest();
-    copyTree();
+    //copyTree();
 	fprintf(debug, "<-fs_test\n");
 }
 

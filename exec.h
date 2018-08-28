@@ -2,6 +2,8 @@
 extern "C" {
 #endif
 
+#include <signal.h>
+
 #define TOOL_BG      1 /* Run as background process */
 #define TOOL_NOARG   2
 #define TOOL_SHELL   4 /* Run command with "sh -c ..." */
