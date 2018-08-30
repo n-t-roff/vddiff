@@ -15,7 +15,7 @@
 #include "db.h"
 #include "fs.h"
 
-const char oom_msg[] = "malloc failed: Out of memory\n";
+const char oom_msg[] = "Out of memory\n";
 
 int
 getuwidth(unsigned long u)
@@ -122,10 +122,6 @@ int do_cli_rm(int argc, char **argv) {
 #if defined(TRACE)
         fprintf(debug, "<>do_cli_rm(\"%s\")\n", syspth[0]);
 #endif
-        if (summary) {
-            printf("Delete \"%s\"\n", syspth[0]);
-        }
-
         if (fs_rm(0, /* tree */
                   "delete",
                   NULL, /* nam */
@@ -150,6 +146,10 @@ int do_cli_cp(int argc, char **argv, const unsigned opt) {
     int ret_val = 0;
     unsigned md = 1|4; /* !rebuild|force */
 
+    if (opt & 1) {
+        md |= 16; /* move instead of copy (remove source) */
+    }
+
     while (!ret_val && argc >= 2) {
         get_arg(argv[0], 0);
         get_arg(argv[argc - 1], 1);
@@ -158,10 +158,6 @@ int do_cli_cp(int argc, char **argv, const unsigned opt) {
 #if defined(TRACE)
         fprintf(debug, "<>do_cli_cp(\"%s\" -> \"%s\")\n", syspth[0], syspth[1]);
 #endif
-        if (summary) {
-            printf("\"%s\" -> \"%s\"\n", syspth[0], syspth[1]);
-        }
-
         if (!(f[0].name = buf_basename(syspth[0], &pthlen[0]))) {
             ret_val |= 1;
             goto abort;

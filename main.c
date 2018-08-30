@@ -100,6 +100,7 @@ static bool cli_cp;
 static bool cli_mv;
 static bool cli_rm;
 static bool cli_mode;
+bool verbose;
 
 int
 main(int argc, char **argv)
@@ -167,7 +168,7 @@ main(int argc, char **argv)
 
     while ((opt =
             getopt(argc, argv,
-                   "ABbDCcdEeF:fG:gIikLlMmNnoP:qRrsTt:Vv:WXy")
+                   "ABbDCcdEeF:fG:gIikLlMmNnoP:pqRrsTt:Vv:WXy")
             ) != -1)
     {
 		switch (opt) {
@@ -273,12 +274,17 @@ main(int argc, char **argv)
 			printwd = optarg;
 			break;
 
+        case 'p':
+            verbose = TRUE;
+            break;
+
 		case 'q':
             if (dontdiff) {
                 q_opt_err();
             }
 
             qdiff = TRUE;
+            cli_mode = TRUE;
 			break;
 
 		case 'R':
@@ -523,9 +529,15 @@ main(int argc, char **argv)
 		term_jmp_buf_valid = 0;
 	}
 
-    if (qdiff) {
-        printf("%'ju bytes in %'ld files compared\n",
-               (uintmax_t)tot_cmp_byte_count, tot_cmp_file_count);
+    if (cli_mode) {
+        if (summary && !cli_rm) {
+            printf("%'ld files (%'ju bytes) %s\n",
+                   tot_cmp_file_count,
+                   (uintmax_t)tot_cmp_byte_count,
+                   qdiff ? "compared" :
+                   cli_mv ? "moved" :
+                   cli_cp ? "copied" : "");
+        }
     } else {
 		remove_tmp_dirs();
 		bkgd(A_NORMAL);

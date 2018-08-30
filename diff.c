@@ -997,8 +997,9 @@ read_link(char *path, off_t size)
     char *l = malloc(size + 1);
 
     if (!l) {
-        fprintf(stderr, oom_msg);
-        printerr(strerror(errno), LOCFMT "malloc(%zu)" LOCVAR, size + 1);
+        if (printerr(strerror(errno),
+                     LOCFMT "malloc(%zu)" LOCVAR, size + 1))
+            fprintf(stderr, oom_msg);
         return NULL;
     }
 
@@ -1119,12 +1120,14 @@ int cmp_file(
 			break;
 
         /* Count successfully compared bytes only. */
-        tot_cmp_byte_count += l1;
+        if (qdiff)
+            tot_cmp_byte_count += l1;
     }
 
     /* Count really and successfully compared files only,
      * not zero size files, nor different files. */
-    ++tot_cmp_file_count;
+    if (qdiff)
+        ++tot_cmp_file_count;
 
     close(f2);
 close_f1:

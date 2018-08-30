@@ -58,6 +58,7 @@ extern bool force_exec, force_fs, force_multi;
 extern bool readonly;
 extern bool nofkeys;
 extern bool summary;
+extern bool verbose;
 
 char *add_home_pth(const char *);
 /*

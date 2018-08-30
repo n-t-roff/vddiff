@@ -37,7 +37,10 @@ struct ui_state {
  *   0 else */
 
 int build_ui(void);
-void printerr(const char *, const char *, ...);
+/*
+ * Output: 0: Success, !0: Fail
+ */
+int printerr(const char *, const char *, ...);
 /*
  * Input:
  *   quest: Possible answers as human readable text

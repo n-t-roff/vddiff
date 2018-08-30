@@ -1426,30 +1426,28 @@ putwcs(WINDOW *w, wchar_t *s,
 	wadd_wchnstr(w, ccbuf, n);
 }
 
-/* Number of wide chars */
-ssize_t
-putmbs(WINDOW *w, const char *const s,
-    /* -1: unlimited */
-    int n)
-{
-	ssize_t l;
+size_t putmbs(WINDOW *w, const char *const s, int n) {
+    size_t l;
 
-	l = mbstowchs(w, s);
+    if ((l = mbstowchs(w, s)) == (size_t)-1)
+        goto ret;
 
-	/* Because of bug in older ncurses versions */
-	if (n > l) {
-		n = l;
-	}
+    /* Because of bug in older ncurses versions */
+    if (n > (ssize_t)l) {
+        n = l;
+    }
 
-	wadd_wchnstr(w, ccbuf, n);
-	return l;
+    if (wadd_wchnstr(w, ccbuf, n) == ERR)
+        l = (size_t)-1;
+ret:
+    return l;
 }
 
 int
 addmbs(WINDOW *w, const char *const s, int mx)
 {
 	int cy, cx, my;
-	ssize_t l;
+    size_t l;
 	int n;
 
 	getyx(w, cy, cx);
@@ -1465,7 +1463,7 @@ addmbs(WINDOW *w, const char *const s, int mx)
 	if (cx >= mx)
 		return -2; /* Not really an error */
 
-	if ((l = putmbs(w, s, n)) == -1)
+    if ((l = putmbs(w, s, n)) == (size_t)-1)
 		return -1;
 
 	cx += l;

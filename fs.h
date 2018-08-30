@@ -76,7 +76,21 @@ extern time_t fs_t1, fs_t2;
 extern char *pth1, *pth2;
 
 void rm_file(void);
-int cp_reg(const unsigned);
+/*
+ * WARNING: Overwrites `lbuf` and (via cmp_file()) `rbuf`!
+ *
+ * Input:
+ *   mode:
+ *     1: append
+ *     2: force (currently used by software test only)
+ *
+ * Output:
+ *    1: Files are equal
+ *    0: Successfully copied
+ *   -1: System call failed
+ *   -2: User abort
+ */
+int cp_reg(const unsigned mode);
 int fs_stat(const char *, struct stat *, const unsigned);
 
 #ifdef __cplusplus

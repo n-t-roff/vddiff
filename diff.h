@@ -51,8 +51,8 @@ size_t pthcat(char *, size_t, const char *);
 
 int cmp_file(const char *const, const off_t, const char *const, const off_t,
 	const unsigned);
-
-/* Input:
+/*
+ * Input:
  *   syspth[0]
  *   syspth[1]
  *   gstat[0]
@@ -63,12 +63,19 @@ int cmp_file(const char *const, const off_t, const char *const, const off_t,
  *   1  Difference
  *   2  Error
  *
- * Usage:
- *   char *a = NULL;
- *   char *b = NULL;
- *   cmp_symlink();
- *   free(b);
- *   free(a);
+ * Usage example:
+ *
+ *   if ((lstat("...", &gstat[0]) == -1 && errno != ENOENT) ||
+ *       (lstat("...", &gstat[1]) == -1 && errno != ENOENT))
+ *   {
+ *     ... handle error ...
+ *   } else {
+ *     char *a = NULL;
+ *     char *b = NULL;
+ *     cmp_symlink();
+ *     free(b);
+ *     free(a);
+ *   }
  */
 int cmp_symlink(char **, char **);
 void free_diff(struct filediff *);

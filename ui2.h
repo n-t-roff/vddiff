@@ -62,7 +62,12 @@ void rebuild_scr(void);
 ssize_t mbstowchs(WINDOW *, const char *);
 void wcs2ccs(WINDOW *, wchar_t *);
 void putwcs(WINDOW *, wchar_t *, int);
-ssize_t putmbs(WINDOW *, const char *const, int);
+/* Input:
+ *   n: -1: unlimited
+ * Output:
+ *   Number of wide chars or (size_t)-1 on error
+ */
+size_t putmbs(WINDOW *w, const char *const s, int n);
 int addmbs(WINDOW *, const char *const, int);
 ssize_t putmbsra(WINDOW *, const char *, int);
 WINDOW *new_scrl_win(int, int, int, int);

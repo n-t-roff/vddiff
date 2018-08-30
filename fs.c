@@ -503,7 +503,7 @@ int fs_rm(int tree, const char *const txt, char *nam, long u, int n,
           unsigned md)
 {
 	struct filediff *f;
-	unsigned short m;
+    const unsigned short m = n > 1; /* multiple files to process */
 	int rv = 0;
     const char *fn = NULL;
     const char *const p0 = pth1; /* Save what is used by fs_cp() too */
@@ -526,44 +526,57 @@ int fs_rm(int tree, const char *const txt, char *nam, long u, int n,
 	/* Save what is used by fs_cp() too */
 	s[0] = strdup(syspth[0]);
 	s[1] = strdup(syspth[1]);
-	m = n > 1;
+
+    if (!s[0] || !s[1]) {
+        if (printerr(strerror(errno),
+                     LOCFMT "strdup()" LOCVAR))
+            fprintf(stderr, oom_msg);
+        rv |= 2;
+        goto free_mem;
+    }
 
 	/* case: Multiple files (not from fs_cp(), instead from <n>dd */
 
-	if (!(force_fs && force_multi) && !(md & 1) && m) {
-		if (bmode) {
-			pth1 = syspth[1];
+    if (!(force_fs && force_multi)
+            && !(md & 1) /* force */
+            && m) /* multiple files */
+    {
+        if (bmode) {
+            pth1 = syspth[1];
 
-		} else if ((fmode && tree == 3 && !right_col)
-		    || tree == 1) {
+        } else if ((fmode && tree == 3 && !right_col)
+                   || tree == 1)
+        {
+            syspth[0][pthlen[0]] = 0;
+            pth1 = syspth[0];
 
-			syspth[0][pthlen[0]] = 0;
-			pth1 = syspth[0];
+        } else if ((fmode && tree == 3 && right_col)
+                   || tree == 2)
+        {
+            syspth[1][pthlen[1]] = 0;
+            pth1 = syspth[1];
+        } else {
+            /* Case: "dd" in diff mode. Allowed only if file is present
+             * on one side only. */
+            pth1 = NULL;
+        }
 
-		} else if ((fmode && tree == 3 && right_col)
-		    ||tree == 2) {
-
-			syspth[1][pthlen[1]] = 0;
-			pth1 = syspth[1];
-		} else {
-			pth1 = NULL;
-		}
-
-		if (pth1) {
-			if (dialog(y_n_txt,
-			    NULL, "Really %s %d files in \"%s\"?",
-			    txt ? txt : "delete", n, pth1) != 'y') {
-
-				rv = 1;
-				goto ret;
-			}
-		} else if (dialog(y_n_txt, NULL, "Really %s %d files?",
-		    txt ? txt : "delete", n) != 'y') {
-
-			rv = 1;
-			goto ret;
-		}
-	}
+        if (pth1) {
+            if (dialog(y_n_txt, NULL, "Really %s %d files in \"%s\"?",
+                       txt ? txt : "delete", n, pth1)
+                    != 'y')
+            {
+                rv |= 1;
+                goto ret;
+            }
+        } else if (dialog(y_n_txt, NULL, "Really %s %d files?",
+                          txt ? txt : "delete", n)
+                   != 'y')
+        {
+            rv |= 1;
+            goto ret;
+        }
+    }
 
 	for (; n; n--, u++) {
 
@@ -647,14 +660,13 @@ ntr:
 #endif
 		if (lstat(pth1, &gstat[0]) == -1) {
 			if (errno != ENOENT)
-				printerr(strerror(errno), "lstat %s failed",
-				    pth1);
+                printerr(strerror(errno), "lstat %s failed", pth1);
 			continue;
 		}
 
 		empty_dir_ = FALSE;
 
-		if (!(md & 1) && !m) {
+        if (!(md & 1) && !m) { /* not force and not multi */
 			const char *typ = NULL;
 
 			if (S_ISDIR(gstat[0].st_mode)) {
@@ -671,12 +683,14 @@ ntr:
 				}
 			}
 
-			if (fs_deldialog(
-			    tree < 1 || nam || ntr ? y_a_n_txt : y_n_txt,
-			    txt ? txt : "delete", typ, pth1)) {
-				rv = 1;
-				goto ret;
-			}
+            if (fs_deldialog(tree < 1 || nam || ntr ? y_a_n_txt : y_n_txt, /* menu */
+                             txt ? txt : "delete", /* operation text */
+                             typ, /* e.g. "non-empty directory " */
+                             pth1)) /* file name */
+            {
+                rv = 1;
+                goto ret;
+            }
 		}
 
 		chg = TRUE;
@@ -702,10 +716,11 @@ ntr:
 		}
 	}
 
-	if (txt || /* rebuild is done by others */
-	    !chg) { /* Nothing done */
-		goto ret;
-	}
+    if (txt || /* rebuild is done by others */
+            !chg) /* Nothing done */
+    {
+        goto ret;
+    }
 
 	if (!(md & 2)) {
 		rebuild_db(0);
@@ -718,6 +733,7 @@ ntr:
 ret:
 	memcpy(syspth[0], s[0], strlen(s[0]) + 1);
 	memcpy(syspth[1], s[1], strlen(s[1]) + 1);
+free_mem:
 	free(s[1]);
 	free(s[0]);
 	pth1 = p0;
@@ -1240,9 +1256,12 @@ rm_dir(void)
 #endif
 
 	if (!fs_error && rmdir(pth1) == -1 && !fs_ign_errs) {
-
 		fs_fwrap("rmdir \"%s\": %s", pth1, strerror(errno));
-	}
+    } else {
+        if (!wstat && verbose) {
+            printf("Directory \"%s\" removed\n", pth1);
+        }
+    }
 }
 
 void
@@ -1264,7 +1283,11 @@ rm_file(void)
 
 	if (!fs_error && unlink(pth1) == -1 && !fs_ign_errs) {
 		fs_fwrap("unlink \"%s\": %s", pth1, strerror(errno));
-	}
+    } else {
+        if (!wstat && verbose) {
+            printf("File \"%s\" removed\n", pth1);
+        }
+    }
 }
 
 /* !0: Error */
@@ -1350,19 +1373,25 @@ creatdir(void)
 		return -1;
 	}
 
+    if (!wstat && verbose) {
+        printf("Directory \"%s\" created\n", pth2);
+    }
+
 	return 0;
 }
 
 static int
 cp_link(void)
 {
-	ssize_t l;
-	char *buf;
 	int r = 0;
+    bool equal = FALSE;
+    char *const buf = malloc(gstat[0].st_size + 1);
+    ssize_t l = readlink(pth1, buf, gstat[0].st_size);
+#if defined(TRACE)
+    fprintf(debug, "->cp_link \"%s\" -> \"%s\"\n", pth1, pth2);
+#endif
 
-	buf = malloc(gstat[0].st_size + 1);
-
-	if ((l = readlink(pth1, buf, gstat[0].st_size)) == -1) {
+    if (l == -1) {
 		printerr(strerror(errno), "readlink %s", pth1);
 		r = -1;
 		goto exit;
@@ -1374,41 +1403,73 @@ cp_link(void)
 		goto exit;
 	}
 
-	buf[l] = 0;
+    buf[l] = 0;
 
-	if (!fs_stat(pth2, &gstat[1], 0) &&
-	    fs_rm(0 /* tree */, "overwrite", NULL /* nam */,
-	    0 /* u */, 1 /* n */, 4|2 /* md */) == 1) {
-		r = 1;
-		goto exit;
-	}
+    if (!fs_stat(pth2, &gstat[1], 0)
+            && S_ISLNK(gstat[1].st_mode)
+            && l == gstat[1].st_size)
+    {
+        char *const buf2 = malloc(gstat[0].st_size + 1);
+        ssize_t l2 = readlink(pth2, buf2, gstat[1].st_size);
 
-	if (symlink(buf, pth2) == -1) {
-		printerr(strerror(errno), "symlink %s", pth2);
-		r = -1;
-		goto exit;
-	}
+        if (l2 == -1) {
+            printerr(strerror(errno), "readlink %s", pth2);
+            r = -1;
+            goto free_buf2;
+        }
+
+        if (l2 != l) {
+            printerr("Unexpected link lenght", "readlink %s", pth2);
+            r = -1;
+            goto free_buf2;
+        }
+
+        buf2[l2] = 0;
+
+        if (!strcmp(buf, buf2)) {
+#if defined(TRACE)
+            fprintf(debug, "  Equal symlinks: %s and %s\n", pth1, pth2);
+#endif
+            equal = TRUE;
+        }
+
+free_buf2:
+        free(buf2);
+    }
+
+    if (!equal) {
+        if (!fs_stat(pth2, &gstat[1], 0) &&
+                fs_rm(0 /* tree */, "overwrite", NULL /* nam */,
+                      0 /* u */, 1 /* n */, 4|2 /* md */) == 1) {
+            r = 1;
+            goto exit;
+        }
+
+        if (symlink(buf, pth2) == -1) {
+            printerr(strerror(errno), "symlink %s", pth2);
+            r = -1;
+            goto exit;
+        }
+
+        tot_cmp_byte_count += l;
+        ++tot_cmp_file_count;
+    }
 
 	/* setting symlink time is not supported on all file systems */
 
 exit:
-	free(buf);
-	return r;
+    if (!equal && !r && !wstat && verbose) {
+        printf("Symbolic link copy \"%s\" -> \"%s\" done\n", pth1, pth2);
+    }
+
+    free(buf);
+#if defined(TRACE)
+    fprintf(debug, "<-cp_link: %d\n", r);
+#endif
+    return r;
 }
 
-/* WARNING: Overwrites `lbuf` and (via cmp_file()) `rbuf`! */
-
-/*  1: Files are equal */
-/*  0: Successfully copied */
-/* -1: System call failed */
-/* -2: User abort */
-
-int
-cp_reg(
-    /* 1: append */
-    /* 2: force (currently used by software test only) */
-    const unsigned mode)
-{
+int cp_reg(const unsigned mode) {
 	int f1 = -1; /* read file descriptor */
 	int f2 = -1; /* write file descriptor */
 	/* rv must only be set in code. Clearing rv may hide errors. */
@@ -1541,9 +1602,11 @@ copy:
 
 		if (l1 < (ssize_t)(sizeof lbuf))
 			break;
+        tot_cmp_byte_count += l1;
 	}
 
 	close(f1);
+    ++tot_cmp_file_count;
 
 setattr:
 #ifdef HAVE_FUTIMENS
@@ -1560,6 +1623,10 @@ close2:
 	close(f2);
 
 ret:
+    if (!rv && !wstat && verbose) {
+        printf("File copy \"%s\" -> \"%s\" done\n", pth1, pth2);
+    }
+
 #if defined(TRACE)
 	fprintf(debug, "<-cp_reg: %d\n", rv);
 #endif

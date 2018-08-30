@@ -4252,12 +4252,12 @@ ret:
 	return;
 }
 
-void
-printerr(const char *s2, const char *s1, ...)
+int printerr(const char *s2, const char *s1, ...)
 {
 	va_list ap;
 	char *buf;
 	static const size_t bufsiz = 4096;
+    int ret_val = 0;
 
 #ifdef TEST
 	printerr_called = TRUE;
@@ -4266,7 +4266,7 @@ printerr(const char *s2, const char *s1, ...)
 	fputs("<>printerr: ", debug);
 	if (s1) {
 		va_start(ap, s1);
-		vfprintf(debug, s1, ap);
+        vfprintf(debug, s1, ap);
 		va_end(ap);
 	}
 
@@ -4279,44 +4279,64 @@ printerr(const char *s2, const char *s1, ...)
 	if (!wstat) { /* curses not opened */
 		if (s1) {
 			va_start(ap, s1);
-			vfprintf(stderr, s1, ap);
+            if (vfprintf(stderr, s1, ap) < 0)
+                ret_val |= 1;
 			va_end(ap);
 		}
 
 		if (s2) {
-			fprintf(stderr, ": %s", s2);
+            if (fprintf(stderr, ": %s", s2) < 0)
+                ret_val |= 1;
 		}
 
-		fputc('\n', stderr);
+        if (fputc('\n', stderr) == EOF)
+            ret_val |= 1;
 		return;
 	}
 
-	buf = malloc(bufsiz);
+    if (!(buf = malloc(bufsiz))) {
+        fprintf(stderr, oom_msg);
+        ret_val |= 1;
+        goto ret;
+    }
+
 	wstat_dirty = TRUE;
-	werase(wstat);
-	wmove(wstat, s2 ? 0 : 1, 0);
+    if (werase(wstat) == ERR)
+        ret_val |= 1;
+    if (wmove(wstat, s2 ? 0 : 1, 0) == ERR)
+        ret_val |= 1;
 
 	if (s1) {
 		va_start(ap, s1);
-		vsnprintf(buf, bufsiz, s1, ap);
-		putmbs(wstat, buf, -1);
+        if (vsnprintf(buf, bufsiz, s1, ap) < 0)
+            ret_val |= 1;
+        if (putmbs(wstat, buf, -1) == (size_t)-1)
+            ret_val |= 1;
 		va_end(ap);
 	}
 
 	if (s2) {
-		wmove(wstat, 1, 0);
-		wclrtoeol(wstat);
-		snprintf(buf, bufsiz, "%s", s2);
-		putmbs(wstat, buf, -1);
-		wrefresh(wstat);
+        if (wmove(wstat, 1, 0) == ERR)
+            ret_val |= 1;
+        if (wclrtoeol(wstat) == ERR)
+            ret_val |= 1;
+        if (snprintf(buf, bufsiz, "%s", s2) < 0)
+            ret_val |= 1;
+        if (putmbs(wstat, buf, -1) == (size_t)-1)
+            ret_val |= 1;
+        if (wrefresh(wstat) == ERR)
+            ret_val |= 1;
 		opt_flushinp();
 		getch();
 		werase(wstat);
 	}
 
 	filt_stat();
-	wrefresh(wstat);
+    if (wrefresh(wstat) == ERR)
+        ret_val |= 1;
 	free(buf);
+ret:
+    return ret_val;
 }
 
 int
