@@ -890,10 +890,15 @@ tpth:
 				fprintf(debug, "  Rename \"%s\" -> \"%s\"\n",
 				    pth1, pth2);
 #endif
-				if (!fs_error && rename(pth1, pth2) == -1
-				    && !fs_ign_errs) {
-					fs_fwrap("rename %s -> %s: %s",
-					    pth1, pth2, strerror(errno));
+                if (!fs_error) {
+                    if (rename(pth1, pth2) == -1) {
+                        if (!fs_ign_errs) {
+                            fs_fwrap("rename %s -> %s: %s",
+                                     pth1, pth2, strerror(errno));
+                        }
+                    } else if (!wstat && verbose) {
+                        printf("Rename \"%s\" -> \"%s\" done\n", pth1, pth2);
+                    }
 				}
 
 				chg = TRUE;
@@ -1267,7 +1272,7 @@ rm_dir(void)
 void
 rm_file(void)
 {
-#if defined(TRACE) && (defined(TEST) || 0)
+#if defined(TRACE) && (defined(TEST) || 1)
 	fprintf(debug, "<>rm_file(path=%s)\n", pth1);
 #endif
 

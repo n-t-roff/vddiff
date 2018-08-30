@@ -13,7 +13,7 @@ LOSS OF USE, DATA OR PROFITS, WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE OR
 OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
 PERFORMANCE OF THIS SOFTWARE.
 ..
-.Dd August 27, 2018
+.Dd August 30, 2018
 .Dt VDDIFF 1
 .Sh NAME
 .Nm @vddiff@
@@ -144,6 +144,17 @@ File type
 All following arguments (if any) are not recognized as options
 even when starting with a
 .Sq Fl "" .
+.It Fl A Oo Fl psW Oc Ar source_file_or_directory Ar ... Ar destination_file_or_directory
+Debug option:
+Recursively copy source arguments to destination argument.
+. Bl -tag
+. It Fl p
+Be verbose.
+. It Fl s
+Print summary.
+. It Fl W
+Force overwrite (don't ask).
+. El
 .It Fl B
 Force two-column file browser mode even if two arguments are given.
 Normally diff mode is started with two arguments.
@@ -184,6 +195,17 @@ If also
 .Fl r
 is used only those directories are shown
 which contain differences.
+.It Fl D Oo Fl psW Oc Ar file_or_directory Ar ...
+Debug option:
+Recursively delete given arguments from disk.
+. Bl -tag
+. It Fl p
+Be verbose.
+. It Fl s
+Print summary.
+. It Fl W
+Force delete (don't ask).
+. El
 .It Fl d
 Use
 .Dq Li diff $1 $2 | less -Q
@@ -346,6 +368,10 @@ this can be used to change the shell working directory to the
 last directory used in fmode or bmode.
 (See
 .Xr mc 1 ) .
+.It Fl s
+With options
+.Fl A , D , q , T :
+Print message for each processed file.
 .It Fl q Ar file_or_directory_1 Ar file_or_directory_2
 Print differing files and exit (similar to
 .Dq Li diff \-q ,
@@ -380,9 +406,20 @@ Pressing key
 .Sq c
 enables to view all files in this mode.
 .It Fl s
-When used with option
-.Fl q :
-Output summary how many files and bytes have been successfully compared.
+With options
+.Fl A , D , q , T :
+Output summary how many files and bytes have been successfully processed.
+.It Fl T Oo Fl psW Oc Ar source_file_or_directory Ar ... Ar destination_file_or_directory
+Debug option:
+Recursively move source arguments to destination argument.
+. Bl -tag
+. It Fl p
+Be verbose.
+. It Fl s
+Print summary.
+. It Fl W
+Force overwrite (don't ask).
+. El
 .It Fl t Ar diff_tool
 Specify diff tool on the command line.
 The filenames to compare are appended to the given string.

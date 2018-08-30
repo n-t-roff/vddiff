@@ -1039,6 +1039,10 @@ int cmp_symlink(char **a, char **b) {
                 /* Count successfully compared links only. */
                 ++tot_cmp_file_count;
                 tot_cmp_byte_count += gstat[0].st_size;
+
+                if (qdiff && verbose)
+                    printf("Equal symbolic links: \"%s\" and \"%s\"\n",
+                           syspth[0], syspth[1]);
             }
         }
     }
@@ -1126,8 +1130,13 @@ int cmp_file(
 
     /* Count really and successfully compared files only,
      * not zero size files, nor different files. */
-    if (qdiff)
+    if (qdiff) {
         ++tot_cmp_file_count;
+
+        if (verbose)
+            printf("Equal files: \"%s\" and \"%s\"\n",
+                   syspth[0], syspth[1]);
+    }
 
     close(f2);
 close_f1:
