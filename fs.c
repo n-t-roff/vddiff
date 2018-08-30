@@ -1287,6 +1287,11 @@ rm_file(void)
         if (!wstat && verbose) {
             printf("File \"%s\" removed\n", pth1);
         }
+
+        if (cli_rm) {
+            tot_cmp_byte_count += gstat[0].st_size;
+            ++tot_cmp_file_count;
+        }
     }
 }
 

@@ -1206,8 +1206,13 @@ pthcat(char *p, size_t l, const char *n)
 		free(s);
 	}
 #endif
-	if (*n == '.' && n[1] == '.' && !n[2])
-		return pthcut(p, l);
+
+    if (n[0] == '.') {
+        if (!n[1])
+            return l;
+        else if (n[1] == '.' && !n[2])
+            return pthcut(p, l);
+    }
 
 	return pthadd(p, l, n);
 }

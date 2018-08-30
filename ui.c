@@ -4277,6 +4277,9 @@ int printerr(const char *s2, const char *s1, ...)
 	fputc('\n', debug);
 #endif
 	if (!wstat) { /* curses not opened */
+        if (fprintf(stderr, "%s: ", prog) < 0)
+            ret_val |= 1;
+
 		if (s1) {
 			va_start(ap, s1);
             if (vfprintf(stderr, s1, ap) < 0)

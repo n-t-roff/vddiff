@@ -51,7 +51,7 @@ PERFORMANCE OF THIS SOFTWARE.
 
 int yyparse(void);
 
-static char *prog;
+const char *prog;
 const char *pwd, *rpwd, *arg[2];
 size_t pthlen[2];
 char syspth[2][PATHSIZ], lbuf[BUF_SIZE], rbuf[BUF_SIZE];
@@ -98,7 +98,7 @@ static bool lstat_args;
 bool summary;
 static bool cli_cp;
 static bool cli_mv;
-static bool cli_rm;
+bool cli_rm;
 static bool cli_mode;
 bool verbose;
 
@@ -530,13 +530,14 @@ main(int argc, char **argv)
 	}
 
     if (cli_mode) {
-        if (summary && !cli_rm) {
+        if (summary) {
             printf("%'ld files (%'ju bytes) %s\n",
                    tot_cmp_file_count,
                    (uintmax_t)tot_cmp_byte_count,
                    qdiff ? "compared" :
                    cli_mv ? "moved" :
-                   cli_cp ? "copied" : "");
+                   cli_cp ? "copied" :
+                   cli_rm ? "removed" : "");
         }
     } else {
 		remove_tmp_dirs();

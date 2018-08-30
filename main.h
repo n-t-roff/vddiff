@@ -38,6 +38,7 @@ struct strlst {
 	struct strlst *next;
 };
 
+extern const char *prog;
 extern struct stat gstat[2];
 extern size_t pthlen[2];
 extern const char *pwd, *rpwd, *arg[];
@@ -59,6 +60,7 @@ extern bool readonly;
 extern bool nofkeys;
 extern bool summary;
 extern bool verbose;
+extern bool cli_rm;
 
 char *add_home_pth(const char *);
 /*
