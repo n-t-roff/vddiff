@@ -230,7 +230,10 @@ build_diff_db(
 		}
 
 		if (tree & 2) {
-			pthcat(syspth[1], pthlen[1], name);
+#if defined(TRACE) && 1
+            fprintf(debug, "  %s:%d\n", __FILE__, __LINE__);
+#endif
+            pthcat(syspth[1], pthlen[1], name);
 		} else {
 			goto no_tree2;
 		}
@@ -851,7 +854,7 @@ add_diff_dir(
 	syspth[0][pthlen[0]] = 0;
 	syspth[1][pthlen[1]] = 0;
 	path = side ? syspth[1] : syspth[0];
-#if defined(TRACE) && 0
+#if defined(TRACE) && 1
 	fprintf(debug, "->add_diff_dir(%s:%s) lp(%s) rp(%s)\n",
 	    side ? "right" : "left", path, syspth[0], syspth[1]);
 #endif
@@ -904,11 +907,15 @@ add_diff_dir(
 ret:
 	free(rp);
 ret0:
-#if defined(TRACE) && 0
+#if defined(TRACE) && 1
 	fprintf(debug, "<-add_diff_dir\n");
 #endif
 	return;
 }
+
+/*
+ * Implementaion detail: Called from ui.c only!
+ */
 
 int
 is_diff_dir(struct filediff *f)
@@ -919,10 +926,13 @@ is_diff_dir(struct filediff *f)
 
 	/* E.g. for file stat called independend from 'recursive' */
 	/* or called in bmode with option -r (for later dir diffs) */
-	if (!recursive || ((bmode || fmode) && !file_pattern)) {
+    if (!recursive || ((bmode || fmode) && !file_pattern)
+            /* Don't apply for ".."! */
+            || (dotdot && f->name[0] == '.' && f->name[1] == '.' && !f->name[2]))
+    {
 		goto ret0; /* No debug print */
 	}
-#if defined(TRACE) && 0
+#if defined(TRACE) && 1
 	fprintf(debug, "->is_diff_dir(%s)\n", f->name);
 #endif
 	if (bmode) {
@@ -931,28 +941,37 @@ is_diff_dir(struct filediff *f)
 		bp = malloc(l + strlen(f->name) + 2);
 		memcpy(bp, pth, l);
 		pth = bp;
-		pthcat(pth, l, f->name);
+#if defined(TRACE) && 1
+        fprintf(debug, "  %s:%d\n", __FILE__, __LINE__);
+#endif
+        pthcat(pth, l, f->name);
 		v = is_diff_pth(pth, 0);
 		free(bp);
 	} else {
 		if (f->type[0]) {
 			pth = syspth[0];
 			l = pthlen[0];
-			pthcat(pth, l, f->name);
+#if defined(TRACE) && 1
+            fprintf(debug, "  %s:%d\n", __FILE__, __LINE__);
+#endif
+            pthcat(pth, l, f->name);
 			v = is_diff_pth(pth, 0);
 		}
 
 		if (!v && f->type[1]) {
 			pth = syspth[1];
 			l = pthlen[1];
-			pthcat(pth, l, f->name);
+#if defined(TRACE) && 1
+            fprintf(debug, "  %s:%d\n", __FILE__, __LINE__);
+#endif
+            pthcat(pth, l, f->name);
 			v = is_diff_pth(pth, 0);
 		}
 
 		pth[l] = 0;
 	}
 
-#if defined(TRACE) && 0
+#if defined(TRACE) && 1
 	fprintf(debug, "<-is_diff_dir: %d\n", v);
 #endif
 ret0:
@@ -1222,34 +1241,61 @@ free_diff(struct filediff *f)
 size_t
 pthcat(char *p, size_t l, const char *n)
 {
+    size_t ret_val = 0;
 #if defined(TRACE)
 	{
 		char *s = malloc(l + 1);
 		memcpy(s, p, l);
 		s[l] = 0;
-        fprintf(debug, "->pthcat(\"%s\" (length %zu) + \"%s\")\n", s, l, n);
+        fprintf(debug, "->pthcat(\"%s\" len_param=%zu true_len=%zu + \"%s\")\n", s, l, strlen(s), n);
 		free(s);
 	}
 #endif
 
     if (n[0] == '.') {
-        if (!n[1])
-            return l;
-        else if (n[1] == '.' && !n[2])
-            return pthcut(p, l);
+        if (!n[1]) {
+            ret_val = l;
+            goto ret;
+        } else if (n[1] == '.' && !n[2]) {
+            ret_val = pthcut(p, l);
+            goto ret;
+        }
     }
 
-	return pthadd(p, l, n);
+    ret_val = pthadd(p, l, n);
+ret:
+#if defined(TRACE)
+    {
+        char *s = malloc(ret_val + 1);
+        memcpy(s, p, ret_val);
+        s[ret_val] = 0;
+        fprintf(debug, "<-pthcat: \"%s\" len_return=%zu true_len=%zu\n", s, ret_val, strlen(s));
+        free(s);
+    }
+#endif
+    return ret_val;
 }
 
 static size_t
 pthadd(char *p, size_t l, const char *n)
 {
-	size_t ln = strlen(n);
+    size_t rv = 0;
+    size_t ln = strlen(n);
+
+#if defined(TRACE)
+    {
+        char *s = malloc(l + 1);
+        memcpy(s, p, l);
+        s[l] = 0;
+        fprintf(debug, "->pthadd(\"%s\" len_param=%zu true_len=%zu + \"%s\")\n", s, l, strlen(s), n);
+        free(s);
+    }
+#endif
 
 	if (l + ln + 2 > PATHSIZ) {
 		printerr(NULL, "Path buffer overflow");
-		return l;
+        rv = l;
+        goto ret;
 	}
 
 	/* For archives push_state() sets l = 0 */
@@ -1258,12 +1304,25 @@ pthadd(char *p, size_t l, const char *n)
 		p[l++] = '/';
 
 	memcpy(p + l, n, ln + 1);
-	return l + ln;
+    rv = l + ln;
+ret:
+#if defined(TRACE)
+    {
+        char *s = malloc(rv + 1);
+        memcpy(s, p, rv);
+        s[rv] = 0;
+        fprintf(debug, "<-pthadd: \"%s\" len_return=%zu true_len=%zu\n", s, rv, strlen(s));
+        free(s);
+    }
+#endif
+    return rv;
 }
 
 static size_t
 pthcut(char *p, size_t l)
 {
+    size_t rv = 0;
+
 #if defined(TRACE)
 	{
 		char *s = malloc(l + 1);
@@ -1273,12 +1332,25 @@ pthcut(char *p, size_t l)
 		free(s);
 	}
 #endif
-	if (l == 1)
-		return l;
+    if (l == 1) {
+        rv = l;
+        goto ret;
+    }
 
 	while (l > 1 && p[--l] != '/');
 	p[l] = 0;
-    return l;
+    rv = l;
+ret:
+#if defined(TRACE)
+    {
+        char *s = malloc(rv + 1);
+        memcpy(s, p, rv);
+        s[rv] = 0;
+        fprintf(debug, "<-pthcut: %s, %zu\n", s, rv);
+        free(s);
+    }
+#endif
+    return rv;
 }
 
 int
