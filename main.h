@@ -61,6 +61,7 @@ extern bool nofkeys;
 extern bool summary;
 extern bool verbose;
 extern bool cli_rm;
+extern bool cli_mode;
 
 char *add_home_pth(const char *);
 /*

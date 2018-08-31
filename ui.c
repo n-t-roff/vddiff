@@ -145,7 +145,7 @@ build_ui(void)
     fprintf(debug, "->build_ui\n");
 #endif
 
-    if (!qdiff) {
+    if (!cli_mode) {
         srandom(time(NULL));
         initscr();
 
@@ -185,7 +185,7 @@ build_ui(void)
 	if (recursive) {
         return_value |= do_scan();
 
-		if (qdiff) {
+        if (cli_mode) {
             goto ret;
 		}
     }
@@ -213,7 +213,7 @@ build_ui(void)
         return_value |= build_diff_db(3);
     }
 
-    if (qdiff) {
+    if (cli_mode) {
         goto ret;
     }
 
@@ -4254,48 +4254,48 @@ ret:
 
 int printerr(const char *s2, const char *s1, ...)
 {
-	va_list ap;
-	char *buf;
-	static const size_t bufsiz = 4096;
+    va_list ap;
+    char *buf;
+    static const size_t bufsiz = 4096;
     int ret_val = 0;
 
 #ifdef TEST
-	printerr_called = TRUE;
+    printerr_called = TRUE;
 #endif
 #if defined(TRACE)
-	fputs("<>printerr: ", debug);
-	if (s1) {
-		va_start(ap, s1);
+    fputs("<>printerr: ", debug);
+    if (s1) {
+        va_start(ap, s1);
         vfprintf(debug, s1, ap);
-		va_end(ap);
-	}
+        va_end(ap);
+    }
 
-	if (s2) {
-		fprintf(debug, ": %s", s2);
-	}
+    if (s2) {
+        fprintf(debug, ": %s", s2);
+    }
 
-	fputc('\n', debug);
+    fputc('\n', debug);
 #endif
-	if (!wstat) { /* curses not opened */
+    if (!wstat) { /* curses not opened */
         if (fprintf(stderr, "%s: ", prog) < 0)
             ret_val |= 1;
 
-		if (s1) {
-			va_start(ap, s1);
+        if (s1) {
+            va_start(ap, s1);
             if (vfprintf(stderr, s1, ap) < 0)
                 ret_val |= 1;
-			va_end(ap);
-		}
+            va_end(ap);
+        }
 
-		if (s2) {
+        if (s2) {
             if (fprintf(stderr, ": %s", s2) < 0)
                 ret_val |= 1;
-		}
+        }
 
         if (fputc('\n', stderr) == EOF)
             ret_val |= 1;
-		return;
-	}
+        goto ret;
+    }
 
     if (!(buf = malloc(bufsiz))) {
         fprintf(stderr, oom_msg);
@@ -4303,22 +4303,22 @@ int printerr(const char *s2, const char *s1, ...)
         goto ret;
     }
 
-	wstat_dirty = TRUE;
+    wstat_dirty = TRUE;
     if (werase(wstat) == ERR)
         ret_val |= 1;
     if (wmove(wstat, s2 ? 0 : 1, 0) == ERR)
         ret_val |= 1;
 
-	if (s1) {
-		va_start(ap, s1);
+    if (s1) {
+        va_start(ap, s1);
         if (vsnprintf(buf, bufsiz, s1, ap) < 0)
             ret_val |= 1;
         if (putmbs(wstat, buf, -1) == (size_t)-1)
             ret_val |= 1;
-		va_end(ap);
-	}
+        va_end(ap);
+    }
 
-	if (s2) {
+    if (s2) {
         if (wmove(wstat, 1, 0) == ERR)
             ret_val |= 1;
         if (wclrtoeol(wstat) == ERR)
@@ -4329,15 +4329,15 @@ int printerr(const char *s2, const char *s1, ...)
             ret_val |= 1;
         if (wrefresh(wstat) == ERR)
             ret_val |= 1;
-		opt_flushinp();
-		getch();
-		werase(wstat);
-	}
+        opt_flushinp();
+        getch();
+        werase(wstat);
+    }
 
-	filt_stat();
+    filt_stat();
     if (wrefresh(wstat) == ERR)
         ret_val |= 1;
-	free(buf);
+    free(buf);
 ret:
     return ret_val;
 }

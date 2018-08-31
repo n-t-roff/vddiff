@@ -78,8 +78,8 @@ static void check_args(int, char **);
 static void cmp_inodes(void);
 static int read_rc(char *);
 static void ttcharoff(void);
-static void q_opt_err(void);
 static void runs2x(void);
+static void check_opts(void);
 
 static const char rc_name[] = "." BIN "rc";
 char *printwd;
@@ -99,7 +99,7 @@ bool summary;
 static bool cli_cp;
 static bool cli_mv;
 bool cli_rm;
-static bool cli_mode;
+bool cli_mode;
 bool verbose;
 
 int
@@ -168,7 +168,7 @@ main(int argc, char **argv)
 
     while ((opt =
             getopt(argc, argv,
-                   "ABbDCcdEeF:fG:gIikLlMmNnoP:pqRrsTt:Vv:WXy")
+                   "ABbDCcdEeF:fG:gIikLlMmNnoP:pqRrSsTt:Vv:WXy")
             ) != -1)
     {
 		switch (opt) {
@@ -178,11 +178,7 @@ main(int argc, char **argv)
             break;
 
 		case 'B':
-            if (qdiff) {
-                q_opt_err();
-            }
-
-			dontdiff = TRUE;
+            dontdiff = TRUE;
 			break;
 		case 'b':
 			color = 0;
@@ -279,10 +275,6 @@ main(int argc, char **argv)
             break;
 
 		case 'q':
-            if (dontdiff) {
-                q_opt_err();
-            }
-
             qdiff = TRUE;
             cli_mode = TRUE;
 			break;
@@ -295,6 +287,11 @@ main(int argc, char **argv)
 		case 'r':
 			recursive = 1;
 			break;
+
+        case 'S':
+            bmode = TRUE;
+            cli_mode = TRUE;
+            break;
 
         case 's':
             summary = TRUE;
@@ -354,12 +351,14 @@ main(int argc, char **argv)
 		}
 	}
 
-	if (!run2x) {
+    argc -= optind;
+    argv += optind;
+
+    check_opts();
+
+    if (!run2x) {
 		runs2x();
 	}
-
-	argc -= optind;
-	argv += optind;
 
     if (cli_rm) {
         if (argc < 1) { /* -D */
@@ -370,6 +369,12 @@ main(int argc, char **argv)
     } else if (cli_cp) {
         if (argc < 2) { /* -A || -T */
             printf("At least two arguments expected\n");
+            exit(EXIT_STATUS_ERROR);
+            /* not reached */
+        }
+    } else if (cli_mode && bmode) { /* -S */
+        if (argc > 1) {
+            printf("None or at most one argument expected\n");
             exit(EXIT_STATUS_ERROR);
             /* not reached */
         }
@@ -582,7 +587,7 @@ arg_diff(int i)
         exit(EXIT_STATUS_ERROR);
 	}
 
-	cmp_inodes();
+    cmp_inodes();
 	tool("", "", 3, 0);
 	free(s);
 }
@@ -682,7 +687,7 @@ check_args(int argc, char **argv)
 	get_arg(s, 1);
 
 	if (!fmode) {
-		cmp_inodes();
+        cmp_inodes();
 	}
 }
 
@@ -829,11 +834,17 @@ BIN " is already running in this terminal.  Type \"exit\" or ^D (CTRL-d)\n"
 	}
 }
 
-static void q_opt_err(void) {
-    fprintf(stderr,
-            "%s: Option -B is incompatible with -q\n",
-            prog);
-    exit(EXIT_STATUS_ERROR);
+static void check_opts(void) {
+    if (qdiff && dontdiff) {
+        fprintf(stderr, "%s: Option -B is incompatible with -q\n", prog);
+        exit(EXIT_STATUS_ERROR);
+    }
+    if (bmode && cli_mode /* -S */
+            && !file_pattern) /* -F || -G */
+    {
+        fprintf(stderr, "%s: Option -S can be used with -F or -G only\n", prog);
+        exit(EXIT_STATUS_ERROR);
+    }
 }
 
 void

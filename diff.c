@@ -134,7 +134,7 @@ build_diff_db(
 		}
 	}
 
-    if (!qdiff) {
+    if (!cli_mode) {
         ini_int();
     }
 
@@ -222,7 +222,7 @@ build_diff_db(
 				file_err = TRUE;
                 retval |= 2;
 
-				if (scan || qdiff)
+                if (scan || cli_mode)
 					continue;
 			}
 
@@ -257,7 +257,7 @@ build_diff_db(
 				file_err = TRUE;
                 retval |= 2;
 
-				if (scan || qdiff)
+                if (scan || cli_mode)
 					continue;
 			}
 
@@ -272,7 +272,7 @@ no_tree2:
 			gstat[1].st_mode = 0;
 		}
 
-		if (scan || qdiff) {
+        if (scan || cli_mode) {
 			if (stopscan ||
 			    ((bmode || fmode) && file_pattern && getch() == '%')) {
 				stopscan = TRUE;
@@ -298,16 +298,23 @@ no_tree2:
 				continue;
 			}
 
-			if (find_name) {
+            if (find_name) { /* -F ("find(1)") */
 				if (regexec(&fn_re, name, 0, NULL, 0)) {
+                    /* no match */
 					continue;
 				} else if (!gq_pattern) {
+                    /* match and not -G */
 					dir_diff = 1;
+
+                    if (cli_mode) {
+                        syspth[0][pthlen[0]] = 0;
+                        printf("%s/%s\n", syspth[0], name);
+                    }
 					continue;
 				}
 			}
 
-			if (gq_pattern) {
+            if (gq_pattern) { /* -G ("grep(1)") */
 				diff = alloc_diff(name);
 				diff->type[0] = gstat[0].st_mode;
 				diff->type[1] = gstat[1].st_mode;
@@ -481,7 +488,7 @@ db_add_file:
 
 	/* Now already done here for diff mode to use syspth[0] instead of syspth[1].
 	 * May be useless. */
-	if (scan && dir_diff && !qdiff) {
+    if (scan && dir_diff && !cli_mode) {
 		add_diff_dir(0);
 		dir_diff = 0;
 	}
@@ -496,7 +503,7 @@ right_tree:
 	if (scan && (real_diff || dir_diff))
 		goto dir_scan_end;
 
-	if (!qdiff) {
+    if (!cli_mode) {
 		if (printwd && fmode && !scan) {
 			save_last_path(syspth[1]);
 		}
@@ -683,7 +690,7 @@ dir_scan_end:
 		goto exit;
 	}
 
-	if (dir_diff && !qdiff) {
+    if (dir_diff && !cli_mode) {
 		add_diff_dir(1);
 	}
 

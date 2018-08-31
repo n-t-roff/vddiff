@@ -42,8 +42,6 @@ static struct gq_re *gq_re;
 bool gq_pattern;
 static bool ign_errs;
 
-/* If called multiple times only the last pattern is applied */
-
 int
 fn_init(char *s)
 {
@@ -72,10 +70,6 @@ fn_init(char *s)
 	find_name = TRUE;
 	return 0;
 }
-
-/* This function can be called multiple times with different patterns.
- * All these patterns are then AND combined. A OR combination can be
- * expressed with the regex operator | inside the pattern. */
 
 int
 gq_init(char *s)
