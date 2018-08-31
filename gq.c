@@ -323,9 +323,11 @@ ret:
 static int gq_match_buf(const char *const buf)
 {
     struct gq_re *re;
+    int rv = 0; /* 0: match found */
 
-    for (re = gq_re; re; re = re->next) /* pattern loop */
-        if (!regexec(&re->re, buf, 0, NULL, 0))
-            return 0;
-    return 1;
+    /* Pattern loop. All patterns need to match! */
+    for (re = gq_re; re; re = re->next)
+        if (regexec(&re->re, buf, 0, NULL, 0))
+            rv = 1;
+    return rv;
 }
