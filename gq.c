@@ -41,6 +41,12 @@ static struct gq_re *gq_re;
 
 bool gq_pattern;
 static bool ign_errs;
+/*
+ * Output:
+ *   0: match
+ *   1: no match
+ */
+static int gq_match_buf(const char *const buf);
 
 int
 fn_init(char *s)
@@ -154,13 +160,13 @@ gq_proc(struct filediff *f)
 	ssize_t n;
 	int fh;
 	int rv = 1; /* not found */
-	struct gq_re *re;
+    struct gq_re *re = gq_re;
 
 	if (dontcmp) {
 		return 0;
 	}
 
-	if (getch() == '%') {
+    if (!cli_mode && getch() == '%') {
 		dontcmp = TRUE;
 		return 0;
 	}
@@ -196,8 +202,6 @@ gq_proc(struct filediff *f)
 		goto ret;
 	}
 
-	re = gq_re;
-
 	while (1) {
 		if ((n = read(fh, gq_buf, GQBUFSIZ)) == -1) {
 			printerr(strerror(errno), "read \"%s\"", p);
@@ -230,14 +234,14 @@ gq_proc(struct filediff *f)
 			break;
 
 		if (lseek(fh, -GQBSEEK, SEEK_CUR) == -1) {
-			printerr(strerror(errno), "lseek \"%s\" failed", p);
+            printerr(strerror(errno), LOCFMT "lseek \"%s\"" LOCVAR, p);
 			rv = -1;
 			break;
 		}
 	}
 
 	if (close(fh) == -1) {
-		printerr(strerror(errno), "close \"%s\" failed", p);
+        printerr(strerror(errno), LOCFMT "close \"%s\"" LOCVAR, p);
 		rv = -1;
 	}
 
@@ -248,4 +252,80 @@ ret2:
 	fprintf(debug, "->(%d)\n", rv);
 #endif
 	return rv;
+}
+
+void gq_proc_lines(const struct filediff *const f)
+{
+    FILE *fh;
+    char *line = NULL; /* let getline() allocate buffer */
+    size_t len = 0; /* let getline() allocate buffer */
+    ssize_t nread;
+    unsigned long line_num = 0;
+    bool binary = FALSE;
+    size_t pathlen;
+    char *path;
+
+    if (S_ISREG(f->type[0]) && f->siz[0]) {
+        path = syspth[0];
+        pathlen = pthlen[0];
+    } else if (S_ISREG(f->type[1]) && f->siz[1]) {
+        path = syspth[1];
+        pathlen = pthlen[1];
+    } else {
+        goto ret;
+    }
+    pthcat(path, pathlen, f->name);
+
+    if (!(fh = fopen(path, "r"))) {
+        printerr(strerror(errno), LOCFMT "fopen \"%s\"" LOCVAR, path);
+        goto cut_path;
+    }
+    while (1) { /* line loop */
+        ssize_t i;
+        errno = 0;
+
+        if ((nread = getline(&line, &len, fh)) == -1) {
+            if (errno)
+                printerr(strerror(errno), LOCFMT "getline \"%s\"" LOCVAR, path);
+            break;
+        }
+        if (!nread)
+            break;
+        /* test if buffer contains a 0 byte */
+        for (i = 0; !binary && i < nread; i++)
+            if (!line[i])
+                binary = TRUE;
+        /* chomp */
+        if (!binary && line[nread - 1] == '\n') {
+            if (nread == 1)
+                continue;
+            line[nread - 1] = 0;
+        }
+        ++line_num;
+        if (!gq_match_buf(line)) {
+            if (binary) {
+                printf("Binary file %s matches\n", path);
+                break;
+            } else {
+                printf("%s:%lu:%s\n", path, line_num, line);
+            }
+        }
+    }
+    free(line);
+    fclose(fh);
+
+cut_path:
+    path[pathlen] = 0;
+ret:
+    return;
+}
+
+static int gq_match_buf(const char *const buf)
+{
+    struct gq_re *re;
+
+    for (re = gq_re; re; re = re->next) /* pattern loop */
+        if (!regexec(&re->re, buf, 0, NULL, 0))
+            return 0;
+    return 1;
 }

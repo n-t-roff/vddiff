@@ -119,7 +119,7 @@ build_diff_db(
 			save_last_path(syspth[1]);
 		}
 
-		if ((lpt2 = time(NULL)) - lpt) {
+        if (!cli_mode && (lpt2 = time(NULL)) - lpt) {
 			printerr(NULL, "Reading directory \"%s\"", syspth[1]);
 			lpt = lpt2;
 		}
@@ -248,7 +248,7 @@ build_diff_db(
 		if (i == -1) {
 			if (errno != ENOENT) {
 				if (!ign_diff_errs && dialog(ign_txt, NULL,
-				    LOCFMT "stat \"%s\" failed: %s"
+                    LOCFMT "stat \"%s\": %s"
 				    LOCVAR, syspth[1], strerror(errno)) == 'i') {
 
 					ign_diff_errs = TRUE;
@@ -274,7 +274,7 @@ no_tree2:
 
         if (scan || cli_mode) {
 			if (stopscan ||
-			    ((bmode || fmode) && file_pattern && getch() == '%')) {
+                (!cli_mode && (bmode || fmode) && file_pattern && getch() == '%')) {
 				stopscan = TRUE;
 				closedir(d);
 				goto dir_scan_end;
@@ -321,9 +321,17 @@ no_tree2:
 				diff->siz[0]  = gstat[0].st_size;
 				diff->siz[1]  = gstat[1].st_size;
 
-				if (!gq_proc(diff))
+                if (cli_mode && verbose) {
+                    /* -pSG -> print lines */
+                    gq_proc_lines(diff);
+                } else if (!gq_proc(diff)) {
 					dir_diff = 1;
 
+                    if (cli_mode) { /* -SG */
+                        syspth[0][pthlen[0]] = 0;
+                        printf("%s/%s\n", syspth[0], name);
+                    }
+                }
 				free_diff(diff);
 				continue;
 			}
@@ -634,7 +642,8 @@ right_tree:
 					continue;
 				} else if (
 				    /* else *also* gq need to match */
-				    !gq_pattern) {
+                    !gq_pattern)
+                {
 					dir_diff = 1;
 					continue;
 				}

@@ -16,3 +16,7 @@ int gq_init(char *);
 int fn_free(void);
 int gq_free(void);
 int gq_proc(struct filediff *);
+/*
+ * Intented for -pSG, *not* for curses UI mode
+ */
+void gq_proc_lines(const struct filediff *const f);
