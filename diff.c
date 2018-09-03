@@ -265,7 +265,9 @@ build_diff_db(
 			}
 
 no_tree2:
-			if (qdiff) {
+            if (qdiff) {
+                if (nosingle)
+                    continue;
 				syspth[0][pthlen[0]] = 0;
                 printf("Only in %s: %s\n", syspth[0], name);
                 retval |= 1;
@@ -574,7 +576,9 @@ right_tree:
 			continue;
 		}
 
-		if (qdiff) {
+        if (qdiff) {
+            if (nosingle)
+                continue;
 			syspth[1][pthlen[1]] = 0;
 			printf("Only in %s: %s\n", syspth[1], name);
             retval |= 1;
