@@ -453,7 +453,18 @@ main(int argc, char **argv)
 
         } else if (!S_ISDIR(gstat[0].st_mode)) {
 			if (argc < 2) {
-				tool(syspth[0], NULL, 1, 0);
+                if (cli_mode && gq_pattern) {
+                    const char *base = buf_basename(syspth[0], &pthlen[0]);
+
+                    if (!base) {
+                        fprintf(stderr, oom_msg);
+                    } else {
+                        file_grep(base);
+                        free(base);
+                    }
+                } else {
+                    tool(syspth[0], NULL, 1, 0);
+                }
 			/* check_args() uses stat(), hence type can't
 			 * be symlink */
 			} else if (S_ISREG(gstat[0].st_mode)
@@ -461,7 +472,7 @@ main(int argc, char **argv)
 			{
                 if (qdiff) {
                     int v = cmp_file(syspth[0], gstat[0].st_size,
-                            syspth[1], gstat[1].st_size, 1);
+                                     syspth[1], gstat[1].st_size, 1);
 
                     switch (v) {
                     case 0:
@@ -677,6 +688,8 @@ check_args(int argc, char **argv)
 	get_arg(s, 0);
 
 	if (bmode) {
+        /* gstat[1] is tested even in bmode */
+        memset(&gstat[1], 0, sizeof(gstat[1]));
 		return;
 	}
 

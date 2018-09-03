@@ -43,7 +43,7 @@ struct scan_dir {
 	struct scan_dir *next;
 };
 
-static struct filediff *alloc_diff(char *);
+static struct filediff *alloc_diff(const char *const);
 static void add_diff_dir(short);
 static size_t pthadd(char *, size_t, const char *);
 static size_t pthcut(char *, size_t);
@@ -320,24 +320,8 @@ no_tree2:
 			}
 
             if (gq_pattern) { /* -G ("grep(1)") */
-				diff = alloc_diff(name);
-				diff->type[0] = gstat[0].st_mode;
-				diff->type[1] = gstat[1].st_mode;
-				diff->siz[0]  = gstat[0].st_size;
-				diff->siz[1]  = gstat[1].st_size;
-
-                if (cli_mode && verbose) {
-                    /* -pSG -> print lines */
-                    gq_proc_lines(diff);
-                } else if (!gq_proc(diff)) {
-					dir_diff = 1;
-
-                    if (cli_mode) { /* -SG */
-                        syspth[0][pthlen[0]] = 0;
-                        printf("%s/%s\n", syspth[0], name);
-                    }
-                }
-				free_diff(diff);
+                if (file_grep(name))
+                    dir_diff = 1;
 				continue;
 			}
 
@@ -734,6 +718,30 @@ exit:
     fprintf(debug, "<-build_diff_db%s retval=%d\n", scan ? " scan" : "", retval);
 #endif
 	return retval;
+}
+
+int file_grep(const char *const name)
+{
+    int return_value = 0;
+    diff = alloc_diff(name);
+    diff->type[0] = gstat[0].st_mode;
+    diff->type[1] = gstat[1].st_mode;
+    diff->siz[0]  = gstat[0].st_size;
+    diff->siz[1]  = gstat[1].st_size;
+
+    if (cli_mode && verbose) {
+        /* -pSG -> print lines */
+        gq_proc_lines(diff);
+    } else if (!gq_proc(diff)) {
+        return_value = 1;
+
+        if (cli_mode) { /* -SG */
+            syspth[0][pthlen[0]] = 0;
+            printf("%s/%s\n", syspth[0], name);
+        }
+    }
+    free_diff(diff);
+    return return_value;
 }
 
 static void
@@ -1222,7 +1230,7 @@ static ssize_t dlg_read(int fd, void *buf, size_t count,
 }
 
 static struct filediff *
-alloc_diff(char *name)
+alloc_diff(const char *const name)
 {
 	struct filediff *p = malloc(sizeof(struct filediff));
 	p->name  = strdup(name);

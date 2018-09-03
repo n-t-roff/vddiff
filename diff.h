@@ -23,20 +23,36 @@ extern long tot_cmp_file_count;
 extern short followlinks;
 extern bool one_scan;
 extern bool dotdot;
-
-/* Returns a compination of:
+/*
+ * Returns a compination of:
  *   1 difference found
  *   2 on error
- *   0 else */
-
+ *   0 else
+ */
 int build_diff_db(int);
-
-/* Returns a compination of:
+/*
+ * Returns a compination of:
  *   1 difference found
  *   2 on error
- *   0 else */
-
+ *   0 else
+ */
 int scan_subdir(const char *, const char *, int);
+/*
+ * Input:
+ *   Parameter:
+ *     `name`: File name (without path)
+ *   Global:
+ *     syspth[0]
+ *     pthlen[0]
+ *     gstat[i]
+ * Output:
+ *   stdout:
+ *     if (cli_mode)
+ *       matching line
+ *   Return value:
+ *     1: set `dir_diff`
+ */
+int file_grep(const char *const name);
 int is_diff_dir(struct filediff *);
 int is_diff_pth(const char *, unsigned);
 size_t pthcat(char *, size_t, const char *);
