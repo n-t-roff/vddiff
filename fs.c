@@ -1510,7 +1510,8 @@ int cp_reg(const unsigned mode) {
             bool ms = FALSE; /* mode set after access(2) error */
 
             if (overwrite_if_old &&
-                    cmp_timespec(gstat[0].st_mtim, gstat[1].st_mtim) > 0)
+                    /* gstat[0].st_mtim < gstat[1].st_mtim -> dest is newer */
+                    cmp_timespec(gstat[0].st_mtim, gstat[1].st_mtim) < 0)
             {
                 goto ret;
             }

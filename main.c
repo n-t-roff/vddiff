@@ -170,7 +170,7 @@ main(int argc, char **argv)
 
     while ((opt =
             getopt(argc, argv,
-                   "ABbDCcdEeF:fG:gIikLlMmNnoP:pqRrSsTt:Vv:WXy")
+                   "ABbDCcdEeF:fG:gIikLlMmNnOoP:pqRrSsTt:UVv:WXy")
             ) != -1)
     {
 		switch (opt) {

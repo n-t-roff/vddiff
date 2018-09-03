@@ -32,6 +32,12 @@ int do_cli_rm(int argc, char **argv);
  *   1  move instead of copy (remove source after copy operation)
  */
 int do_cli_cp(int argc, char **argv, const unsigned opt);
+/*
+ * Return value:
+ *   < 0: a < b: a is older than b
+ *   = 0: a and b have equal time
+ *   > 0: a > b: a is newer than b
+ */
 int cmp_timespec(const struct timespec a, const struct timespec b);
 
 #ifdef __cplusplus
