@@ -295,13 +295,16 @@ void gq_proc_lines(const struct filediff *const f)
         for (i = 0; !binary && i < nread; i++)
             if (!line[i])
                 binary = TRUE;
-        /* chomp */
-        if (!binary && line[nread - 1] == '\n') {
-            if (nread == 1)
-                continue;
-            line[nread - 1] = 0;
+        if (!binary) {
+            ++line_num;
+
+            /* chomp */
+            if (line[nread - 1] == '\n') {
+                if (nread == 1)
+                    continue;
+                line[nread - 1] = 0;
+            }
         }
-        ++line_num;
         if (!gq_match_buf(line)) {
             if (binary) {
                 printf("Binary file %s matches\n", path);
