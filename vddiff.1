@@ -13,7 +13,7 @@ LOSS OF USE, DATA OR PROFITS, WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE OR
 OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
 PERFORMANCE OF THIS SOFTWARE.
 ..
-.Dd August 30, 2018
+.Dd September 3, 2018
 .Dt VDDIFF 1
 .Sh NAME
 .Nm @vddiff@
@@ -359,6 +359,11 @@ to return to @vddiff@.
 The tool checks this case and prevents a second invocation.
 .It Fl n
 This option suppresses the display of equal files.
+.It Fl O
+Debug option:
+Don't overwrite existing files.
+Intented for use with
+.Fl A .
 .It Fl o
 Hide files which are on one side only.
 .It Fl P Ar last wd file
@@ -445,6 +450,11 @@ to the second file.
 Note that the shell may require quoting as in
 .Pp
 .Dl \-t \(dqdiff \(rs$1 \(rs$2 | vim \-R \-\(dq
+.It Fl U
+Debug option:
+Overwrite files only if they are older than the source file.
+Intented for use with
+.Fl A .
 .It Fl u Op Ar filename
 Skip reading the initialization file at start-up.
 If

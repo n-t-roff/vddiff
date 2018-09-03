@@ -186,7 +186,7 @@ ntr: /* next tree */
 		if (lstat(pth1, &gstat[0]) == -1) {
 			if (errno != ENOENT)
 				printerr(strerror(errno),
-				    "lstat \"%s\" failed", pth1);
+                    LOCFMT "lstat \"%s\"" LOCVAR, pth1);
 		} else {
 			if (!force_fs && dialog(y_n_txt, NULL,
 			    "Delete existing %s \"%s\"?",
@@ -999,7 +999,7 @@ ret0:
 #if defined(TRACE)
 	fprintf(debug, "<-fs_cp: 0x%x\n", r);
 #endif
-	return r;
+    return r;
 }
 
 void
@@ -1308,7 +1308,7 @@ cp_file(void)
 	int rv = 1;
 
 #if defined(TRACE)
-	fprintf(debug, "->cp_file \"%s\" -> \"%s\"\n", pth1, pth2);
+    fprintf(debug, "->cp_file pth1=\"%s\" pth2=\"%s\"\n", pth1, pth2);
 #endif
 
     if (wstat && (fs_t2 = time(NULL)) - fs_t1) {
@@ -1494,19 +1494,26 @@ int cp_reg(const unsigned mode) {
 #endif
 
 #if defined(TRACE)
-	fprintf(debug, "->cp_reg(%u) \"%s\" -> \"%s\"\n", mode, pth1, pth2);
+    fprintf(debug, "->cp_reg(mode=%x) pth1=\"%s\" pth2=\"%s\"\n", mode, pth1, pth2);
 #endif
 
 	if (!fs_stat(pth2, &gstat[1], 0)) { /* target file exists */
+        if (dont_overwrite)
+            goto ret;
 #if defined(TRACE)
 		fprintf(debug, "  Already exists: %s\n", pth2);
 #endif
-		if (S_ISREG(gstat[1].st_mode)) {
+        if (S_ISREG(gstat[1].st_mode)) {
             /* target file is a regular file
              * or a followed symlink to a regular file */
 
             bool ms = FALSE; /* mode set after access(2) error */
 
+            if (overwrite_if_old &&
+                    cmp_timespec(gstat[0].st_mtim, gstat[1].st_mtim) > 0)
+            {
+                goto ret;
+            }
             if (!(mode & 1) && /* file contents are not relevant in append mode */
                     !cmp_file(pth1, gstat[0].st_size,
                               pth2, gstat[1].st_size, 1)) {
@@ -1565,7 +1572,7 @@ test:
                     == 1) /* == Cancel */
             {
 				rv = -2;
-				goto ret;
+                goto ret;
 			}
 		}
 	} /* if (!fs_stat(pth2)) */
@@ -1576,7 +1583,7 @@ copy:
 	if ((f2 = open(pth2, fl, gstat[0].st_mode & 07777)) == -1) {
 		printerr(strerror(errno), "create \"%s\"", pth2);
 		rv = -1;
-		goto ret;
+        goto ret;
 	}
 
 	if (!gstat[0].st_size)
@@ -1632,11 +1639,10 @@ setattr:
 close2:
 	close(f2);
 
-ret:
     if (!rv && !wstat && verbose) {
         printf("File copy \"%s\" -> \"%s\" done\n", pth1, pth2);
     }
-
+ret:
 #if defined(TRACE)
 	fprintf(debug, "<-cp_reg: %d\n", rv);
 #endif
@@ -1792,7 +1798,7 @@ fs_stat(const char *p, struct stat *s,
 {
 	int i;
 
-#if defined(TRACE) && (defined(TEST) || 0)
+#if defined(TRACE) && (defined(TEST) || 1)
 	fprintf(debug, "->fs_stat(path=%s mode=%u) follow=%d\n",
 		p, mode, followlinks);
 #endif
@@ -1807,7 +1813,7 @@ fs_stat(const char *p, struct stat *s,
 		}
 	}
 
-#if defined(TRACE) && (defined(TEST) || 0)
+#if defined(TRACE) && (defined(TEST) || 1)
 	fprintf(debug, "<-fs_stat(): %d\n", i);
 #endif
 	return i;

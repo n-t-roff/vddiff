@@ -236,7 +236,7 @@ stat_info_pth(void)
 			return 2;
 		}
 
-		printerr(strerror(errno), "stat \"%s\"", info_pth);
+        printerr(strerror(errno), LOCFMT "stat \"%s\"" LOCVAR, info_pth);
 		return -1;
 	}
 
@@ -375,7 +375,7 @@ rm:
 			goto mv;
 		}
 
-		printerr(strerror(errno), "stat \"%s\"", info_pth);
+        printerr(strerror(errno), LOCFMT "stat \"%s\"" LOCVAR, info_pth);
 		rv = 1;
 		goto mv;
 	}

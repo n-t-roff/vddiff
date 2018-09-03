@@ -4019,7 +4019,7 @@ ret:
 void
 enter_dir(const char *name, const char *rnam, bool lzip, bool rzip, short tree
 #ifdef DEBUG
-    , char *_file, unsigned _line
+    , const char *const _file, const unsigned _line
 #endif
     )
 {

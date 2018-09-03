@@ -145,14 +145,21 @@ int do_cli_cp(int argc, char **argv, const unsigned opt) {
     struct filediff *pf[] = { &f[0], &f[1] };
     int ret_val = 0;
     unsigned md = 1|4; /* !rebuild|force */
+    const char *const target = argv[argc - 1];
 
     if (opt & 1) {
         md |= 16; /* move instead of copy (remove source) */
     }
+    get_arg(target, 1); /* set gstat[1] */
 
+    if (argc > 2 && !S_ISDIR(gstat[1].st_mode)) {
+        printerr(NULL, LOCFMT "Target \"%s\" is not a directory" LOCVAR, target);
+        ret_val |= 1;
+        goto ret;
+    }
     while (!ret_val && argc >= 2) {
         get_arg(argv[0], 0);
-        get_arg(argv[argc - 1], 1);
+        get_arg(target, 1); /* set gstat[1] on each iteration */
         f[0].name = NULL;
         f[1].name = NULL;
 #if defined(TRACE)
@@ -163,7 +170,10 @@ int do_cli_cp(int argc, char **argv, const unsigned opt) {
             goto abort;
         }
 
-        if (!gstat[1].st_mode) { /* target is to be created */
+        if (!gstat[1].st_mode || /* target is to be created */
+                (S_ISREG(gstat[0].st_mode) &&
+                 S_ISREG(gstat[1].st_mode))) /* src and tgt are files */
+        {
             if (!(f[1].name = buf_basename(syspth[1], &pthlen[1])))
             {
                 ret_val |= 1;
@@ -195,6 +205,20 @@ abort:
         ++argv;
         --argc;
     }
-
+ret:
     return ret_val;
+}
+
+int cmp_timespec(const struct timespec a, const struct timespec b)
+{
+    if (a.tv_sec < b.tv_sec)
+        return -1;
+    else if (a.tv_sec > b.tv_sec)
+        return 1;
+    else if (a.tv_nsec < b.tv_nsec)
+        return -1;
+    else if (a.tv_nsec > b.tv_nsec)
+        return 1;
+    else
+        return 0;
 }

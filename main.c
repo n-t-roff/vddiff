@@ -101,6 +101,8 @@ static bool cli_mv;
 bool cli_rm;
 bool cli_mode;
 bool verbose;
+bool dont_overwrite;
+bool overwrite_if_old;
 
 int
 main(int argc, char **argv)
@@ -262,6 +264,9 @@ main(int argc, char **argv)
 		case 'n':
 			noequal = 1;
 			break;
+        case 'O':
+            dont_overwrite = TRUE;
+            break;
 		case 'o':
 			nosingle = 3;
 			break;
@@ -306,6 +311,9 @@ main(int argc, char **argv)
         case 't':
 			set_tool(&difftool, strdup(optarg), 0);
 			break;
+        case 'U':
+            overwrite_if_old = TRUE;
+            break;
 		case 'V':
 			printf(BIN " %s\n\tCompile option(s): "
 #if defined HAVE_NCURSESW_CURSES_H
@@ -619,7 +627,7 @@ read_rc(char *upath)
 	if (stat(rc_path, &gstat[0]) == -1) {
 		if (errno == ENOENT)
 			goto free;
-		printf("stat \"%s\": %s\n", rc_path,
+        printf(LOCFMT "stat \"%s\": %s\n" LOCVAR, rc_path,
 		    strerror(errno));
 		rv = 1;
 		goto free;
@@ -721,6 +729,7 @@ get_arg(const char *s, int i)
 {
     char *s2;
 	struct filediff f;
+    bool free_path = FALSE;
 
 	arg[i] = s;
 
@@ -746,7 +755,7 @@ stat:
             exit(EXIT_STATUS_ERROR);
 		}
 
-		if (!zipfile[i]) { /* break "goto stat" loop */
+        if (!cli_cp && !cli_rm && !zipfile[i]) { /* break "goto stat" loop */
 			f.name = s;
 			f.type[i] = gstat[i].st_mode;
 
@@ -760,8 +769,10 @@ stat:
 	}
 
 set_path:
-	if (fmode && *s != '/') {
-		if (!(s2 = realpath(s, NULL))) {
+    if (!cli_cp && !cli_rm && fmode && *s != '/') {
+        if ((s2 = realpath(s, NULL))) {
+            free_path = TRUE;
+        } else {
 			printf(LOCFMT "realpath \"%s\": %s\n" LOCVAR, s,
 			    strerror(errno));
             exit(EXIT_STATUS_ERROR);
@@ -784,7 +795,7 @@ set_path:
 
 	memcpy(syspth[i], s2, pthlen[i] + 1);
 
-	if (fmode && *s != '/') {
+    if (free_path) {
 		free(s2);
 	}
 }

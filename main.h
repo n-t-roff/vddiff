@@ -16,7 +16,7 @@
 #endif
 
 #ifdef DEBUG
-# define LOCFMT "%s %u: "
+# define LOCFMT "%s:%u: "
 # define LOCVAR , __FILE__, __LINE__
 #else
 # define LOCFMT
@@ -62,6 +62,8 @@ extern bool summary;
 extern bool verbose;
 extern bool cli_rm;
 extern bool cli_mode;
+extern bool dont_overwrite; /* -O: Like `cp -n` */
+extern bool overwrite_if_old; /* -U: Like `cp -u` */
 
 char *add_home_pth(const char *);
 /*

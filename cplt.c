@@ -182,8 +182,7 @@ complet(char *s, int c)
 					continue;
 
 				default:
-					printerr(strerror(errno),
-					    "stat \"%s\"", b);
+                    printerr(strerror(errno), LOCFMT "stat \"%s\"" LOCVAR, b);
 					continue;
 				}
 			}

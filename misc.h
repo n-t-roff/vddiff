@@ -32,6 +32,7 @@ int do_cli_rm(int argc, char **argv);
  *   1  move instead of copy (remove source after copy operation)
  */
 int do_cli_cp(int argc, char **argv, const unsigned opt);
+int cmp_timespec(const struct timespec a, const struct timespec b);
 
 #ifdef __cplusplus
 }

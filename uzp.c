@@ -266,7 +266,7 @@ unpack(const struct filediff *f, int tree, char **tmp,
 	int i;
     const char *s;
 
-#if defined(TRACE) && 0
+#if defined(TRACE) && 1
 	fprintf(debug, "->unpack(f->name=%s, tree=%d)\n", f->name, tree);
 #endif
 
@@ -349,7 +349,7 @@ unpack(const struct filediff *f, int tree, char **tmp,
 
 	*tmp = tmp_dir;
 ret:
-#if defined(TRACE) && 0
+#if defined(TRACE) && 1
 	fprintf(debug, "<-unpack: z->name=%s *tmp=%s\n",
 	    z ? z->name : "", *tmp);
 #endif
@@ -365,6 +365,9 @@ check_ext(const char *name, int *pos)
 	int c;
 	enum uz_id id;
 	int i;
+#if defined(TRACE)
+    fprintf(debug, "<>check_ext(name=\"%s\")\n", name);
+#endif
 
 	l = strlen(name);
 	s = lbuf + sizeof lbuf;

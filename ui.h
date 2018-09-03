@@ -38,9 +38,12 @@ struct ui_state {
 
 int build_ui(void);
 /*
+ * Input:
+ *   err: optional, e.g. `strerror(errno)`
+ *   fmt: e.g. "stat"
  * Output: 0: Success, !0: Fail
  */
-int printerr(const char *, const char *, ...);
+int printerr(const char *err, const char *fmt, ...);
 /*
  * Input:
  *   quest: Possible answers as human readable text
@@ -58,7 +61,7 @@ void clr_mark(void);
 void disp_curs(int);
 void enter_dir(const char *, const char *, bool, bool, short
 #ifdef DEBUG
-    , char *, unsigned
+    , const char *const , const unsigned
 #endif
     );
 void set_win_dim(void);
