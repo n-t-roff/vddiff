@@ -1293,7 +1293,7 @@ rm_file(void)
             printf("File \"%s\" removed\n", pth1);
         }
 
-        if (cli_rm) {
+        if (cli_rm) { /* not cli_cp overwrite */
             tot_cmp_byte_count += gstat[0].st_size;
             ++tot_cmp_file_count;
         }
@@ -1617,10 +1617,10 @@ copy:
 			rv = -1;
 			break; /* error */
 		}
-
-		if (l1 < (ssize_t)(sizeof lbuf))
-			break;
         tot_cmp_byte_count += l1;
+        /* Not an error: Signals the last iteration. */
+        if (l1 < (ssize_t)(sizeof lbuf))
+			break;
 	}
 
 	close(f1);

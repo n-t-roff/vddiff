@@ -1208,13 +1208,11 @@ int cmp_file(
             rv |= 1;
 			break;
 		}
-
-		if (l1 < (ssize_t)(sizeof lbuf))
-			break;
-
         /* Count successfully compared bytes only. */
         if (qdiff)
             tot_cmp_byte_count += l1;
+        if (l1 < (ssize_t)(sizeof lbuf))
+            break;
     }
 
     /* Count really and successfully compared files only,
