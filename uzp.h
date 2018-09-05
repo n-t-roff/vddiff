@@ -20,7 +20,12 @@ int uz_init(void);
 void uz_add(char *, char *);
 void uz_exit(void);
 const char *gettmpdirbase(void);
-void setvpth(int);
+/*
+ * Called before output af path to UI
+ * Input
+ *   i: 0: syspth[0], 1: syspth[1], 2: both paths
+ */
+void setvpth(const int i);
 /*
  * Called when archive is entered
  * Input

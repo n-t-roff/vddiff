@@ -100,7 +100,11 @@ uz_init(void)
 	int i;
 	const char *s;
 
-	for (i = 0; i < (ssize_t)(sizeof(exttab)/sizeof(*exttab)); i++) {
+#if defined(TRACE) && 1
+    fprintf(debug, "<>uz_init())\n");
+#endif
+
+    for (i = 0; i < (ssize_t)(sizeof(exttab)/sizeof(*exttab)); i++) {
 		uz_db_add(strdup(exttab[i].str), exttab[i].id);
 	}
 
@@ -160,7 +164,11 @@ uz_exit(void)
 	char *key;
 	struct bpth *dat;
 
-	while ((n = ptr_db_get_node(uz_path_db))) {
+#if defined(TRACE) && 1
+    fprintf(debug, "<>uz_exit())\n");
+#endif
+
+    while ((n = ptr_db_get_node(uz_path_db))) {
 #ifdef HAVE_LIBAVLBST
 		key = n->key.p;
 		dat = n->data.p;
@@ -550,15 +558,10 @@ zpths(const struct filediff *f, struct filediff **z2, int tree, size_t *l2,
 	}
 }
 
-/* Called before output af path to UI */
-
-void
-setvpth(
-    /* 0: syspth[0], 1: syspth[1], 2: both paths */
-    int i)
+void setvpth(const int i)
 {
-	size_t l;
-	int src;
+    const int src = bmode ? 1 : i;
+    const size_t l = pthlen[src] - spthofs[src];
 
 	if (i > 1) {
 		/* 1 before 0 because of bmode */
@@ -566,9 +569,6 @@ setvpth(
 		setvpth(0);
 		return;
 	}
-
-	src = bmode ? 1 : i;
-
 	if (spthofs[src] > pthlen[src] || vpthofs[i] > vpthsz[i]) {
 #ifdef DEBUG
 		printerr("Path offset error", "setvpth()");
@@ -576,11 +576,10 @@ setvpth(
 		return;
 	}
 
-#if defined(TRACE) && 0
+#if defined(TRACE) && 1
 	TRCPTH;
-	fprintf(debug, "->setvpth(%d): v(%s) s(%s)\n", i, vpath[i], trcpth[i]);
+    fprintf(debug, "->setvpth(i=%d): vpath[i]=\"%s\" trcpth[i]=\"%s\"\n", i, vpath[i], trcpth[i]);
 #endif
-	l = pthlen[src] - spthofs[src];
 
 	while (l >= vpthsz[i] - vpthofs[i]) {
 		vpath[i] = realloc(vpath[i], vpthsz[i] <<= 1);
@@ -588,7 +587,7 @@ setvpth(
 
 	memcpy(vpath[i] + vpthofs[i], syspth[src] + spthofs[src], l);
 	vpath[i][vpthofs[i] + l] = 0;
-#if defined(TRACE) && 0
+#if defined(TRACE) && 1
 	fprintf(debug, "<-setvpth [%zu] \"%s\"\n", vpthsz[i], vpath[i]);
 #endif
 }
@@ -607,7 +606,8 @@ void setpthofs(const int mode, const char *const fn, const char *const tn)
 #endif
 	p->sys = spthofs[i];
 	p->view = vpthofs[i];
-	p->vpth = *fn == '/' ? strdup(vpath[i]) : NULL;
+    p->vpth = !(fl & 4) /* when started from main() vpath[i] is invalid */
+            && *fn == '/' ? strdup(vpath[i]) : NULL;
 	p->next = pthofs[i];
 	pthofs[i] = p;
 	/* If we are already in a archive and enter another archive,
