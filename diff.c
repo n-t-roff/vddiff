@@ -290,6 +290,17 @@ no_tree2:
             {
 				struct scan_dir *se;
 
+                if (find_dir_name &&
+                        !regexec(&find_dir_name_regex, name, 0, NULL, 0))
+                {
+                    dir_diff = 1;
+
+                    if (cli_mode) {
+                        syspth[0][pthlen[0]] = 0;
+                        printf("%s/%s\n", syspth[0], name);
+                    }
+                }
+
 				if (!scan) {
 					/* Non-recursive qdiff */
 					continue;

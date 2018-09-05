@@ -36,9 +36,14 @@ struct gq_re {
 	struct gq_re *next;
 };
 
+regex_t fn_re;
+regex_t find_dir_name_regex;
 static char *gq_buf;
 static struct gq_re *gq_re;
 
+bool file_pattern; /* TRUE for -F or -G */
+bool find_name;
+bool find_dir_name;
 bool gq_pattern;
 static bool ign_errs;
 /*
@@ -75,6 +80,24 @@ fn_init(char *s)
 	file_pattern = TRUE;
 	find_name = TRUE;
 	return 0;
+}
+
+int find_dir_name_init(const char *const s)
+{
+    int fl = REG_NOSUB;
+    if (find_dir_name)
+        find_dir_name_free();
+    if (magic)
+        fl |= REG_EXTENDED;
+    if (!noic)
+        fl |= REG_ICASE;
+    if (regcomp(&find_dir_name_regex, s, fl)) {
+        printerr(strerror(errno), "regcomp \"%s\"", s);
+        return -1;
+    }
+    file_pattern = TRUE;
+    find_dir_name = TRUE;
+    return 0;
 }
 
 int
@@ -118,11 +141,22 @@ fn_free(void)
 	regfree(&fn_re);
 	find_name = FALSE;
 
-	if (!gq_pattern) {
+    if (!find_dir_name && !gq_pattern) {
 		file_pattern = FALSE;
 	}
 
 	return 0;
+}
+
+int find_dir_name_free(void)
+{
+    if (!find_dir_name)
+        return 1;
+    regfree(&find_dir_name_regex);
+    find_dir_name = FALSE;
+    if (!find_name && !gq_pattern)
+        file_pattern = FALSE;
+    return 0;
 }
 
 /* Remove all patterns from list. */
@@ -145,7 +179,7 @@ gq_free(void)
 
 	gq_pattern = FALSE;
 
-	if (!find_name) {
+    if (!find_name && !find_dir_name) {
 		file_pattern = FALSE;
 	}
 

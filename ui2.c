@@ -70,7 +70,6 @@ static unsigned srch_idx;
 unsigned prev_pos[2];
 unsigned jmrk[2][32];
 
-bool file_pattern; /* TRUE for -F or -G */
 bool excl_or;
 bool file_exec;
 bool nobold;

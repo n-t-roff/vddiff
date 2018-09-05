@@ -46,6 +46,7 @@ PERFORMANCE OF THIS SOFTWARE.
 #include "dl.h"
 #include "cplt.h"
 #include "misc.h"
+#include "gq.h"
 #ifdef TEST
 # include "test.h"
 #endif

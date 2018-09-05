@@ -56,7 +56,6 @@ const char *pwd, *rpwd, *arg[2];
 size_t pthlen[2];
 char syspth[2][PATHSIZ], lbuf[BUF_SIZE], rbuf[BUF_SIZE];
 struct stat gstat[2];
-regex_t fn_re;
 short recursive, scan;
 short nosingle;
 #ifdef TRACE
@@ -85,7 +84,6 @@ static const char rc_name[] = "." BIN "rc";
 char *printwd;
 bool bmode;
 bool qdiff;
-bool find_name;
 static bool dontdiff;
 bool dontcmp;
 bool force_exec, force_fs, force_multi;
@@ -170,7 +168,7 @@ main(int argc, char **argv)
 
     while ((opt =
             getopt(argc, argv,
-                   "ABbDCcdEeF:fG:gIikLlMmNnOoP:pqRrSsTt:UVv:WXy")
+                   "ABbCcDdEeF:fG:gIikLlMmNnOoP:pqRrSsTt:UVv:WXx:y")
             ) != -1)
     {
 		switch (opt) {
@@ -349,7 +347,11 @@ main(int argc, char **argv)
 		case 'X':
 			force_exec = TRUE;
 			break;
-
+        case 'x':
+            if (find_dir_name_init(optarg)) {
+                return EXIT_STATUS_ERROR;
+            }
+            break;
 		case 'y':
 			twocols = TRUE;
 			break;

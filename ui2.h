@@ -20,7 +20,6 @@ extern const char ign_esc_txt[];
 extern const char any_txt[];
 extern const char enter_regex_txt[];
 extern const char no_match_txt[];
-extern bool file_pattern;
 extern bool excl_or;
 extern bool file_exec;
 extern bool nobold;

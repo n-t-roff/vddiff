@@ -1,3 +1,8 @@
+extern regex_t fn_re;
+extern regex_t find_dir_name_regex;
+extern bool file_pattern;
+extern bool find_name;
+extern bool find_dir_name;
 extern bool gq_pattern;
 /*
  * Called on option -F
@@ -5,6 +10,7 @@ extern bool gq_pattern;
  * If called multiple times only the last pattern is applied
  */
 int fn_init(char *);
+int find_dir_name_init(const char *const s);
 /*
  * Called on option -G
  *
@@ -14,6 +20,7 @@ int fn_init(char *);
  */
 int gq_init(char *);
 int fn_free(void);
+int find_dir_name_free(void);
 int gq_free(void);
 int gq_proc(struct filediff *);
 /*

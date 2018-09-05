@@ -43,7 +43,6 @@ extern struct stat gstat[2];
 extern size_t pthlen[2];
 extern const char *pwd, *rpwd, *arg[];
 extern char syspth[2][PATHSIZ], lbuf[BUF_SIZE], rbuf[BUF_SIZE];
-extern regex_t fn_re;
 extern char *printwd;
 extern short recursive, scan;
 extern short nosingle;
@@ -53,7 +52,6 @@ extern char trcpth[2][PATHSIZ];
 #endif
 extern bool bmode;
 extern bool qdiff;
-extern bool find_name;
 extern bool dontcmp;
 extern bool force_exec, force_fs, force_multi;
 extern bool readonly;
