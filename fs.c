@@ -1636,6 +1636,8 @@ setattr:
 	tb.modtime = gstat[0].st_mtime;
 	utime(pth2, &tb);
 #endif
+    if (fchmod(f2, gstat[0].st_mode & 07777))
+        printerr(strerror(errno), "chmod \"%s\"", pth2);
 
 close2:
 	close(f2);
