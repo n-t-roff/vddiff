@@ -120,7 +120,7 @@ uz_init(void)
 
 	vpath[0] = malloc((vpthsz[0] = 4096));
 	vpath[1] = malloc((vpthsz[1] = 4096));
-#if defined(TRACE) && 0
+#if defined(TRACE) && 0 /* DANGER!!! Hides bugs! Keep 0! */
 	*vpath[0] = 0;
 	*vpath[1] = 0;
 #endif
@@ -578,7 +578,7 @@ void setvpth(const int i)
 
 #if defined(TRACE) && 1
 	TRCPTH;
-    fprintf(debug, "->setvpth(i=%d): vpath[i]=\"%s\" trcpth[i]=\"%s\"\n", i, vpath[i], trcpth[i]);
+    fprintf(debug, "->setvpth(i=%d): trcpth[i]=\"%s\"\n", i, trcpth[i]);
 #endif
 
 	while (l >= vpthsz[i] - vpthofs[i]) {
@@ -588,7 +588,7 @@ void setvpth(const int i)
 	memcpy(vpath[i] + vpthofs[i], syspth[src] + spthofs[src], l);
 	vpath[i][vpthofs[i] + l] = 0;
 #if defined(TRACE) && 1
-	fprintf(debug, "<-setvpth [%zu] \"%s\"\n", vpthsz[i], vpath[i]);
+    fprintf(debug, "<-setvpth(i=%d) vpthsz[i]=%zu vpath[i]=\"%s\"\n", i, vpthsz[i], vpath[i]);
 #endif
 }
 
