@@ -878,10 +878,12 @@ exit:
 	do { \
 	if ((!file_pattern || \
 	     ((S_ISDIR(f->type[0]) || S_ISDIR(f->type[1])) && \
+          (!find_dir_name || !regexec(&find_dir_name_regex, f->name, 0, NULL, 0)) && \
 	      (!recursive || is_diff_dir(f))) || \
-	     ((!find_name || !regexec(&fn_re, f->name, 0, NULL, 0)) && \
-	      (!gq_pattern || !gq_proc(f)))) && \
-	    \
+         (!S_ISDIR(f->type[0]) && !S_ISDIR(f->type[1]) && \
+          (!find_name || !regexec(&fn_re, f->name, 0, NULL, 0)) && \
+          (!gq_pattern || !gq_proc(f)))) \
+        && \
 	    (bmode || fmode || \
 	     ((!noequal || \
 	       f->diff == '!' || \
