@@ -668,7 +668,8 @@ cd_home:
 		if (!fn_free()) {
 			rebuild_db(1);
 		}
-
+        if (!find_dir_name_free())
+            rebuild_db(1);
 		return 0;
 	}
 
