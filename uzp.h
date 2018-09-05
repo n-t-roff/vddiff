@@ -21,5 +21,14 @@ void uz_add(char *, char *);
 void uz_exit(void);
 const char *gettmpdirbase(void);
 void setvpth(int);
-void setpthofs(int, const char *, const char *);
+/*
+ * Called when archive is entered
+ * Input
+ *   mode
+ *     0/1: side, 2: side 1 only
+ *     4: Started from main()
+ *   fn: archive file name
+ *   tn: temp dir name
+ */
+void setpthofs(const int mode, const char *const, const char *const);
 void respthofs(int);

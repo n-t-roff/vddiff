@@ -593,35 +593,18 @@ setvpth(
 #endif
 }
 
-/* Called when archive is entered */
-
-void
-setpthofs(
-    /* 0/1: side, 2: side 1 only */
-    /* 4: Started from main() */
-    int i,
-    const char *fn, /* archive file name */
-    const char *tn) /* temp dir name */
+void setpthofs(const int mode, const char *const fn, const char *const tn)
 {
-	size_t l;
-	struct pthofs *p;
-	int fl;
-	bool b;
+    const size_t l = strlen(fn);
+    struct pthofs *const p = malloc(sizeof(*p));
+    const int fl =  mode & ~3;
+    const int  i = (mode & 3) > 1 ? 1 : mode & 3;
+    const bool b = (mode & 3) > 1 ? FALSE : bmode && i ? TRUE : FALSE;
 
-#if defined(TRACE) && 0
-	fprintf(debug, "->setpthofs(col=%d fn(%s) tn(%s))\n", i, fn, tn);
+#if defined(TRACE) && 1
+    fprintf(debug, "->setpthofs(mode=%d archive file name fn=\"%s\" temp dir name tn=\"%s\")\n",
+            mode, fn, tn);
 #endif
-	fl = i & ~3;
-	i &= 3;
-
-	if (i > 1) {
-		i = 1;
-		b = FALSE;
-	} else {
-		b = bmode && i ? TRUE : FALSE;
-	}
-
-	p = malloc(sizeof(struct pthofs));
 	p->sys = spthofs[i];
 	p->view = vpthofs[i];
 	p->vpth = *fn == '/' ? strdup(vpath[i]) : NULL;
@@ -632,7 +615,6 @@ setpthofs(
 	vpthofs[i] = fl & 4 || *fn == '/' ? 0 :
 	             vpthofs[i] ? strlen(vpath[i]) : pthlen[bmode ? 1 : i];
 	spthofs[i] = strlen(tn);
-	l = strlen(fn);
 
 	while (vpthsz[i] < vpthofs[i] + l + 3) {
 		vpath[i] = realloc(vpath[i], vpthsz[i] <<= 1);
@@ -656,14 +638,13 @@ setpthofs(
 		}
 
 		memcpy(vpath[0], vpath[1], vpthofs[0] + 1);
-#if defined(TRACE) && 0
-		fprintf(debug, "<-setpthofs(0) [%zu] \"%s\"\n",
-		    vpthsz[0], vpath[0]);
+#if defined(TRACE) && 1
+        fprintf(debug, "<-setpthofs(i=%d) vpthsz[0]=%zu vpath[0]=\"%s\"\n", i, vpthsz[0], vpath[0]);
 #endif
 	}
 
-#if defined(TRACE) && 0
-	fprintf(debug, "<-setpthofs [%zu] \"%s\"\n", vpthsz[i], vpath[i]);
+#if defined(TRACE) && 1
+    fprintf(debug, "<-setpthofs(i=%d) vpthsz[i]=%zu vpath[i]=\"%s\"\n", i, vpthsz[i], vpath[i]);
 #endif
 }
 
