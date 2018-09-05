@@ -85,6 +85,9 @@ fn_init(char *s)
 int find_dir_name_init(const char *const s)
 {
     int fl = REG_NOSUB;
+#if defined(TRACE) && 1
+    fprintf(debug, "<>find_dir_name_init(%s)\n", s);
+#endif
     if (find_dir_name)
         find_dir_name_free();
     if (magic)

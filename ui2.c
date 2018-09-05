@@ -623,20 +623,30 @@ cd_home:
 		return 0;
 	}
 
-	if (!strncmp(buf, "find ", 5)) {
-		if (!(buf = getnextarg(buf + 5, 1))) {
-			return 0;
-		}
+    if (!strncmp(buf, "find ", 5)) {
+        if (!(buf = getnextarg(buf + 5, 1))) {
+            return 0;
+        }
 
-		if (!fn_init(buf)) {
-			free_scan_db(TRUE); /* sets {one_scan} */
-			rebuild_db(1);
-		}
+        if (!fn_init(buf)) {
+            free_scan_db(TRUE); /* sets {one_scan} */
+            rebuild_db(1);
+        }
 
-		return 0;
-	}
+        return 0;
+    }
 
-	if (!strncmp(buf, "grep ", 5)) {
+    if (!strncmp(buf, "find_dir ", 9)) {
+        if (!(buf = getnextarg(buf + 9, 1)))
+            return 0;
+        if (!find_dir_name_init(buf)) {
+            free_scan_db(TRUE); /* sets {one_scan} */
+            rebuild_db(1);
+        }
+        return 0;
+    }
+
+    if (!strncmp(buf, "grep ", 5)) {
 		if (!(buf = getnextarg(buf + 5, 1))) {
 			return 0;
 		}

@@ -65,6 +65,7 @@ static const char *ex_cmds[] = {
 	"cd",
 	"edit",
 	"find",
+    "find_dir",
 	"grep",
 	"marks",
 	"nofind",
