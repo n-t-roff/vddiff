@@ -293,6 +293,9 @@ no_tree2:
                 if (find_dir_name &&
                         !regexec(&find_dir_name_regex, name, 0, NULL, 0))
                 {
+#if defined(TRACE) && 1
+                    fprintf(debug, "  dir_diff: find_dir: %s\n", name);
+#endif
                     dir_diff = 1;
 
                     if (cli_mode) {
@@ -320,7 +323,10 @@ no_tree2:
 					continue;
 				} else if (!gq_pattern) {
                     /* match and not -G */
-					dir_diff = 1;
+#if defined(TRACE) && 1
+                    fprintf(debug, "  dir_diff: find: %s\n", name);
+#endif
+                    dir_diff = 1;
 
                     if (cli_mode) {
                         syspth[0][pthlen[0]] = 0;
@@ -331,10 +337,16 @@ no_tree2:
 			}
 
             if (gq_pattern) { /* -G ("grep(1)") */
-                if (file_grep(name))
+                if (file_grep(name)) {
+#if defined(TRACE) && 1
+                    fprintf(debug, "  dir_diff: grep: %s\n", name);
+#endif
                     dir_diff = 1;
+                }
 				continue;
 			}
+            if (bmode || fmode)
+                continue;
 
             if (S_ISREG(gstat[0].st_mode) &&
                 S_ISREG(gstat[1].st_mode))
@@ -346,6 +358,9 @@ no_tree2:
                                syspth[0], syspth[1]);
                         retval |= 1;
                     } else {
+#if defined(TRACE) && 1
+                        fprintf(debug, "  dir_diff: file diff: %s\n", name);
+#endif
                         dir_diff = 1;
                     }
                 }
@@ -367,6 +382,9 @@ no_tree2:
                         printf("Symbolic links differ: %s -> %s, %s -> %s\n",
                                syspth[0], a, syspth[1], b);
                     } else {
+#if defined(TRACE) && 1
+                        fprintf(debug, "  dir_diff: link diff: %s\n", name);
+#endif
                         dir_diff = 1;
                     }
                 }
@@ -387,6 +405,9 @@ no_tree2:
                            syspth[0], syspth[1]);
                     retval |= 1;
                 } else {
+#if defined(TRACE) && 1
+                    fprintf(debug, "  dir_diff: type diff: %s\n", name);
+#endif
                     dir_diff = 1;
                 }
 
@@ -497,7 +518,7 @@ db_add_file:
 	/* Now already done here for diff mode to use syspth[0] instead of syspth[1].
 	 * May be useless. */
     if (scan && dir_diff && !cli_mode) {
-		add_diff_dir(0);
+        add_diff_dir(0); /* left tree */
 		dir_diff = 0;
 	}
 
@@ -579,7 +600,10 @@ right_tree:
             retval |= 1;
 			continue;
 		} else if (scan && !file_pattern) {
-			dir_diff = 1;
+#if defined(TRACE) && 1
+            fprintf(debug, "  dir_diff: One sided: %s\n", name);
+#endif
+            dir_diff = 1;
 			break;
 		}
 
@@ -646,7 +670,10 @@ right_tree:
 				    /* else *also* gq need to match */
                     !gq_pattern)
                 {
-					dir_diff = 1;
+#if defined(TRACE) && 1
+                    fprintf(debug, "  dir_diff: find[1]: %s\n", name);
+#endif
+                    dir_diff = 1;
 					continue;
 				}
 			}
@@ -678,7 +705,10 @@ right_tree:
 
 		if (scan) {
 			if (gq_pattern && !gq_proc(diff)) {
-				dir_diff = 1;
+#if defined(TRACE) && 1
+                fprintf(debug, "  dir_diff: grep[1]: %s\n", name);
+#endif
+                dir_diff = 1;
 			}
 
 			free_diff(diff);
@@ -702,7 +732,7 @@ dir_scan_end:
 	}
 
     if (dir_diff && !cli_mode) {
-		add_diff_dir(1);
+        add_diff_dir(1); /* right tree */
 	}
 
 	while (dirs) {
@@ -766,7 +796,7 @@ ini_int(void)
 	if (bmode || fmode) {
 		if (gq_pattern) {
 			/* keep msg */
-		} else if (recursive && find_name) {
+        } else if (recursive && (find_name || find_dir_name)) {
 			s = s2;
 		} else {
 			return;
@@ -878,8 +908,9 @@ add_diff_dir(
 	syspth[1][pthlen[1]] = 0;
 	path = side ? syspth[1] : syspth[0];
 #if defined(TRACE) && 1
-	fprintf(debug, "->add_diff_dir(%s:%s) lp(%s) rp(%s)\n",
-	    side ? "right" : "left", path, syspth[0], syspth[1]);
+    fprintf(debug, "->add_diff_dir(side=%s path=%s) "
+                   "syspth[0]=\"%s\" syspth[1]=\"%s\"\n",
+            side ? "right" : "left", path, syspth[0], syspth[1]);
 #endif
 
 	if (!(rp = realpath(path, NULL))) {
@@ -912,7 +943,7 @@ add_diff_dir(
 		}
 #endif
 
-#if defined(TRACE) && 0
+#if defined(TRACE) && 1
 		fprintf(debug, "  \"%s\" added\n", path);
 #endif
 		do {
@@ -1270,7 +1301,7 @@ pthcat(char *p, size_t l, const char *n)
 		char *s = malloc(l + 1);
 		memcpy(s, p, l);
 		s[l] = 0;
-        fprintf(debug, "->pthcat(\"%s\" len_param=%zu true_len=%zu + \"%s\")\n", s, l, strlen(s), n);
+        fprintf(debug, "->pthcat(\"%s\" param_len=%zu true_len=%zu + \"%s\")\n", s, l, strlen(s), n);
 		free(s);
 	}
 #endif
@@ -1292,7 +1323,7 @@ ret:
         char *s = malloc(ret_val + 1);
         memcpy(s, p, ret_val);
         s[ret_val] = 0;
-        fprintf(debug, "<-pthcat: \"%s\" len_return=%zu true_len=%zu\n", s, ret_val, strlen(s));
+        fprintf(debug, "<-pthcat: \"%s\" return_len=%zu true_len=%zu\n", s, ret_val, strlen(s));
         free(s);
     }
 #endif
@@ -1310,7 +1341,7 @@ pthadd(char *p, size_t l, const char *n)
         char *s = malloc(l + 1);
         memcpy(s, p, l);
         s[l] = 0;
-        fprintf(debug, "->pthadd(\"%s\" len_param=%zu true_len=%zu + \"%s\")\n", s, l, strlen(s), n);
+        fprintf(debug, "->pthadd(\"%s\" param_len=%zu true_len=%zu + \"%s\")\n", s, l, strlen(s), n);
         free(s);
     }
 #endif
@@ -1334,7 +1365,7 @@ ret:
         char *s = malloc(rv + 1);
         memcpy(s, p, rv);
         s[rv] = 0;
-        fprintf(debug, "<-pthadd: \"%s\" len_return=%zu true_len=%zu\n", s, rv, strlen(s));
+        fprintf(debug, "<-pthadd: \"%s\" return_len=%zu true_len=%zu\n", s, rv, strlen(s));
         free(s);
     }
 #endif
