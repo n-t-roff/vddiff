@@ -49,6 +49,8 @@ int printerr(const char *err, const char *fmt, ...);
  *   quest: Possible answers as human readable text
  *   answ: Possible answers as char array
  *   fmt: Dialog text
+ * Output
+ *   The character the user enters or 0 if stdout is not a tty
  */
 int dialog(const char *, const char *, const char *, ...);
 int vdialog(const char *, const char *, const char *, va_list);

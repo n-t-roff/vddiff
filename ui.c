@@ -4362,18 +4362,24 @@ dialog(const char *quest, const char *answ, const char *fmt, ...)
 #endif
 
     if (!wstat) {
+        FILE *fp = nodialog ? stderr :
+                              stdout ;
         if (fmt) {
             va_start(ap, fmt);
-            vfprintf(stdout, fmt, ap);
+            vfprintf(fp, fmt, ap);
             va_end(ap);
-            fputc('\n', stdout);
+            fputc('\n', fp);
         }
 
-        fprintf(stdout, "%s: ", quest);
-        r = fgetc(stdin);
+        if (nodialog) {
+            r = 0;
+        } else {
+            fprintf(stdout, "%s: ", quest);
+            r = fgetc(stdin);
 
-        if (r != '\n') {
-            while (fgetc(stdin) != '\n') {
+            if (r != '\n') {
+                while (fgetc(stdin) != '\n') {
+                }
             }
         }
     } else {

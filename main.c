@@ -101,6 +101,7 @@ bool cli_mode;
 bool verbose;
 bool dont_overwrite;
 bool overwrite_if_old;
+bool nodialog;
 
 int
 main(int argc, char **argv)
@@ -168,7 +169,7 @@ main(int argc, char **argv)
 
     while ((opt =
             getopt(argc, argv,
-                   "ABbCcDdEeF:fG:gIikLlMmNnOoP:pqRrSsTt:UVv:WXx:y")
+                   "ABbCcDdEeF:fG:gIikLlMmNnOoP:pqRrSsTt:UVv:WXx:Yy")
             ) != -1)
     {
 		switch (opt) {
@@ -352,6 +353,9 @@ main(int argc, char **argv)
                 return EXIT_STATUS_ERROR;
             }
             break;
+        case 'Y':
+            nodialog = TRUE;
+            break;
 		case 'y':
 			twocols = TRUE;
 			break;
@@ -392,6 +396,11 @@ main(int argc, char **argv)
         printf("Two arguments expected\n");
         exit(EXIT_STATUS_ERROR);
         /* not reached */
+    }
+    if (!nodialog && (isatty(STDIN_FILENO)  != 1 ||
+                      isatty(STDOUT_FILENO) != 1))
+    {
+        nodialog = TRUE;
     }
 
     if (cli_mode) {

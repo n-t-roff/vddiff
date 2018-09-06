@@ -62,6 +62,7 @@ extern bool cli_rm;
 extern bool cli_mode;
 extern bool dont_overwrite; /* -O: Like `cp -n` */
 extern bool overwrite_if_old; /* -U: Like `cp -u` */
+extern bool nodialog;
 
 char *add_home_pth(const char *);
 /*
