@@ -20,11 +20,11 @@ PERFORMANCE OF THIS SOFTWARE.
 .Nd text terminal directory diff tool
 .Sh SYNOPSIS
 .Nm
-.Op Fl u Op Ar "RC file"
+.Op Fl u Op Ar "RC_file"
 .Op Ar OPTIONS
-.Op Fl F Ar file name pattern
-.Op Fl G Ar file content pattern
-.Op Fl P Ar last wd file
+.Op Fl F Ar file_name_pattern
+.Op Fl G Ar file_content_pattern
+.Op Fl P Ar last_wd_file
 .Op Fl t Ar diff_tool
 .Op Fl v Ar view_tool
 .Op Fl -
@@ -1955,7 +1955,13 @@ Browse mode only:
 Show directory entry
 .Dq Li .. .
 .El
+.
+.
+.
 .Sh VDDIFF MODES
+.
+.
+.
 .Nm
 has four modes:
 A diff mode and a browser mode, both have an
@@ -2049,7 +2055,13 @@ key
 or a compare of a marked directory (or archive)
 with a directory (or archive)
 switches to two-column diff mode.
+.
+.
+.
 .Sh MOUSE SUPPORT
+.
+.
+.
 For mouse support currently the ncurses interface is used
 which means that ncurses is required if one wants to use the mouse.
 Furthermore at least ncurses version 6 is currently required
@@ -2067,14 +2079,39 @@ set
 .Dq Li TERM=xterm-1002
 (else usually a further mouse click is required to finalize
 the resize).
+.
+.
+.
 .Sh FILES
+.
+.
+.
 .Bl -tag -width ~/.@vddiff@info
-.It Pa ~/.@vddiff@rc
+.
+.It Pa /etc/@vddiff@rc
 Read on start-up to set non-default options.
+.
+.It Pa ~/.@vddiff@rc
+If
+.Pa ~/.@vddiff@rc
+does exist, it is read instead of
+.Pa /etc/@vddiff@rc .
+To read both, add an
+.Cm include
+statement into
+.Pa ~/.@vddiff@rc .
+.
 .It Pa ~/.@vddiff@info
 Storage for persistant information.
+.
 .El
+.
+.
+.
 .Sh EXAMPLES
+.
+.
+.
 To display only differing files and subdirectories which contain
 differing files in two-column mode enter
 .Pp
@@ -2152,7 +2189,13 @@ compares two archives and
 .D1 Li @vddiff@ Ar file Ns Li .txz Ar directory
 .Pp
 compares an archive with a directory.
+.
+.
+.
 .Sh SEE ALSO
+.
+.
+.
 .Bl -tag -width 8n
 .It Lk http://n-t-roff.github.io/vddiff/vddiff.1.pdf
 This manual page as a PDF document with hyperlinks.

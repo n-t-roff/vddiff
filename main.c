@@ -75,12 +75,13 @@ static char *zipdir[2];
 static void arg_diff(int i);
 static void check_args(int, char **);
 static void cmp_inodes(void);
-static int read_rc(char *);
+static int read_rc(const char *const);
 static void ttcharoff(void);
 static void runs2x(void);
 static void check_opts(void);
 
 static const char rc_name[] = "." BIN "rc";
+const char etc_rc_name[] = "/etc/" BIN "rc";
 char *printwd;
 bool bmode;
 bool qdiff;
@@ -156,10 +157,17 @@ main(int argc, char **argv)
 		if (read_rc(NULL))
             return EXIT_STATUS_ERROR;
 	} else {
-		argc--; argv++;
+#if defined(TRACE)
+        fprintf(debug, "  main: Option -u\n");
+#endif
+        argc--; argv++;
 
+        /* argv[1] is only treated as an argument to -u
+         * if it does not start with `-` and it exists
+         * and is a regular file */
 		if (argc > 1 && argv[1][0] != '-' &&
-		    stat(argv[1], &gstat[0]) == 0 && S_ISREG(gstat[0].st_mode)) {
+            stat(argv[1], &gstat[0]) == 0 && S_ISREG(gstat[0].st_mode))
+        {
 			if (read_rc(argv[1]))
                 return EXIT_STATUS_ERROR;
 
@@ -623,21 +631,37 @@ arg_diff(int i)
 }
 
 static int
-read_rc(char *upath)
+read_rc(const char *const upath)
 {
-	char *rc_path;
+    const char *rc_path;
 	int rv = 0;
 	extern FILE *yyin;
+    bool try_etc_name = TRUE;
 
 	if (upath) {
-		rc_path = upath;
+        if (!(rc_path = strdup(upath)))
+            return 1;
 	} else if (!(rc_path = add_home_pth(rc_name))) {
-		return 1;
+        return 1;
 	}
-
-	if (stat(rc_path, &gstat[0]) == -1) {
-		if (errno == ENOENT)
+test_again:
+    if (stat(rc_path, &gstat[0]) != -1) {
+        cur_rc_dev = gstat[0].st_dev;
+        cur_rc_ino = gstat[0].st_ino;
+    } else {
+        if (errno == ENOENT) {
+#if defined(TRACE)
+            fprintf(debug, "  read_rc: %s not found\n", rc_path);
+#endif
+            if (try_etc_name) {
+                try_etc_name = FALSE;
+                free(rc_path);
+                if (!(rc_path = strdup(etc_rc_name)))
+                    return 1;
+                goto test_again;
+            }
 			goto free;
+        }
         printf(LOCFMT "stat \"%s\": %s\n" LOCVAR, rc_path,
 		    strerror(errno));
 		rv = 1;
@@ -659,9 +683,7 @@ read_rc(char *upath)
 		    strerror(errno));
 	}
 free:
-	if (!upath)
-		free(rc_path);
-
+    free(rc_path);
 	return rv;
 }
 

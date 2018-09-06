@@ -40,7 +40,9 @@ static struct incl_file *incstack;
 static void include(const char *);
 static void qstr_append(const char *, size_t);
 
-char *cur_rc_filenam;
+const char *cur_rc_filenam;
+dev_t cur_rc_dev;
+ino_t cur_rc_ino;
 unsigned rc_nline = 1;
 unsigned rc_col = 1;
 static size_t qstrsiz;
@@ -222,9 +224,22 @@ include(const char *s)
 	fprintf(debug, "<>include(%s)\n", p);
 # endif
 
-	if (!(yyin = fopen(p, "r"))){
-		printf("include \"%s\": %s\n", p, strerror(errno));
-		exit(1);
+    if (stat(p, &gstat[0]) != -1) {
+        if (cur_rc_dev == gstat[0].st_dev &&
+            cur_rc_ino == gstat[0].st_ino)
+        {
+            printf("include \"%s\": infinite loop\n", p);
+            exit(1);
+        }
+        cur_rc_dev = gstat[0].st_dev;
+        cur_rc_ino = gstat[0].st_ino;
+    } else {
+        printf(LOCFMT "include \"%s\": %s\n" LOCVAR, p, strerror(errno));
+        exit(1);
+    }
+    if (!(yyin = fopen(p, "r"))){
+        printf(LOCFMT "include \"%s\": %s\n" LOCVAR, p, strerror(errno));
+        exit(1);
 	}
 
 	inc = malloc(sizeof(struct incl_file));
