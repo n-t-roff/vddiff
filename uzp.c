@@ -560,7 +560,8 @@ zpths(const struct filediff *f, struct filediff **z2, int tree, size_t *l2,
 
 void setvpth(const int i)
 {
-    const int src = bmode ? 1 : i;
+    const int src = bmode ? 1 :
+                    i > 1 ? 0 : i; /* `src` is not used if `i > 1` */
     const size_t l = pthlen[src] - spthofs[src];
 
 	if (i > 1) {
