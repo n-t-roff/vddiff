@@ -1388,7 +1388,18 @@ creatdir(void)
 		printerr(strerror(errno), "mkdir %s", pth2);
 		return -1;
 	}
-
+    if (preserve_all) {
+        if (lchown(pth2, gstat[0].st_uid, gstat[0].st_gid) == -1) {
+#if defined(TRACE)
+            fprintf(debug, "  lchown(%s): %s\n", pth2, strerror(errno));
+#endif
+        }
+        if (chmod(pth2, gstat[0].st_mode & 07777) == -1) {
+#if defined(TRACE)
+            fprintf(debug, "  chmod(%s): %s\n", pth2, strerror(errno));
+#endif
+        }
+    }
     if (!wstat && verbose) {
         printf("Directory \"%s\" created\n", pth2);
     }
@@ -1466,7 +1477,18 @@ free_buf2:
             r = -1;
             goto exit;
         }
-
+#ifdef HAVE_FUTIMENS
+        if (preserve_all) {
+            struct timespec ts[2];
+            ts[0] = gstat[0].st_atim;
+            ts[1] = gstat[0].st_mtim;
+            if (utimensat(0, pth2, ts, AT_SYMLINK_NOFOLLOW) == -1) {
+#if defined(TRACE)
+                fprintf(debug, "  utimensat(%s): %s\n", pth2, strerror(errno));
+#endif
+            }
+        }
+#endif
         tot_cmp_byte_count += l;
         ++tot_cmp_file_count;
     }
@@ -1493,11 +1515,6 @@ int cp_reg(const unsigned mode) {
 	int fl = 0; /* open(2) flags */
 	ssize_t l1 = -1; /* read(2) return value */
 	ssize_t l2 = -1; /* write(2) return value */
-#ifdef HAVE_FUTIMENS
-	struct timespec ts[2];
-#else
-	struct utimbuf tb;
-#endif
 
 #if defined(TRACE)
     fprintf(debug, "->cp_reg(mode=%x) pth1=\"%s\" pth2=\"%s\"\n", mode, pth1, pth2);
@@ -1635,18 +1652,32 @@ copy:
 setattr:
     if (preserve_all || preserve_mtim) {
 #ifdef HAVE_FUTIMENS
+        struct timespec ts[2];
         ts[0] = gstat[0].st_atim;
         ts[1] = gstat[0].st_mtim;
-        futimens(f2, ts); /* error not checked */
+        if (futimens(f2, ts) == -1) {
+#if defined(TRACE)
+            fprintf(debug, "  futimes(%s): %s\n", pth2, strerror(errno));
+#endif
+        }
 #else
+        struct utimbuf tb;
         tb.actime  = gstat[0].st_atime;
         tb.modtime = gstat[0].st_mtime;
-        utime(pth2, &tb);
+        utime(pth2, &tb); /* error not checked */
 #endif
     }
     if (preserve_all) {
-        if (fchmod(f2, gstat[0].st_mode & 07777))
-            printerr(strerror(errno), "chmod \"%s\"", pth2);
+        if (fchown(f2, gstat[0].st_uid, gstat[0].st_gid) == -1) {
+#if defined(TRACE)
+            fprintf(debug, "  fchown(%s): %s\n", pth2, strerror(errno));
+#endif
+        }
+        if (fchmod(f2, gstat[0].st_mode & 07777) == -1) {
+#if defined(TRACE)
+            fprintf(debug, "  fchmod(%s): %s\n", pth2, strerror(errno));
+#endif
+        }
     }
 
 close2:
