@@ -185,12 +185,12 @@ ntr: /* next tree */
 
 		l = len1;
 		len1 = pthcat(pth1, len1, rbuf);
-		s = strdup(pth1);
+        if (!(s = strdup(pth1))) /* TODO: LSAN reports a leak--which can't be possible. Likely a LSAN bug. */
+            goto exit;
 
 		if (lstat(pth1, &gstat[0]) == -1) {
 			if (errno != ENOENT)
-				printerr(strerror(errno),
-                    LOCFMT "lstat \"%s\"" LOCVAR, pth1);
+                printerr(strerror(errno), LOCFMT "lstat \"%s\"" LOCVAR, pth1);
 		} else {
             if (!force_fs &&
                     dialog(y_n_txt, NULL, "Delete existing %s \"%s\"?",
@@ -211,7 +211,7 @@ ntr: /* next tree */
 		pthcat(pth1, len1, f->name);
 
 		if (rename(pth1, s) == -1) {
-			printerr(strerror(errno), "rename \"%s\" failed");
+            printerr(strerror(errno), LOCFMT "rename \"%s\"" LOCVAR, pth1);
 			goto exit;
 		}
 
