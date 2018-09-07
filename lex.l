@@ -108,6 +108,8 @@ uz_add		{ rc_col += yyleng; return UZ_ADD       ; }
 uz_del		{ rc_col += yyleng; return UZ_DEL       ; }
 dotdot		{ rc_col += yyleng; return DOTDOT       ; }
 sortic		{ rc_col += yyleng; return SORTIC       ; }
+preserve_all { rc_col += yyleng; return PRESERVE_ALL; }
+preserve_mtim { rc_col += yyleng; return PRESERVE_MTIM; }
 include		{ rc_col += yyleng; incl = 1            ; }
 {S}+		{ rc_col += yyleng; }
 

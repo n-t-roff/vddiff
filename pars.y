@@ -34,6 +34,7 @@ PERFORMANCE OF THIS SOFTWARE.
 #include "diff.h"
 #include "tc.h"
 #include "pars.h"
+#include "fs.h"
 
 int yylex(void);
 extern char *yytext;
@@ -48,7 +49,7 @@ extern char *yytext;
 %token SHELL SH NORMAL_COLOR CURSOR_COLOR ERROR_COLOR MARK_COLOR BG_COLOR
 %token ALIAS TWOCOLUMN READONLY DISP_PERM DISP_OWNER DISP_GROUP DISP_HSIZE
 %token DISP_MTIME MMRK_COLOR LOCALE FILE_EXEC UZ_ADD UZ_DEL WAIT NOBOLD DOTDOT
-%token SORTIC
+%token SORTIC PRESERVE_ALL PRESERVE_MTIM
 %token <str>     STRING
 %token <integer> INTEGER
 %%
@@ -119,6 +120,8 @@ option:
 	| FILE_EXEC                    { file_exec = TRUE                 ; }
 	| DOTDOT                       { dotdot = TRUE                    ; }
 	| SORTIC                       { sortic = TRUE                    ; }
+    | PRESERVE_ALL                 { preserve_all = TRUE; }
+    | PRESERVE_MTIM                { preserve_mtim = TRUE; }
 	| LOCALE STRING {
 			if (!setlocale(LC_ALL, $2)) {
 				printf("locale LC_ALL=%s cannot be set\n",

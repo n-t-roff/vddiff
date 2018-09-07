@@ -69,6 +69,8 @@ int fs_any_dst(long, int, unsigned);
 
 extern bool fs_none; /* Don't delete or overwrite any file */
 extern bool fs_abort; /* Abort operation */
+extern bool preserve_mtim;
+extern bool preserve_all;
 
 /* global for software test: */
 

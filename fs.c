@@ -72,11 +72,13 @@ static int fs_testBreak(void);
 time_t fs_t1, fs_t2;
 char *pth1, *pth2;
 static size_t len1, len2;
+
 static enum {
     TREE_RM, /* delete */
     TREE_CP, /* copy */
     TREE_NOT_EMPTY
 } tree_op;
+
 /* Ignores all syscall errors (continues on return value -1) */
 /* Set by fs_fwrap() on key 'i' */
 static bool fs_ign_errs;
@@ -89,6 +91,8 @@ static bool fs_error;
 static bool fs_all;
 bool fs_none;
 bool fs_abort;
+bool preserve_mtim;
+bool preserve_all;
 
 void
 clr_fs_err(void) {
@@ -138,7 +142,7 @@ fs_rename(int tree, long u, int num,
     unsigned md)
 {
 	struct filediff *f;
-	char *s;
+    const char *s = NULL;
 	size_t l;
 	int ntr = 0;
 
@@ -188,17 +192,19 @@ ntr: /* next tree */
 				printerr(strerror(errno),
                     LOCFMT "lstat \"%s\"" LOCVAR, pth1);
 		} else {
-			if (!force_fs && dialog(y_n_txt, NULL,
-			    "Delete existing %s \"%s\"?",
-			    S_ISDIR(gstat[0].st_mode) ?
-			    "directory" : "file", pth1) != 'y')
+            if (!force_fs &&
+                    dialog(y_n_txt, NULL, "Delete existing %s \"%s\"?",
+                           S_ISDIR(gstat[0].st_mode) ?
+                           "directory" : "file", pth1) != 'y')
+            {
 				goto exit;
-
+            }
 			if (S_ISDIR(gstat[0].st_mode)) {
 				tree_op = TREE_RM;
 				proc_dir();
-			} else
+            } else {
 				rm_file();
+            }
 		}
 
 		len1 = l;
@@ -1627,17 +1633,21 @@ copy:
     ++tot_cmp_file_count;
 
 setattr:
+    if (preserve_all || preserve_mtim) {
 #ifdef HAVE_FUTIMENS
-	ts[0] = gstat[0].st_atim;
-	ts[1] = gstat[0].st_mtim;
-	futimens(f2, ts); /* error not checked */
+        ts[0] = gstat[0].st_atim;
+        ts[1] = gstat[0].st_mtim;
+        futimens(f2, ts); /* error not checked */
 #else
-	tb.actime  = gstat[0].st_atime;
-	tb.modtime = gstat[0].st_mtime;
-	utime(pth2, &tb);
+        tb.actime  = gstat[0].st_atime;
+        tb.modtime = gstat[0].st_mtime;
+        utime(pth2, &tb);
 #endif
-    if (fchmod(f2, gstat[0].st_mode & 07777))
-        printerr(strerror(errno), "chmod \"%s\"", pth2);
+    }
+    if (preserve_all) {
+        if (fchmod(f2, gstat[0].st_mode & 07777))
+            printerr(strerror(errno), "chmod \"%s\"", pth2);
+    }
 
 close2:
 	close(f2);

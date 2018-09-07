@@ -42,6 +42,7 @@ PERFORMANCE OF THIS SOFTWARE.
 #include "info.h"
 #include "lex.h"
 #include "misc.h"
+#include "fs.h"
 #ifdef TEST
 # include "test.h"
 #endif
@@ -177,7 +178,7 @@ main(int argc, char **argv)
 
     while ((opt =
             getopt(argc, argv,
-                   "ABbCcDdEeF:fG:gIikLlMmNnOoP:pqRrSsTt:UVv:WXx:Yy")
+                   "AaBbCcDdEeF:fG:gIikLlMmNnOoP:pqRrSsTt:UVv:WXx:Yy")
             ) != -1)
     {
 		switch (opt) {
@@ -185,7 +186,9 @@ main(int argc, char **argv)
             cli_cp = TRUE;
             cli_mode = TRUE;
             break;
-
+        case 'a':
+            preserve_all = TRUE;
+            break;
 		case 'B':
             dontdiff = TRUE;
 			break;

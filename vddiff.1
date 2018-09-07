@@ -138,12 +138,20 @@ File type
 .It So Li ?   Sc Ta "Unknown file type"
 .It So Li !   Sc Ta "Different file type"
 .El
+.
+.
+.
 .Sh OPTIONS
+.
+.
+.
 .Bl -tag -width 12n
+.
 .It Fl -
 All following arguments (if any) are not recognized as options
 even when starting with a
 .Sq Fl "" .
+.
 .It Fl A Oo Fl psW Oc Ar source_file_or_directory Ar ... Ar destination_file_or_directory
 Debug option:
 Recursively copy source arguments to destination argument.
@@ -155,6 +163,14 @@ Print summary.
 . It Fl W
 Force overwrite (don't ask).
 . El
+.
+.It Fl a
+Preserve all attributes on copy except file type
+(following links is selected with option
+.Fl l
+or RC command
+.Cm followlinks ) .
+.
 .It Fl B
 Force two-column file browser mode even if two arguments are given.
 Normally diff mode is started with two arguments.
@@ -1453,7 +1469,13 @@ Toggle to always wait for
 after running an external tool.
 This can be useful for debugging purposes.
 .El
+.
+.
+.
 .Sh CONFIGURATION FILE ~/.@vddiff@rc
+.
+.
+.
 Permanent non-default options can be set in the file
 .Pa ~/.@vddiff@rc ,
 which has a very simple
@@ -1486,9 +1508,11 @@ into a quoted string, precede it with a backslash.
 This backslash is removed before storing the string.
 All other backslashes are preserved.
 .Bl -tag -width 12n
+.
 .It Li twocolumn
 Start in two-column mode.
 This is currently only supported if two arguments are given.
+.
 .It Li difftool Ar string
 Configure
 .Ar string
@@ -1527,6 +1551,7 @@ is ignored if one of the files to be compared is compressed.
 Since they are decompressed into a temporary directory
 which is removed after starting the diff tool,
 the file may be removed before the tool reads it.
+.
 .It Li viewtool Ar string
 Configure
 .Ar string
@@ -1544,6 +1569,7 @@ the symbol
 can be embedded into
 .Ar string ,
 which is expanded to the filename.
+.
 .It Li viewtool bg Ar string
 Start
 .Ar string
@@ -1559,6 +1585,17 @@ For example
 .Pp
 displayes every file to view in a separate window while not
 blocking the file browser.
+.
+.It Li preserve_mtim
+Preserve modification time on copying regular files.
+This command had been introduced for compatibility with version 1.11
+which did preserve file modification time by default.
+.
+.It Li preserve_all
+Preserve all file attributes on copy except file type.
+(Following links is selected with
+.Cm followlinks . )
+.
 .It Li ext Ar extension Ar string
 Configure view tool
 .Ar string
@@ -1578,6 +1615,7 @@ as in
 because the parser expects a string (and not a number)
 after the keyword
 .Li ext .
+.
 .It Li ext Ar extension Li bg Ar string
 Start
 .Ar string
