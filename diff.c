@@ -1111,6 +1111,9 @@ read_link(char *path, off_t size)
 
 int cmp_symlink(char **a, char **b) {
     int return_value = 0;
+#if defined(TRACE) && (defined(TEST) || 1)
+    fprintf(debug, "<>cmp_symlink()\n");
+#endif
 
     if (gstat[0].st_size != gstat[1].st_size) {
         return_value |= 1;
@@ -1150,7 +1153,7 @@ int cmp_file(
 	int rv = 0, f1 = -1, f2 = -1;
 	ssize_t l1 = -1, l2 = -1;
 
-#if defined(TRACE) && (defined(TEST) || 0)
+#if defined(TRACE) && (defined(TEST) || 1)
 	fprintf(debug, "->cmp_file(name1=%s size1=%ju name2=%s size2=%ju mode=%u)\n",
 		lpth, (intmax_t)lsiz, rpth, (intmax_t)rsiz, md);
 #endif
@@ -1229,7 +1232,7 @@ int cmp_file(
 close_f1:
 	close(f1);
 ret:
-#if defined(TRACE) && (defined(TEST) || 0)
+#if defined(TRACE) && (defined(TEST) || 1)
 	fprintf(debug, "<-cmp_file(): %d\n", rv);
 #endif
 	return rv;

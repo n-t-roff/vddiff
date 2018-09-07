@@ -382,6 +382,7 @@ Intented for use with
 .Fl A .
 .It Fl o
 Hide files which are on one side only.
+.
 .It Fl P Ar last wd file
 Write the last working directory to the specified file.
 With the appropriate scripts (not yet installed with this software),
@@ -389,10 +390,12 @@ this can be used to change the shell working directory to the
 last directory used in fmode or bmode.
 (See
 .Xr mc 1 ) .
-.It Fl s
+.
+.It Fl p
 With options
 .Fl A , D , q , T :
 Print message for each processed file.
+.
 .It Fl q Ar file_or_directory_1 Ar file_or_directory_2
 Print differing files and exit (similar to
 .Dq Li diff \-q ,
@@ -426,6 +429,7 @@ combined with
 Pressing key
 .Sq c
 enables to view all files in this mode.
+.
 .It Fl S
 Debug option:
 With options
@@ -436,10 +440,16 @@ Run tool in shell mode.
 With option
 .Fl p
 a matching line is printed too.
+.
 .It Fl s
 With options
 .Fl A , D , q , T :
 Output summary how many files and bytes have been successfully processed.
+Zero sized files are not counted for
+.Fl A , T
+and
+.Fl q .
+.
 .It Fl T Oo Fl psW Oc Ar source_file_or_directory Ar ... Ar destination_file_or_directory
 Debug option:
 Recursively move source arguments to destination argument.
@@ -451,6 +461,7 @@ Print summary.
 . It Fl W
 Force overwrite (don't ask).
 . El
+.
 .It Fl t Ar diff_tool
 Specify diff tool on the command line.
 The filenames to compare are appended to the given string.

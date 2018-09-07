@@ -1491,15 +1491,10 @@ free_buf2:
 #endif
         tot_cmp_byte_count += l;
         ++tot_cmp_file_count;
+        if (!wstat && verbose)
+            printf("Symbolic link copy \"%s\" -> \"%s\" done\n", pth1, pth2);
     }
-
-	/* setting symlink time is not supported on all file systems */
-
 exit:
-    if (!equal && !r && !wstat && verbose) {
-        printf("Symbolic link copy \"%s\" -> \"%s\" done\n", pth1, pth2);
-    }
-
     free(buf);
 #if defined(TRACE)
     fprintf(debug, "<-cp_link: %d\n", r);
