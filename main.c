@@ -109,7 +109,7 @@ bool nodialog;
     do { \
         if (exit_status == EXIT_SUCCESS) \
             exit_status = EXIT_STATUS_DIFF; \
-    } while (1)
+    } while (0)
 
 int
 main(int argc, char **argv)
