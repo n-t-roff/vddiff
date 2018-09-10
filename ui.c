@@ -3321,12 +3321,11 @@ file_stat(struct filediff *f, struct filediff *f2)
     if (ltyp)
         get_uid_name(f->uid[0], lbuf, sizeof lbuf);
     if (rtyp)
-        get_uid_name(f->uid[1], rbuf, sizeof rbuf);
+        get_uid_name(f2->uid[1], rbuf, sizeof rbuf);
     if (ltyp) {
         wmove(wstat, yl, x);
         addmbs(wstat, lbuf, mx1);
     }
-
 	if (rtyp) {
 		wmove(wstat, yr, x2);
 		addmbs(wstat, rbuf, 0);
@@ -3352,12 +3351,11 @@ file_stat(struct filediff *f, struct filediff *f2)
     if (ltyp)
         get_gid_name(f->gid[0], lbuf, sizeof lbuf);
     if (rtyp)
-        get_gid_name(f->gid[1], rbuf, sizeof rbuf);
+        get_gid_name(f2->gid[1], rbuf, sizeof rbuf);
     if (ltyp) {
         wmove(wstat, yl, x);
         addmbs(wstat, lbuf, mx1);
     }
-
 	if (rtyp) {
 		wmove(wstat, yr, x2);
 		addmbs(wstat, rbuf, 0);
