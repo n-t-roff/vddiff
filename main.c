@@ -82,6 +82,7 @@ static void runs2x(void);
 static void check_opts(void);
 
 static const char rc_name[] = "." BIN "rc";
+const char etc_rc_dir[] = "/etc/" BIN "/" BIN "rc";
 const char etc_rc_name[] = "/etc/" BIN "rc";
 char *printwd;
 bool bmode;
@@ -653,6 +654,7 @@ read_rc(const char *const upath)
     const char *rc_path;
 	int rv = 0;
 	extern FILE *yyin;
+    bool try_etc_dir = TRUE;
     bool try_etc_name = TRUE;
 
 	if (upath) {
@@ -670,7 +672,13 @@ test_again:
 #if defined(TRACE)
             fprintf(debug, "  read_rc: %s not found\n", rc_path);
 #endif
-            if (try_etc_name) {
+            if (try_etc_dir) {
+                try_etc_dir = FALSE;
+                free(rc_path);
+                if (!(rc_path = strdup(etc_rc_dir)))
+                    return 1;
+                goto test_again;
+            } else if (try_etc_name) {
                 try_etc_name = FALSE;
                 free(rc_path);
                 if (!(rc_path = strdup(etc_rc_name)))

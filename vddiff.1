@@ -2148,14 +2148,21 @@ the resize).
 .
 .Bl -tag -width ~/.@vddiff@info
 .
-.It Pa /etc/@vddiff@rc
+.It Pa /etc/@vddiff@/@vddiff@rc
 Read on start-up to set non-default options.
+.
+.It Pa /etc/@vddiff@rc
+If
+.Pa /etc/@vddiff@/@vddiff@rc
+does not exist
+.Pa /etc/@vddiff@rc
+is read instead.
 .
 .It Pa ~/.@vddiff@rc
 If
 .Pa ~/.@vddiff@rc
 does exist, it is read instead of
-.Pa /etc/@vddiff@rc .
+.Pa /etc/@vddiff@/@vddiff@rc .
 To read both, add an
 .Cm include
 statement into
