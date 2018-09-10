@@ -290,7 +290,7 @@ no_tree2:
             {
 				struct scan_dir *se;
 
-                if (find_dir_name) {
+                if (find_dir_name) { /* -x */
                     if (!find_name && !gq_pattern)
                         ++tot_cmp_file_count;
                     if (!regexec(&find_dir_name_regex, name, 0, NULL, 0)) {
@@ -299,7 +299,7 @@ no_tree2:
 #endif
                         dir_diff = 1;
 
-                        if (cli_mode) {
+                        if (cli_mode) { /* -Sx */
                             syspth[0][pthlen[0]] = 0;
                             printf("%s/%s\n", syspth[0], name);
                         }

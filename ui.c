@@ -180,7 +180,7 @@ build_ui(void)
             return_value |= 2;
             goto ret;
         }
-    } /* if (!qdiff) */
+    } /* if (!cli_mode) */
 
 	/* Not in main since build_diff_db() uses printerr() */
 	if (recursive) {
@@ -210,7 +210,7 @@ build_ui(void)
     } else if (fmode) {
 		build_diff_db(1);
 		build_diff_db(2);
-    } else {
+    } else { /* case also used for qdiff */
         return_value |= build_diff_db(3);
     }
 

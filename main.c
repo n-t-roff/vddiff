@@ -105,6 +105,12 @@ bool dont_overwrite;
 bool overwrite_if_old;
 bool nodialog;
 
+#define SET_EXIT_DIFF \
+    do { \
+        if (exit_status == EXIT_SUCCESS) \
+            exit_status = EXIT_STATUS_DIFF; \
+    } while (1)
+
 int
 main(int argc, char **argv)
 {
@@ -454,7 +460,7 @@ main(int argc, char **argv)
             {
                 printf("Different file type: %s and %s\n",
                        syspth[0], syspth[1]);
-                exit_status = EXIT_STATUS_DIFF;
+                SET_EXIT_DIFF;
             } else {
                 char *a = NULL;
                 char *b = NULL;
@@ -469,7 +475,7 @@ main(int argc, char **argv)
                 case 1:
                     printf("Symbolic links differ: %s -> %s, %s -> %s\n",
                            syspth[0], a, syspth[1], b);
-                    exit_status = EXIT_STATUS_DIFF;
+                    SET_EXIT_DIFF;
                     break;
                 default: /* 2 or 3 */
                     exit_status = EXIT_STATUS_ERROR;
@@ -510,7 +516,7 @@ main(int argc, char **argv)
                     case 1:
                         printf("Files %s and %s differ\n",
                                syspth[0], syspth[1]);
-                        exit_status = EXIT_STATUS_DIFF;
+                        SET_EXIT_DIFF;
                         break;
                     default: /* 2 or 3 */
                         exit_status = EXIT_STATUS_ERROR;
@@ -556,14 +562,16 @@ main(int argc, char **argv)
 		term_jmp_buf_valid = 1;
 
         if (cli_rm) {
-            do_cli_rm(argc, argv);
+            if (do_cli_rm(argc, argv))
+                exit_status = EXIT_STATUS_ERROR;
         } else if (cli_cp) {
-            do_cli_cp(argc, argv, cli_mv ? 1 : 0);
+            if (do_cli_cp(argc, argv, cli_mv ? 1 : 0))
+                exit_status = EXIT_STATUS_ERROR;
         } else {
-            int v = build_ui();
+            int v = build_ui(); /* v is return value of qdiff */
 
             if (v == 1) {
-                exit_status = EXIT_STATUS_DIFF;
+                SET_EXIT_DIFF;
             } else if (v) {
                 exit_status = EXIT_STATUS_ERROR;
             }
