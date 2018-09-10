@@ -4,6 +4,9 @@
 #include <limits.h>
 #include <stdlib.h>
 #include <stdarg.h>
+#include <sys/types.h>
+#include <pwd.h>
+#include <grp.h>
 #include "compat.h"
 #include "tc.h"
 #include "ui.h"
@@ -221,4 +224,22 @@ int cmp_timespec(const struct timespec a, const struct timespec b)
         return 1;
     else
         return 0;
+}
+
+void get_uid_name(const uid_t uid, char *const buf, const size_t buf_size)
+{
+    const struct passwd *const pw = getpwuid(uid);
+    if (pw)
+        memcpy(buf, pw->pw_name, strlen(pw->pw_name) + 1);
+    else
+        snprintf(buf, buf_size, "%u", uid);
+}
+
+void get_gid_name(const gid_t gid, char *const buf, const size_t buf_size)
+{
+    const struct group *const gr = getgrgid(gid);
+    if (gr)
+        memcpy(buf, gr->gr_name, strlen(gr->gr_name) + 1);
+    else
+        snprintf(buf, buf_size, "%u", gid);
 }

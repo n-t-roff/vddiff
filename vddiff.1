@@ -13,7 +13,7 @@ LOSS OF USE, DATA OR PROFITS, WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE OR
 OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
 PERFORMANCE OF THIS SOFTWARE.
 ..
-.Dd September 3, 2018
+.Dd September 10, 2018
 .Dt VDDIFF 1
 .Sh NAME
 .Nm @vddiff@
@@ -638,24 +638,35 @@ which can be accessed with the
 and
 .Aq Cm DOWN
 keys.
+.
 .It Dq Li \&Sd
 Sort files with directories on top.
 (See also rc file option
 .Cm sortic
 and ex command
 .Cm set sortic . )
+.
 .It Dq Li \&Sm
 Sort files by name only (ignoring file type).
 (See also rc file option
 .Cm sortic
 and ex command
 .Cm set sortic . )
+.
 .It Dq Li \&SS
 Sort files by size with directories on top,
 smallest file first.
+.
 .It Dq Li \&St
 Sort files by modification time only,
 oldest first (ignoring file type).
+.
+.It Dq Li \&Su
+Sort files by owner name.
+.
+.It Dq Li \&Sg
+Sort files by group name.
+.
 .It Sq Li H
 Put cursor to top line.
 .It Sq Li M

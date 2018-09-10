@@ -1065,7 +1065,7 @@ diff_cmp(
 	const char *name1 = f1->name;
 	const char *name2 = f2->name;
 	const bool dotdot2 = str_eq_dotdot(name2);
-	int case_cmp_result;
+    int i;
 
 	if (str_eq_dotdot(name1)) {
 		if (dotdot2) {
@@ -1100,7 +1100,21 @@ diff_cmp(
 		if      (t1 < t2) return -1;
 		else if (t1 > t2) return  1;
 
-	} else if (sorting != SORTMIXED) {
+    } else if (sorting == SORT_OWNER) {
+        uid_t uid1 = f1->type[0] ? f1->uid[0] : f1->uid[1];
+        uid_t uid2 = f2->type[0] ? f2->uid[0] : f2->uid[1];
+        get_uid_name(uid1, lbuf, sizeof lbuf);
+        get_uid_name(uid2, rbuf, sizeof rbuf);
+        if ((i = strcmp(lbuf, rbuf)))
+            return i;
+    } else if (sorting == SORT_GROUP) {
+        gid_t gid1 = f1->type[0] ? f1->gid[0] : f1->gid[1];
+        gid_t gid2 = f2->type[0] ? f2->gid[0] : f2->gid[1];
+        get_gid_name(gid1, lbuf, sizeof lbuf);
+        get_gid_name(gid2, rbuf, sizeof rbuf);
+        if ((i = strcmp(lbuf, rbuf)))
+            return i;
+    } else if (sorting != SORTMIXED) {
 		short f1_dir = IS_F_DIR(1),
 		      f2_dir = IS_F_DIR(2);
 		short dirsort = f1_dir && !f2_dir ? -1 :
@@ -1114,8 +1128,8 @@ diff_cmp(
 		}
 	}
 
-	if (sortic && (case_cmp_result = strcasecmp(name1, name2))) {
-		return case_cmp_result;
+    if (sortic && (i = strcasecmp(name1, name2))) {
+        return i;
 	} else {
 		return strcmp(name1, name2);
 	}

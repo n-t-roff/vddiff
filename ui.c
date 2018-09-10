@@ -1239,8 +1239,14 @@ next_key:
 
 					goto save_st;
 				}
-			}
-
+            } else if (*key == 'S') {
+                c = 0;
+                if (sorting == SORT_OWNER)
+                    break;
+                sorting = SORT_OWNER;
+                rebuild_db(1);
+                break;
+            }
 			c = 0;
 			rebuild_db(0);
 			break;
@@ -1294,8 +1300,14 @@ next_key:
 
 					goto save_st;
 				}
-			}
-
+            } else if (*key == 'S') {
+                c = 0;
+                if (sorting == SORT_GROUP)
+                    break;
+                sorting = SORT_GROUP;
+                rebuild_db(1);
+                break;
+            }
 			break;
 
 		case 's':
@@ -1626,6 +1638,8 @@ static const char *const helptxt[] = {
        "Sm		Sort files by name only",
        "SS		Sort files by size only",
        "St		Sort files by modification time only",
+       "Su		Sort files by owner name",
+       "Sg		Sort files by group name",
        "H		Put cursor to top line",
        "M		Put cursor on middle line",
        "L		Put cursor on bottom line",
@@ -3086,8 +3100,6 @@ disp_name(WINDOW *w, int y, int x, int mx,
     int i) /* tree--*not* col! */
 {
 	int j;
-	struct passwd *pw;
-	struct group *gr;
 	int db;
 
 	db = fmode ? right_col : 0;
@@ -3161,22 +3173,14 @@ disp_name(WINDOW *w, int y, int x, int mx,
 	}
 
 	if (add_owner) {
-		if ((pw = getpwuid(f->uid[i])))
-			memcpy(lbuf, pw->pw_name, strlen(pw->pw_name) + 1);
-		else
-			snprintf(lbuf, sizeof lbuf, "%u", f->uid[i]);
-
+        get_uid_name(f->uid[i], lbuf, sizeof lbuf);
 		wmove(w, y, mx + 1);
 		addmbs(w, lbuf, 0);
 		mx += usrlen[db];
 	}
 
 	if (add_group) {
-		if ((gr = getgrgid(f->gid[i])))
-			memcpy(lbuf, gr->gr_name, strlen(gr->gr_name) + 1);
-		else
-			snprintf(lbuf, sizeof lbuf, "%u", f->gid[i]);
-
+        get_gid_name(f->gid[i], lbuf, sizeof lbuf);
 		wmove(w, y, mx + 1);
 		addmbs(w, lbuf, 0);
 		mx += grplen[db];
@@ -3257,8 +3261,6 @@ static void
 file_stat(struct filediff *f, struct filediff *f2)
 {
 	int x, x2, w, w1, w2, yl, yr, lx1, lx2, mx1;
-	struct passwd *pw;
-	struct group *gr;
 	mode_t ltyp, rtyp;
 	bool tc = twocols || mark;
 
@@ -3316,24 +3318,14 @@ file_stat(struct filediff *f, struct filediff *f2)
 	if (tc && x2 >= COLS)
 		rtyp = 0;
 
-	if (ltyp) {
-		if ((pw = getpwuid(f->uid[0])))
-			memcpy(lbuf, pw->pw_name, strlen(pw->pw_name) + 1);
-		else
-			snprintf(lbuf, sizeof lbuf, "%u", f->uid[0]);
-	}
-
-	if (rtyp) {
-		if ((pw = getpwuid(f2->uid[1])))
-			memcpy(rbuf, pw->pw_name, strlen(pw->pw_name) + 1);
-		else
-			snprintf(rbuf, sizeof rbuf, "%u", f2->uid[1]);
-	}
-
-	if (ltyp) {
-		wmove(wstat, yl, x);
-		addmbs(wstat, lbuf, mx1);
-	}
+    if (ltyp)
+        get_uid_name(f->uid[0], lbuf, sizeof lbuf);
+    if (rtyp)
+        get_uid_name(f->uid[1], rbuf, sizeof rbuf);
+    if (ltyp) {
+        wmove(wstat, yl, x);
+        addmbs(wstat, lbuf, mx1);
+    }
 
 	if (rtyp) {
 		wmove(wstat, yr, x2);
@@ -3357,24 +3349,14 @@ file_stat(struct filediff *f, struct filediff *f2)
 	if (tc && x2 >= COLS)
 		rtyp = 0;
 
-	if (ltyp) {
-		if ((gr = getgrgid(f->gid[0])))
-			memcpy(lbuf, gr->gr_name, strlen(gr->gr_name) + 1);
-		else
-			snprintf(lbuf, sizeof lbuf, "%u", f->gid[0]);
-	}
-
-	if (rtyp) {
-		if ((gr = getgrgid(f2->gid[1])))
-			memcpy(rbuf, gr->gr_name, strlen(gr->gr_name) + 1);
-		else
-			snprintf(rbuf, sizeof rbuf, "%u", f2->gid[1]);
-	}
-
-	if (ltyp) {
-		wmove(wstat, yl, x);
-		addmbs(wstat, lbuf, mx1);
-	}
+    if (ltyp)
+        get_gid_name(f->gid[0], lbuf, sizeof lbuf);
+    if (rtyp)
+        get_gid_name(f->gid[1], rbuf, sizeof rbuf);
+    if (ltyp) {
+        wmove(wstat, yl, x);
+        addmbs(wstat, lbuf, mx1);
+    }
 
 	if (rtyp) {
 		wmove(wstat, yr, x2);
