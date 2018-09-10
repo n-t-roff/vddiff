@@ -248,7 +248,7 @@ gq_proc(struct filediff *f)
 
 		if (!n)
 			break;
-
+        tot_cmp_byte_count += n;
 		gq_buf[n] = 0;
 
 		if (!regexec(&re->re, gq_buf, 0, NULL, 0)) {
@@ -328,6 +328,7 @@ void gq_proc_lines(const struct filediff *const f)
         }
         if (!nread)
             break;
+        tot_cmp_byte_count += nread;
         /* test if buffer contains a 0 byte */
         for (i = 0; !binary && i < nread; i++)
             if (!line[i])

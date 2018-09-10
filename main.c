@@ -577,13 +577,19 @@ main(int argc, char **argv)
 
     if (cli_mode) {
         if (summary) {
-            printf("%'ld files (%'ju bytes) %s\n",
-                   tot_cmp_file_count,
-                   (uintmax_t)tot_cmp_byte_count,
-                   qdiff ? "compared" :
-                   cli_mv ? "moved" :
-                   cli_cp ? "copied" :
-                   cli_rm ? "removed" : "");
+            if (!gq_pattern && find_name)
+                printf("%'ld files processed\n", tot_cmp_file_count);
+            else if (!gq_pattern && find_dir_name)
+                printf("%'ld directories processed\n", tot_cmp_file_count);
+            else
+                printf("%'ld files (%'ju bytes) %s\n",
+                       tot_cmp_file_count,
+                       (uintmax_t)tot_cmp_byte_count,
+                       qdiff ? "compared" :
+                       cli_mv ? "moved" :
+                       cli_cp ? "copied" :
+                       cli_rm ? "removed" :
+                       gq_pattern ? "processed" : "");
         }
     } else {
 		remove_tmp_dirs();

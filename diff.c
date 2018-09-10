@@ -290,17 +290,19 @@ no_tree2:
             {
 				struct scan_dir *se;
 
-                if (find_dir_name &&
-                        !regexec(&find_dir_name_regex, name, 0, NULL, 0))
-                {
+                if (find_dir_name) {
+                    if (!find_name && !gq_pattern)
+                        ++tot_cmp_file_count;
+                    if (!regexec(&find_dir_name_regex, name, 0, NULL, 0)) {
 #if defined(TRACE) && 1
-                    fprintf(debug, "  dir_diff: find_dir: %s\n", name);
+                        fprintf(debug, "  dir_diff: find_dir: %s\n", name);
 #endif
-                    dir_diff = 1;
+                        dir_diff = 1;
 
-                    if (cli_mode) {
-                        syspth[0][pthlen[0]] = 0;
-                        printf("%s/%s\n", syspth[0], name);
+                        if (cli_mode) {
+                            syspth[0][pthlen[0]] = 0;
+                            printf("%s/%s\n", syspth[0], name);
+                        }
                     }
                 }
 
@@ -318,6 +320,8 @@ no_tree2:
 			}
 
             if (find_name) { /* -F ("find(1)") */
+                if (!gq_pattern)
+                    ++tot_cmp_file_count;
 				if (regexec(&fn_re, name, 0, NULL, 0)) {
                     /* no match */
 					continue;
@@ -764,6 +768,7 @@ exit:
 int file_grep(const char *const name)
 {
     int return_value = 0;
+    ++tot_cmp_file_count;
     diff = alloc_diff(name);
     diff->type[0] = gstat[0].st_mode;
     diff->type[1] = gstat[1].st_mode;
