@@ -1920,26 +1920,54 @@ A size less than 2 disables the history
 entry need to be saved to use this feature).
 .It Li scale
 Show file size in human-readable format.
+.
+.It Li disp_all
+Add columns for file permissions,
+file owner,
+file group,
+scaled file size, and
+file modification time.
+.
 .It Li disp_perms
 Add file permissions column.
 Can be removed with
 .Dq Li \&Rp
+.
+.It Li nodisp_perms
+Remove file permissions column.
+.
 .It Li disp_owner
 Add file owner column.
 Can be removed with
 .Dq Li \&Ru
+.
+.It Li nodisp_owner
+Remove file owner column.
+.
 .It Li disp_group
 Add file group column.
 Can be removed with
 .Dq Li \&Rg
+.
+.It Li nodisp_group
+Remove file group column.
+.
 .It Li disp_hsize
 Add scaled file size column.
 Can be removed with
 .Dq Li \&Rh
+.
+.It Li nodisp_hsize
+Remove file size column.
+.
 .It Li disp_mtime
 Add file modification time column.
 Can be removed with
 .Dq Li \&Rt
+.
+.It Li nodisp_mtime
+Remove modification time column.
+.
 .It Li file_exec
 bmode and fmode only:
 Enable execution of executeable files by pressing

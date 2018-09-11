@@ -49,7 +49,8 @@ extern char *yytext;
 %token SHELL SH NORMAL_COLOR CURSOR_COLOR ERROR_COLOR MARK_COLOR BG_COLOR
 %token ALIAS TWOCOLUMN READONLY DISP_PERM DISP_OWNER DISP_GROUP DISP_HSIZE
 %token DISP_MTIME MMRK_COLOR LOCALE FILE_EXEC UZ_ADD UZ_DEL WAIT NOBOLD DOTDOT
-%token SORTIC PRESERVE_ALL PRESERVE_MTIM
+%token SORTIC PRESERVE_ALL PRESERVE_MTIM DISP_ALL
+%token NO_DISP_PERM NO_DISP_OWNER NO_DISP_GROUP NO_DISP_HSIZE NO_DISP_MTIME
 %token <str>     STRING
 %token <integer> INTEGER
 %%
@@ -112,12 +113,22 @@ option:
 	| UZ_DEL STRING                { uz_db_del($2)                    ; }
 	| TWOCOLUMN                    { twocols = TRUE                   ; }
 	| READONLY                     { readonly = TRUE; nofkeys = TRUE  ; }
-	| DISP_PERM                    { add_mode = TRUE                  ; }
+    | DISP_ALL                     { add_mode  = TRUE;
+                                     add_owner = TRUE;
+                                     add_group = TRUE;
+                                     add_hsize = TRUE;
+                                     add_mtime = TRUE; }
+    | DISP_PERM                    { add_mode  = TRUE                 ; }
 	| DISP_OWNER                   { add_owner = TRUE                 ; }
 	| DISP_GROUP                   { add_group = TRUE                 ; }
 	| DISP_HSIZE                   { add_hsize = TRUE                 ; }
 	| DISP_MTIME                   { add_mtime = TRUE                 ; }
-	| FILE_EXEC                    { file_exec = TRUE                 ; }
+    | NO_DISP_PERM                 { add_mode  = FALSE                ; }
+    | NO_DISP_OWNER                { add_owner = FALSE                ; }
+    | NO_DISP_GROUP                { add_group = FALSE                ; }
+    | NO_DISP_HSIZE                { add_hsize = FALSE                ; }
+    | NO_DISP_MTIME                { add_mtime = FALSE                ; }
+    | FILE_EXEC                    { file_exec = TRUE                 ; }
 	| DOTDOT                       { dotdot = TRUE                    ; }
 	| SORTIC                       { sortic = TRUE                    ; }
     | PRESERVE_ALL                 { preserve_all = TRUE; }
@@ -135,6 +146,6 @@ option:
 void
 yyerror(const char *s)
 {
-	printf("Parse error: %s in %s line %u before column %u\n",
-	    s, cur_rc_filenam, rc_nline, rc_col);
+    printf("Parse error: %s in %s line %u before column %u\n",
+        s, cur_rc_filenam, rc_nline, rc_col);
 }
