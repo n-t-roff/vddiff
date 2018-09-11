@@ -591,6 +591,7 @@ next_key:
 			if (num && num <= FKEY_MUX_NUM) {
 				c = 0;
 				fkey_set = num - 1;
+                printerr(NULL, "Funktion key set %d selected", num);
 				break;
 			}
 
@@ -878,47 +879,7 @@ next_key:
 			}
 
 			c = 0;
-			standendc(wlist);
-			werase(wlist);
-
-			if (fkey_set) {
-				mvwprintw(wlist, 0, 0, "Set %d", fkey_set + 1);
-			}
-
-			for (i = 0; i < FKEY_NUM; i++) {
-				int j = fkey_set ? i + 2 : i; /* display line */
-				mvwprintw(wlist, j, 0, "F%d", i + 1);
-
-				if (fkey_cmd[fkey_set][i]) {
-					if (fkey_comment[fkey_set][i]) {
-						mvwprintw(wlist, j, 5, "\"%c %s\" (%s)",
-						    FKEY_CMD_CHR(i), fkey_cmd[fkey_set][i],
-						    fkey_comment[fkey_set][i]);
-					} else {
-						mvwprintw(wlist, j, 5, "\"%c %s\"",
-						    FKEY_CMD_CHR(i), fkey_cmd[fkey_set][i]);
-					}
-
-					continue;
-				}
-
-				if (!sh_str[fkey_set][i])
-					continue;
-
-				mvwprintw(wlist, j, 5, "\"%ls\"",
-				    sh_str[fkey_set][i]);
-			}
-
-			{
-				int lkey_ = anykey();
-
-				for (i = 0; i < FKEY_NUM; i++) {
-					if (lkey_ == KEY_F(i + 1)) {
-						keep_ungetch(lkey_);
-						break;
-					}
-				}
-			}
+            disp_fkey_list();
 			break;
 
 		case 'r':
