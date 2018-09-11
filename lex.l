@@ -113,9 +113,12 @@ file_exec	{ rc_col += yyleng; return FILE_EXEC    ; }
 uz_add		{ rc_col += yyleng; return UZ_ADD       ; }
 uz_del		{ rc_col += yyleng; return UZ_DEL       ; }
 dotdot		{ rc_col += yyleng; return DOTDOT       ; }
+nodotdot	{ rc_col += yyleng; return NO_DOTDOT    ; }
 sortic		{ rc_col += yyleng; return SORTIC       ; }
 preserve_all { rc_col += yyleng; return PRESERVE_ALL; }
 preserve_mtim { rc_col += yyleng; return PRESERVE_MTIM; }
+hidden { rc_col += yyleng; return HIDDEN; }
+nohidden { rc_col += yyleng; return NO_HIDDEN; }
 include		{ rc_col += yyleng; incl = 1            ; }
 {S}+		{ rc_col += yyleng; }
 

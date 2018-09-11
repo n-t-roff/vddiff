@@ -1187,45 +1187,30 @@ mmrktobot(void)
 void
 filt_stat(void)
 {
-	unsigned x;
-
-	x = COLS - 1;
+    unsigned x = COLS - 1;
 	standoutc(wstat);
 
-	if (file_pattern) {
+    if (file_pattern)
 		mvwaddch(wstat, 0, x--, 'E');
-	}
-
-	if (wait_after_exec) {
+    if (wait_after_exec)
 		mvwaddch(wstat, 0, x--, 'W');
-	}
-
-	if (followlinks) {
+    if (followlinks)
 		mvwaddch(wstat, 0, x--, 'F');
-	}
-
-	if (dontcmp) {
+    if (dontcmp)
 		mvwaddch(wstat, 0, x--, '%');
-	}
+    if (nohidden)
+        mvwaddch(wstat, 0, x--, ',');
 
 	if (!(bmode || fmode)) {
-		if (excl_or) {
+        if (excl_or)
 			mvwaddch(wstat, 0, x--, '^');
-		}
-
-		if (nosingle) {
+        if (nosingle)
 			mvwaddch(wstat, 0, x--, '&');
-		}
-
-		if (noequal) {
+        if (noequal)
 			mvwaddch(wstat, 0, x--, '!');
-		}
-
-		if (real_diff) {
+        if (real_diff)
 			mvwaddch(wstat, 0, x--, 'c');
-		}
 	}
-
 	standendc(wstat);
 	mvwaddch(wstat, 0, x--, ' ');
 }

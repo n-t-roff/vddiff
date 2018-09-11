@@ -49,7 +49,7 @@ extern char *yytext;
 %token SHELL SH NORMAL_COLOR CURSOR_COLOR ERROR_COLOR MARK_COLOR BG_COLOR
 %token ALIAS TWOCOLUMN READONLY DISP_PERM DISP_OWNER DISP_GROUP DISP_HSIZE
 %token DISP_MTIME MMRK_COLOR LOCALE FILE_EXEC UZ_ADD UZ_DEL WAIT NOBOLD DOTDOT
-%token SORTIC PRESERVE_ALL PRESERVE_MTIM DISP_ALL
+%token SORTIC PRESERVE_ALL PRESERVE_MTIM DISP_ALL NO_DOTDOT HIDDEN NO_HIDDEN
 %token NO_DISP_PERM NO_DISP_OWNER NO_DISP_GROUP NO_DISP_HSIZE NO_DISP_MTIME
 %token <str>     STRING
 %token <integer> INTEGER
@@ -130,9 +130,12 @@ option:
     | NO_DISP_MTIME                { add_mtime = FALSE                ; }
     | FILE_EXEC                    { file_exec = TRUE                 ; }
 	| DOTDOT                       { dotdot = TRUE                    ; }
-	| SORTIC                       { sortic = TRUE                    ; }
+    | NO_DOTDOT                    { dotdot = FALSE                   ; }
+    | SORTIC                       { sortic = TRUE                    ; }
     | PRESERVE_ALL                 { preserve_all = TRUE; }
     | PRESERVE_MTIM                { preserve_mtim = TRUE; }
+    | HIDDEN { nohidden = FALSE; }
+    | NO_HIDDEN { nohidden = TRUE; }
 	| LOCALE STRING {
 			if (!setlocale(LC_ALL, $2)) {
 				printf("locale LC_ALL=%s cannot be set\n",

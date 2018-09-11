@@ -66,3 +66,4 @@ extern void *name_db;
 extern void *skipext_db;
 extern void *uz_path_db;
 extern bool sortic;
+extern bool nohidden;

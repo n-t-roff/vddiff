@@ -254,7 +254,7 @@ static void
 ui_ctrl(void)
 {
 	static struct history opt_hist;
-	int key[2] = { 0, 0 }, key2[2], c = 0, c2 = 0, i;
+    int key[2] = { 0, 0 }, key2[2], c = 0, c2 = 0;
 	unsigned num, num2;
 	long u;
 	struct filediff *f;
@@ -717,9 +717,17 @@ next_key:
 			break;
 
 		case 'E':
-			c = 0;
-			file_pattern = file_pattern ? FALSE : TRUE;
-			re_sort_list();
+        case ',':
+            switch (c) {
+            case 'E':
+                file_pattern = file_pattern ? FALSE : TRUE;
+                break;
+            case ',':
+                nohidden = nohidden ? FALSE : TRUE;
+                break;
+            }
+            c = 0; /* c is used in the switch statement above! */
+            re_sort_list();
 			break;
 
 		case KEY_RESIZE:
@@ -1619,6 +1627,7 @@ static const char *const helptxt[] = {
        "^		Toggle display of files which are in both trees",
        "F		Toggle following symbolic links",
        "E		Toggle file name or file content filter",
+       ",		Toggle display of hidden files",
        "Ah		Show scaled file size",
        "Ag		Show file group",
        "Ap		Show file mode",
@@ -3711,12 +3720,14 @@ no_file(void)
 	}
 
 	if (file_pattern) n++;
+    if (nohidden    ) n++;
 
 	if (n) {
 		printerr(NULL,
 		    "No file in list (key%s %s%s%s%s%sdisable%s filter%s).",
 		    n > 1 ? "s" : "",
 		    file_pattern ? "'E' " : "",
+            nohidden     ? "',' " : "",
 		    real_diff    ? "'c' " : "",
 		    noequal      ? "'!' " : "",
 		    nosingle     ? "'&' " : "",

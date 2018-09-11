@@ -93,6 +93,7 @@ void *skipext_db;
 void *uz_path_db;
 static void *alias_db;
 bool sortic;
+bool nohidden; /* in db.c because it must be possible to toggle with ',' */
 
 static void *curs_db[2];
 static void *ext_db;
@@ -883,6 +884,9 @@ exit:
          (!S_ISDIR(f->type[0]) && !S_ISDIR(f->type[1]) && \
           (!find_name || !regexec(&fn_re, f->name, 0, NULL, 0)) && \
           (!gq_pattern || !gq_proc(f)))) \
+        && \
+        (!nohidden || f->name[0] != '.' || \
+         (dotdot && f->name[1] == '.' && !f->name[2])) \
         && \
 	    (bmode || fmode || \
 	     ((!noequal || \

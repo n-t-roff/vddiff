@@ -13,7 +13,7 @@ LOSS OF USE, DATA OR PROFITS, WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE OR
 OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
 PERFORMANCE OF THIS SOFTWARE.
 ..
-.Dd September 10, 2018
+.Dd September 11, 2018
 .Dt VDDIFF 1
 .Sh NAME
 .Nm @vddiff@
@@ -713,6 +713,10 @@ Toggle file name
 or file content
 .Pq Fl G
 filter.
+.
+.It Sq Li \&,
+Toggle display of hidden files.
+.
 .It Dq Li \&Ah
 Add scaled file size column.
 Does not show device major and minor numbers
@@ -1853,6 +1857,13 @@ the file extension can be removed with this command.
 Display directories at the end instead on top.
 .It Li mixed
 Display files and directories mixed.
+.
+.It Li hidden
+Show hidden files.
+.
+.It Li nohidden
+Don't show hidden files.
+.
 .It Li dir_color Ar integer
 Set color for directories.
 Default is 3 (yellow).
