@@ -16,6 +16,7 @@ PERFORMANCE OF THIS SOFTWARE.
 
 #include <stdlib.h>
 #include <string.h>
+#include <strings.h>
 #include <errno.h>
 #include <sys/types.h>
 #include <unistd.h>
@@ -556,7 +557,7 @@ parsopt(char *buf)
 	bool next_arg = FALSE;
 
 #if defined(TRACE)
-	fprintf(debug, "<->parsopt(%s)\n", buf);
+    fprintf(debug, "<>parsopt(%s)\n", buf);
 #endif
 	bufend = buf + strlen(buf);
 
@@ -756,17 +757,23 @@ next_opt:
 
 		loop_mode = not ? 0 : 1;
 
-	} else if (!strcmp(buf, "random") ||
-	    (!strncmp(buf, "random ", (skip = 7)) &&
-	    (next_arg = TRUE))) {
-		rnd_mode = not ? FALSE : TRUE;
-
 	} else if (!strcmp(buf, "magic") ||
 	    (!strncmp(buf, "magic ", (skip = 6)) &&
 	    (next_arg = TRUE))) {
 		magic = not ? 0 : 1;
 
-	} else if (!strcmp(buf, "recursive") ||
+    } else if (!strcmp(buf, "preserve") ||
+        (!strncmp(buf, "preserve ", (skip = 9)) &&
+        (next_arg = TRUE))) {
+        preserve_all = not ? FALSE : TRUE;
+        preserve_mtim = FALSE;
+
+    } else if (!strcmp(buf, "random") ||
+        (!strncmp(buf, "random ", (skip = 7)) &&
+        (next_arg = TRUE))) {
+        rnd_mode = not ? FALSE : TRUE;
+
+    } else if (!strcmp(buf, "recursive") ||
 	    (!strncmp(buf, "recursive ", (skip = 10)) &&
 	    (next_arg = TRUE))) {
 		recursive = not ? 0 : 1;
@@ -816,14 +823,15 @@ getnextarg(char *buf, unsigned m)
 static void
 set_all(void)
 {
-	static char nofile_exec_str[] = "nofile_exec\n";
-	static char nofkeys_str[]     = "nofkeys\n";
-	static char noic_str[]        = "noic\n";
-	static char noloop_str[]      = "noloop\n";
-	static char nomagic_str[]     = "nomagic\n";
-	static char norandom_str[]    = "norandom\n";
-	static char norecurs_str[]    = "norecursive\n";
-	static char nows_str[]        = "nows\n";
+    static const char nofile_exec_str[] = "nofile_exec\n";
+    static const char nofkeys_str[]     = "nofkeys\n";
+    static const char noic_str[]        = "noic\n";
+    static const char noloop_str[]      = "noloop\n";
+    static const char nomagic_str[]     = "nomagic\n";
+    static const char nopreserve_str[]  = "nopreserve\n";
+    static const char norandom_str[]    = "norandom\n";
+    static const char norecurs_str[]    = "norecursive\n";
+    static const char nows_str[]        = "nows\n";
 
 	werase(wlist);
 	wattrset(wlist, A_NORMAL);
@@ -833,6 +841,7 @@ set_all(void)
 	waddstr(wlist, noic ? noic_str : noic_str + 2);
 	waddstr(wlist, loop_mode ? noloop_str + 2 : noloop_str);
 	waddstr(wlist, magic ? nomagic_str + 2 : nomagic_str);
+    waddstr(wlist, preserve_all ? nopreserve_str + 2 : nopreserve_str);
 	waddstr(wlist, rnd_mode ? norandom_str + 2 : norandom_str);
 	waddstr(wlist, recursive ? norecurs_str + 2 : norecurs_str);
 	waddstr(wlist, nows ? nows_str : nows_str + 2);

@@ -16,6 +16,7 @@ PERFORMANCE OF THIS SOFTWARE.
 
 #include <errno.h>
 #include <string.h>
+#include <strings.h>
 #include <stdlib.h>
 #include <sys/types.h>
 #include <pwd.h>

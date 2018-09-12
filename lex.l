@@ -117,6 +117,7 @@ nodotdot	{ rc_col += yyleng; return NO_DOTDOT    ; }
 sortic		{ rc_col += yyleng; return SORTIC       ; }
 preserve_all { rc_col += yyleng; return PRESERVE_ALL; }
 preserve_mtim { rc_col += yyleng; return PRESERVE_MTIM; }
+nopreserve { rc_col += yyleng; return NO_PRESERVE; }
 hidden { rc_col += yyleng; return HIDDEN; }
 nohidden { rc_col += yyleng; return NO_HIDDEN; }
 include		{ rc_col += yyleng; incl = 1            ; }

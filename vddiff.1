@@ -1348,10 +1348,19 @@ This could make sense if the command is e.g. an
 audio player.
 .It Li set noloop
 End loop mode.
+.
 .It Li set magic
 Use extended regular expressions.
+.
 .It Li set nomagic
 Use basic regular expressions.
+.
+.It Li set preserve
+Preserve file attributes on copy.
+.
+.It Li set nopreserve
+Don't preserve file attributes on copy.
+.
 .It Li set random
 Process multiple marked files in random order.
 .It Li set norandom
@@ -1621,6 +1630,9 @@ which did preserve file modification time by default.
 Preserve all file attributes on copy except file type.
 (Following links is selected with
 .Cm followlinks . )
+.
+.It Li nopreserve
+Don't preserve file attributes on copy.
 .
 .It Li ext Ar extension Ar string
 Configure view tool

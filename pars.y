@@ -51,6 +51,7 @@ extern char *yytext;
 %token DISP_MTIME MMRK_COLOR LOCALE FILE_EXEC UZ_ADD UZ_DEL WAIT NOBOLD DOTDOT
 %token SORTIC PRESERVE_ALL PRESERVE_MTIM DISP_ALL NO_DOTDOT HIDDEN NO_HIDDEN
 %token NO_DISP_PERM NO_DISP_OWNER NO_DISP_GROUP NO_DISP_HSIZE NO_DISP_MTIME
+%token NO_PRESERVE
 %token <str>     STRING
 %token <integer> INTEGER
 %%
@@ -134,6 +135,8 @@ option:
     | SORTIC                       { sortic = TRUE                    ; }
     | PRESERVE_ALL                 { preserve_all = TRUE; }
     | PRESERVE_MTIM                { preserve_mtim = TRUE; }
+    | NO_PRESERVE { preserve_all = FALSE;
+                    preserve_mtim = FALSE; }
     | HIDDEN { nohidden = FALSE; }
     | NO_HIDDEN { nohidden = TRUE; }
 	| LOCALE STRING {
