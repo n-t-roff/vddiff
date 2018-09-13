@@ -315,12 +315,15 @@ edit_fkey:
 	return 0;
 }
 
-bool
-is_fkey_cmd(char *s) {
-	int ek;
+bool is_fkey_cmd(const char *const s) {
+    int ek;
 
-	return ((ek = *s) == '$' || ek == '!' || ek == '#' || ek == '%') &&
-	    isspace((int)s[1]);
+    bool result = ((ek = *s) == '$' || ek == '!' || ek == '#' || ek == '%') &&
+                  isspace((int)s[1]);
+#if defined(TRACE)
+    fprintf(debug, "<>is_fkey_cmd(%s): %d\n", s, result ? 1 : 0);
+#endif
+    return result;
 }
 
 void
@@ -332,13 +335,20 @@ set_fkey_cmd(
 #if defined(TRACE)
 	fprintf(debug, "<>set_fkey_cmd(%d '%c' \"%s\"\n", i, ek, s);
 #endif
+    free(fkey_cmd[j][i]);
 	fkey_cmd[j][i] = strdup(s);
-	fkey_comment[j][i] = comment;
+    set_fkey_comment(j, i, comment);
 	fkey_flags[j][i] =
 	    ek == '%' ? (FKEY_WAIT | FKEY_FORCE) :
 	    ek == '!' ? FKEY_WAIT  : /* wait after command */
 	    ek == '#' ? FKEY_FORCE : /* don't wait before command */
 	                0 ;
+}
+
+void set_fkey_comment(const int set, const int key_id, char *const comment)
+{
+    free(fkey_comment[set][key_id]);
+    fkey_comment[set][key_id] = comment;
 }
 
 void
@@ -1926,7 +1936,11 @@ static void print_fkey_set(void)
         }
         if (!sh_str[fkey_set][i])
             continue;
-        mvwprintw(wlist, j, 5, "\"%ls\"", sh_str[fkey_set][i]);
+        if (fkey_comment[fkey_set][i])
+            mvwprintw(wlist, j, 5, "\"%ls\" (%s)",
+                      sh_str[fkey_set][i], fkey_comment[fkey_set][i]);
+        else
+            mvwprintw(wlist, j, 5, "\"%ls\"", sh_str[fkey_set][i]);
     }
 }
 

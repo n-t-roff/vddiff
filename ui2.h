@@ -27,7 +27,9 @@ extern unsigned prev_pos[2];
 extern unsigned jmrk[2][32];
 
 int test_fkey(int, unsigned short, long);
-bool is_fkey_cmd(char *);
+/* Test if "fkey" argument is simply a saved string
+ * or if it is a command to process a file. */
+bool is_fkey_cmd(const char *const);
 void set_fkey_cmd(int, int, char *, int, char *);
 void ui_srch(void);
 int srch_file(char *, int);
@@ -87,3 +89,7 @@ int keep_ungetch(int);
 int opt_flushinp(void);
 void disp_fkey_list(void);
 void set_fkey_set(const int i);
+
+/* private declarations */
+
+void set_fkey_comment(const int set, const int key_id, char *const comment);

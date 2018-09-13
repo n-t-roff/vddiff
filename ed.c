@@ -128,8 +128,12 @@ disp_edit(void)
 }
 
 void
-set_fkey(int i, char *s, char *comment)
+set_fkey(int i, char *const s, char *const comment)
 {
+#if defined(TRACE)
+    fprintf(debug, "<>set_fkey(key_num=%d cmd=\"%s\" comment=\"%s\"\n",
+            i, s, comment);
+#endif
 	int ek = *s;
 	size_t l;
 	int set = 0;
@@ -142,18 +146,16 @@ set_fkey(int i, char *s, char *comment)
 			set--;
 		}
 
-		if (set < 0 || set >= FKEY_MUX_NUM) {
-			printf("Function key set must be in range 0-%d\n",
-			    FKEY_MUX_NUM - 1);
-			exit(1);
-		}
+        if (set < 0 || set >= FKEY_MUX_NUM) {
+            printf("Function key set must be in range 0-%d\n", FKEY_MUX_NUM - 1);
+            exit(1);
+        }
 	}
 
-	if (i < 1 || i > FKEY_NUM) {
-		printf("Function key number must be in range 1-%d\n",
-		    FKEY_NUM);
-		exit(1);
-	}
+    if (i < 1 || i > FKEY_NUM) {
+        printf("Function key number must be in range 1-%d\n", FKEY_NUM);
+        exit(1);
+    }
 
 	i--; /* key 1-12, storage 0-11 */
 	free(sh_str[set][i]);
@@ -165,20 +167,19 @@ set_fkey(int i, char *s, char *comment)
 		int c;
 		char *p = s;
 
-		while ((c = *++p) && isspace(c));
-
-		if (!c)
-			goto free; /* empty input */
-
-		set_fkey_cmd(set, i, p, ek, comment);
-
-free:
+        while ((c = *++p) && isspace(c))
+            ;
+        if (c) /* input not empty */
+            set_fkey_cmd(set, i, p, ek, comment);
 		free(s);
 		return;
-	}
+    } else {
+        set_fkey_comment(set, i, comment);
+    }
 
 	/* wcslen(wcs) should be <= strlen(mbs) */
 	l = strlen(s) + 1;
+    free(sh_str[set][i]);
 	sh_str[set][i] = malloc(l * sizeof(wchar_t));
 	mbstowcs(sh_str[set][i], s, l);
 	free(s);

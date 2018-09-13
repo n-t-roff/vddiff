@@ -254,6 +254,12 @@ include(const char *s)
     }
     if (!(yyin = fopen(p, "r"))){
         printf(LOCFMT "include \"%s\": %s\n" LOCVAR, p, strerror(errno));
+        switch (errno) {
+        case EMFILE:
+        case ENFILE:
+            printf(LOCFMT "Possible infinite loop (circular include file dependency)\n" LOCVAR);
+            break;
+        }
         exit(1);
 	}
 

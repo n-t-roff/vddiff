@@ -19,7 +19,7 @@ void disp_edit(void);
 int ed_dialog(const char *const, const char *const, int (*)(char *, int), int,
     struct history *);
 void clr_edit(void);
-void set_fkey(int, char *, char *);
+void set_fkey(int, char *const, char *const);
 
 extern short edit;
 extern unsigned histsize;

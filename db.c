@@ -632,7 +632,7 @@ add_alias(char *const key, char *value, const tool_flags_t flags)
         }
         if (!override_prev) {
             printf("Error: Alias \"%s\" -> \"%s\" "
-                   "already  exists with value \"%s\"\n",
+                   "already exists with value \"%s\"\n",
                    key, value, ot->tool);
             exit(EXIT_STATUS_ERROR);
         } else {

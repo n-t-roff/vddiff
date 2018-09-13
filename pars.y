@@ -106,8 +106,12 @@ option:
 	| NOWS                         { nows  = 1                        ; }
 	| SCALE                        { scale = 1                        ; }
 	| NOBOLD                       { nobold = 1                       ; }
-	| SHELL STRING                 { ishell = $2                      ; }
-	| SH STRING                    { nishell = $2                     ; }
+    | SHELL STRING { if (ishell)
+                         free(ishell);
+                     ishell = $2; }
+    | SH STRING    { if (nishell)
+                         free(nishell);
+                     nishell = $2; }
 	| UZ_ADD STRING STRING         { uz_add($2, $3)                   ; }
     | UZ_DEL STRING                { uz_db_del($2);
                                      free($2); }
