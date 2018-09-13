@@ -1636,6 +1636,18 @@ Preserve all file attributes on copy except file type.
 .It Li nopreserve
 Don't preserve file attributes on copy.
 .
+.It Li override
+Using
+.Cm ext
+twice for the same extension
+or
+.Cm alias
+twice for the same alias
+normally leads to a fatal error.
+When
+.Li override
+is set, the previous command is redefined.
+.
 .It Li ext Ar extension Ar string
 Configure view tool
 .Ar string
@@ -1800,11 +1812,14 @@ Sort files case-insensitive.
 Disable colors.
 .It Li followlinks
 Follow symbolic links.
+.
 .It Li noequal
 Display differences only, hide equal files.
+.
 .It Li real_diff
 Show only directories which exist in both trees
 and really different files.
+.
 .It Li recursive
 Recursively scan file tree to detect and mark
 directories which contain differences.
@@ -1815,6 +1830,7 @@ additionally set option
 To view all files when in this mode key
 .Sq c
 can be used.
+.
 .It Li noic
 Searching for a filename with
 .Sq Li /
@@ -1822,6 +1838,7 @@ or
 .Dq Li //
 is normally done case-insensitive.
 Case-sensitive search can be configured with this option.
+.
 .It Li magic
 For searching with
 .Dq Li //
@@ -1910,6 +1927,7 @@ Default is 4 (blue).
 .It Li normal_color Ar integer
 Set color for normal text.
 Default is 7 (white).
+.
 .It Li bg_color Ar integer
 Set background color.
 Default is 0 (black).
@@ -1919,6 +1937,7 @@ E.g.
 .Pp
 changes the background color to blue
 (and the normally blue mark color to black).
+.
 .It Li cursor_color Ar foreground Ar background
 Set the cursor color.
 .Ar foreground
@@ -1926,6 +1945,7 @@ and
 .Ar background
 must be given as integers.
 Default is 0 7 (black on white).
+.
 .It Li mark_color Ar foreground Ar background
 Set color for marks.
 .Ar foreground
@@ -1933,6 +1953,7 @@ and
 .Ar background
 must be given as integers.
 Default is 7 4 (white on blue).
+.
 .It Li mmrk_color Ar foreground Ar background
 Set color for multiple marks.
 .Ar foreground
@@ -1940,6 +1961,7 @@ and
 .Ar background
 must be given as integers.
 Default is 0 3 (black on yellow).
+.
 .It Li error_color Ar foreground Ar background
 Set color for diff errors.
 .Ar foreground
@@ -1947,6 +1969,10 @@ and
 .Ar background
 must be given as integers.
 Default is 7 1 (white on red).
+.
+.It nobold
+Don't use bold font for colored text.
+.
 .It Li histsize Ar integer
 Set history size to
 .Ar integer .
@@ -1954,6 +1980,7 @@ Default is 100.
 A size less than 2 disables the history
 (at least the current command line and one previous
 entry need to be saved to use this feature).
+.
 .It Li scale
 Show file size in human-readable format.
 .
@@ -2074,10 +2101,17 @@ can be placed at the end of the RC file.
 Set locale
 .Ar locale_name .
 .end_comment
+.
 .It Li dotdot
 Browse mode only:
 Show directory entry
 .Dq Li .. .
+.
+.It Li nodotdot
+Browse mode only:
+Don't show directory entry
+.Dq Li .. .
+.
 .El
 .
 .
