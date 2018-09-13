@@ -268,8 +268,6 @@ str_db_add(void **db, char *s)
 }
 #endif
 
-/* 0: found, !0: not found */
-
 #ifdef HAVE_LIBAVLBST
 int
 str_db_srch(void **db, char *s, struct bst_node **n)

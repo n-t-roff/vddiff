@@ -12,17 +12,29 @@ struct scan_db {
 
 #ifdef HAVE_LIBAVLBST
 void db_init(void);
-void str_db_add(void **, char *, int, struct bst_node *);
-int str_db_srch(void **, char *, struct bst_node **);
 #else
 struct ptr_db_ent {
-	char *key;
-	void *dat;
+    char *key;
+    void *dat;
 };
-
-char *str_db_add(void **, char *);
-int str_db_srch(void **, char *, char **);
 #endif
+
+#ifdef HAVE_LIBAVLBST
+void str_db_add(void **, char *, int, struct bst_node *);
+#else
+char *str_db_add(void **, char *);
+#endif
+
+/* Input:
+ *   node: May be NULL
+ * Return value: 0: found, !0: not found */
+int str_db_srch(void **db, char *str,
+#ifdef HAVE_LIBAVLBST
+                struct bst_node **node);
+#else
+                char **node);
+#endif
+
 char **str_db_sort(void *, unsigned long);
 void diff_db_add(struct filediff *, int);
 void diff_db_sort(int);

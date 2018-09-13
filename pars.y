@@ -73,11 +73,7 @@ option:
 	| ALIAS STRING STRING          { add_alias($2, $3, 0)             ; }
 	| ALIAS STRING BG STRING       { add_alias($2, $4, TOOL_BG)       ; }
 	| ALIAS STRING WAIT STRING     { add_alias($2, $4, TOOL_BG|TOOL_WAIT); }
-	| SKIPEXT STRING         { str_db_add(&skipext_db, str_tolower($2)
-#ifdef HAVE_LIBAVLBST
-	                              , 0, NULL
-#endif
-	                              ); }
+    | SKIPEXT STRING         { add_skip_ext($2); }
 	| FKEY INTEGER STRING          { nofkeys = FALSE; set_fkey($2, $3, NULL); }
 	| FKEY INTEGER STRING STRING   { nofkeys = FALSE; set_fkey($2, $3, $4); }
     | FKEY_SET INTEGER { set_fkey_set($2); }

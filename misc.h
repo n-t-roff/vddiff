@@ -39,6 +39,7 @@ int do_cli_cp(int argc, char **argv, const unsigned opt);
 int cmp_timespec(const struct timespec a, const struct timespec b);
 void get_uid_name(const uid_t uid, char *const buf, const size_t buf_size);
 void get_gid_name(const gid_t gid, char *const buf, const size_t buf_size);
+void add_skip_ext(char *const ext);
 
 extern const char oom_msg[];
 extern bool override_prev;

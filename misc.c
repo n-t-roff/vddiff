@@ -244,3 +244,23 @@ void get_gid_name(const gid_t gid, char *const buf, const size_t buf_size)
     else
         snprintf(buf, buf_size, "%u", gid);
 }
+
+void add_skip_ext(char *const ext)
+{
+#if defined(TRACE)
+    fprintf(debug, "<>add_skip_ext(%s)\n", ext);
+#endif
+    str_tolower(ext);
+    if (!str_db_srch(&skipext_db, ext, NULL)) {
+#if defined(TRACE)
+        fprintf(debug, "  %s already exists\n", ext);
+#endif
+        free(ext);
+        return;
+    }
+    str_db_add(&skipext_db, ext
+#ifdef HAVE_LIBAVLBST
+               , 0, NULL
+#endif
+               );
+}
