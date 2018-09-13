@@ -638,38 +638,48 @@ add_alias(char *key, char *value, tool_flags_t flags)
  * ext DB *
  **********/
 
-void
-db_def_ext(char *ext, char *_tool, tool_flags_t flags)
+void db_def_ext(char *const ext, char *_tool, tool_flags_t flags)
 {
-	struct tool *t;
-#ifndef HAVE_LIBAVLBST
-	struct tool key;
-#endif
-
 	str_tolower(ext);
 #ifdef HAVE_LIBAVLBST
-	if (!bst_srch(ext_db, (union bst_val)(void *)ext, NULL)) {
+    struct bst_node *n;
+    if (!bst_srch(ext_db, (union bst_val)(void *)ext, &n)) {
+        struct tool *const ot = n->data.p;
 #else
-	key.ext = ext;
+    struct tool key;
+    key.ext = ext;
+    void *vp;
 
-	if (tfind(&key, &ext_db, ext_cmp)) {
+    if ((vp = tfind(&key, &ext_db, ext_cmp))) {
+        struct tool *const ot = *(struct tool **)vp;
 #endif
-		printf("Error: Tool for extension \"%s\" set twice\n", ext);
-		exit(1);
-	} else {
-		struct tool *at;
-
-		t = malloc(sizeof(struct tool));
-		t->tool = NULL; /* set_tool makes a free() */
-		t->args = NULL;
-
-		if (!ptr_db_srch(&alias_db, _tool, (void **)&at, NULL)) {
-			free(_tool);
-			_tool = strdup(at->tool);
-			flags |= at->flags;
-		}
-
-		set_tool(t, _tool, flags);
+        if (override_prev) {
+            free(ext);
+            struct tool *const t = set_ext_tool(_tool, flags);
+            if (!t)
+                return;
+#ifdef HAVE_LIBAVLBST
+            n->data.p = (void *)t;
+#else
+            t->ext = ot->ext;
+            *(struct tool **)vp = t;
+#endif
+            struct strlst *args = ot->args;
+            while (args) {
+                struct strlst *const p = args;
+                args = args->next;
+                free(p);
+            }
+            free(ot->tool);
+            free(ot);
+        } else {
+            printf("Error: Tool for extension \"%s\" set twice\n", ext);
+            exit(EXIT_STATUS_ERROR);
+        }
+    } else {
+        struct tool *const t = set_ext_tool(_tool, flags);
+        if (!t)
+            return;
 #ifdef HAVE_LIBAVLBST
 		avl_add(ext_db, (union bst_val)(void *)ext,
 		    (union bst_val)(void *)t);
@@ -678,6 +688,30 @@ db_def_ext(char *ext, char *_tool, tool_flags_t flags)
 		tsearch(t, &ext_db, ext_cmp);
 #endif
 	}
+}
+
+struct tool *set_ext_tool(char *_tool, tool_flags_t flags)
+{
+    struct tool *const t = malloc(sizeof(*t));
+    if (!t)
+        goto ret;
+    t->tool = NULL; /* set_tool makes a free() */
+    t->args = NULL;
+
+    struct tool *at; /* "alias tool" */
+    if (!ptr_db_srch(&alias_db, _tool, (void **)&at, NULL)) {
+        free(_tool);
+        _tool = strdup(at->tool);
+        if (!_tool) {
+            free(t);
+            return NULL;
+        }
+        flags |= at->flags;
+    }
+
+    set_tool(t, _tool, flags);
+ret:
+    return t;
 }
 
 struct tool *

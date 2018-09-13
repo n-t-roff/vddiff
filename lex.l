@@ -121,6 +121,7 @@ preserve_mtim { rc_col += yyleng; return PRESERVE_MTIM; }
 nopreserve { rc_col += yyleng; return NO_PRESERVE; }
 hidden { rc_col += yyleng; return HIDDEN; }
 nohidden { rc_col += yyleng; return NO_HIDDEN; }
+override { rc_col += yyleng; return OVERRIDE; }
 include		{ rc_col += yyleng; incl = 1            ; }
 {S}+		{ rc_col += yyleng; }
 
@@ -208,6 +209,8 @@ yywrap(void)
 	inc = incstack;
 	incstack = incstack->next;
 	free(inc);
+    cur_rc_dev = 0;
+    cur_rc_ino = 0;
 	return 0;
 #endif
 }

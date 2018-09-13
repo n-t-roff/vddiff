@@ -35,6 +35,7 @@ PERFORMANCE OF THIS SOFTWARE.
 #include "tc.h"
 #include "pars.h"
 #include "fs.h"
+#include "misc.h"
 
 int yylex(void);
 extern char *yytext;
@@ -51,7 +52,7 @@ extern char *yytext;
 %token DISP_MTIME MMRK_COLOR LOCALE FILE_EXEC UZ_ADD UZ_DEL WAIT NOBOLD DOTDOT
 %token SORTIC PRESERVE_ALL PRESERVE_MTIM DISP_ALL NO_DOTDOT HIDDEN NO_HIDDEN
 %token NO_DISP_PERM NO_DISP_OWNER NO_DISP_GROUP NO_DISP_HSIZE NO_DISP_MTIME
-%token NO_PRESERVE FKEY_SET
+%token NO_PRESERVE FKEY_SET OVERRIDE
 %token <str>     STRING
 %token <integer> INTEGER
 %%
@@ -140,6 +141,7 @@ option:
                     preserve_mtim = FALSE; }
     | HIDDEN { nohidden = FALSE; }
     | NO_HIDDEN { nohidden = TRUE; }
+    | OVERRIDE { override_prev = TRUE; }
 	| LOCALE STRING {
 			if (!setlocale(LC_ALL, $2)) {
 				printf("locale LC_ALL=%s cannot be set\n",

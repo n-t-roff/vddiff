@@ -1,6 +1,9 @@
 #include <sys/stat.h>
 #include <regex.h>
 
+#define EXIT_STATUS_DIFF  1
+#define EXIT_STATUS_ERROR 2
+
 #define PATHSIZ  (1024*16)
 #define BUF_SIZE PATHSIZ
 

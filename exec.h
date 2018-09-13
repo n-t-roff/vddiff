@@ -19,7 +19,7 @@ struct tool {
 	char *tool;
 	struct strlst *args;
 #ifndef HAVE_LIBAVLBST
-	char *ext;
+    char *ext; /* The "key" for a `tsearch` tree */
 #endif
 	tool_flags_t flags;
 };

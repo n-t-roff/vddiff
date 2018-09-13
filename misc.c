@@ -19,6 +19,7 @@
 #include "fs.h"
 
 const char oom_msg[] = "Out of memory\n";
+bool override_prev;
 
 int
 getuwidth(unsigned long u)

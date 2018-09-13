@@ -47,9 +47,6 @@ PERFORMANCE OF THIS SOFTWARE.
 # include "test.h"
 #endif
 
-#define EXIT_STATUS_DIFF  1
-#define EXIT_STATUS_ERROR 2
-
 int yyparse(void);
 
 const char *prog;

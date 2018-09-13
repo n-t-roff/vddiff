@@ -4,8 +4,6 @@ extern "C" {
 
 #include <sys/types.h>
 
-extern const char oom_msg[];
-
 int getuwidth(unsigned long);
 char *msgrealpath(const char *);
 bool str_eq_dotdot(const char *);
@@ -41,6 +39,9 @@ int do_cli_cp(int argc, char **argv, const unsigned opt);
 int cmp_timespec(const struct timespec a, const struct timespec b);
 void get_uid_name(const uid_t uid, char *const buf, const size_t buf_size);
 void get_gid_name(const gid_t gid, char *const buf, const size_t buf_size);
+
+extern const char oom_msg[];
+extern bool override_prev;
 
 #ifdef __cplusplus
 }
