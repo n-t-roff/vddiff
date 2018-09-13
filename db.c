@@ -588,7 +588,6 @@ uz_db_del(char *ext)
 	free(ue);
 
 ret:
-	free(ext);
 #if defined(TRACE)
 	fprintf(debug, "<-uz_db_del\n");
 #endif

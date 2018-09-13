@@ -145,6 +145,9 @@ uz_add(char *ext, char *str)
 		exit(1);
 	}
 
+    /* uz_add can silently be used twice with the same argument since
+     * it is used outside RC too. Hence ist is not distinguishable
+     * if it had been in DB from RC or not. */
 	if (UZ_NONE != uz_db_srch(ext)) {
 		uz_db_del(ext);
 	}

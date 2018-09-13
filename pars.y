@@ -113,7 +113,8 @@ option:
 	| SHELL STRING                 { ishell = $2                      ; }
 	| SH STRING                    { nishell = $2                     ; }
 	| UZ_ADD STRING STRING         { uz_add($2, $3)                   ; }
-	| UZ_DEL STRING                { uz_db_del($2)                    ; }
+    | UZ_DEL STRING                { uz_db_del($2);
+                                     free($2); }
 	| TWOCOLUMN                    { twocols = TRUE                   ; }
 	| READONLY                     { readonly = TRUE; nofkeys = TRUE  ; }
     | DISP_ALL                     { add_mode  = TRUE;
