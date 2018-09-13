@@ -51,7 +51,7 @@ extern char *yytext;
 %token DISP_MTIME MMRK_COLOR LOCALE FILE_EXEC UZ_ADD UZ_DEL WAIT NOBOLD DOTDOT
 %token SORTIC PRESERVE_ALL PRESERVE_MTIM DISP_ALL NO_DOTDOT HIDDEN NO_HIDDEN
 %token NO_DISP_PERM NO_DISP_OWNER NO_DISP_GROUP NO_DISP_HSIZE NO_DISP_MTIME
-%token NO_PRESERVE
+%token NO_PRESERVE FKEY_SET
 %token <str>     STRING
 %token <integer> INTEGER
 %%
@@ -69,6 +69,9 @@ option:
 	| EXT STRING STRING      { db_def_ext($2, $3, 0)                  ; }
 	| EXT STRING BG STRING   { db_def_ext($2, $4, TOOL_BG)            ; }
 	| EXT STRING WAIT STRING { db_def_ext($2, $4, TOOL_BG|TOOL_WAIT)  ; }
+	| ALIAS STRING STRING          { add_alias($2, $3, 0)             ; }
+	| ALIAS STRING BG STRING       { add_alias($2, $4, TOOL_BG)       ; }
+	| ALIAS STRING WAIT STRING     { add_alias($2, $4, TOOL_BG|TOOL_WAIT); }
 	| SKIPEXT STRING         { str_db_add(&skipext_db, str_tolower($2)
 #ifdef HAVE_LIBAVLBST
 	                              , 0, NULL
@@ -76,6 +79,7 @@ option:
 	                              ); }
 	| FKEY INTEGER STRING          { nofkeys = FALSE; set_fkey($2, $3, NULL); }
 	| FKEY INTEGER STRING STRING   { nofkeys = FALSE; set_fkey($2, $3, $4); }
+    | FKEY_SET INTEGER { set_fkey_set($2); }
 	| FILES                        { sorting = FILESFIRST             ; }
 	| MIXED                        { sorting = SORTMIXED              ; }
 	| FOLLOW                       { followlinks = 1;                 ; }
@@ -107,9 +111,6 @@ option:
 	| NOBOLD                       { nobold = 1                       ; }
 	| SHELL STRING                 { ishell = $2                      ; }
 	| SH STRING                    { nishell = $2                     ; }
-	| ALIAS STRING STRING          { add_alias($2, $3, 0)             ; }
-	| ALIAS STRING BG STRING       { add_alias($2, $4, TOOL_BG)       ; }
-	| ALIAS STRING WAIT STRING     { add_alias($2, $4, TOOL_BG|TOOL_WAIT); }
 	| UZ_ADD STRING STRING         { uz_add($2, $3)                   ; }
 	| UZ_DEL STRING                { uz_db_del($2)                    ; }
 	| TWOCOLUMN                    { twocols = TRUE                   ; }

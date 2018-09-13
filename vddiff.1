@@ -13,7 +13,7 @@ LOSS OF USE, DATA OR PROFITS, WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE OR
 OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
 PERFORMANCE OF THIS SOFTWARE.
 ..
-.Dd September 11, 2018
+.Dd September 13, 2018
 .Dt VDDIFF 1
 .Sh NAME
 .Nm @vddiff@
@@ -767,10 +767,12 @@ Show current relative work directory.
 Show command line directory arguments.
 .It Sq Li f
 Show full path.
+.
 .It Ar n Ns Sq Li f
 Select alternate function key set.
 .Ar n
 must be between 1 and 9.
+.
 .It Oo Ar n Oc Ns Dq Li <<
 Copy from second to first tree.
 If
@@ -1709,14 +1711,17 @@ alias audio mplayer
 ext mpg mplayer
 ext mp3 audio
 .Ed
+.
 .It Li alias Ar name Li bg Ar string
 Start
 .Ar string
 as a background process.
+.
 .It Li alias Ar name Li wait Ar string
 Wait for pressing a key after starting
 .Ar string
 as a background process.
+.
 .It Li skipext Ar extension
 When checking a filename extension skip
 .Ar extension
@@ -1729,6 +1734,7 @@ would remove
 .Dq Li .old
 from the end of each filename before checking the
 extension.
+.
 .It Li fkey Ar number Ar string Op Ar comment
 Define
 .Ar string
@@ -1781,6 +1787,12 @@ the selected filename as argument, add a space followed
 by an octothorpe
 .Pq Dq Li " #"
 at the end of the string.
+.
+.It Li fkey_set Ar number
+Set initial function key set.
+.Ar number
+must be between 1 and 9.
+.
 .It Li sortic
 Sort files case-insensitive.
 .It Li mono

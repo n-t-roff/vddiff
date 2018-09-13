@@ -66,6 +66,7 @@ skipext		{ rc_col += yyleng; return SKIPEXT      ; }
 bg		{ rc_col += yyleng; return BG           ; }
 wait		{ rc_col += yyleng; return WAIT         ; }
 fkey		{ rc_col += yyleng; return FKEY         ; }
+fkey_set { rc_col += yyleng; return FKEY_SET; }
 filesfirst	{ rc_col += yyleng; return FILES        ; }
 mixed		{ rc_col += yyleng; return MIXED        ; }
 followlinks	{ rc_col += yyleng; return FOLLOW       ; }
@@ -221,7 +222,6 @@ include(const char *s)
 	printf("lex(1) on this system does not support buffer switching.\n"
 	    "The statement \"include %s\" will not work.\n", s);
 #else
-	struct incl_file *inc;
 	char *p;
 
 	incl = 0;
@@ -254,7 +254,7 @@ include(const char *s)
         exit(1);
 	}
 
-	inc = malloc(sizeof(struct incl_file));
+    struct incl_file *const inc = malloc(sizeof(struct incl_file));
 	inc->name = cur_rc_filenam;
 	cur_rc_filenam = p;
 	inc->line = rc_nline;

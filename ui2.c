@@ -1929,3 +1929,12 @@ static void print_fkey_set(void)
         mvwprintw(wlist, j, 5, "\"%ls\"", sh_str[fkey_set][i]);
     }
 }
+
+void set_fkey_set(const int i)
+{
+    if (i < 1 || i > 9) {
+        printf("fkey_set argument out of range\n");
+        exit(EXIT_STATUS_ERROR);
+    }
+    fkey_set = i - 1;
+}
