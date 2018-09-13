@@ -30,7 +30,7 @@ void diff_db_restore(struct ui_state *);
 void diff_db_store(struct ui_state *);
 void diff_db_free(int);
 void free_strs(void **);
-void add_alias(char *, char *, tool_flags_t);
+void add_alias(char *const, char *, const tool_flags_t);
 void db_def_ext(char *const, char *, tool_flags_t);
 struct tool *db_srch_ext(char *);
 void db_set_curs(int, char *, unsigned, unsigned);

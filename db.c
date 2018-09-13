@@ -612,25 +612,67 @@ uz_cmp(const void *a, const void *b)
  ************/
 
 void
-add_alias(char *key, char *value, tool_flags_t flags)
+add_alias(char *const key, char *value, const tool_flags_t flags)
 {
-	struct tool *t;
-
-	/* `value` used as key here. If a value should be set which is the
-	 * key of another alias, the value of that alias is used instead. */
-
-	if (!ptr_db_srch(&alias_db, value, (void **)&t, NULL)) {
-		free(value);
+#if defined(TRACE)
+    fprintf(debug, "->add_alias(%s->%s)\n", key, value);
+#endif
+    /* Check if alias exists. */
+    struct tool *ot;
+    if (!ptr_db_srch(&alias_db, key, (void **)&ot, NULL)) {
+#if defined(TRACE)
+        fprintf(debug, "  alias \"%s\"->\"%s\" exists with value \"%s\"\n",
+                key, value, ot->tool);
+#endif
+        if (!strcmp(value, ot->tool)) {
+#if defined(TRACE)
+            fprintf(debug, "  same value -> ignore command\n");
+#endif
+            free(key);
+            free(value);
+            return;
+        }
+        if (!override_prev) {
+            printf("Error: Alias \"%s\" -> \"%s\" "
+                   "already  exists with value \"%s\"\n",
+                   key, value, ot->tool);
+            exit(EXIT_STATUS_ERROR);
+        } else {
+#if defined(TRACE)
+            fprintf(debug, "  value \"%s\" changed to \"%s\"\n",
+                    ot->tool, value);
+#endif
+            free(ot->tool);
+            ot->tool = value;
+            free(key);
+            return;
+        }
+    }
+    /* Check if alias points to alias.
+     * `value` is used as key here. If a value should be set which is the
+     * key of another alias, the value of that alias is used instead.
+     * Example:
+     *   alias video mplayer # alias to tool
+     *   alias audio video   # alias to alias */
+    if (!ptr_db_srch(&alias_db, value, (void **)&ot, NULL)) {
+#if defined(TRACE)
+        fprintf(debug, "  alias \"%s\" to alias \"%s\" with value \"%s\"\n",
+                key, value, ot->tool);
+#endif
+        free(value);
 		/* `s` is the value of the other alias. Hence the strdup
 		 * is necessary, since now a *second* alias will be created
 		 * with that value. */
-		value = strdup(t->tool);
+        value = strdup(ot->tool);
 	}
 
-	t = malloc(sizeof(struct tool));
-	t->tool = value;
-	t->flags = flags;
-	ptr_db_add(&alias_db, key, t);
+    struct tool *const nt = malloc(sizeof(struct tool));
+    nt->tool = value;
+    nt->flags = flags;
+    ptr_db_add(&alias_db, key, nt);
+#if defined(TRACE)
+    fprintf(debug, "<-add_alias: \"%s\"->\"%s\" set\n", key, nt->tool);
+#endif
 }
 
 /**********
@@ -652,7 +694,10 @@ void db_def_ext(char *const ext, char *_tool, tool_flags_t flags)
     if ((vp = tfind(&key, &ext_db, ext_cmp))) {
         struct tool *const ot = *(struct tool **)vp;
 #endif
-        if (override_prev) {
+        if (!override_prev) {
+            printf("Error: Tool for extension \"%s\" set twice\n", ext);
+            exit(EXIT_STATUS_ERROR);
+        } else {
             free(ext);
             struct tool *const t = set_ext_tool(_tool, flags);
             if (!t)
@@ -671,9 +716,6 @@ void db_def_ext(char *const ext, char *_tool, tool_flags_t flags)
             }
             free(ot->tool);
             free(ot);
-        } else {
-            printf("Error: Tool for extension \"%s\" set twice\n", ext);
-            exit(EXIT_STATUS_ERROR);
         }
     } else {
         struct tool *const t = set_ext_tool(_tool, flags);
