@@ -67,8 +67,15 @@ static void ui_resize(void);
 static void statcol(int);
 static void file_stat(struct filediff *, struct filediff *);
 static void set_file_info(struct filediff *, mode_t, int *, short *, int *);
-static int disp_name(WINDOW *, int, int, int, int, struct filediff *, int,
-    short, char *, int, int);
+/* Input
+ *   mx: window width
+ *   o: info
+ *   ct: color_id
+ *   d: diff
+ *   i: tree--*not* col! */
+static int disp_name(WINDOW *w, int y, int x, int mx, int o,
+                     struct filediff *f, int t, short ct, char *l, int d,
+                     int i);
 static size_t getfilesize(char *, size_t, off_t, unsigned);
 static size_t gettimestr(char *, size_t, time_t *);
 static void disp_help(void);
@@ -3060,14 +3067,9 @@ set_file_info(struct filediff *f, mode_t m, int *t, short *ct, int *d)
 	}
 }
 
-static int
-disp_name(WINDOW *w, int y, int x, int mx,
-    int o, /* info */
-    struct filediff *f, int t,
-    short ct, /* color_id */
-    char *l,
-    int d, /* diff */
-    int i) /* tree--*not* col! */
+static int disp_name(WINDOW *w, int y, int x, int mx, int o,
+                     struct filediff *f, int t, short ct, char *l, int d,
+                     int i)
 {
 	int j;
 	int db;
@@ -3123,16 +3125,16 @@ disp_name(WINDOW *w, int y, int x, int mx,
 
 	j = addmbs(w, f->name, mx);
 
-	if (j) {
-		/* Likely mbstowcs(3) did fail */
-		waddstr(w, f->name);
-	}
+    if (j == -1) {
+        /* Likely mbstowcs(3) did fail */
+        waddstr(w, f->name);
+    }
 
 	standendc(w);
 
-	if (l) {
+    if (!j && l) {
 		addmbs(w, " -> ", mx);
-		putmbsra(w, l, mx);
+        putmbsra(w, l, mx);
 	}
 
 	if (add_mode) {
@@ -4266,7 +4268,7 @@ int printerr(const char *s2, const char *s1, ...)
         va_start(ap, s1);
         if (vsnprintf(buf, bufsiz, s1, ap) < 0)
             ret_val |= 1;
-        if (putmbs(wstat, buf, -1) == (size_t)-1)
+        if (putmbs(wstat, buf, -1) < 0)
             ret_val |= 1;
         va_end(ap);
     }
@@ -4278,7 +4280,7 @@ int printerr(const char *s2, const char *s1, ...)
             ret_val |= 1;
         if (snprintf(buf, bufsiz, "%s", s2) < 0)
             ret_val |= 1;
-        if (putmbs(wstat, buf, -1) == (size_t)-1)
+        if (putmbs(wstat, buf, -1) < 0)
             ret_val |= 1;
         if (wrefresh(wstat) == ERR)
             ret_val |= 1;

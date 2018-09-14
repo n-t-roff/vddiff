@@ -1443,20 +1443,26 @@ putwcs(WINDOW *w, wchar_t *s,
 	wadd_wchnstr(w, ccbuf, n);
 }
 
-size_t putmbs(WINDOW *w, const char *const s, int n) {
-    size_t l;
+ssize_t putmbs(WINDOW *w, const char *const s, int n) {
+#if defined(TRACE)
+    fprintf(debug, "->putmbs(\"%s\" avail_width=%d)\n", s, n);
+#endif
+    ssize_t l;
 
-    if ((l = mbstowchs(w, s)) == (size_t)-1)
+    if ((l = mbstowchs(w, s)) < 0)
         goto ret;
 
     /* Because of bug in older ncurses versions */
-    if (n > (ssize_t)l) {
+    if (n > l) {
         n = l;
     }
 
     if (wadd_wchnstr(w, ccbuf, n) == ERR)
-        l = (size_t)-1;
+        l = -1;
 ret:
+#if defined(TRACE)
+    fprintf(debug, "<-putmbs l=%zu\n", l);
+#endif
     return l;
 }
 
@@ -1464,24 +1470,26 @@ int
 addmbs(WINDOW *w, const char *const s, int mx)
 {
 	int cy, cx, my;
-    size_t l;
-	int n;
 
 	getyx(w, cy, cx);
 
-	if (!mx) {
-		n = -1; /* wadd_wchnstr does the work */
+    int avail_width;
+    if (!mx) {
+        avail_width = -1; /* wadd_wchnstr does the work */
 		getmaxyx(w, my, mx);
 	} else
-		n = mx - cx;
+        avail_width = mx - cx;
 
 	(void)my;
 
-	if (cx >= mx)
+    if (cx >= mx)
 		return -2; /* Not really an error */
 
-    if ((l = putmbs(w, s, n)) == (size_t)-1)
+    const ssize_t l = putmbs(w, s, avail_width);
+    if (l < 0)
 		return -1;
+    if (l >= avail_width)
+        return -3;
 
 	cx += l;
 
@@ -1492,14 +1500,11 @@ addmbs(WINDOW *w, const char *const s, int mx)
 	return 0;
 }
 
-/* Number of wide chars */
-
 ssize_t
 putmbsra(WINDOW *w, const char *s, int mx)
 {
-	int cy, cx, my;
-	ssize_t l;
-	cchar_t *cs;
+    int cy, my; /* unused */
+    int cx; /* current x position */
 
 	getyx(w, cy, cx);
 
@@ -1508,17 +1513,20 @@ putmbsra(WINDOW *w, const char *s, int mx)
 
 	(void)cy;
 	(void)my;
+    const int avail_width = mx - cx;
 
-	if (cx >= mx)
+    if (avail_width <= 0)
 		return -2; /* Not really an error */
 
-	if ((l = mbstowchs(w, s)) == -1)
+    const ssize_t l = mbstowchs(w, s); /* writes into `ccbuf` */
+    if (l == -1)
 		return -1;
 
-	cs = ccbuf;
+    cchar_t *cs = ccbuf;
+    const ssize_t offset = l - avail_width;
 
-	if (l > mx - cx)
-		cs += l - (mx - cx);
+    if (offset > 0)
+        cs += offset;
 
 	wadd_wchstr(w, cs);
 	return l;

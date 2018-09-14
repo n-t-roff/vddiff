@@ -66,10 +66,13 @@ void putwcs(WINDOW *, wchar_t *, int);
 /* Input:
  *   n: -1: unlimited
  * Output:
- *   Number of wide chars or (size_t)-1 on error
+ *   Number of wide chars or -1 on error
  */
-size_t putmbs(WINDOW *w, const char *const s, int n);
+ssize_t putmbs(WINDOW *w, const char *const s, int n);
 int addmbs(WINDOW *, const char *const, int);
+/* Put multi-byte string right-adjusted.
+ * Input
+ *   mx: available width */
 ssize_t putmbsra(WINDOW *, const char *, int);
 WINDOW *new_scrl_win(int, int, int, int);
 void set_def_mouse_msk(void);

@@ -79,8 +79,8 @@ static void runs2x(void);
 static void check_opts(void);
 
 static const char rc_name[] = "." BIN "rc";
-const char etc_rc_dir[] = "/etc/" BIN "/" BIN "rc";
-const char etc_rc_name[] = "/etc/" BIN "rc";
+static const char etc_rc_dir[] = "/etc/" BIN "/" BIN "rc";
+static const char etc_rc_name[] = "/etc/" BIN "rc";
 char *printwd;
 bool bmode;
 bool qdiff;
