@@ -589,6 +589,7 @@ ret:
 #if defined(TRACE)
 	fprintf(debug, "<-uz_db_del\n");
 #endif
+    return;
 }
 
 #ifndef HAVE_LIBAVLBST

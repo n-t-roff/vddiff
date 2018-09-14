@@ -1469,35 +1469,35 @@ ret:
 int
 addmbs(WINDOW *w, const char *const s, int mx)
 {
-	int cy, cx, my;
+    int cy, cx, my;
 
-	getyx(w, cy, cx);
+    getyx(w, cy, cx);
 
     int avail_width;
     if (!mx) {
         avail_width = -1; /* wadd_wchnstr does the work */
-		getmaxyx(w, my, mx);
-	} else
+        getmaxyx(w, my, mx);
+    } else
         avail_width = mx - cx;
 
-	(void)my;
+    (void)my;
 
     if (cx >= mx)
-		return -2; /* Not really an error */
+        return -2; /* Not really an error */
 
     const ssize_t l = putmbs(w, s, avail_width);
     if (l < 0)
-		return -1;
+        return -1;
     if (l >= avail_width)
         return -3;
 
-	cx += l;
+    cx += l;
 
-	if (cx > mx)
-		cx = mx;
+    if (cx > mx)
+        cx = mx;
 
-	wmove(w, cy, cx);
-	return 0;
+    wmove(w, cy, cx);
+    return 0;
 }
 
 ssize_t
