@@ -470,7 +470,7 @@ unzip(const struct filediff *f, int tree, int i,
 	zpths(f, &z, tree, NULL, i, m & 1 ? 2 : 0);
 	av[2] = lbuf;
 	av[4] = rbuf;
-	exec_cmd(av, 0, NULL, NULL);
+    exec_cmd(av, TOOL_TTY, NULL, NULL);
 	return z;
 }
 

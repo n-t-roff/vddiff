@@ -539,29 +539,23 @@ exec_cmd(const char **av, tool_flags_t flags, char *path, const char *const msg)
 			puts(msg);
 		}
 
-		if (flags & TOOL_SHELL) {
-			const char *const shell = nishell ? nishell : "sh";
-
+        if (flags & TOOL_SHELL) {
+            const char *const shell = nishell ? nishell : "sh";
 #if defined(TRACE)
-			fprintf(debug, "  execlp(%s -c %s)\n",
-			    shell, *av);
+            fprintf(debug, "  execlp(%s -c %s)\n", shell, *av);
 #endif
-			if (execlp(shell, shell, "-c", *av, NULL) == -1) {
-				/* only seen when vddiff exits later */
-				printf("exec %s -c \"%s\": %s\n",
-				    shell, *av, strerror(errno));
-			}
-		} else {
+            execlp(shell, shell, "-c", *av, NULL);
+            /* only seen when vddiff exits later */
+            printf("exec %s -c \"%s\": %s\n", shell, *av, strerror(errno));
+        } else {
 #if defined(TRACE)
-			fprintf(debug, "  execvp(%s)\n", *av);
+            fprintf(debug, "  execvp(%s)\n", *av);
 #endif
-			if (execvp(*av, av) == -1) {
-				/* only seen when vddiff exits later */
-				printf("exec \"%s\": %s\n", *av,
-				    strerror(errno));
-			}
-		}
-
+            execvp(*av, av);
+            /* only seen when vddiff exits later */
+            printf("exec \"%s\": %s\n", *av, strerror(errno));
+        }
+        /* Only reached in case exec() fails. */
 		write(STDOUT_FILENO, prompt, sizeof prompt);
 		fgetc(stdin);
 		_exit(77);
