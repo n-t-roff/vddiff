@@ -25,6 +25,7 @@ PERFORMANCE OF THIS SOFTWARE.
 #include <time.h>
 #include <stdarg.h>
 #include <signal.h>
+#include <stdint.h>
 #include "compat.h"
 #include "main.h"
 #include "ui.h"
