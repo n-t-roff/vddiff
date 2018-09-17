@@ -78,6 +78,9 @@ static void ttcharoff(void);
 static void runs2x(void);
 static void check_opts(void);
 static void set_opts(void);
+#ifdef DEBUG
+static void check_tmp_dir_left(void);
+#endif
 
 static const char rc_name[] = "." BIN "rc";
 static const char etc_rc_dir[] = "/etc/" BIN "/" BIN "rc";
@@ -167,6 +170,10 @@ main(int argc, char **argv)
 	if (uz_init()) {
 		return 1;
 	}
+#if defined(DEBUG)
+    if (argc < 3 || strcmp(argv[1], "-u") || strcmp(argv[2], "-S"))
+        check_tmp_dir_left();
+#endif
 
 	set_tool(&difftool, strdup(vimdiff), 0);
 	set_tool(&viewtool, strdup("less -Q --"), 0);
@@ -642,7 +649,10 @@ rmtmp:
 		}
 #endif
 	}
-
+#if defined(DEBUG)
+    if (!(bmode && cli_mode))
+        check_tmp_dir_left();
+#endif
     return exit_status;
 }
 
@@ -991,3 +1001,22 @@ remove_tmp_dirs(void)
 	fprintf(debug, "<-remove_tmp_dirs()\n");
 #endif
 }
+
+#if defined(DEBUG)
+static void check_tmp_dir_left(void)
+{
+    if (snprintf(lbuf, sizeof(lbuf), BIN " -u -S -Nx ." BIN ". %s",
+                 tmpdirbase) != -1)
+    {
+        const int i_ = system(lbuf);
+        if (i_ == -1) {
+            fprintf(stderr, "system(%s): %s\n", lbuf, strerror(errno));
+            exit(EXIT_STATUS_ERROR);
+        } else if (!i_) {
+            fprintf(stderr, "\"%s\": Unexpected temporary directory found\n",
+                    lbuf);
+            exit(EXIT_STATUS_ERROR);
+        }
+    }
+}
+#endif

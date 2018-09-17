@@ -8,6 +8,7 @@ struct uz_ext {
 	enum uz_id id;
 };
 
+extern const char *tmpdirbase;
 extern char *tmp_dir;
 extern char *vpath[2];
 extern size_t vpthsz[2];

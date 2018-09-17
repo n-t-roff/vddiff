@@ -60,7 +60,7 @@ size_t spthofs[2];
 /* Offset in view path to where real path + tpthlen is copied. */
 size_t vpthofs[2];
 static struct pthofs *pthofs[2];
-static const char *tmpdirbase;
+const char *tmpdirbase;
 
 static struct uz_ext exttab[] = {
 	{ "bz2"    , UZ_BZ2 },
