@@ -22,8 +22,14 @@ int gq_init(char *);
 int fn_free(void);
 int find_dir_name_free(void);
 int gq_free(void);
+/* Return value:
+ *    1: no pattern match
+ *    0: pattern match
+ *   -1: error */
 int gq_proc(struct filediff *);
-/*
- * Intented for -pSG, *not* for curses UI mode
- */
-void gq_proc_lines(const struct filediff *const f);
+/* Intented for -pSG, *not* for curses UI mode
+ * Return value:
+ *    1: no pattern match
+ *    0: pattern match
+ *   -1: error */
+int gq_proc_lines(const struct filediff *const f);

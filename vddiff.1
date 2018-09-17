@@ -13,7 +13,7 @@ LOSS OF USE, DATA OR PROFITS, WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE OR
 OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
 PERFORMANCE OF THIS SOFTWARE.
 ..
-.Dd September 13, 2018
+.Dd September 17, 2018
 .Dt VDDIFF 1
 .Sh NAME
 .Nm @vddiff@
@@ -2277,18 +2277,31 @@ Storage for persistant information.
 .
 .
 .
+For
 .Nm Fl A ,
 .Nm Fl D ,
 and
 .Nm Fl T
-return 0 on success and
+the exit status is 0 on success and
 2 on error.
 .
 .Pp
 .
+For
+.Nm Fl F ,
+.Nm Fl G ,
+and
+.Nm Fl x
+the exit status is 0 for a pattern match,
+1 if there was no match, and
+2 if an error occurred.
+.
+.Pp
+.
+For
 .Nm Fl q
-returns 0 if no difference had been found,
-1 for a difference and
+the exit status is 0 if no difference had been found,
+1 for a difference, and
 2 on error.
 .
 .

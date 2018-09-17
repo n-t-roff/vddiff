@@ -291,7 +291,7 @@ no_tree2:
 				struct scan_dir *se;
 
                 if (find_dir_name) { /* -x */
-                    if (!find_name && !gq_pattern)
+                    if (find_dir_name_only)
                         ++tot_cmp_file_count;
                     if (!regexec(&find_dir_name_regex, name, 0, NULL, 0)) {
 #if defined(TRACE) && 1
@@ -302,6 +302,7 @@ no_tree2:
                         if (cli_mode) { /* -Sx */
                             syspth[0][pthlen[0]] = 0;
                             printf("%s/%s\n", syspth[0], name);
+                            retval |= 1;
                         }
                     }
                 }
@@ -335,17 +336,20 @@ no_tree2:
                     if (cli_mode) {
                         syspth[0][pthlen[0]] = 0;
                         printf("%s/%s\n", syspth[0], name);
+                        retval |= 1;
                     }
 					continue;
 				}
 			}
 
             if (gq_pattern) { /* -G ("grep(1)") */
-                if (file_grep(name)) {
+                if (!file_grep(name)) {
 #if defined(TRACE) && 1
                     fprintf(debug, "  dir_diff: grep: %s\n", name);
 #endif
                     dir_diff = 1;
+                    if (cli_mode)
+                        retval |= 1;
                 }
 				continue;
 			}
@@ -767,7 +771,7 @@ exit:
 
 int file_grep(const char *const name)
 {
-    int return_value = 0;
+    int return_value = 1;
     ++tot_cmp_file_count;
     diff = alloc_diff(name);
     diff->type[0] = gstat[0].st_mode;
@@ -777,14 +781,10 @@ int file_grep(const char *const name)
 
     if (cli_mode && verbose) {
         /* -pSG -> print lines */
-        gq_proc_lines(diff);
-    } else if (!gq_proc(diff)) {
-        return_value = 1;
-
-        if (cli_mode) { /* -SG */
-            syspth[0][pthlen[0]] = 0;
-            printf("%s/%s\n", syspth[0], name);
-        }
+        return_value = gq_proc_lines(diff);
+    } else if (!(return_value = gq_proc(diff)) && cli_mode) { /* -SG */
+        syspth[0][pthlen[0]] = 0;
+        printf("%s/%s\n", syspth[0], name);
     }
     free_diff(diff);
     return return_value;
@@ -979,8 +979,8 @@ ret0:
 int
 is_diff_dir(struct filediff *f)
 {
-	char *bp = NULL, *pth;
-	size_t l;
+    char *bp = NULL, *pth = NULL;
+    size_t l = (size_t)-1;
 	int v = 0;
 
 	/* E.g. for file stat called independend from 'recursive' */
@@ -1027,7 +1027,14 @@ is_diff_dir(struct filediff *f)
 			v = is_diff_pth(pth, 0);
 		}
 
-		pth[l] = 0;
+        if (pth && l != (size_t)-1)
+            pth[l] = 0;
+#if defined(DEBUG)
+        else {
+            fprintf(debug, LOCFMT "\n" LOCVAR);
+            exit(EXIT_STATUS_ERROR);
+        }
+#endif
 	}
 
 #if defined(TRACE) && 1

@@ -2,6 +2,8 @@
 extern "C" {
 #endif
 
+#include <sys/types.h>
+
 /* File marked (for delete, copy, etc.) */
 #define FDFL_MMRK 1
 
@@ -37,8 +39,7 @@ int build_diff_db(int);
  *   0 else
  */
 int scan_subdir(const char *, const char *, int);
-/*
- * Input:
+/* Input:
  *   Parameter:
  *     `name`: File name (without path)
  *   Global:
@@ -50,8 +51,9 @@ int scan_subdir(const char *, const char *, int);
  *     if (cli_mode)
  *       matching line
  *   Return value:
- *     1: set `dir_diff`
- */
+ *      1: no pattern match
+ *      0: pattern match
+ *     -1: error */
 int file_grep(const char *const name);
 int is_diff_dir(struct filediff *);
 int is_diff_pth(const char *, unsigned);

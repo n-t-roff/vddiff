@@ -77,6 +77,7 @@ static int read_rc(const char *const);
 static void ttcharoff(void);
 static void runs2x(void);
 static void check_opts(void);
+static void set_opts(void);
 
 static const char rc_name[] = "." BIN "rc";
 static const char etc_rc_dir[] = "/etc/" BIN "/" BIN "rc";
@@ -102,12 +103,24 @@ bool verbose;
 bool dont_overwrite;
 bool overwrite_if_old;
 bool nodialog;
+bool find_dir_name_only;
 
-#define SET_EXIT_DIFF \
+#if defined(TRACE) && defined(DEBUG)
+# define SET_EXIT_DIFF \
+    do { \
+        fprintf(debug, LOCFMT "<>SET_EXIT_DIFF\n" LOCVAR); \
+        if (exit_status == EXIT_SUCCESS) { \
+            fprintf(debug, LOCFMT "  change success -> diff\n" LOCVAR); \
+            exit_status = EXIT_STATUS_DIFF; \
+        } \
+    } while (0)
+#else
+# define SET_EXIT_DIFF \
     do { \
         if (exit_status == EXIT_SUCCESS) \
             exit_status = EXIT_STATUS_DIFF; \
     } while (0)
+#endif
 
 int
 main(int argc, char **argv)
@@ -384,6 +397,7 @@ main(int argc, char **argv)
     argv += optind;
 
     check_opts();
+    set_opts();
 
     if (!run2x) {
 		runs2x();
@@ -491,9 +505,10 @@ main(int argc, char **argv)
                     const char *base = buf_basename(syspth[0], &pthlen[0]);
 
                     if (!base) {
-                        fprintf(stderr, oom_msg);
+                        fputs(oom_msg, stderr);
                     } else {
-                        file_grep(base);
+                        if (file_grep(base))
+                            SET_EXIT_DIFF;
                         free(base);
                     }
                 } else {
@@ -566,12 +581,19 @@ main(int argc, char **argv)
             if (do_cli_cp(argc, argv, cli_mv ? 1 : 0))
                 exit_status = EXIT_STATUS_ERROR;
         } else {
-            int v = build_ui(); /* v is return value of qdiff */
-
+            /* v is return value of qdiff, -SF, -SG, or -Sx */
+            const int v = build_ui();
             if (v == 1) {
-                SET_EXIT_DIFF;
+                if (qdiff)
+                    SET_EXIT_DIFF;
+                /* else: For pattern match v == 1 means "match found"
+                 * -> exit status 0. */
             } else if (v) {
                 exit_status = EXIT_STATUS_ERROR;
+            }
+            /* v == 0 */
+            else if (!qdiff && cli_mode && file_pattern) {
+                SET_EXIT_DIFF; /* no pattern match */
             }
         }
 
@@ -924,6 +946,12 @@ static void check_opts(void) {
         fprintf(stderr, "%s: Option -S can be used with -F or -G only\n", prog);
         exit(EXIT_STATUS_ERROR);
     }
+}
+
+static void set_opts(void)
+{
+    if (find_dir_name && !find_name && !gq_pattern)
+        find_dir_name_only = TRUE;
 }
 
 void

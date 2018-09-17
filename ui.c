@@ -154,7 +154,7 @@ build_ui(void)
 #endif
 
     if (!cli_mode) {
-        srandom(time(NULL));
+        srandom((unsigned)time(NULL));
         initscr();
 
         if (color && (!has_colors() || start_color() == ERR))
@@ -213,11 +213,13 @@ build_ui(void)
 	}
 
     if (bmode) {
-		build_diff_db(1);
+        /* case also used for option -S */
+        return_value |= build_diff_db(1);
     } else if (fmode) {
 		build_diff_db(1);
 		build_diff_db(2);
-    } else { /* case also used for qdiff */
+    } else {
+        /* case also used for qdiff */
         return_value |= build_diff_db(3);
     }
 

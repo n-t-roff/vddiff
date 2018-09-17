@@ -291,7 +291,7 @@ ret2:
 	return rv;
 }
 
-void gq_proc_lines(const struct filediff *const f)
+int gq_proc_lines(const struct filediff *const f)
 {
     FILE *fh;
     char *line = NULL; /* let getline() allocate buffer */
@@ -301,6 +301,7 @@ void gq_proc_lines(const struct filediff *const f)
     bool binary = FALSE;
     size_t pathlen;
     char *path;
+    int return_value = 1; /* no match */
 
     if (S_ISREG(f->type[0]) && f->siz[0]) {
         path = syspth[0];
@@ -315,6 +316,7 @@ void gq_proc_lines(const struct filediff *const f)
 
     if (!(fh = fopen(path, "r"))) {
         printerr(strerror(errno), LOCFMT "fopen \"%s\"" LOCVAR, path);
+        return_value = -1;
         goto cut_path;
     }
     while (1) { /* line loop */
@@ -324,6 +326,7 @@ void gq_proc_lines(const struct filediff *const f)
         if ((nread = getline(&line, &len, fh)) == -1) {
             if (errno)
                 printerr(strerror(errno), LOCFMT "getline \"%s\"" LOCVAR, path);
+            return_value = -1;
             break;
         }
         if (!nread)
@@ -344,6 +347,7 @@ void gq_proc_lines(const struct filediff *const f)
             }
         }
         if (!gq_match_buf(line)) {
+            return_value = 0;
             if (binary) {
                 printf("Binary file %s matches\n", path);
                 break;
@@ -358,7 +362,7 @@ void gq_proc_lines(const struct filediff *const f)
 cut_path:
     path[pathlen] = 0;
 ret:
-    return;
+    return return_value;
 }
 
 static int gq_match_buf(const char *const buf)
