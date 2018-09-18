@@ -72,7 +72,9 @@ static void set_file_info(struct filediff *, mode_t, int *, short *, int *);
  *   o: info
  *   ct: color_id
  *   d: diff
- *   i: tree--*not* col! */
+ *   i: tree--*not* col!
+ * Modified
+ *   lbuf */
 static int disp_name(WINDOW *w, int y, int x, int mx, int o,
                      struct filediff *f, int t, short ct, char *l, int d,
                      int i);
@@ -141,6 +143,7 @@ bool add_hsize; /* scaled size */
 bool add_bsize;
 bool add_mode;
 bool add_mtime;
+bool add_ns_mtim;
 bool add_owner;
 bool add_group;
 
@@ -665,28 +668,38 @@ next_key:
 			wrefresh(wstat);
 			break;
 
-		case 'n':
-			if (regex_mode) {
-				c = 0;
-				regex_srch(1);
-				break;
+        case 'n':
+            if (regex_mode) {
+                c = 0;
+                regex_srch(1);
+                break;
 
-			} else if (*key == 'e') {
-				ui_rename(3, u, num);
-				goto save_st;
+            } else if (*key == 'e') {
+                ui_rename(3, u, num);
+                goto save_st;
+            } else if (*key == 'A') {
+                c = 0;
+                add_mtime = FALSE;
+                add_ns_mtim = TRUE;
+                disp_fmode();
+                goto next_key;
+            } else if (*key == 'R') {
+                c = 0;
+                add_ns_mtim = FALSE;
+                disp_fmode();
+                goto next_key;
+            } else if (key[1] == 'e') {
+                if (*key == 'l') {
+                    ui_rename(1, u, num);
+                    goto save_st;
 
-			} else if (key[1] == 'e') {
-				if (*key == 'l') {
-					ui_rename(1, u, num);
-					goto save_st;
+                } else if (*key == 'r') {
+                    ui_rename(2, u, num);
+                    goto save_st;
+                }
+            }
 
-				} else if (*key == 'r') {
-					ui_rename(2, u, num);
-					goto save_st;
-				}
-			}
-
-			/* fall through */
+            /* fall through */
 
 		case '!':
 		case 'c':
@@ -792,6 +805,7 @@ next_key:
 
 			case 'A':
 				c = 0;
+                add_ns_mtim = FALSE;
 				add_mtime = TRUE;
 				disp_fmode();
 				goto next_key;
@@ -1637,20 +1651,22 @@ static const char *const helptxt[] = {
        "F		Toggle following symbolic links",
        "E		Toggle file name or file content filter",
        ",		Toggle display of hidden files",
+       "Aa		Show mode, owner, group, size, and mtime",
        "Ah		Show scaled file size",
        "Ag		Show file group",
+       "An		Show nanosecond precision mtime",
        "Ap		Show file mode",
        "As		Show file size",
        "At		Show modification time",
        "Au		Show file owner",
-       "Aa		Show mode, owner, group, size, and mtime",
+       "Ra		Remove mode, owner, group, size, and mtime column",
        "Rh		Remove scaled file size column",
        "Rg		Remove file group column",
+       "Rn		Remove nanosecond precision mtime column",
        "Rp		Remove file mode column",
        "Rs		Remove file size column",
        "Rt		Remove modification time column",
        "Ru		Remove file owner column",
-       "Ra		Remove mode, owner, group, size, and mtime column",
        "p		Show current relative work directory",
        "a		Show command line directory arguments",
        "f		Show full path",
@@ -3075,6 +3091,8 @@ static int disp_name(WINDOW *w, int y, int x, int mx, int o,
 {
 	int j;
 	int db;
+    static const int ns_time_width = 28; /* "18-09-17 17:42:54.000000000"
+                                          * ("%'09ld" does not work!?) */
 
 	db = fmode ? right_col : 0;
 
@@ -3096,9 +3114,11 @@ static int disp_name(WINDOW *w, int y, int x, int mx, int o,
 		mx -= bsizlen[db];
 	}
 
-	if (add_mtime) {
+    if (add_mtime)
 		mx -= 13;
-	}
+    else if (add_ns_mtim) {
+        mx -= ns_time_width;
+    }
 
 	if (!o) {
 		if (!color) {
@@ -3190,10 +3210,22 @@ static int disp_name(WINDOW *w, int y, int x, int mx, int o,
 		size_t n;
 
 		mx += 13;
-		n = gettimestr(lbuf, sizeof lbuf, &f->mtim[i]);
+        n = gettimestr(lbuf, sizeof lbuf, &f->mtim[i].tv_sec);
 		wmove(w, y, mx - n);
 		addmbs(w, lbuf, 0);
-	}
+    } else if (add_ns_mtim) {
+        struct tm tm;
+        if (localtime_r(&f->mtim[i].tv_sec, &tm)) {
+            const size_t n = snprintf(lbuf, sizeof(lbuf),
+                         "%02d-%02d-%02d %02d:%02d:%02d.%09ld",
+                         tm.tm_year % 100, tm.tm_mon + 1, tm.tm_mday,
+                         tm.tm_hour, tm.tm_min, tm.tm_sec,
+                         f->mtim[i].tv_nsec);
+            mx += ns_time_width;
+            wmove(w, y, mx - n);
+            addmbs(w, lbuf, 0);
+        }
+    }
 
 	return 0;
 }
@@ -3412,13 +3444,13 @@ file_stat(struct filediff *f, struct filediff *f2)
 		rtyp = 0;
 
 	if (ltyp) {
-		lx1 = x + gettimestr(lbuf, sizeof lbuf, &f->mtim[0]);
+        lx1 = x + gettimestr(lbuf, sizeof lbuf, &f->mtim[0].tv_sec);
 		wmove(wstat, yl, x);
 		addmbs(wstat, lbuf, mx1);
 	}
 
 	if (rtyp) {
-		lx2 = x2 + gettimestr(rbuf, sizeof rbuf, &f2->mtim[1]);
+        lx2 = x2 + gettimestr(rbuf, sizeof rbuf, &f2->mtim[1].tv_sec);
 		wmove(wstat, yr, x2);
 		addmbs(wstat, rbuf, 0);
 	}
@@ -4255,7 +4287,7 @@ int printerr(const char *s2, const char *s1, ...)
     }
 
     if (!(buf = malloc(bufsiz))) {
-        fprintf(stderr, oom_msg);
+        fputs(oom_msg, stderr);
         ret_val |= 1;
         goto ret;
     }

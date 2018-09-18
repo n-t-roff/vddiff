@@ -27,6 +27,7 @@ PERFORMANCE OF THIS SOFTWARE.
 #include <stdarg.h>
 #include <setjmp.h>
 #include <stdint.h>
+#include <time.h>
 #include "compat.h"
 #include "main.h"
 #include "y.tab.h"
@@ -134,7 +135,7 @@ main(int argc, char **argv)
 
 	prog = *argv;
 	setlocale(LC_ALL, "");
-
+    tzset();
 #ifdef TRACE
 	{
 		size_t l;

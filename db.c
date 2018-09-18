@@ -1144,7 +1144,6 @@ diff_cmp(
 	const char *name1 = f1->name;
 	const char *name2 = f2->name;
 	const bool dotdot2 = str_eq_dotdot(name2);
-    int i;
 
 	if (str_eq_dotdot(name1)) {
 		if (dotdot2) {
@@ -1155,14 +1154,14 @@ diff_cmp(
 	} else if (dotdot2) {
 		return 1;
 	} else if (sorting == SORTMTIME) {
-		time_t t1, t2;
+        struct timespec t1, t2;
 
 		t1 = f1->type[0] ? f1->mtim[0] : f1->mtim[1];
 		t2 = f2->type[0] ? f2->mtim[0] : f2->mtim[1];
 
-		if      (t1 < t2) return -1;
-		else if (t1 > t2) return  1;
-
+        const int i = cmp_timespec(t1, t2);
+        if (i)
+            return i;
 	} else if (sorting == SORTSIZE) {
 		off_t t1, t2;
 		short f1_dir = IS_F_DIR(1),
@@ -1184,14 +1183,16 @@ diff_cmp(
         uid_t uid2 = f2->type[0] ? f2->uid[0] : f2->uid[1];
         get_uid_name(uid1, lbuf, sizeof lbuf);
         get_uid_name(uid2, rbuf, sizeof rbuf);
-        if ((i = strcmp(lbuf, rbuf)))
+        const int i = strcmp(lbuf, rbuf);
+        if (i)
             return i;
     } else if (sorting == SORT_GROUP) {
         gid_t gid1 = f1->type[0] ? f1->gid[0] : f1->gid[1];
         gid_t gid2 = f2->type[0] ? f2->gid[0] : f2->gid[1];
         get_gid_name(gid1, lbuf, sizeof lbuf);
         get_gid_name(gid2, rbuf, sizeof rbuf);
-        if ((i = strcmp(lbuf, rbuf)))
+        const int i = strcmp(lbuf, rbuf);
+        if (i)
             return i;
     } else if (sorting != SORTMIXED) {
 		short f1_dir = IS_F_DIR(1),
@@ -1207,6 +1208,7 @@ diff_cmp(
 		}
 	}
 
+    int i;
     if (sortic && (i = strcasecmp(name1, name2))) {
         return i;
 	} else {

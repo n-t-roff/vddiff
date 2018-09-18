@@ -14,7 +14,7 @@ struct filediff {
 	uid_t   uid[2];
 	gid_t   gid[2];
 	off_t   siz[2];
-	time_t  mtim[2];
+    struct timespec mtim[2];
 	dev_t   rdev[2];
 	unsigned fl;
 	char    diff;

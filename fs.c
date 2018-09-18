@@ -534,9 +534,8 @@ int fs_rm(int tree, const char *const txt, char *nam, long u, int n,
 	s[1] = strdup(syspth[1]);
 
     if (!s[0] || !s[1]) {
-        if (printerr(strerror(errno),
-                     LOCFMT "strdup()" LOCVAR))
-            fprintf(stderr, oom_msg);
+        if (printerr(strerror(errno), LOCFMT "strdup()" LOCVAR))
+            fputs(oom_msg, stderr);
         rv |= 2;
         goto free_mem;
     }
@@ -1790,15 +1789,16 @@ fs_get_dst(long u,
 			dst = f->diff == '!' ? 3 : 0;
 		} else if (f->type[0]) {
 			if (f->type[1]) {
+                const int i = cmp_timespec(f->mtim[0], f->mtim[1]);
 				if (!m || !S_ISREG(f->type[0]) ||
 				          !S_ISREG(f->type[1])) {
 
 					/* return 0 */
 
-				} else if (f->mtim[0] < f->mtim[1]) {
+                } else if (i < 0) {
 					dst = 1;
 
-				} else if (f->mtim[0] > f->mtim[1]) {
+                } else if (i > 0) {
 					dst = 2;
 				}
 

@@ -442,7 +442,7 @@ no_tree2:
 			diff->uid[0] = gstat[0].st_uid;
 			diff->gid[0] = gstat[0].st_gid;
 			diff->siz[0] = gstat[0].st_size;
-			diff->mtim[0] = gstat[0].st_mtim.tv_sec;
+            diff->mtim[0] = gstat[0].st_mtim;
 			diff->rdev[0] = gstat[0].st_rdev;
 
 			if (S_ISLNK(gstat[0].st_mode))
@@ -460,7 +460,7 @@ no_tree2:
 			diff->uid[1] = gstat[1].st_uid;
 			diff->gid[1] = gstat[1].st_gid;
 			diff->siz[1] = gstat[1].st_size;
-			diff->mtim[1] = gstat[1].st_mtim.tv_sec;
+            diff->mtim[1] = gstat[1].st_mtim;
 			diff->rdev[1] = gstat[1].st_rdev;
 
 			if (S_ISLNK(gstat[1].st_mode))
@@ -702,7 +702,7 @@ right_tree:
 			diff->uid[1] = gstat[1].st_uid;
 			diff->gid[1] = gstat[1].st_gid;
 			diff->siz[1] = gstat[1].st_size;
-			diff->mtim[1] = gstat[1].st_mtim.tv_sec;
+            diff->mtim[1] = gstat[1].st_mtim;
 			diff->rdev[1] = gstat[1].st_rdev;
 
 			if (S_ISLNK(gstat[1].st_mode))
@@ -1101,7 +1101,7 @@ read_link(char *path, off_t size)
     if (!l) {
         if (printerr(strerror(errno),
                      LOCFMT "malloc(%zu)" LOCVAR, size + 1))
-            fprintf(stderr, oom_msg);
+            fputs(oom_msg, stderr);
         return NULL;
     }
 
