@@ -471,10 +471,10 @@ main(int argc, char **argv)
         }
 
         if (S_ISLNK(gstat[0].st_mode) ||
-            S_ISLNK(gstat[0].st_mode))
+            S_ISLNK(gstat[1].st_mode))
         { /* Possible with -L only */
             if (!S_ISLNK(gstat[0].st_mode) ||
-                !S_ISLNK(gstat[0].st_mode))
+                !S_ISLNK(gstat[1].st_mode))
             {
                 printf("Different file type: %s and %s\n",
                        syspth[0], syspth[1]);
@@ -515,7 +515,7 @@ main(int argc, char **argv)
                     } else {
                         if (file_grep(base))
                             SET_EXIT_DIFF;
-                        free(base);
+                        free(const_cast_ptr(base));
                     }
                 } else {
                     tool(syspth[0], NULL, 1, 0);
@@ -702,13 +702,13 @@ test_again:
 #endif
             if (try_etc_dir) {
                 try_etc_dir = FALSE;
-                free(rc_path);
+                free(const_cast_ptr(rc_path));
                 if (!(rc_path = strdup(etc_rc_dir)))
                     return 1;
                 goto test_again;
             } else if (try_etc_name) {
                 try_etc_name = FALSE;
-                free(rc_path);
+                free(const_cast_ptr(rc_path));
                 if (!(rc_path = strdup(etc_rc_name)))
                     return 1;
                 goto test_again;
@@ -736,7 +736,7 @@ test_again:
 		    strerror(errno));
 	}
 free:
-    free(rc_path);
+    free(const_cast_ptr(rc_path));
 	return rv;
 }
 
@@ -864,7 +864,7 @@ set_path:
             exit(EXIT_STATUS_ERROR);
 		}
 	} else {
-		s2 = s;
+        s2 = const_cast_ptr(s);
 	}
 
     /* Set path length in pthlen[i]
