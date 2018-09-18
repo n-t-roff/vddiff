@@ -218,7 +218,7 @@ ntr: /* next tree */
 		if (ntr) {
 			tree = ntr;
 			ntr = 0;
-			free(s);
+            free(const_cast_ptr(s));
 			goto ntr;
 		}
 	}
@@ -227,7 +227,7 @@ ntr: /* next tree */
 		rebuild_db(0);
 	}
 exit:
-	free(s);
+    free(const_cast_ptr(s));
 	syspth[0][pthlen[0]] = 0;
 
 	if (!bmode)
@@ -381,7 +381,7 @@ ask_for_perms(mode_t *mode)
 		}
 
 		m <<= 3;
-		m |= c - '0';
+        m |= (c & 0x7f) - '0';
 	}
 
 	*mode = m;
@@ -460,21 +460,21 @@ ntr:
 		if (op) {
 			if ((gr = getgrnam(rbuf)))
 				gid = gr->gr_gid;
-			else if (!(gid = atoi(rbuf))) {
+            else if (!(gid = (gid_t)atoi(rbuf))) {
 				printerr("", "Invalid group name \"%s\"", rbuf);
 				return;
 			}
 
-			i = chown(pth1, -1, gid);
+            i = chown(pth1, (uid_t)-1, gid);
 		} else {
 			if ((pw = getpwnam(rbuf)))
 				uid = pw->pw_uid;
-			else if (!(uid = atoi(rbuf))) {
+            else if (!(uid = (uid_t)atoi(rbuf))) {
 				printerr("", "Invalid user name \"%s\"", rbuf);
 				return;
 			}
 
-			i = chown(pth1, uid, -1);
+            i = chown(pth1, uid, (gid_t)-1);
 		}
 
 		if (i == -1) {
@@ -508,7 +508,7 @@ exit:
 int fs_rm(int tree, const char *const txt, char *nam, long u, int n,
           unsigned md)
 {
-	struct filediff *f;
+    struct filediff *f = NULL;
     const unsigned short m = n > 1; /* multiple files to process */
 	int rv = 0;
     const char *fn = NULL;
@@ -609,6 +609,15 @@ int fs_rm(int tree, const char *const txt, char *nam, long u, int n,
 			} else {
 				/* "dd" is not allowed
 				 * if both files are present */
+                if (!f) {
+#if defined (TRACE) && defined (DEBUG)
+                    fprintf(debug, LOCFMT "`f` == NULL !\n" LOCVAR);
+                    exit(EXIT_STATUS_ERROR);
+#else
+                    rv |= 2;
+                    goto ret;
+#endif
+                }
 				if (f->type[0] && f->type[1]) {
 					ntr = 2;
 					tree = 1;
@@ -739,9 +748,9 @@ ret:
 	memcpy(syspth[0], s[0], strlen(s[0]) + 1);
 	memcpy(syspth[1], s[1], strlen(s[1]) + 1);
 free_mem:
-	free(s[1]);
-	free(s[0]);
-	pth1 = p0;
+    free(const_cast_ptr(s[1]));
+    free(const_cast_ptr(s[0]));
+    pth1 = const_cast_ptr(p0);
 	len1 = l0;
 	gstat[0] = st;
 
@@ -983,7 +992,7 @@ next:
 #endif
 		rebuild_db(
 		    !fmode || !sto || sto == 3 || (md & (16 | 32))
-		    ? 0 : sto << 1);
+            ? 0 : (short)(sto << 1));
 	}
 
 	r = (fs_error    ? 1 : 0) |
@@ -1024,7 +1033,7 @@ fs_cat(
 		goto ret;
 	}
 
-	pth1 = db_list[right_col][u]->name;
+    pth1 = const_cast_ptr(db_list[right_col][u]->name);
 
 	if (str_eq_dotdot(pth1)) {
 		goto ret;
@@ -1035,11 +1044,11 @@ fs_cat(
 		goto ret;
 	}
 
-	pth2 = mark->name ? mark->name :
-	       bmode ? gl_mark :
-	       mark_lnam ? mark_lnam :
-	       mark_rnam ? mark_rnam :
-	       "<error>" ;
+    pth2 = const_cast_ptr(mark->name ? mark->name :
+                          bmode      ? gl_mark    :
+                          mark_lnam  ? mark_lnam  :
+                          mark_rnam  ? mark_rnam  :
+                                       "<error>") ;
 
 	if (fs_stat(pth1, &gstat[0], 1) == -1 ||
 	    fs_stat(pth2, &gstat[1], 1)) {
@@ -1093,7 +1102,7 @@ rebuild_db(
      * 4: rebuild right side only */
     short mode)
 {
-	char *name;
+    char *name = NULL;
 
 #if defined(TRACE)
 	fprintf(debug, "->rebuild_db(%d) c=%u\n", mode, curs[right_col]);
@@ -1411,8 +1420,8 @@ cp_link(void)
 {
 	int r = 0;
     bool equal = FALSE;
-    char *const buf = malloc(gstat[0].st_size + 1);
-    ssize_t l = readlink(pth1, buf, gstat[0].st_size);
+    char *const buf = malloc((size_t)gstat[0].st_size + 1);
+    ssize_t l = readlink(pth1, buf, (size_t)gstat[0].st_size);
 #if defined(TRACE)
     fprintf(debug, "->cp_link \"%s\" -> \"%s\"\n", pth1, pth2);
 #endif
@@ -1435,8 +1444,8 @@ cp_link(void)
             && S_ISLNK(gstat[1].st_mode)
             && l == gstat[1].st_size)
     {
-        char *const buf2 = malloc(gstat[0].st_size + 1);
-        ssize_t l2 = readlink(pth2, buf2, gstat[1].st_size);
+        char *const buf2 = malloc((size_t)gstat[0].st_size + 1);
+        ssize_t l2 = readlink(pth2, buf2, (size_t)gstat[1].st_size);
 
         if (l2 == -1) {
             printerr(strerror(errno), "readlink %s", pth2);
@@ -1623,7 +1632,7 @@ copy:
 		if (!l1)
 			break;
 
-		if ((l2 = write(f2, lbuf, l1)) == -1 && !fs_ign_errs) {
+        if ((l2 = write(f2, lbuf, (size_t)l1)) == -1 && !fs_ign_errs) {
 			fs_fwrap("write \"%s\": %s", pth2, strerror(errno));
 			rv = -1;
 			break;
@@ -1835,7 +1844,7 @@ fs_stat(const char *p, struct stat *s,
     /* 1: also report ENOENT */
     const unsigned mode)
 {
-	int i;
+    int i = -1;
 
 #if defined(TRACE) && (defined(TEST) || 1)
 	fprintf(debug, "->fs_stat(path=%s mode=%u) follow=%d\n",

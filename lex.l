@@ -24,10 +24,11 @@ PERFORMANCE OF THIS SOFTWARE.
 #include "y.tab.h"
 #include "lex.h"
 #include "pars.h"
+#include "misc.h"
 
 #ifdef LEX_HAS_BUFS
 struct incl_file {
-	char *name;
+    const char *name;
 	unsigned long line;
 	YY_BUFFER_STATE buf;
 	struct incl_file *next;
@@ -199,7 +200,7 @@ yywrap(void)
 		printf("fclose \"%s\": %s\n", cur_rc_filenam, strerror(errno));
 	}
 
-	free(cur_rc_filenam);
+    free(const_cast_ptr(cur_rc_filenam));
 	cur_rc_filenam = incstack->name;
 	rc_nline = incstack->line;
 	yy_delete_buffer(YY_CURRENT_BUFFER);

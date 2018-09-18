@@ -29,6 +29,7 @@ PERFORMANCE OF THIS SOFTWARE.
 #include "db.h"
 #include "main.h"
 #include "tc.h"
+#include "misc.h"
 
 struct pthofs {
 	size_t sys;
@@ -255,7 +256,7 @@ rmtmpdirs(const char *s, tool_flags_t tf)
 	exec_cmd(cm, tf, NULL, NULL);
 	rm[2] = s;
 	exec_cmd(rm, tf, NULL, NULL);
-	free(s); /* either tmp_dir or a DB entry */
+    free(const_cast_ptr(s)); /* either tmp_dir or a DB entry */
 #if defined(TRACE) && 0
 	fprintf(debug, "<-rmtmpdirs\n");
 #endif
@@ -433,7 +434,7 @@ zcat(const char *cmd, const struct filediff *f, int tree, int i)
 	else
 		z->siz[1] = st.st_size;
 
-	free(s2);
+    free(const_cast_ptr(s2));
 	return z;
 }
 
@@ -541,7 +542,7 @@ zpths(const struct filediff *f, struct filediff **z2, int tree, size_t *l2,
 	}
 
 	if (*s2 == '/')
-		s = s2;
+        s = const_cast_ptr(s2);
 	else
 		pthcat(s, l, s2);
 

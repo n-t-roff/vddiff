@@ -4092,8 +4092,8 @@ enter_dir(const char *name, const char *rnam, bool lzip, bool rzip, short tree
 		scan_subdir(name, rnam, subtree);
 
 		if (f2d) {
-			free(name);
-			free(rnam);
+            free(const_cast_ptr(name));
+            free(const_cast_ptr(rnam));
 		}
 
 		goto disp;
@@ -4154,7 +4154,7 @@ enter_dir(const char *name, const char *rnam, bool lzip, bool rzip, short tree
 			l = strlen(name);
 			memcpy(syspth[bpth->col], name, l+1);
 			pthlen[bpth->col] = l;
-			free(name);
+            free(const_cast_ptr(name));
 			name = NULL;
 		}
 
@@ -4184,7 +4184,7 @@ enter_dir(const char *name, const char *rnam, bool lzip, bool rzip, short tree
 	i = scan_subdir(fmode ? name : NULL, NULL, right_col ? 2 : 1);
 
 	if (fmode) {
-		free(name);
+        free(const_cast_ptr(name));
 
         if (i & 2) { /* build_diff_db() return an error */
 			/* sp is absolut. So reset length to place sp at
@@ -4201,7 +4201,7 @@ enter_dir(const char *name, const char *rnam, bool lzip, bool rzip, short tree
 	if (n) {
         size_t l;
         /* `rnam` is const but modified below */
-        char *s = rnam;
+        char *s = const_cast_ptr(rnam);
 
         l = strlen(s);
 
@@ -4213,7 +4213,7 @@ enter_dir(const char *name, const char *rnam, bool lzip, bool rzip, short tree
 		respthofs(bmode || right_col ? 1 : 0);
 
 		if (bmode)
-			free(name); /* dat */
+            free(const_cast_ptr(name)); /* dat */
 	}
 
 	if (right_col) {

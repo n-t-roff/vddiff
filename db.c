@@ -151,12 +151,12 @@ ptr_db_add(void **db, char *key, void *dat)
 #ifdef HAVE_LIBAVLBST
 	struct bst_node *n;
 	int br;
-
-	if (!(br = bst_srch(*db, (union bst_val)(void *)key, &n)))
+    union bst_val k, v;
+    k.p = key;
+    v.p = dat;
+    if (!(br = bst_srch(*db, k, &n)))
 		return 0; /* was already in DB */
-
-	avl_add_at(*db, (union bst_val)(void *)key,
-	    (union bst_val)(void *)dat, br, n);
+    avl_add_at(*db, k, v, br, n);
 	return 1; /* was not in DB, now added */
 #else
 	struct ptr_db_ent *pe;
@@ -186,9 +186,9 @@ ptr_db_srch(void **db, char *key, void **dat, void **n)
 
 	if (!n)
 		n = (void **)&n1;
-
-	if (!(i = bst_srch(*db, (union bst_val)(void *)key,
-	    (struct bst_node **)n)) && dat)
+    union bst_val k;
+    k.p = key;
+    if (!(i = bst_srch(*db, k, (struct bst_node **)n)) && dat)
 		*dat = (*(struct bst_node **)n)->data.p;
 
 	return i;
@@ -252,8 +252,10 @@ ptr_db_cmp(const void *a, const void *b)
 void
 str_db_add(void **db, char *s, int br, struct bst_node *n)
 {
-	avl_add_at(*db, (union bst_val)(void *)s,
-	    (union bst_val)(int)0, br, n);
+    union bst_val k, v;
+    k.p = s;
+    v.i = 0;
+    avl_add_at(*db, k, v, br, n);
 }
 #else
 char *
@@ -270,7 +272,9 @@ str_db_add(void **db, char *s)
 int
 str_db_srch(void **db, char *s, struct bst_node **n)
 {
-	return bst_srch(*db, (union bst_val)(void *)s, n);
+    union bst_val k;
+    k.p = s;
+    return bst_srch(*db, k, n);
 }
 #else
 int
@@ -508,8 +512,10 @@ uz_db_add(char *ext, enum uz_id id)
 	p->str = ext;
 	p->id = id;
 #ifdef HAVE_LIBAVLBST
-	avl_add(uz_ext_db, (union bst_val)(const void *)p->str,
-	    (union bst_val)(void *)p);
+    union bst_val k, v;
+    k.cp = p->str;
+    v.p = p;
+    avl_add(uz_ext_db, k, v);
 #else
 	tsearch(p, &uz_ext_db, uz_cmp);
 #endif
@@ -530,7 +536,9 @@ uz_db_srch(char *str)
 #endif
 
 #ifdef HAVE_LIBAVLBST
-	if (!bst_srch(uz_ext_db, (union bst_val)(void *)str, &n))
+    union bst_val k;
+    k.p = str;
+    if (!bst_srch(uz_ext_db, k, &n))
 		return ((struct uz_ext *)n->data.p)->id;
 #else
 	key.str = str;
@@ -558,7 +566,9 @@ uz_db_del(char *ext)
 #endif
 
 #ifdef HAVE_LIBAVLBST
-	if (bst_srch(uz_ext_db, (union bst_val)(void *)ext, &n)) {
+    union bst_val k;
+    k.p = ext;
+    if (bst_srch(uz_ext_db, k, &n)) {
 		goto ret;
 	}
 
@@ -580,7 +590,7 @@ uz_db_del(char *ext)
 	ue = *(struct uz_ext **)vp;
 	tdelete(ue, &uz_ext_db, uz_cmp);
 #endif
-	free(ue->str);
+    free(const_cast_ptr(ue->str));
 	free(ue);
 
 ret:
@@ -681,7 +691,9 @@ void db_def_ext(char *const ext, char *_tool, tool_flags_t flags)
 	str_tolower(ext);
 #ifdef HAVE_LIBAVLBST
     struct bst_node *n;
-    if (!bst_srch(ext_db, (union bst_val)(void *)ext, &n)) {
+    union bst_val k, v;
+    k.p = ext;
+    if (!bst_srch(ext_db, k, &n)) {
         struct tool *const ot = n->data.p;
 #else
     struct tool key;
@@ -719,8 +731,9 @@ void db_def_ext(char *const ext, char *_tool, tool_flags_t flags)
         if (!t)
             return;
 #ifdef HAVE_LIBAVLBST
-		avl_add(ext_db, (union bst_val)(void *)ext,
-		    (union bst_val)(void *)t);
+        k.p = ext;
+        v.p = t;
+        avl_add(ext_db, k, v);
 #else
 		t->ext = ext;
 		tsearch(t, &ext_db, ext_cmp);
@@ -757,8 +770,9 @@ db_srch_ext(char *ext)
 {
 #ifdef HAVE_LIBAVLBST
 	struct bst_node *n;
-
-	if (!bst_srch(ext_db, (union bst_val)(void *)ext, &n))
+    union bst_val k;
+    k.p = ext;
+    if (!bst_srch(ext_db, k, &n))
 		return n->data.p;
 #else
 	struct tool key;
@@ -795,13 +809,15 @@ db_set_curs(int col, char *path, unsigned _top_idx, unsigned _curs)
 #ifdef HAVE_LIBAVLBST
 	struct bst_node *n;
 	int br;
-
-	if (!(br = bst_srch(curs_db[col], (union bst_val)(void *)path, &n))) {
+    union bst_val k, v;
+    k.p = path;
+    if (!(br = bst_srch(curs_db[col], k, &n))) {
 		uv = n->data.p;
 	} else {
 		uv = malloc(2 * sizeof(unsigned));
-		avl_add_at(curs_db[col], (union bst_val)(void *)strdup(path),
-		    (union bst_val)(void *)uv, br, n);
+        k.p = strdup(path);
+        v.p = uv;
+        avl_add_at(curs_db[col], k, v, br, n);
 	}
 #else
 	struct curs_pos *cp, *cp2;
@@ -832,8 +848,9 @@ db_get_curs(int col, char *path)
 {
 #ifdef HAVE_LIBAVLBST
 	struct bst_node *n;
-
-	if (!bst_srch(curs_db[col], (union bst_val)(void *)path, &n))
+    union bst_val k;
+    k.p = path;
+    if (!bst_srch(curs_db[col], k, &n))
 		return n->data.p;
 #else
 	struct curs_pos *cp, key;
@@ -931,7 +948,7 @@ exit:
 		    bsizlen[i]++, maxsiz /= 10);
 
 		if (maxmajor || maxminor) {
-			unsigned j;
+            unsigned short j;
 
 			for (majorlen[i] = 4; maxmajor >= 1000;
 			    majorlen[i]++, maxmajor /= 10);
@@ -1222,8 +1239,10 @@ diff_db_add(struct filediff *diff, int i)
 	    diff->name, diff->type[0], diff->type[1]);
 #endif
 #ifdef HAVE_LIBAVLBST
-	avl_add(&diff_db[i],
-	    (union bst_val)(void *)diff, (union bst_val)(int)0);
+    union bst_val k, v;
+    k.p = diff;
+    v.i = 0;
+    avl_add(&diff_db[i], k, v);
 #else
 	tsearch(diff, &diff_db[i], diff_cmp);
 #endif
@@ -1335,12 +1354,14 @@ db_dl_add(char *d1, char *d2, char *desc)
 	}
 
 #ifdef HAVE_LIBAVLBST
-	if (!(br = bst_srch(db, (union bst_val)(void *)da, &n))) {
+    union bst_val k, v;
+    k.p = da;
+    v.i = 0;
+    if (!(br = bst_srch(db, k, &n))) {
 		goto ret;
 	}
 
-	avl_add_at(db, (union bst_val)(void *)da,
-	    (union bst_val)(int)0, br, n);
+    avl_add_at(db, k, v, br, n);
 	rv = 1;
 #else
 	vp = tsearch(da, db, d2 ? ddl_cmp : bdl_cmp);
@@ -1375,8 +1396,9 @@ ddl_del(char **k)
 {
 #ifdef HAVE_LIBAVLBST
 	struct bst_node *n;
-
-	bst_srch(&ddl_db, (union bst_val)(void *)k, &n);
+    union bst_val key;
+    key.p = k;
+    bst_srch(&ddl_db, key, &n);
 	avl_del_node(&ddl_db, n);
 #else
 	tdelete(k, &ddl_db, ddl_cmp);
@@ -1389,8 +1411,9 @@ bdl_del(char **k)
 {
 #ifdef HAVE_LIBAVLBST
 	struct bst_node *n;
-
-	bst_srch(&bdl_db, (union bst_val)(void *)k, &n);
+    union bst_val key;
+    key.p = k;
+    bst_srch(&bdl_db, key, &n);
 	avl_del_node(&bdl_db, n);
 #else
 	tdelete(k, &bdl_db, bdl_cmp);
@@ -1564,7 +1587,7 @@ str_tolower(char *in)
 	char *s = in;
 
 	while ((c = *s))
-		*s++ = tolower(c);
+        *s++ = (char)tolower(c);
 
 	return in;
 }

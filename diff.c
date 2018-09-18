@@ -1031,7 +1031,7 @@ is_diff_dir(struct filediff *f)
             pth[l] = 0;
 #if defined(DEBUG)
         else {
-            fprintf(debug, LOCFMT "\n" LOCVAR);
+            fprintf(debug, LOCFMT "`pth` or `l` not set !\n" LOCVAR);
             exit(EXIT_STATUS_ERROR);
         }
 #endif
@@ -1299,7 +1299,7 @@ alloc_diff(const char *const name)
 void
 free_diff(struct filediff *f)
 {
-	free(f->name);
+    free(const_cast_ptr(f->name));
 	free(f->llink);
 	free(f->rlink);
 	free(f);

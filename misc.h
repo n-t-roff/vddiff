@@ -43,6 +43,7 @@ int cmp_timespec(const struct timespec a, const struct timespec b);
 void get_uid_name(const uid_t uid, char *const buf, const size_t buf_size);
 void get_gid_name(const gid_t gid, char *const buf, const size_t buf_size);
 void add_skip_ext(char *const ext);
+void *const_cast_ptr(const void *const ptr);
 
 extern const char oom_msg[];
 extern bool override_prev;

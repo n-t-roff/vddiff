@@ -31,7 +31,8 @@ struct ui_state {
 	void *bst;
 	unsigned num; /* db_num */
 	struct filediff **list;
-	unsigned top_idx, curs, mmrkd;
+    unsigned top_idx, curs;
+    long mmrkd;
 	/* 1: Don't restore. Just remove tmpdir. */
 	unsigned fl;
 	unsigned short tree;

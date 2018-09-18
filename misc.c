@@ -204,8 +204,8 @@ int do_cli_cp(int argc, char **argv, const unsigned opt) {
         }
 
 abort:
-        free(f[1].name);
-        free(f[0].name);
+        free(const_cast_ptr(f[1].name));
+        free(const_cast_ptr(f[0].name));
         ++argv;
         --argc;
     }
@@ -264,3 +264,5 @@ void add_skip_ext(char *const ext)
 #endif
                );
 }
+
+inline void *const_cast_ptr(const void *const ptr) { return ptr; }

@@ -117,7 +117,7 @@ settool:
 	if (tmptool->flags & TOOL_SHELL) {
 		cmd = exec_mk_cmd(tmptool, name, rnam, tree);
 		exec_cmd(&cmd, tmptool->flags | TOOL_TTY, NULL, NULL);
-		free(cmd);
+        free(const_cast_ptr(cmd));
 	} else {
 		exec_tool(tmptool, name, rnam, tree);
 	}
@@ -427,7 +427,7 @@ exec_tool(struct tool *t, const char *const name, const char *const rnam,
 
 	free(s1);
 	free(s2);
-	free(*av.begin);
+    free(const_cast_ptr(*av.begin));
 	free(av.begin);
 
 	if (WIFEXITED(status) && WEXITSTATUS(status) == 77 &&
@@ -755,7 +755,7 @@ open_sh(int tree)
 	*av.end = NULL;
 	exec_cmd(av.begin, TOOL_NOLIST | TOOL_TTY, s,
 	    "\nType \"exit\" or '^D' to return to " BIN ".\n");
-	free(*av.begin);
+    free(const_cast_ptr(*av.begin));
 	free(av.begin);
 
 	/* exec_cmd() did likely create or delete files */
