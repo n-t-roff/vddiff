@@ -84,7 +84,7 @@ complet(char *s, int c)
 	const char *bn;
 	DIR *dh;
 	struct dirent *de;
-	size_t ld, lb, ln;
+    size_t ld, lb, ln = 0;
 	int r = 0;
 	bool co;
 	bool ts; /* trailing slash */
@@ -284,7 +284,7 @@ cpltstr(
 	const char *cw; /* current word */
 	char *mw = NULL; /* matched word */
 	size_t iwl = strlen(iw); /* input word length */
-	size_t mwl; /* matched word length */
+    size_t mwl = 0; /* matched word length */
 	int r = 0;
 	bool co = TRUE;
 
@@ -342,7 +342,6 @@ pthexp(char *p)
 	char *b, *s, *s2;
 	size_t n = 0;
 	int c, c2;
-	bool d;
 
 	b = malloc(PATHSIZ);
 
@@ -350,6 +349,7 @@ pthexp(char *p)
 		*b = 0; /* "" expanded to "" */
 		return b;
 	}
+    bool d = FALSE;
 
 	if (*p == '~') {
 		p++;
@@ -378,14 +378,14 @@ pthexp(char *p)
 			}
 
 			s = pw->pw_dir;
-			*p = c;
+            *p = (char)c;
 		}
 
 		n = strlen(s);
 		memcpy(b, s, n);
 	}
 
-	while ((c = *p++)) {
+    while ((c = *p++)) {
 		if (c == '$') {
 			s2 = p;
 
@@ -410,14 +410,14 @@ pthexp(char *p)
 				}
 
 				while ((c2 = *s++)) {
-					b[n++] = c2;
+                    b[n++] = (char)c2;
 
 					if (n == PATHSIZ) {
 						goto err;
 					}
 				}
 
-				*p++ = c;
+                *p++ = (char)c;
 
 				if (d && c == '}') {
 					continue;
@@ -425,7 +425,7 @@ pthexp(char *p)
 			}
 		}
 
-		b[n++] = c;
+        b[n++] = (char)c;
 
 		if (n == PATHSIZ) {
 			goto err;

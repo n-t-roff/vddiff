@@ -264,11 +264,12 @@ ui_ctrl(void)
 {
 	static struct history opt_hist;
     int key[2] = { 0, 0 }, key2[2], c = 0, c2 = 0;
-	unsigned num, num2;
-	long u;
+    unsigned num = 0;
+    unsigned num2 = 0;
+    long u = 0;
 	struct filediff *f;
-	bool ns; /* num set */
-	bool us; /* u set */
+    bool ns = FALSE; /* num set */
+    bool us = FALSE; /* u set */
 
 	while (1) {
 /* {continue} may be dangerous when a {for} loop is put around the statement
@@ -1586,7 +1587,7 @@ next_key:
 			c = 0;
 		}
 	}
-
+    /* while (1) loop -> not reached */
 	return;
 
 save_st:
@@ -2889,9 +2890,9 @@ disp_line(
 	struct filediff *f;
 	short color_id = 0;
 	WINDOW *w;
-	attr_t a;
+    attr_t a = 0;
 	int mx;
-	short cp;
+    short cp = 0;
 
 #if defined(DEBUG)
 	if (i >= db_num[right_col]) {

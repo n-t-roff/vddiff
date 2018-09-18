@@ -20,6 +20,7 @@ PERFORMANCE OF THIS SOFTWARE.
 #include <stdlib.h>
 #include <stdarg.h>
 #include <signal.h>
+#include <wchar.h>
 #include "compat.h"
 #include <wctype.h>
 #include "ui.h"

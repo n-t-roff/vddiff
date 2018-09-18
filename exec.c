@@ -153,7 +153,7 @@ check_ext_tool(const char *name)
 	*--cmd = 0;
 
 	while (l) {
-		*--cmd = tolower((int)name[--l]);
+        *--cmd = (char)tolower((int)name[--l]);
 
 		if (!skipped && *cmd == '.' &&
 		    !str_db_srch(&skipext_db, cmd + 1, NULL)) {
@@ -440,12 +440,12 @@ exec_tool(struct tool *t, const char *const name, const char *const rnam,
 static void
 str2argvec(const char *cmd, struct argvec *av)
 {
-	int o, c;
+    int c;
 	const char *s;
 	char *s2;
 
 	s = cmd;
-	o = 0;
+    size_t o = 0;
 
 	while (1) {
 		while ((c = *s++) && !isblank(c));
@@ -457,15 +457,19 @@ str2argvec(const char *cmd, struct argvec *av)
 
 	/* tool + any opt (= o) + 2 args + NULL = o + 4 */
 
-	av->begin = av->end = malloc((o + 4) * sizeof(*av));
+    av->begin = av->end = malloc((o + 4) * sizeof(*av));
 	*av->end++ = s2 = strdup(cmd);
 
 	while (o) {
-		while ((c = *s2++) && !isblank(c));
-		if (!c) break;
+        while ((c = *s2++) && !isblank(c))
+            ;
+        if (!c)
+            break;
 		s2[-1] = 0;
-		while ((c = *s2++) &&  isblank(c));
-		if (!c) break;
+        while ((c = *s2++) &&  isblank(c))
+            ;
+        if (!c)
+            break;
 		*av->end++ = s2 - 1;
 	}
 }
@@ -699,7 +703,7 @@ shell_quote(char *to, const char *from, size_t siz)
 
 			/* fall through */
 		default:
-			*to++ = c;
+            *to++ = (char)c;
 			len++;
 		}
 	}

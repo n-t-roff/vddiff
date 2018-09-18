@@ -1095,7 +1095,7 @@ ret:
 char *
 read_link(char *path, off_t size)
 {
-    char *l = malloc(size + 1);
+    char *l = malloc((size_t)size + 1);
 
     if (!l) {
         if (printerr(strerror(errno),
@@ -1104,7 +1104,7 @@ read_link(char *path, off_t size)
         return NULL;
     }
 
-    if ((size = readlink(path, l, size)) == -1) {
+    if ((size = readlink(path, l, (size_t)size)) == -1) {
         if (!ign_diff_errs &&
                 dialog(ign_txt, NULL, "readlink \"%s\": %s",
                        path, strerror(errno))
@@ -1219,7 +1219,7 @@ int cmp_file(
 		if (!l1)
 			break;
 
-		if (memcmp(lbuf, rbuf, l1)) {
+        if (memcmp(lbuf, rbuf, (size_t)l1)) {
             rv |= 1;
 			break;
 		}

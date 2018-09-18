@@ -39,13 +39,13 @@ struct pthofs {
 };
 
 static int mktmpdirs(void);
-static enum uz_id check_ext(const char *, int *);
-static struct filediff *zcat(const char *, const struct filediff *, int, int);
-static struct filediff *tar(const char *const, const struct filediff *, int, int,
+static enum uz_id check_ext(const char *, size_t *);
+static struct filediff *zcat(const char *, const struct filediff *, int, size_t);
+static struct filediff *tar(const char *const, const struct filediff *, int, size_t,
     unsigned);
-static struct filediff *unzip(const struct filediff *, int, int, unsigned);
+static struct filediff *unzip(const struct filediff *, int, size_t, unsigned);
 static char *zpths(const struct filediff *, struct filediff **, int, size_t *,
-    int, int);
+    size_t, int);
 
 char *tmp_dir;
 /* View path names used by the UI.
@@ -273,7 +273,6 @@ unpack(const struct filediff *f, int tree, char **tmp,
 {
 	enum uz_id id;
 	struct filediff *z = NULL;
-	int i;
     const char *s;
 
 #if defined(TRACE) && 1
@@ -290,7 +289,7 @@ unpack(const struct filediff *f, int tree, char **tmp,
 	if ((type & 8) && check_ext_tool(s)) {
 		goto ret;
 	}
-
+    size_t i;
 	if ((id = check_ext(s, &i)) == UZ_NONE)
 		goto ret;
 
@@ -367,14 +366,13 @@ ret:
 }
 
 static enum uz_id
-check_ext(const char *name, int *pos)
+check_ext(const char *name, size_t *pos)
 {
 	size_t l;
 	char *s;
 	short skipped = 0;
 	int c;
 	enum uz_id id;
-	int i;
 #if defined(TRACE)
     fprintf(debug, "<>check_ext(name=\"%s\")\n", name);
 #endif
@@ -384,7 +382,7 @@ check_ext(const char *name, int *pos)
 	*--s = 0;
 
 	while (l) {
-		*--s = tolower((int)name[--l]);
+        *--s = (char)tolower((int)name[--l]);
 
 		if (!skipped && *s == '.' &&
 		    !str_db_srch(&skipext_db, s + 1, NULL)) {
@@ -396,7 +394,7 @@ check_ext(const char *name, int *pos)
 			break;
 	}
 
-	for (i = 0; (c = *s++); i++) {
+    for (size_t i = 0; (c = *s++); i++) {
 		if (c == '.' && *s &&
 		    ((id = uz_db_srch(s)) != UZ_NONE)) {
 			*pos = i;
@@ -408,7 +406,7 @@ check_ext(const char *name, int *pos)
 }
 
 static struct filediff *
-zcat(const char *cmd, const struct filediff *f, int tree, int i)
+zcat(const char *cmd, const struct filediff *f, int tree, size_t i)
 {
     char *s;
     const char *s2;
@@ -439,7 +437,7 @@ zcat(const char *cmd, const struct filediff *f, int tree, int i)
 }
 
 static struct filediff *
-tar(const char *const opt, const struct filediff *f, int tree, int i,
+tar(const char *const opt, const struct filediff *f, int tree, size_t i,
     /* 1: set tmpdir */
     unsigned m)
 {
@@ -459,7 +457,7 @@ tar(const char *const opt, const struct filediff *f, int tree, int i,
 }
 
 static struct filediff *
-unzip(const struct filediff *f, int tree, int i,
+unzip(const struct filediff *f, int tree, size_t i,
     /* 1: set tmp_dir */
     unsigned m)
 {
@@ -478,7 +476,7 @@ unzip(const struct filediff *f, int tree, int i,
 
 static char *
 zpths(const struct filediff *f, struct filediff **z2, int tree, size_t *l2,
-    int i,
+    size_t i,
     /* 1: is file, not dir */
     /* 2: keep tmpdir */
     int fn)

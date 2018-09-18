@@ -7,14 +7,14 @@ extern "C" {
 
 #include <signal.h>
 
-#define TOOL_BG      1 /* Run as background process */
-#define TOOL_NOARG   2
-#define TOOL_SHELL   4 /* Run command with "sh -c ..." */
-#define TOOL_WAIT    8 /* Wait for <ENTER> after command */
-#define TOOL_NOLIST 16 /* Don't call disp_fmode() */
-#define TOOL_TTY    32 /* For commands for which output is expected */
-#define TOOL_UDSCR  64 /* Implies TOOL_NOLIST, calls rebuild_scr() */
-#define TOOL_NOCURS 128 /* Don't call curses functions */
+#define TOOL_BG       1U /* Run as background process */
+#define TOOL_NOARG    2U
+#define TOOL_SHELL    4U /* Run command with "sh -c ..." */
+#define TOOL_WAIT     8U /* Wait for <ENTER> after command */
+#define TOOL_NOLIST  16U /* Don't call disp_fmode() */
+#define TOOL_TTY     32U /* For commands for which output is expected */
+#define TOOL_UDSCR   64U /* Implies TOOL_NOLIST, calls rebuild_scr() */
+#define TOOL_NOCURS 128U /* Don't call curses functions */
 
 typedef unsigned tool_flags_t;
 

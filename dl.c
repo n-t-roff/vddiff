@@ -147,7 +147,7 @@ int /* !0: Exit */
 dl_list(void)
 {
 	int c, c1;
-	unsigned num;
+    unsigned num = 0;
 	int ret_val_ = 0;
 	bool del = FALSE;
 	bool act = FALSE;
@@ -203,7 +203,7 @@ dl_list(void)
 
 		if (c >= '0' && c <= '9') {
 			num = num * 10;
-			num += c - '0';
+            num += (unsigned)(c - '0');
 			continue;
 		}
 
@@ -825,8 +825,6 @@ dl_regexec(
 			return 1;
 		}
 	}
-
-	return 0;
 
 no_match:
 	printerr(NULL, no_match_txt);
