@@ -1,3 +1,8 @@
+#ifndef TC_H
+#define TC_H
+
+#include "compat.h"
+
 struct bpth {
 	char *pth;
 	int col;
@@ -31,3 +36,5 @@ void mk_abs_pth(char *, size_t *);
 void movemb(int);
 void doresizecols(void);
 #endif
+
+#endif /* TC_H */

@@ -1,3 +1,6 @@
+#ifndef FS_H
+#define FS_H
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -98,3 +101,5 @@ int fs_stat(const char *, struct stat *, const unsigned);
 #ifdef __cplusplus
 }
 #endif
+
+#endif /* FS_H */

@@ -21,7 +21,6 @@ PERFORMANCE OF THIS SOFTWARE.
 #include <sys/types.h>
 #include <signal.h>
 #include <ctype.h>
-#include "compat.h"
 #include "dl.h"
 #include "main.h"
 #include "tc.h"

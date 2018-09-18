@@ -1,3 +1,6 @@
+#ifndef EXEC_H
+#define EXEC_H
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -50,3 +53,5 @@ void sig_child(int);
 #ifdef __cplusplus
 }
 #endif
+
+#endif /* EXEC_H */

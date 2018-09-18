@@ -21,7 +21,6 @@ PERFORMANCE OF THIS SOFTWARE.
 #include <string.h>
 #include <stdarg.h>
 #include <signal.h>
-#include "compat.h"
 #include "ui.h"
 #include "tc.h"
 #include "main.h"

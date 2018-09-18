@@ -1,3 +1,9 @@
+#ifndef UI2_H
+#define UI2_H
+
+#include <regex.h>
+#include "compat.h"
+
 #define FKEY_WAIT  1 /* Wait after executing the command to check the command output.
                       * Used by '!' and '%'. */
 #define FKEY_FORCE 2 /* Immediately start execution. Used by '#' and '%'. */
@@ -96,3 +102,5 @@ void set_fkey_set(const int i);
 /* private declarations */
 
 void set_fkey_comment(const int set, const int key_id, char *const comment);
+
+#endif /* UI2_H */

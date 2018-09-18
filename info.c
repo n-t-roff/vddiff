@@ -16,7 +16,6 @@ PERFORMANCE OF THIS SOFTWARE.
 
 #include <stdarg.h>
 #include <stdlib.h>
-#include <sys/types.h>
 #include <signal.h>
 #include <unistd.h>
 #include <errno.h>

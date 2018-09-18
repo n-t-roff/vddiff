@@ -1,6 +1,11 @@
+#ifndef DB_H
+#define DB_H
+
 #ifdef HAVE_LIBAVLBST
 # include <avlbst.h>
 #endif
+#include "exec.h"
+#include "uzp.h"
 
 enum sorting { DIRSFIRST, FILESFIRST, SORTMIXED, SORTMTIME, SORTSIZE,
                SORT_OWNER, SORT_GROUP };
@@ -83,3 +88,5 @@ extern bool nohidden;
 /* private declarations */
 
 struct tool *set_ext_tool(char *_tool, tool_flags_t flags);
+
+#endif /* DB_H */

@@ -1,3 +1,8 @@
+#ifndef GQ_H
+#define GQ_H
+
+#include <regex.h>
+
 extern regex_t fn_re;
 extern regex_t find_dir_name_regex;
 extern bool file_pattern;
@@ -33,3 +38,5 @@ int gq_proc(struct filediff *);
  *    0: pattern match
  *   -1: error */
 int gq_proc_lines(const struct filediff *const f);
+
+#endif /* GQ_H */

@@ -1,5 +1,10 @@
+#ifndef MAIN_H
+#define MAIN_H
+
+#include <sys/types.h>
 #include <sys/stat.h>
 #include <regex.h>
+#include "compat.h"
 
 #define EXIT_STATUS_DIFF  1
 #define EXIT_STATUS_ERROR 2
@@ -92,3 +97,5 @@ char *add_home_pth(const char *);
 void get_arg(const char *s, int i);
 void sig_term(int);
 void remove_tmp_dirs(void);
+
+#endif /* MAIN_H */

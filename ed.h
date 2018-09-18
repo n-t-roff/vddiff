@@ -1,3 +1,6 @@
+#ifndef ED_H
+#define ED_H
+
 #define EDCB_RM_CB 1 /* remove callback */
 #define EDCB_IGN   2 /* ignore input */
 #define EDCB_FAIL  4 /* return <ESC> value */
@@ -26,3 +29,5 @@ extern unsigned histsize;
 extern unsigned linelen;
 
 extern wchar_t *linebuf;
+
+#endif /* ED_H */

@@ -18,14 +18,12 @@ PERFORMANCE OF THIS SOFTWARE.
 #include <string.h>
 #include <errno.h>
 #include <stdlib.h>
-#include <sys/types.h>
 #include <unistd.h>
 #include <ctype.h>
 #include <stdarg.h>
 #include <signal.h>
 #include "compat.h"
 #include "ui.h"
-#include "exec.h"
 #include "diff.h"
 #include "uzp.h"
 #include "db.h"

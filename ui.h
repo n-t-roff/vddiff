@@ -1,3 +1,10 @@
+#ifndef UI_H
+#define UI_H
+
+#include <sys/types.h>
+#include <stdarg.h>
+#include "compat.h"
+
 #define PAIR_LEFTONLY  1
 #define PAIR_RIGHTONLY 2
 #define PAIR_DIFF      3
@@ -114,3 +121,5 @@ extern bool add_mtime;
 extern bool add_ns_mtim;
 extern bool add_owner;
 extern bool add_group;
+
+#endif /* UI_H */

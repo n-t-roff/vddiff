@@ -1,3 +1,8 @@
+#ifndef INFO_H
+#define INFO_H
+
+#include <sys/types.h>
+
 void info_load(void);
 void info_store(void);
 void info_chomp(char *);
@@ -8,3 +13,5 @@ extern const char info_ddir_txt[];
 extern const char info_desc_txt[];
 extern char *info_pth;
 extern pid_t info_pid;
+
+#endif /* INFO_H */

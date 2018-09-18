@@ -1,8 +1,12 @@
+#ifndef DIFF_H
+#define DIFF_H
+
 #ifdef __cplusplus
 extern "C" {
 #endif
 
 #include <sys/types.h>
+#include "compat.h"
 
 /* File marked (for delete, copy, etc.) */
 #define FDFL_MMRK 1
@@ -111,3 +115,5 @@ void wr_last_path(void);
 #ifdef __cplusplus
 }
 #endif
+
+#endif /* DIFF_H */

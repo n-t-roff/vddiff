@@ -15,10 +15,8 @@ PERFORMANCE OF THIS SOFTWARE.
 */
 
 #include <unistd.h>
-#include <stdarg.h>
 #include <string.h>
 #include <stdlib.h>
-#include <sys/types.h>
 #include <pwd.h>
 #include <grp.h>
 #include <time.h>
@@ -32,7 +30,6 @@ PERFORMANCE OF THIS SOFTWARE.
 #ifdef USE_SYS_MKDEV_H
 # include <sys/mkdev.h>
 #endif
-#include "compat.h"
 #include "diff.h"
 #include "main.h"
 #include "ui.h"

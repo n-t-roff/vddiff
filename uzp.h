@@ -1,3 +1,9 @@
+#ifndef UZP_H
+#define UZP_H
+
+#include <sys/types.h>
+#include "exec.h"
+
 #define TMPPREFIX "/." BIN "."
 
 enum uz_id { UZ_NONE, UZ_GZ, UZ_BZ2, UZ_TAR, UZ_TGZ, UZ_TBZ, UZ_ZIP,
@@ -38,3 +44,5 @@ void setvpth(const int i);
  */
 void setpthofs(const int mode, const char *const, const char *const);
 void respthofs(int);
+
+#endif /* UZP_H */

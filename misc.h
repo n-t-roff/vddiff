@@ -1,3 +1,6 @@
+#ifndef MISC_H
+#define MISC_H
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -47,3 +50,5 @@ extern bool override_prev;
 #ifdef __cplusplus
 }
 #endif
+
+#endif /* MISC_H */
