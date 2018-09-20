@@ -1488,8 +1488,8 @@ free_buf2:
             r = -1;
             goto exit;
         }
-#ifdef HAVE_FUTIMENS
         if (preserve_all) {
+#ifdef HAVE_FUTIMENS
             struct timespec ts[2];
             ts[0] = gstat[0].st_atim;
             ts[1] = gstat[0].st_mtim;
@@ -1498,8 +1498,13 @@ free_buf2:
                 fprintf(debug, "  utimensat(%s): %s\n", pth2, strerror(errno));
 #endif
             }
-        }
+#endif /* HAVE_FUTIMENS */
+            if (lchown(pth2, gstat[0].st_uid, gstat[0].st_gid) == -1) {
+#if defined(TRACE)
+                fprintf(debug, "  lchown(%s): %s\n", pth2, strerror(errno));
 #endif
+            }
+        }
         tot_cmp_byte_count += l;
         ++tot_cmp_file_count;
         if (!wstat && verbose)
