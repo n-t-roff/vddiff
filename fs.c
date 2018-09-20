@@ -49,6 +49,8 @@ struct str_list {
 
 static int proc_dir(void);
 static void rm_dir(void);
+/* Return value:
+ *   !0: error */
 static int cp_file(void);
 static int creatdir(void);
 static int cp_link(void);
@@ -906,14 +908,12 @@ tpth:
 #endif
                 if (!fs_error) {
                     if (rename(pth1, pth2) == -1) {
-                        if (!fs_ign_errs) {
-                            fs_fwrap("rename %s -> %s: %s",
-                                     pth1, pth2, strerror(errno));
-                        }
+                        fs_fwrap("rename %s -> %s: %s",
+                                 pth1, pth2, strerror(errno));
                     } else if (!wstat && verbose) {
                         printf("Rename \"%s\" -> \"%s\" done\n", pth1, pth2);
                     }
-				}
+                }
 
 				chg = TRUE;
 				goto next;
@@ -1274,10 +1274,10 @@ rm_dir(void)
 	fprintf(debug, "<>rm_dir(%s)\n", pth1);
 #endif
 
-	if (!fs_error && rmdir(pth1) == -1 && !fs_ign_errs) {
-		fs_fwrap("rmdir \"%s\": %s", pth1, strerror(errno));
-    } else {
-        if (!wstat && verbose) {
+    if (!fs_error) {
+        if (rmdir(pth1) == -1) {
+            fs_fwrap("rmdir \"%s\": %s", pth1, strerror(errno));
+        } else if (!wstat && verbose) {
             printf("Directory \"%s\" removed\n", pth1);
         }
     }
@@ -1300,26 +1300,26 @@ rm_file(void)
 		}
 	}
 
-	if (!fs_error && unlink(pth1) == -1 && !fs_ign_errs) {
-		fs_fwrap("unlink \"%s\": %s", pth1, strerror(errno));
-    } else {
-        if (!wstat && verbose) {
-            printf("File \"%s\" removed\n", pth1);
-        }
+    if (!fs_error) {
+        if (unlink(pth1) == -1) {
+            fs_fwrap("unlink \"%s\": %s", pth1, strerror(errno));
+        } else {
+            if (!wstat && verbose) {
+                printf("File \"%s\" removed\n", pth1);
+            }
 
-        if (cli_rm) { /* not cli_cp overwrite */
-            tot_cmp_byte_count += gstat[0].st_size;
-            ++tot_cmp_file_count;
+            if (cli_rm) { /* not cli_cp overwrite */
+                tot_cmp_byte_count += gstat[0].st_size;
+                ++tot_cmp_file_count;
+            }
         }
     }
 }
 
-/* !0: Error */
-
 static int
 cp_file(void)
 {
-	int rv = 1;
+    int rv = 0;
 
 #if defined(TRACE)
     fprintf(debug, "->cp_file pth1=\"%s\" pth2=\"%s\"\n", pth1, pth2);
@@ -1331,17 +1331,20 @@ cp_file(void)
 
 		/* Test for ESC once a second */
 		if (fs_testBreak()) {
+            rv |= 1;
 			goto ret;
 		}
 	}
 
 	if (S_ISREG(gstat[0].st_mode)) {
-		rv = cp_reg(0) < 0 ? rv : 0;
+        if (cp_reg(0) < 0)
+            rv |= 1;
 	} else if (S_ISLNK(gstat[0].st_mode)) {
-		rv = cp_link();
+        rv |= cp_link();
 	} else {
+        fs_fwrap("Unsupported file type 0%o", gstat[0].st_mode);
 		printerr(NULL, "Not copied: \"%s\"", pth1);
-		rv = 0; /* Not an error */
+        rv |= 1;
 	}
 
 ret:
@@ -1632,7 +1635,7 @@ copy:
 		if (!l1)
 			break;
 
-        if ((l2 = write(f2, lbuf, (size_t)l1)) == -1 && !fs_ign_errs) {
+        if ((l2 = write(f2, lbuf, (size_t)l1)) == -1) {
 			fs_fwrap("write \"%s\": %s", pth2, strerror(errno));
 			rv = -1;
 			break;
@@ -1696,23 +1699,21 @@ ret:
 	return rv;
 }
 
-static void
-fs_fwrap(const char *f, ...)
+static void fs_fwrap(const char *f, ...)
 {
-	va_list a;
-
-	va_start(a, f);
-
-	switch (vdialog(ign_esc_txt, "\ni", f, a)) {
-	case '':
-		fs_error = 1;
-		break;
-	case 'i':
-		fs_ign_errs = TRUE;
-		break;
-	}
-
-	va_end(a);
+    if (fs_ign_errs)
+        return;
+    va_list a;
+    va_start(a, f);
+    switch (vdialog(ign_esc_txt, "\ni", f, a)) {
+    case '':
+        fs_error = 1;
+        break;
+    case 'i':
+        fs_ign_errs = TRUE;
+        break;
+    }
+    va_end(a);
 }
 
 static int
