@@ -500,7 +500,7 @@ tmpbasecmp(const char *p)
 }
 
 int
-exec_cmd(const char **av, tool_flags_t flags, char *path, const char *const msg)
+exec_cmd(const char *const *const av, tool_flags_t flags, char *path, const char *const msg)
 {
 	pid_t pid;
 	int status = 0;

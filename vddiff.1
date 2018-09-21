@@ -147,6 +147,23 @@ File type
 .
 .Bl -tag -width 12n
 .
+.It Fl u Op Ar filename
+Skip reading the initialization file at start-up.
+If
+.Fl u
+is used, it must be the very first option.
+Other used options need to begin with
+.Sq Fl
+again.
+If an optional
+.Ar filename
+is supplied, this file is read instead of the default
+initialization file
+.Pa ~/.@vddiff@rc .
+.Ar filename
+needs to be separated with white space from
+.Fl u .
+.
 .It Fl -
 All following arguments (if any) are not recognized as options
 even when starting with a
@@ -482,22 +499,7 @@ Debug option:
 Overwrite files only if they are older than the source file.
 Intented for use with
 .Fl A .
-.It Fl u Op Ar filename
-Skip reading the initialization file at start-up.
-If
-.Fl u
-is used, it must be the very first option.
-Other used options need to begin with
-.Sq Fl
-again.
-If an optional
-.Ar filename
-is supplied, this file is read instead of the default
-initialization file
-.Pa ~/.@vddiff@rc .
-.Ar filename
-needs to be separated with white space from
-.Fl u .
+.
 .It Fl V
 Print version and exit.
 .It Fl v Ar view_tool

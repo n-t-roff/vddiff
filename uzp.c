@@ -246,18 +246,15 @@ mktmpdirs(void)
 void
 rmtmpdirs(const char *s, tool_flags_t tf)
 {
-	static const char *cm[] = { "chmod", "-R" , "700", NULL, NULL };
-	static const char *rm[] = { "rm"   , "-rf", NULL , NULL };
-
-#if defined(TRACE) && 0
+#if defined(TRACE) && 1
 	fprintf(debug, "->rmtmpdirs(%s)\n", s);
 #endif
-	cm[3] = s;
-	exec_cmd(cm, tf, NULL, NULL);
-	rm[2] = s;
-	exec_cmd(rm, tf, NULL, NULL);
+    const char *const cm[] = { "chmod", "-R", "700", s, NULL };
+    exec_cmd(cm, tf, NULL, NULL);
+    const char *const rm[] = { "rm", "-rf", s, NULL };
+    exec_cmd(rm, tf, NULL, NULL);
     free(const_cast_ptr(s)); /* either tmp_dir or a DB entry */
-#if defined(TRACE) && 0
+#if defined(TRACE) && 1
 	fprintf(debug, "<-rmtmpdirs\n");
 #endif
 }
@@ -410,20 +407,15 @@ check_ext(const char *name, size_t *pos)
 static struct filediff *
 zcat(const char *cmd, const struct filediff *f, int tree, size_t i)
 {
-    char *s;
-    const char *s2;
-	size_t l;
 	struct filediff *z;
-	struct stat st;
-
-	l = 20;
-	s = zpths(f, &z, tree, &l, i, 3);
+    size_t l = 20;
+    char *s = zpths(f, &z, tree, &l, i, 3);
 	snprintf(s, l, "%s %s > %s", cmd, lbuf, rbuf);
-	s2 = strdup(rbuf); /* altered by exec_cmd() */
+    const char *s2 = strdup(rbuf); /* altered by exec_cmd() */
 	exec_cmd(&s, TOOL_SHELL, NULL, NULL);
 	free(s);
-
-	if (lstat(z->name, &st) == -1) {
+    struct stat st;
+    if (lstat(z->name, &st) == -1) {
 		if (errno == ENOENT)
 			printerr("", "Unpacked file \"%s\" not found", s2);
 		else
@@ -433,7 +425,6 @@ zcat(const char *cmd, const struct filediff *f, int tree, size_t i)
 		z->siz[0] = st.st_size;
 	else
 		z->siz[1] = st.st_size;
-
     free(const_cast_ptr(s2));
 	return z;
 }
