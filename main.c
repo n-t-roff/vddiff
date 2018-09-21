@@ -348,7 +348,7 @@ main(int argc, char **argv)
             overwrite_if_old = TRUE;
             break;
 		case 'V':
-			printf(BIN " %s\n\tCompile option(s): "
+            printf(BIN " "VERSION"\n\tCompile option(s): "
 #if defined HAVE_NCURSESW_CURSES_H
 			    "ncursesw"
 #elif defined HAVE_NCURSES_CURSES_H
@@ -369,7 +369,7 @@ main(int argc, char **argv)
 #else
 			    "tsearch"
 #endif
-			    "\n", version);
+                "\n");
             return EXIT_SUCCESS;
 		case 'v':
 			set_tool(&viewtool, strdup(optarg), 0);

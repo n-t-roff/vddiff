@@ -10,11 +10,11 @@ INCDIR=	$(PREFIX)/include
 LIBDIR=	$(PREFIX)/lib
 TEST_DIR = .TMP_TEST_DIR
 
-TRACE=	#-DTRACE='"/tmp/.$(BIN)_trace_"'
-DEBUG=	#-DUNIMP -DDEBUG
-STRP=	-s
+TRACE = #-DTRACE='"/tmp/.$(BIN)_trace_"'
+DEBUG = #-DDEBUG #-std=c99 -D_XOPEN_SOURCE=700 #-DUNIMP
+STRP = -s
 
-OBJ=	main.o pars.o lex.o diff.o ui.o db.o exec.o fs.o ed.o uzp.o ver.o \
+OBJ=	main.o pars.o lex.o diff.o ui.o db.o exec.o fs.o ed.o uzp.o \
 	ui2.o gq.o tc.o info.o dl.o cplt.o misc.o
 TEST_OBJ = $(OBJ) test.o fs_test.o misc_test.o
 YFLAGS=	-d
@@ -47,7 +47,7 @@ distclean: clean
 	rm -f Makefile config.log compat.h
 
 $(BINDIR) $(MANDIR)/man1:
-	[ -d $@ ] || mkdir -p $@
+	mkdir -p $@
 
 $(BIN): $(OBJ)
 	$(CC) $(_CFLAGS) $(_LDFLAGS) -o $@ $(OBJ) $(LDADD)

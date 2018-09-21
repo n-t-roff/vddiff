@@ -29,7 +29,6 @@ SOURCES += \
     ui.c \
     ui2.c \
     uzp.c \
-    ver.c \
     misc_test.cpp
 
 HEADERS += \
@@ -54,5 +53,5 @@ HEADERS += \
     ui.h \
     ui2.h \
     uzp.h \
-    ver.h \
-    misc_test.h
+    misc_test.h \
+    ver.h

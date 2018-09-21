@@ -394,13 +394,15 @@ check_ext(const char *name, size_t *pos)
 			break;
 	}
 
-    for (size_t i = 0; (c = *s++); i++) {
-		if (c == '.' && *s &&
-		    ((id = uz_db_srch(s)) != UZ_NONE)) {
-			*pos = i;
-			return id;
-		}
-	}
+    size_t i; /* Old compilers require -std=c99 for this
+               * which causes further issues */
+    for (i = 0; (c = *s++); i++) {
+        if (c == '.' && *s &&
+                ((id = uz_db_srch(s)) != UZ_NONE)) {
+            *pos = i;
+            return id;
+        }
+    }
 
 	return UZ_NONE;
 }
