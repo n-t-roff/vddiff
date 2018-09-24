@@ -1348,6 +1348,8 @@ cp_file(void)
 	}
 
 ret:
+    if (exit_on_error && rv)
+        fs_abort = TRUE;
 #if defined(TRACE)
 	fprintf(debug, "<-cp_file: %d\n", rv);
 #endif
@@ -1677,7 +1679,12 @@ int cp_reg(const unsigned mode) {
     fprintf(debug, "->cp_reg(mode=%x) pth1=\"%s\" pth2=\"%s\"\n", mode, pth1, pth2);
 #endif
     int rv = 0; /* return value. must only be set in code. Clearing rv may hide errors. */
-    if (!fs_stat(pth2, &gstat[1], 0)) { /* target file exists */
+    if (fs_stat(pth2, &gstat[1], 0)) {
+        if (errno && exit_on_error) {
+            rv = -1;
+            goto ret;
+        }
+    } else { /* target file exists */
         if (dont_overwrite)
             goto ret;
         int i;
@@ -1697,7 +1704,7 @@ int cp_reg(const unsigned mode) {
                               O_CREAT | O_TRUNC | O_WRONLY ;
     const int f2 = open(pth2, fl, gstat[0].st_mode & 07777);
     if (f2 == -1) {
-		printerr(strerror(errno), "create \"%s\"", pth2);
+        printerr(strerror(errno), LOCFMT "create \"%s\"" LOCVAR, pth2);
 		rv = -1;
         goto ret;
 	}
@@ -1719,10 +1726,12 @@ close2:
         printf("File copy \"%s\" -> \"%s\" done\n", pth1, pth2);
     }
 ret:
+    if (exit_on_error && rv < 0)
+        fs_abort = TRUE;
 #if defined(TRACE)
 	fprintf(debug, "<-cp_reg: %d\n", rv);
 #endif
-	return rv;
+    return rv;
 }
 
 static void fs_fwrap(const char *f, ...)
@@ -1740,6 +1749,8 @@ static void fs_fwrap(const char *f, ...)
         break;
     }
     va_end(a);
+    if (exit_on_error)
+        fs_abort = TRUE;
 }
 
 static int
@@ -1872,24 +1883,29 @@ fs_stat(const char *p, struct stat *s,
     const unsigned mode)
 {
     int i = -1;
-
+    int saved_errno = 0;
 #if defined(TRACE) && (defined(TEST) || 1)
 	fprintf(debug, "->fs_stat(path=%s mode=%u) follow=%d\n",
 		p, mode, followlinks);
 #endif
 
 	if (( followlinks && (i =  stat(p, s)) == -1) ||
-	    (!followlinks && (i = lstat(p, s)) == -1)) {
+        (!followlinks && (i = lstat(p, s)) == -1))
+    {
 		if (errno != ENOENT /* report any error that is not ENOENT */
 		    || (mode & 1)) /* report even ENOENT when `mode & 1` */
 		{
-			printerr(strerror(errno), LOCFMT "stat \"%s\""
+            saved_errno = errno;
+            printerr(strerror(errno), LOCFMT "stat \"%s\""
 			    LOCVAR, p);
+            if (exit_on_error)
+                fs_abort = TRUE;
 		}
 	}
 
 #if defined(TRACE) && (defined(TEST) || 1)
 	fprintf(debug, "<-fs_stat(): %d\n", i);
 #endif
+    errno = saved_errno;
 	return i;
 }

@@ -167,7 +167,6 @@ even when starting with a
 .Sq Fl "" .
 .
 .It Fl A Oo Fl psW Oc Ar source_file_or_directory Ar ... Ar destination_file_or_directory
-Debug option:
 Recursively copy source arguments to destination argument.
 . Bl -tag
 . It Fl p
@@ -226,7 +225,6 @@ If also
 is used only those directories are shown
 which contain differences.
 .It Fl D Oo Fl psW Oc Ar file_or_directory Ar ...
-Debug option:
 Recursively delete given arguments from disk.
 . Bl -tag
 . It Fl p
@@ -390,7 +388,6 @@ The tool checks this case and prevents a second invocation.
 .It Fl n
 This option suppresses the display of equal files.
 .It Fl O
-Debug option:
 Don't overwrite existing files.
 Intented for use with
 .Fl A .
@@ -454,7 +451,6 @@ Pressing key
 enables to view all files in this mode.
 .
 .It Fl S
-Debug option:
 With options
 .Fl F
 and
@@ -474,7 +470,6 @@ and
 .Fl q .
 .
 .It Fl T Oo Fl psW Oc Ar source_file_or_directory Ar ... Ar destination_file_or_directory
-Debug option:
 Recursively move source arguments to destination argument.
 . Bl -tag
 . It Fl p
@@ -501,7 +496,6 @@ Note that the shell may require quoting as in
 .Pp
 .Dl \-t \(dqdiff \(rs$1 \(rs$2 | vim \-R \-\(dq
 .It Fl U
-Debug option:
 Overwrite files only if they are older than the source file.
 Intented for use with
 .Fl A .

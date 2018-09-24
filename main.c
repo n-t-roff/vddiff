@@ -953,16 +953,23 @@ BIN " is already running in this terminal.  Type \"exit\" or ^D (CTRL-d)\n"
 }
 
 static void check_opts(void) {
+    bool error = FALSE;
     if (qdiff && dontdiff) {
         fprintf(stderr, "%s: Option -B is incompatible with -q\n", prog);
-        exit(EXIT_STATUS_ERROR);
+        error = TRUE;
     }
     if (bmode && cli_mode /* -S */
             && !file_pattern) /* -F || -G */
     {
         fprintf(stderr, "%s: Option -S can be used with -F, -G, or -x only\n", prog);
-        exit(EXIT_STATUS_ERROR);
+        error = TRUE;
     }
+    if (exit_on_error && !cli_mode) {
+        fprintf(stderr, "%s: Option -Q can be used with -q or -S only\n", prog);
+        error = TRUE;
+    }
+    if (error)
+        exit(EXIT_STATUS_ERROR);
 }
 
 static void set_opts(void)

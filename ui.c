@@ -4329,6 +4329,27 @@ ret:
     return ret_val;
 }
 
+static int cli_vdialog(const char *const quest,
+                       const char *const fmt, va_list ap)
+{
+    int c = 0;
+    FILE *fp = nodialog ? stderr :
+                          stdout ;
+    if (fmt) {
+        vfprintf(fp, fmt, ap);
+        fputc('\n', fp);
+    }
+    if (!nodialog) {
+        fprintf(stdout, "%s: ", quest);
+        c = fgetc(stdin);
+        if (c != '\n') {
+            while (fgetc(stdin) != '\n') {
+            }
+        }
+    }
+    return c;
+}
+
 int
 dialog(const char *quest, const char *answ, const char *fmt, ...)
 {
@@ -4337,48 +4358,19 @@ dialog(const char *quest, const char *answ, const char *fmt, ...)
 
 #if defined(TRACE)
     fprintf(debug, "->dialog: quest=\"%s\" answ=\"%s\" ", quest, answ);
-
     if (fmt) {
         va_start(ap, fmt);
         vfprintf(debug, fmt, ap);
         va_end(ap);
     }
-
 	fputc('\n', debug);
 #endif
 
-    if (!wstat) {
-        FILE *fp = nodialog ? stderr :
-                              stdout ;
-        if (fmt) {
-            va_start(ap, fmt);
-            vfprintf(fp, fmt, ap);
-            va_end(ap);
-            fputc('\n', fp);
-        }
-
-        if (nodialog) {
-            r = 0;
-        } else {
-            fprintf(stdout, "%s: ", quest);
-            r = fgetc(stdin);
-
-            if (r != '\n') {
-                while (fgetc(stdin) != '\n') {
-                }
-            }
-        }
-    } else {
-        if (fmt) {
-            va_start(ap, fmt);
-        }
-
-        r = vdialog(quest, answ, fmt, ap);
-
-        if (fmt) {
-            va_end(ap);
-        }
-    }
+    if (fmt)
+        va_start(ap, fmt);
+    r = vdialog(quest, answ, fmt, ap);
+    if (fmt)
+        va_end(ap);
 
 #if defined(TRACE)
     fprintf(debug, "<-dialog: '%c'\t(%d)\n", r, r);
@@ -4389,35 +4381,41 @@ dialog(const char *quest, const char *answ, const char *fmt, ...)
 int
 vdialog(const char *quest, const char *answ, const char *fmt, va_list ap)
 {
-	int c, c2;
-	const char *s;
+    int c = 0;
 
-	wstat_dirty = TRUE;
+    if (!wstat) {
+        c = cli_vdialog(quest, fmt, ap);
+    } else {
+        int c2;
+        const char *s;
 
-	if (fmt) {
-		/* werase() must not be used if `fmt` is NULL.
-		 * This way it is possible to write something to `wstat`
-		 * and the call vdialog(). */
-		werase(wstat);
-		wmove(wstat, 0, 0);
-		vwprintw(wstat, fmt, ap);
-	}
+        wstat_dirty = TRUE;
 
-	mvwprintw(wstat, 1, 0, "%s", quest);
-	wrefresh(wstat);
+        if (fmt) {
+            /* werase() must not be used if `fmt` is NULL.
+             * This way it is possible to write something to `wstat`
+             * and the call vdialog(). */
+            werase(wstat);
+            wmove(wstat, 0, 0);
+            vwprintw(wstat, fmt, ap);
+        }
 
-	do {
-		opt_flushinp();
-		c = getch();
-		for (s = answ; s && (c2 = *s); s++)
-			if (c == c2)
-				break;
-	} while (s && !c2);
+        mvwprintw(wstat, 1, 0, "%s", quest);
+        wrefresh(wstat);
 
-	werase(wstat);
-	filt_stat();
-	wrefresh(wstat);
-	return c;
+        do {
+            opt_flushinp();
+            c = getch();
+            for (s = answ; s && (c2 = *s); s++)
+                if (c == c2)
+                    break;
+        } while (s && !c2);
+
+        werase(wstat);
+        filt_stat();
+        wrefresh(wstat);
+    }
+    return c;
 }
 
 static void
