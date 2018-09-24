@@ -161,7 +161,10 @@ int do_cli_cp(int argc, char **argv, const unsigned opt) {
         ret_val |= 1;
         goto ret;
     }
-    while (!ret_val && argc >= 2) {
+    while (!ret_val &&
+           !fs_abort && /* Abort */
+           argc >= 2)
+    {
         get_arg(argv[0], 0);
         get_arg(target, 1); /* set gstat[1] on each iteration */
         f[0].name = NULL;

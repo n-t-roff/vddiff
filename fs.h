@@ -80,7 +80,9 @@ extern bool preserve_all;
 extern time_t fs_t1, fs_t2;
 extern char *pth1, *pth2;
 
-void rm_file(void);
+/* Return value:
+ *   -1: error */
+int rm_file(void);
 /*
  * WARNING: Overwrites `lbuf` and (via cmp_file()) `rbuf`!
  *

@@ -47,12 +47,21 @@ struct str_list {
 	struct str_list *next;
 };
 
+/* Case "dir not empty": -1: error, 0: empty, 1: not empty */
 static int proc_dir(void);
-static void rm_dir(void);
+/* Return value:
+ *   -1: error */
+static int rm_dir(void);
 /* Return value:
  *   !0: error */
 static int cp_file(void);
+/* Return value:
+ *    1: User response: "Don't overwrite"
+ *   -1: error */
 static int creatdir(void);
+/* Return value:
+ *    1: User response: "Don't overwrite"
+ *   -1: error */
 static int cp_link(void);
 static int ask_for_perms(mode_t *);
 static int fs_ro(void);
@@ -1143,149 +1152,153 @@ rebuild_db(
 #endif
 }
 
-/* Case "dir not empty": -1: error, 0: empty, 1: not empty */
-static int
-proc_dir(void)
+static int proc_dir(void)
 {
-	DIR *d;
-	struct dirent *ent;
-	char *name;
-	struct str_list *dirs = NULL;
-	int rv = 0;
+    DIR *d;
+    struct dirent *ent;
+    char *name;
+    struct str_list *dirs = NULL;
+    int rv = 0;
 
-	if (tree_op == TREE_CP && creatdir()) {
-		return -1;
-	}
+    if (tree_op == TREE_CP && creatdir()) {
+        rv = -1;
+        goto ret;
+    }
 
-	if (!(d = opendir(pth1))) {
-		printerr(strerror(errno), "opendir %s failed", pth1);
-		return -1;
-	}
+    if (!(d = opendir(pth1))) {
+        printerr(strerror(errno), "opendir %s failed", pth1);
+        rv = -1;
+        goto ret;
+    }
 
-	while (!fs_error && !fs_abort) {
-		int i;
+    while (!fs_error && !fs_abort) {
+        int i;
 
-		errno = 0;
+        errno = 0;
 
-		if (!(ent = readdir(d))) {
-			if (!errno) {
-				break;
-			}
+        if (!(ent = readdir(d))) {
+            if (!errno) {
+                break;
+            }
 
-			pth1[len1] = 0;
-			printerr(strerror(errno), "readdir %s failed", pth1);
-			closedir(d);
-			return -1;
-		}
+            pth1[len1] = 0;
+            printerr(strerror(errno), "readdir %s failed", pth1);
+            rv = -1;
+            break;
+        }
 
-		name = ent->d_name;
+        name = ent->d_name;
 
-		if (*name == '.' && (!name[1] || (name[1] == '.' &&
-		    !name[2]))) {
-			continue;
-		}
+        if (*name == '.' && (!name[1] || (name[1] == '.' &&
+                                          !name[2]))) {
+            continue;
+        }
 
-		if (tree_op == TREE_NOT_EMPTY) {
-			rv++;
-			break;
-		}
+        if (tree_op == TREE_NOT_EMPTY) {
+            rv = 1;
+            break;
+        }
 
-		pthcat(pth1, len1, name);
+        pthcat(pth1, len1, name);
 
-		/* fs_rm does never follow links! */
-		if (followlinks && tree_op != TREE_RM) {
-			i =  stat(pth1, &gstat[0]);
-		} else {
-			i = lstat(pth1, &gstat[0]);
-		}
+        /* fs_rm does never follow links! */
+        if (followlinks && tree_op != TREE_RM) {
+            i =  stat(pth1, &gstat[0]);
+        } else {
+            i = lstat(pth1, &gstat[0]);
+        }
 
-		if (i == -1) {
-			if (errno != ENOENT) {
-				printerr(strerror(errno),
-				    LOCFMT "stat %s" LOCVAR, pth1);
-				goto closedir;
-			}
+        if (i == -1) {
+            if (errno != ENOENT) {
+                printerr(strerror(errno),
+                         LOCFMT "stat %s" LOCVAR, pth1);
+                rv = -1;
+                break;
+            }
+            continue; /* deleted after readdir */
+        }
 
-			continue; /* deleted after readdir */
-		}
+        if (S_ISDIR(gstat[0].st_mode)) {
+            struct str_list *se = malloc(sizeof(struct str_list));
+            se->s = strdup(name);
+            se->next = dirs;
+            dirs = se;
+        } else if (tree_op == TREE_RM) {
+            if (rm_file() < 0)
+                rv = -1;
+        } else {
+            pthcat(pth2, len2, name);
+            if (cp_file())
+                rv = -1;
+        }
+    }
 
-		if (S_ISDIR(gstat[0].st_mode)) {
-			struct str_list *se = malloc(sizeof(struct str_list));
-			se->s = strdup(name);
-			se->next = dirs;
-			dirs = se;
-		} else if (tree_op == TREE_RM) {
-			rm_file();
-		} else {
-			pthcat(pth2, len2, name);
-			cp_file();
-		}
-	}
+    closedir(d);
+    pth1[len1] = 0;
 
-closedir:
-	closedir(d);
-	pth1[len1] = 0;
+    if (tree_op == TREE_NOT_EMPTY) {
+        goto ret;
+    }
 
-	if (tree_op == TREE_NOT_EMPTY) {
-		return rv;
-	}
+    if (tree_op == TREE_CP) {
+        pth2[len2] = 0;
+    }
 
-	if (tree_op == TREE_CP) {
-		pth2[len2] = 0;
-	}
+    while (dirs) {
+        size_t l1, l2 = 0 /* silence warning */;
+        struct str_list *p;
 
-	while (dirs) {
-		size_t l1, l2 = 0 /* silence warning */;
-		struct str_list *p;
+        if (!fs_error && !fs_abort) {
+            l1 = len1;
+            len1 = pthcat(pth1, len1, dirs->s);
 
-		if (!fs_error) {
-			l1 = len1;
-			len1 = pthcat(pth1, len1, dirs->s);
+            if (tree_op == TREE_CP) {
+                l2 = len2;
+                len2 = pthcat(pth2, len2, dirs->s);
+            }
 
-			if (tree_op == TREE_CP) {
-				l2 = len2;
-				len2 = pthcat(pth2, len2, dirs->s);
-			}
+            if (proc_dir() < 0)
+                rv = -1;
+            pth1[(len1 = l1)] = 0;
 
-			proc_dir();
-			pth1[len1 = l1] = 0;
+            if (tree_op == TREE_CP)
+                pth2[(len2 = l2)] = 0;
+        }
 
-			if (tree_op == TREE_CP)
-				pth2[len2 = l2] = 0;
-		}
+        free(dirs->s);
+        p = dirs;
+        dirs = dirs->next;
+        free(p);
+    }
 
-		free(dirs->s);
-		p = dirs;
-		dirs = dirs->next;
-		free(p);
-	}
-
-	if (tree_op == TREE_RM) {
-		rm_dir();
-	}
-
-	return rv;
+    if (tree_op == TREE_RM && rm_dir() < 0)
+        rv = -1;
+ret:
+    if (exit_on_error && rv < 0)
+        fs_abort = TRUE;
+    return rv;
 }
 
-static void
-rm_dir(void)
+static int rm_dir(void)
 {
 #if defined(TRACE)
 	fprintf(debug, "<>rm_dir(%s)\n", pth1);
 #endif
-
+    int return_value = 0;
     if (!fs_error) {
         if (rmdir(pth1) == -1) {
             fs_fwrap("rmdir \"%s\": %s", pth1, strerror(errno));
+            return_value = -1;
         } else if (!wstat && verbose) {
             printf("Directory \"%s\" removed\n", pth1);
         }
     }
+    return return_value;
 }
 
-void
-rm_file(void)
+int rm_file(void)
 {
+    int return_value = 0;
 #if defined(TRACE) && (defined(TEST) || 1)
 	fprintf(debug, "<>rm_file(path=%s)\n", pth1);
 #endif
@@ -1296,13 +1309,14 @@ rm_file(void)
 
 		/* Test for ESC once a second */
 		if (fs_testBreak()) {
-			return;
+            goto func_return;
 		}
 	}
 
     if (!fs_error) {
         if (unlink(pth1) == -1) {
             fs_fwrap("unlink \"%s\": %s", pth1, strerror(errno));
+            return_value = -1;
         } else {
             if (!wstat && verbose) {
                 printf("File \"%s\" removed\n", pth1);
@@ -1314,6 +1328,8 @@ rm_file(void)
             }
         }
     }
+func_return:
+    return return_value;
 }
 
 static int
@@ -1379,28 +1395,34 @@ fs_testBreak(void)
 static int
 creatdir(void)
 {
-	if (fs_stat(pth1, &gstat[0], 0) == -1) {
-		return -1;
-	}
+    int return_value = 0;
 
-	if (!fs_stat(pth2, &gstat[1], 0)) {
-		if (S_ISDIR(gstat[1].st_mode)) {
-			/* Respect write protected dirs, don't make them
-			 * writeable */
-			return 0;
-		}
+    if (fs_stat(pth1, &gstat[0], 0) == -1) {
+        return_value = -1;
+        goto func_return;
+    }
 
-		if (fs_rm(0 /* tree */, "overwrite", NULL /* nam */,
-		    0 /* u */, 1 /* n */, 4|2 /* md */) == 1) {
-			return -1;
-		}
-	}
+    if (!fs_stat(pth2, &gstat[1], 0)) {
+        if (S_ISDIR(gstat[1].st_mode)) {
+            /* Respect write protected dirs, don't make them
+             * writeable */
+            goto func_return;
+        }
 
-	if (mkdir(pth2, (gstat[0].st_mode | 0100) & 07777) == -1
-	    && errno != EEXIST) {
-		printerr(strerror(errno), "mkdir %s", pth2);
-		return -1;
-	}
+        if (fs_rm(0 /* tree */, "overwrite", NULL /* nam */,
+                  0 /* u */, 1 /* n */, 4|2 /* md */) == 1) {
+            return_value = 1;
+            goto func_return;
+        }
+    }
+
+    if (mkdir(pth2, (gstat[0].st_mode | 0100) & 07777) == -1
+            && errno != EEXIST)
+    {
+        printerr(strerror(errno), "mkdir %s", pth2);
+        return_value = -1;
+        goto func_return;
+    }
     if (preserve_all) {
         if (lchown(pth2, gstat[0].st_uid, gstat[0].st_gid) == -1) {
 #if defined(TRACE)
@@ -1416,8 +1438,10 @@ creatdir(void)
     if (!wstat && verbose) {
         printf("Directory \"%s\" created\n", pth2);
     }
-
-	return 0;
+func_return:
+    if (exit_on_error && return_value < 0)
+        fs_abort = TRUE;
+    return return_value;
 }
 
 static int
@@ -1514,6 +1538,8 @@ free_buf2:
     }
 exit:
     free(buf);
+    if (exit_on_error && r < 0)
+        fs_abort = TRUE;
 #if defined(TRACE)
     fprintf(debug, "<-cp_link: %d\n", r);
 #endif
