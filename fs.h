@@ -90,6 +90,7 @@ void rm_file(void);
  *     2: force (currently used by software test only)
  *
  * Output:
+ *    2: Destination is newer than source -> don't overwrite
  *    1: Files are equal
  *    0: Successfully copied
  *   -1: System call failed

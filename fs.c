@@ -1518,149 +1518,129 @@ exit:
     return r;
 }
 
-int cp_reg(const unsigned mode) {
-	int f1 = -1; /* read file descriptor */
-	int f2 = -1; /* write file descriptor */
-	/* rv must only be set in code. Clearing rv may hide errors. */
-	int rv = 0; /* return value */
-	int fl = 0; /* open(2) flags */
-	ssize_t l1 = -1; /* read(2) return value */
-	ssize_t l2 = -1; /* write(2) return value */
-
+static int cp_reg_check_overwrite(const unsigned mode)
+{
+    int rv = 0;
+    if (overwrite_if_old &&
+            /* gstat[0].st_mtim < gstat[1].st_mtim -> dest is newer */
+            cmp_timespec(gstat[0].st_mtim, gstat[1].st_mtim) < 0)
+    {
+        rv = 2;
+    } else if (!(mode & 1) && /* file contents are not relevant in append mode */
+            !cmp_file(pth1, gstat[0].st_size,
+                      pth2, gstat[1].st_size, 1))
+    {
 #if defined(TRACE)
-    fprintf(debug, "->cp_reg(mode=%x) pth1=\"%s\" pth2=\"%s\"\n", mode, pth1, pth2);
+        fprintf(debug, "  But equal: %s and %s\n", pth1, pth2);
 #endif
+        rv = 1;
+    } else if (!(mode & 2) && /* not in "force" mode */
+            fs_deldialog(y_a_n_txt, "overwrite", "file ", pth2))
+    {
+        rv = -2;
+    }
+    return rv;
+}
 
-	if (!fs_stat(pth2, &gstat[1], 0)) { /* target file exists */
-        if (dont_overwrite)
-            goto ret;
-#if defined(TRACE)
-		fprintf(debug, "  Already exists: %s\n", pth2);
-#endif
-        if (S_ISREG(gstat[1].st_mode)) {
-            /* target file is a regular file
-             * or a followed symlink to a regular file */
-
-            bool ms = FALSE; /* mode set after access(2) error */
-
-            if (overwrite_if_old &&
-                    /* gstat[0].st_mtim < gstat[1].st_mtim -> dest is newer */
-                    cmp_timespec(gstat[0].st_mtim, gstat[1].st_mtim) < 0)
-            {
-                goto ret;
-            }
-            if (!(mode & 1) && /* file contents are not relevant in append mode */
-                    !cmp_file(pth1, gstat[0].st_size,
-                              pth2, gstat[1].st_size, 1)) {
-#if defined(TRACE)
-                fprintf(debug, "  But equal: %s and %s\n", pth1, pth2);
-#endif
-                rv = 1;
-                goto ret; /* if (*src == *dest) no copy is done */
-            }
-
-            if (!(mode & 2) &&
-                    fs_deldialog(y_a_n_txt, "overwrite", "file ", pth2))
-            {
-                rv = -2;
-                goto ret;
-            }
+static int cp_reg_prepare_overwrite(void)
+{
+    int rv = 0;
+    bool mode_set = FALSE; /* mode set after access(2) error */
 test:
-            if (access(pth2, W_OK) != -1) {
-				goto copy;
-			}
-            /* Access error */
-
-			if (errno != EACCES) {
-                /* Unexpected system call error */
-
-                printerr(strerror(errno), "access \"%s\"", pth2);
-			}
-            /* Access permission error -> try chmod(2) */
-
-			if (!ms && !(gstat[1].st_mode & S_IWUSR)) {
-                if (chmod(pth2, gstat[1].st_mode & S_IWUSR) == -1) {
-                    printerr(strerror(errno), "chmod \"%s\"", pth2);
-				} else {
-					ms = TRUE;
-					goto test;
-				}
-			}
-            /* mode could not be set or didn't help -> try to remove target */
-
-			if (unlink(pth2) == -1) {
-				printerr(strerror(errno), "unlink \"%s\"",
-				    pth2);
-			}
-		} else {
-            /* target file is a not followed symlink,
-             * a directory or anything else */
-
-			/* Don't delete symlinks! They must be followed. */
-			if (!followlinks &&
-                fs_rm(0, /* tree: Use pth2, ignore nam and u. n must be 1. */
-                      "overwrite", /* Dialog text */
-                      NULL, /* nam: See `tree`. */
-                      0, /* u: See `tree`. */
-                      1, /* n: See `tree`. */
-                      4|2) /* md: Don't reset error, don't rebuild DB. */
-                    == 1) /* == Cancel */
-            {
-				rv = -2;
-                goto ret;
-			}
-		}
-	} /* if (!fs_stat(pth2)) */
-
-copy:
-	fl = mode & 1 ? O_APPEND | O_WRONLY :
-	                O_CREAT | O_TRUNC | O_WRONLY ;
-	if ((f2 = open(pth2, fl, gstat[0].st_mode & 07777)) == -1) {
-		printerr(strerror(errno), "create \"%s\"", pth2);
-		rv = -1;
+    if (access(pth2, W_OK) != -1) {
+        rv = 1000;
         goto ret;
-	}
+    }
+    if (errno != EACCES) {
+        /* Unexpected system call error */
+        printerr(strerror(errno), "access \"%s\"", pth2);
+    }
+    /* Access permission error -> try chmod(2) */
+    if (!mode_set && !(gstat[1].st_mode & S_IWUSR)) {
+        if (chmod(pth2, gstat[1].st_mode & S_IWUSR) == -1) {
+            printerr(strerror(errno), LOCFMT "chmod \"%s\"" LOCVAR, pth2);
+        } else {
+            mode_set = TRUE;
+            goto test;
+        }
+    }
+    /* mode could not be set or didn't help -> try to remove target */
+    if (unlink(pth2) == -1) {
+        printerr(strerror(errno), LOCFMT "unlink \"%s\"" LOCVAR, pth2);
+    }
+ret:
+    return rv;
+}
 
-	if (!gstat[0].st_size)
-		goto setattr;
+static int cp_reg_over_reg(const unsigned mode)
+{
+    int rv = cp_reg_check_overwrite(mode);
+    if (!rv)
+        rv = cp_reg_prepare_overwrite();
+    return rv;
+}
 
-	if ((f1 = open(pth1, O_RDONLY)) == -1) {
-		printerr(strerror(errno), "open \"%s\"", pth1);
-		rv = -1;
-		goto close2;
-	}
+static int cp_reg_to_existing(const unsigned mode)
+{
+    int rv = 0;
+#if defined(TRACE)
+    fprintf(debug, "  Already exists: %s\n", pth2);
+#endif
+    if (S_ISREG(gstat[1].st_mode)) {
+        /* target file is a regular file
+         * or a followed symlink to a regular file */
+        rv = cp_reg_over_reg(mode);
+    } else {
+        /* target file is a not followed symlink,
+         * a directory or anything else */
 
-	while (1) {
-		if ((l1 = read(f1, lbuf, sizeof lbuf)) == -1) {
-			printerr(strerror(errno), "read \"%s\"", pth1);
-			rv = -1;
-			break;
-		}
+        /* Don't delete symlinks! They must be followed. */
+        if (!followlinks &&
+            fs_rm(0, /* tree: Use pth2, ignore nam and u. n must be 1. */
+                  "overwrite", /* Dialog text */
+                  NULL, /* nam: See `tree`. */
+                  0, /* u: See `tree`. */
+                  1, /* n: See `tree`. */
+                  4|2) /* md: Don't reset error, don't rebuild DB. */
+                == 1) /* == Cancel */
+        {
+            rv = -2;
+        }
+    }
+    return rv;
+}
 
-		if (!l1)
-			break;
-
-        if ((l2 = write(f2, lbuf, (size_t)l1)) == -1) {
-			fs_fwrap("write \"%s\": %s", pth2, strerror(errno));
-			rv = -1;
-			break;
-		}
-
-		if (l2 != l1) {
-			fs_fwrap("%s: \"%s\"", "Write error", pth2);
-			rv = -1;
-			break; /* error */
-		}
+static int cp_reg_copy_loop(const int f1, const int f2) {
+    int rv = 0;
+    while (1) {
+        const ssize_t l1 = read(f1, lbuf, sizeof lbuf);
+        if (l1 == -1) {
+            printerr(strerror(errno), "read \"%s\"", pth1);
+            rv = -1;
+            break;
+        }
+        if (!l1)
+            break;
+        const ssize_t l2 = write(f2, lbuf, (size_t)l1);
+        if (l2 == -1) {
+            fs_fwrap("write \"%s\": %s", pth2, strerror(errno));
+            rv = -1;
+            break;
+        }
+        if (l2 != l1) {
+            fs_fwrap("%s: \"%s\"", "Write error", pth2);
+            rv = -1;
+            break; /* error */
+        }
         tot_cmp_byte_count += l1;
         /* Not an error: Signals the last iteration. */
         if (l1 < (ssize_t)(sizeof lbuf))
-			break;
-	}
+            break;
+    }
+    return rv;
+}
 
-	close(f1);
-    ++tot_cmp_file_count;
-
-setattr:
+static void cp_reg_set_attr(const int f2) {
     if (preserve_all || preserve_mtim) {
 #ifdef HAVE_FUTIMENS
         struct timespec ts[2];
@@ -1690,10 +1670,51 @@ setattr:
 #endif
         }
     }
+}
 
+int cp_reg(const unsigned mode) {
+#if defined(TRACE)
+    fprintf(debug, "->cp_reg(mode=%x) pth1=\"%s\" pth2=\"%s\"\n", mode, pth1, pth2);
+#endif
+    int rv = 0; /* return value. must only be set in code. Clearing rv may hide errors. */
+    if (!fs_stat(pth2, &gstat[1], 0)) { /* target file exists */
+        if (dont_overwrite)
+            goto ret;
+        int i;
+        switch ((i = cp_reg_to_existing(mode))) {
+        case 1000:
+            break;
+        /* case 2: dest newer than src, copy not necessary */
+        /* case 1: if (*src == *dest) no copy is done */
+        /* case 0: don't overwrite */
+        /* negative value: error */
+        default:
+            rv = i;
+            goto ret;
+        }
+	} /* if (!fs_stat(pth2)) */
+    const int fl = mode & 1 ? O_APPEND | O_WRONLY :
+                              O_CREAT | O_TRUNC | O_WRONLY ;
+    const int f2 = open(pth2, fl, gstat[0].st_mode & 07777);
+    if (f2 == -1) {
+		printerr(strerror(errno), "create \"%s\"", pth2);
+		rv = -1;
+        goto ret;
+	}
+    if (gstat[0].st_size) {
+        const int f1 = open(pth1, O_RDONLY);
+        if (f1 == -1) {
+            printerr(strerror(errno), "open \"%s\"", pth1);
+            rv = -1;
+            goto close2;
+        }
+        cp_reg_copy_loop(f1, f2);
+        close(f1);
+        ++tot_cmp_file_count;
+    }
+    cp_reg_set_attr(f2);
 close2:
 	close(f2);
-
     if (!rv && !wstat && verbose) {
         printf("File copy \"%s\" -> \"%s\" done\n", pth1, pth2);
     }
