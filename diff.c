@@ -271,6 +271,8 @@ no_tree2:
 				syspth[0][pthlen[0]] = 0;
                 printf("Only in %s: %s\n", syspth[0], name);
                 retval |= 1;
+                if (exit_on_error)
+                    break;
 				continue;
 			}
 
@@ -365,6 +367,8 @@ no_tree2:
                         printf("Files %s and %s differ\n",
                                syspth[0], syspth[1]);
                         retval |= 1;
+                        if (exit_on_error)
+                            break;
                     } else {
 #if defined(TRACE) && 1
                         fprintf(debug, "  dir_diff: file diff: %s\n", name);
@@ -389,6 +393,8 @@ no_tree2:
                     if (qdiff) {
                         printf("Symbolic links differ: %s -> %s, %s -> %s\n",
                                syspth[0], a, syspth[1], b);
+                        if (exit_on_error)
+                            break;
                     } else {
 #if defined(TRACE) && 1
                         fprintf(debug, "  dir_diff: link diff: %s\n", name);
@@ -412,6 +418,8 @@ no_tree2:
                     printf("Different file type: %s and %s\n",
                            syspth[0], syspth[1]);
                     retval |= 1;
+                    if (exit_on_error)
+                        break;
                 } else {
 #if defined(TRACE) && 1
                     fprintf(debug, "  dir_diff: type diff: %s\n", name);
@@ -522,6 +530,8 @@ db_add_file:
 
 	closedir(d);
 	syspth[0][pthlen[0]] = 0;
+    if (retval && exit_on_error)
+        goto exit;
 
 	/* Now already done here for diff mode to use syspth[0] instead of syspth[1].
 	 * May be useless. */
@@ -606,6 +616,8 @@ right_tree:
 			syspth[1][pthlen[1]] = 0;
 			printf("Only in %s: %s\n", syspth[1], name);
             retval |= 1;
+            if (exit_on_error)
+                break;
 			continue;
 		} else if (scan && !file_pattern) {
 #if defined(TRACE) && 1
@@ -726,7 +738,7 @@ right_tree:
 		diff_db_add(diff, fmode ? 1 : 0);
 	}
 
-	closedir(d);
+    closedir(d);
 
 build_list:
 	if (!scan)
@@ -734,8 +746,7 @@ build_list:
 
 dir_scan_end:
 	free_strs(&name_db);
-
-	if (!scan) {
+    if (!scan || (retval && exit_on_error)) {
 		goto exit;
 	}
 

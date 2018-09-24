@@ -152,9 +152,6 @@ Skip reading the initialization file at start-up.
 If
 .Fl u
 is used, it must be the very first option.
-Other used options need to begin with
-.Sq Fl
-again.
 If an optional
 .Ar filename
 is supplied, this file is read instead of the default
@@ -410,8 +407,17 @@ last directory used in fmode or bmode.
 .
 .It Fl p
 With options
-.Fl A , D , q , T :
+.Fl A , D , q ,
+and
+.Fl T :
 Print message for each processed file.
+.
+.It Fl Q
+With options
+.Fl A , D , q ,
+and
+.Fl T :
+Exit tool on first error or difference found.
 .
 .It Fl q Ar file_or_directory_1 Ar file_or_directory_2
 Print differing files and exit (similar to

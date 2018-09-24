@@ -106,6 +106,7 @@ bool dont_overwrite;
 bool overwrite_if_old;
 bool nodialog;
 bool find_dir_name_only;
+bool exit_on_error;
 
 #if defined(TRACE) && defined(DEBUG)
 # define SET_EXIT_DIFF \
@@ -175,33 +176,35 @@ main(int argc, char **argv)
 #endif
 
 	set_tool(&difftool, strdup(vimdiff), 0);
-	set_tool(&viewtool, strdup("less -Q --"), 0);
+    set_tool(&viewtool, strdup("less -Q --"), 0);
 
-	if (argc < 2 || argv[1][0] != '-' || argv[1][1] != 'u') {
-		if (read_rc(NULL))
+    if (argc < 2 || argv[1][0] != '-' || argv[1][1] != 'u') {
+        if (read_rc(NULL))
             return EXIT_STATUS_ERROR;
-	} else {
+    } else {
 #if defined(TRACE)
         fprintf(debug, "  main: Option -u\n");
 #endif
-        argc--; argv++;
+        if (!argv[1][2]) { /* if 'u' is not directly followed by a character */
+            argc--; argv++;
 
-        /* argv[1] is only treated as an argument to -u
-         * if it does not start with `-` and it exists
-         * and is a regular file */
-		if (argc > 1 && argv[1][0] != '-' &&
-            stat(argv[1], &gstat[0]) == 0 && S_ISREG(gstat[0].st_mode))
-        {
-			if (read_rc(argv[1]))
-                return EXIT_STATUS_ERROR;
+            /* argv[1] is only treated as an argument to -u
+             * if it does not start with `-` and it exists
+             * and is a regular file */
+            if (argc > 1 && argv[1][0] != '-' &&
+                    stat(argv[1], &gstat[0]) == 0 && S_ISREG(gstat[0].st_mode))
+            {
+                if (read_rc(argv[1]))
+                    return EXIT_STATUS_ERROR;
 
-			argc--; argv++;
-		}
-	}
+                argc--; argv++;
+            }
+        }
+    }
 
     while ((opt =
             getopt(argc, argv,
-                   "AaBbCcDdEeF:fG:gIikLlMmNnOoP:pqRrSsTt:UVv:WXx:Yy")
+                   "AaBbCcDdEeF:fG:gIikLlMmNnOoP:pQqRrSsTt:UuVv:WXx:Yy")
             ) != -1)
     {
 		switch (opt) {
@@ -311,7 +314,9 @@ main(int argc, char **argv)
         case 'p':
             verbose = TRUE;
             break;
-
+        case 'Q':
+            exit_on_error = TRUE;
+            break;
 		case 'q':
             qdiff = TRUE;
             cli_mode = TRUE;
@@ -346,6 +351,9 @@ main(int argc, char **argv)
 			break;
         case 'U':
             overwrite_if_old = TRUE;
+            break;
+        case 'u':
+            /* already evaluated, ignore */
             break;
 		case 'V':
             printf(BIN " "VERSION"\n\tCompile option(s): "
@@ -952,7 +960,7 @@ static void check_opts(void) {
     if (bmode && cli_mode /* -S */
             && !file_pattern) /* -F || -G */
     {
-        fprintf(stderr, "%s: Option -S can be used with -F or -G only\n", prog);
+        fprintf(stderr, "%s: Option -S can be used with -F, -G, or -x only\n", prog);
         exit(EXIT_STATUS_ERROR);
     }
 }
@@ -961,6 +969,8 @@ static void set_opts(void)
 {
     if (find_dir_name && !find_name && !gq_pattern)
         find_dir_name_only = TRUE;
+    if (exit_on_error)
+        nodialog = TRUE;
 }
 
 void
