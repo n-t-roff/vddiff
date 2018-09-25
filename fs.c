@@ -905,7 +905,7 @@ tpth:
 		if (i == -1) { /* from stat */
 			if (errno != ENOENT) {
 #if defined(TRACE)
-				fprintf(debug, "  stat error\n");
+                fprintf(debug, "  stat error: %s\n", strerror(errno));
 #endif
 				continue;
 			}
@@ -1706,7 +1706,7 @@ int cp_reg(const unsigned mode) {
 #endif
     int rv = 0; /* return value. must only be set in code. Clearing rv may hide errors. */
     if (fs_stat(pth2, &gstat[1], 0)) {
-        if (errno && exit_on_error) {
+        if (errno != ENOENT && exit_on_error) {
             rv = -1;
             goto ret;
         }
@@ -1909,7 +1909,7 @@ fs_stat(const char *p, struct stat *s,
     const unsigned mode)
 {
     int i = -1;
-    int saved_errno = 0;
+    int stat_errno = 0;
 #if defined(TRACE) && (defined(TEST) || 1)
 	fprintf(debug, "->fs_stat(path=%s mode=%u) follow=%d\n",
 		p, mode, followlinks);
@@ -1918,10 +1918,10 @@ fs_stat(const char *p, struct stat *s,
 	if (( followlinks && (i =  stat(p, s)) == -1) ||
         (!followlinks && (i = lstat(p, s)) == -1))
     {
-		if (errno != ENOENT /* report any error that is not ENOENT */
+        stat_errno = errno;
+        if (errno != ENOENT /* report any error that is not ENOENT */
 		    || (mode & 1)) /* report even ENOENT when `mode & 1` */
 		{
-            saved_errno = errno;
             printerr(strerror(errno), LOCFMT "stat \"%s\""
 			    LOCVAR, p);
             if (exit_on_error)
@@ -1932,6 +1932,6 @@ fs_stat(const char *p, struct stat *s,
 #if defined(TRACE) && (defined(TEST) || 1)
 	fprintf(debug, "<-fs_stat(): %d\n", i);
 #endif
-    errno = saved_errno;
+    errno = stat_errno;
 	return i;
 }
