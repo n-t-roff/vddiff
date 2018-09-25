@@ -107,6 +107,9 @@ bool overwrite_if_old;
 bool nodialog;
 bool find_dir_name_only;
 bool exit_on_error;
+#ifdef DEBUG
+static bool tmp_dir_check;
+#endif
 
 #if defined(TRACE) && defined(DEBUG)
 # define SET_EXIT_DIFF \
@@ -134,27 +137,31 @@ main(int argc, char **argv)
 
 	prog = *argv;
 	setlocale(LC_ALL, "");
+#ifdef DEBUG
+    tmp_dir_check = !(argc < 3 ||
+                      strcmp(argv[1], "-u") ||
+                      strcmp(argv[2], "-S") ||
+                      strcmp(argv[3], "-N"));
+#endif
     tzset();
 #ifdef TRACE
 	{
-		size_t l;
-		static const char * const s = TRACE;
-
-		l = strlen(s);
-		memcpy(lbuf, s, l);
-#if 1
-		snprintf(lbuf + l, BUF_SIZE - l, "%lu",
-		    (unsigned long)getuid());
-#else
-		snprintf(lbuf + l, BUF_SIZE - l, "%lu_%lu",
-		    (unsigned long)getuid(), (unsigned long)getpid());
+        const char *const s =
+#ifdef DEBUG
+                tmp_dir_check ? "/dev/null" :
 #endif
-
+                                TRACE;
+        const size_t l = strlen(s);
+		memcpy(lbuf, s, l);
+#ifdef DEBUG
+        if (!tmp_dir_check)
+#endif
+            snprintf(lbuf + l, BUF_SIZE - l, "%lu",
+                     (unsigned long)getuid());
 		if (!(debug = fopen(lbuf, "w"))) {
 			printf("fopen \"%s\": %s\n", lbuf, strerror(errno));
             return EXIT_STATUS_ERROR;
 		}
-
 		setbuf(debug, NULL);
 	}
 #endif
@@ -171,7 +178,7 @@ main(int argc, char **argv)
 		return 1;
 	}
 #if defined(DEBUG)
-    if (argc < 3 || strcmp(argv[1], "-u") || strcmp(argv[2], "-S"))
+    if (!tmp_dir_check)
         check_tmp_dir_left();
 #endif
 
@@ -1021,7 +1028,7 @@ remove_tmp_dirs(void)
 #if defined(DEBUG)
 static void check_tmp_dir_left(void)
 {
-    if (snprintf(lbuf, sizeof(lbuf), BIN " -u -S -Nx ." BIN ". %s",
+    if (snprintf(lbuf, sizeof(lbuf), BIN " -u -S -N -x ." BIN ". %s",
                  tmpdirbase) != -1)
     {
         const int i_ = system(lbuf);
