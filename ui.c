@@ -4333,9 +4333,11 @@ static int cli_vdialog(const char *const quest,
                        const char *const fmt, va_list ap)
 {
     int c = 0;
-    FILE *fp = nodialog ? stderr :
-                          stdout ;
     if (fmt) {
+        FILE *fp = nodialog ? stderr :
+                              stdout ;
+        if (nodialog)
+            fprintf(fp, "%s: ", prog);
         vfprintf(fp, fmt, ap);
         fputc('\n', fp);
     }

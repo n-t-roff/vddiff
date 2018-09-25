@@ -159,7 +159,7 @@ main(int argc, char **argv)
             snprintf(lbuf + l, BUF_SIZE - l, "%lu",
                      (unsigned long)getuid());
 		if (!(debug = fopen(lbuf, "w"))) {
-			printf("fopen \"%s\": %s\n", lbuf, strerror(errno));
+            fprintf(stderr, "fopen(%s): %s\n", lbuf, strerror(errno));
             return EXIT_STATUS_ERROR;
 		}
 		setbuf(debug, NULL);
@@ -426,24 +426,24 @@ main(int argc, char **argv)
 
     if (cli_rm) {
         if (argc < 1) { /* -D */
-            printf("At least one argument expected\n");
+            fprintf(stderr, "%s: At least one argument expected\n", prog);
             exit(EXIT_STATUS_ERROR);
             /* not reached */
         }
     } else if (cli_cp) {
         if (argc < 2) { /* -A || -T */
-            printf("At least two arguments expected\n");
+            fprintf(stderr, "%s: At least two arguments expected\n", prog);
             exit(EXIT_STATUS_ERROR);
             /* not reached */
         }
     } else if (cli_mode && bmode) { /* -S */
         if (argc > 1) {
-            printf("None or at most one argument expected\n");
+            fprintf(stderr, "%s: None or at most one argument expected\n", prog);
             exit(EXIT_STATUS_ERROR);
             /* not reached */
         }
     } else if (argc > 2 || (qdiff && argc != 2)) {
-        printf("Two arguments expected\n");
+        fprintf(stderr, "%s: Two arguments expected\n", prog);
         exit(EXIT_STATUS_ERROR);
         /* not reached */
     }
@@ -577,8 +577,8 @@ main(int argc, char **argv)
 		 * resolve the absolute path. */
 
 		if (!getcwd(syspth[0], sizeof syspth[0])) {
-			printf("getcwd failed: %s\n",
-			    strerror(errno));
+            fprintf(stderr, "%s: " LOCFMT "getcwd failed: %s\n",
+                prog LOCVAR, strerror(errno));
             return EXIT_STATUS_ERROR;
 		}
 
@@ -681,8 +681,8 @@ arg_diff(int i)
 	pthlen[i] = pthcat(syspth[i], pthlen[i], s2);
 
 	if (stat(syspth[i], &gstat[i]) == -1) {
-		printf(LOCFMT "stat \"%s\": %s\n" LOCVAR,
-		    syspth[i], strerror(errno));
+        fprintf(stderr, "%s: " LOCFMT "stat \"%s\": %s\n",
+                prog LOCVAR, syspth[i], strerror(errno));
         exit(EXIT_STATUS_ERROR);
 	}
 
@@ -730,15 +730,15 @@ test_again:
             }
 			goto free;
         }
-        printf(LOCFMT "stat \"%s\": %s\n" LOCVAR, rc_path,
-		    strerror(errno));
+        fprintf(stderr, "%s: " LOCFMT "stat(%s): %s\n",
+                prog LOCVAR, rc_path, strerror(errno));
 		rv = 1;
 		goto free;
 	}
 
 	if (!(yyin = fopen(rc_path, "r"))) {
-		printf("fopen \"%s\": %s\n", rc_path,
-		    strerror(errno));
+        fprintf(stderr, "%s: " LOCFMT "fopen(%s): %s\n",
+                prog LOCVAR, rc_path, strerror(errno));
 		rv = 1;
 		goto free;
 	}
@@ -747,8 +747,8 @@ test_again:
 	rv = yyparse();
 
 	if (fclose(yyin) == EOF) {
-		printf("fclose \"%s\": %s\n", rc_path,
-		    strerror(errno));
+        fprintf(stderr, "%s: " LOCFMT "fclose(%s): %s\n",
+                prog LOCVAR, rc_path, strerror(errno));
 	}
 free:
     free(const_cast_ptr(rc_path));
@@ -765,7 +765,7 @@ add_home_pth(const char *s)
 	fprintf(debug, "->add_home_pth(%s)\n", s);
 #endif
 	if (!(h = getenv("HOME"))) {
-		printf("HOME not set\n");
+        fprintf(stderr, "%s: HOME not set\n", prog);
 		goto ret;
 	}
 
@@ -790,7 +790,7 @@ check_args(int argc, char **argv)
 		s = *argv++;
 		argc--;
 	} else if (!(s = getenv("PWD"))) {
-		printf("PWD not set\n");
+        fprintf(stderr, "%s: PWD not set\n", prog);
         s = ".";
 	}
 
@@ -819,8 +819,8 @@ cmp_inodes(void)
 	if (!fmode &&
 	    gstat[0].st_ino == gstat[1].st_ino &&
 	    gstat[0].st_dev == gstat[1].st_dev) {
-		printf("\"%s\" and \"%s\" are the same file\n",
-		    syspth[0], syspth[1]);
+        printf("\"%s\" and \"%s\" are the same file\n",
+               syspth[0], syspth[1]);
         exit(EXIT_SUCCESS);
 	}
 }
@@ -844,7 +844,8 @@ stat:
             goto set_path;
         }
 
-		printf(LOCFMT "stat \"%s\": %s\n" LOCVAR, s, strerror(errno));
+        fprintf(stderr, "%s: " LOCFMT "stat(%s): %s\n",
+                prog LOCVAR, s, strerror(errno));
         exit(EXIT_STATUS_ERROR);
 	}
 
@@ -852,7 +853,8 @@ stat:
         !S_ISLNK(gstat[i].st_mode))
     {
 		if (!S_ISREG(gstat[i].st_mode)) {
-			printf("\"%s\": Unsupported file type\n", s);
+            fprintf(stderr, "%s: " LOCFMT "\"%s\": Unsupported file type\n",
+                    prog LOCVAR, s);
             exit(EXIT_STATUS_ERROR);
 		}
 
@@ -874,8 +876,8 @@ set_path:
         if ((s2 = realpath(s, NULL))) {
             free_path = TRUE;
         } else {
-			printf(LOCFMT "realpath \"%s\": %s\n" LOCVAR, s,
-			    strerror(errno));
+            fprintf(stderr, "%s: " LOCFMT "realpath(%s): %s\n",
+                    prog LOCVAR, s, strerror(errno));
             exit(EXIT_STATUS_ERROR);
 		}
 	} else {
@@ -886,7 +888,8 @@ set_path:
      * and copy command line argument to syspth[i] */
 
 	if ((pthlen[i] = strlen(s2)) >= PATHSIZ - 1) {
-		printf("Path too long: %s\n", s2);
+        fprintf(stderr, "%s: " LOCFMT "Path too long: %s\n",
+                prog LOCVAR, s2);
         exit(EXIT_STATUS_ERROR);
 	}
 
