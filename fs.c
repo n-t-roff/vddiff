@@ -1546,7 +1546,7 @@ exit:
     return r;
 }
 
-static int cp_reg_check_overwrite(const unsigned mode)
+inline static int cp_reg_check_overwrite(const unsigned mode)
 {
     int rv = 0;
     if (overwrite_if_old &&
@@ -1570,7 +1570,7 @@ static int cp_reg_check_overwrite(const unsigned mode)
     return rv;
 }
 
-static int cp_reg_prepare_overwrite(void)
+inline static int cp_reg_prepare_overwrite(void)
 {
     int rv = 0;
     bool mode_set = FALSE; /* mode set after access(2) error */
@@ -1600,7 +1600,7 @@ ret:
     return rv;
 }
 
-static int cp_reg_over_reg(const unsigned mode)
+inline static int cp_reg_over_reg(const unsigned mode)
 {
     int rv = cp_reg_check_overwrite(mode);
     if (!rv)
@@ -1608,7 +1608,7 @@ static int cp_reg_over_reg(const unsigned mode)
     return rv;
 }
 
-static int cp_reg_to_existing(const unsigned mode)
+inline static int cp_reg_to_existing(const unsigned mode)
 {
     int rv = 0;
 #if defined(TRACE)
@@ -1638,7 +1638,7 @@ static int cp_reg_to_existing(const unsigned mode)
     return rv;
 }
 
-static int cp_reg_copy_loop(const int f1, const int f2) {
+inline static int cp_reg_copy_loop(const int f1, const int f2) {
     int rv = 0;
     while (1) {
         const ssize_t l1 = read(f1, lbuf, sizeof lbuf);
@@ -1668,7 +1668,7 @@ static int cp_reg_copy_loop(const int f1, const int f2) {
     return rv;
 }
 
-static void cp_reg_set_attr(const int f2) {
+inline static void cp_reg_set_attr(const int f2) {
     if (preserve_all || preserve_mtim) {
 #ifdef HAVE_FUTIMENS
         struct timespec ts[2];

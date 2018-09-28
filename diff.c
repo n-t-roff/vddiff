@@ -1165,6 +1165,44 @@ int cmp_symlink(char **a, char **b) {
     return return_value;
 }
 
+inline static int cmp_file_loop(const int f1, const int f2,
+                                const char *const lpth,
+                                const char *const rpth)
+{
+    int rv = 0;
+    while (1) {
+        const ssize_t l1 = dlg_read(f1, lbuf, sizeof lbuf, lpth);
+        if (l1 == -1) {
+            rv |= 2;
+            break;
+        }
+        const ssize_t l2 = dlg_read(f2, rbuf, sizeof rbuf, rpth);
+        if (l2 == -1) {
+            rv |= 2;
+            break;
+        }
+
+        if (l1 != l2) {
+            rv |= 1;
+            break;
+        }
+
+        if (!l1)
+            break;
+
+        if (memcmp(lbuf, rbuf, (size_t)l1)) {
+            rv |= 1;
+            break;
+        }
+        /* Count successfully compared bytes only. */
+        if (qdiff)
+            tot_cmp_byte_count += l1;
+        if (l1 < (ssize_t)(sizeof lbuf))
+            break;
+    }
+    return rv;
+}
+
 int cmp_file(
 	const char *const lpth,
 	const off_t lsiz,
@@ -1173,8 +1211,7 @@ int cmp_file(
     /* !0: force compare, no getch */
     const unsigned md)
 {
-	int rv = 0, f1 = -1, f2 = -1;
-	ssize_t l1 = -1, l2 = -1;
+    int rv = 0;
 
 #if defined(TRACE) && (defined(TEST) || 1)
 	fprintf(debug, "->cmp_file(name1=%s size1=%ju name2=%s size2=%ju mode=%u)\n",
@@ -1195,55 +1232,26 @@ int cmp_file(
 			goto ret;
 		}
 
-		if (getch() == '%') {
+        if (!cli_mode && getch() == '%') {
 			dontcmp = TRUE;
 			goto ret;
 		}
 	}
-
-    if ((f1 = dlg_open_ro(lpth)) == -1) {
+    const int f1 = dlg_open_ro(lpth);
+    if (f1 == -1) {
         rv |= 2;
 		goto ret;
 	}
-
-    if ((f2 = dlg_open_ro(rpth)) == -1) {
+    const int f2 = dlg_open_ro(rpth);
+    if (f2 == -1) {
         rv |= 2;
 		goto close_f1;
 	}
-
-	while (1) {
-        if ((l1 = dlg_read(f1, lbuf, sizeof lbuf, lpth)) == -1) {
-            rv |= 2;
-			break;
-		}
-
-        if ((l2 = dlg_read(f2, rbuf, sizeof rbuf, rpth)) == -1) {
-            rv |= 2;
-			break;
-		}
-
-		if (l1 != l2) {
-            rv |= 1;
-			break;
-		}
-
-		if (!l1)
-			break;
-
-        if (memcmp(lbuf, rbuf, (size_t)l1)) {
-            rv |= 1;
-			break;
-		}
-        /* Count successfully compared bytes only. */
-        if (qdiff)
-            tot_cmp_byte_count += l1;
-        if (l1 < (ssize_t)(sizeof lbuf))
-            break;
-    }
+    rv |= cmp_file_loop(f1, f2, lpth, rpth);
 
     /* Count really and successfully compared files only,
      * not zero size files, nor different files. */
-    if (qdiff) {
+    if (!rv && qdiff) {
         ++tot_cmp_file_count;
 
         if (verbose)
