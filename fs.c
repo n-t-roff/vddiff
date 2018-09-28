@@ -1444,64 +1444,93 @@ func_return:
     return return_value;
 }
 
-static int
-cp_link(void)
+static int cp_link_read(const char *const path, const struct stat *stat_buf,
+                        char **buffer, ssize_t *len)
 {
-	int r = 0;
-    bool equal = FALSE;
-    char *const buf = malloc((size_t)gstat[0].st_size + 1);
-    ssize_t l = readlink(pth1, buf, (size_t)gstat[0].st_size);
-#if defined(TRACE)
-    fprintf(debug, "->cp_link \"%s\" -> \"%s\"\n", pth1, pth2);
-#endif
+    int r = 0;
+    char *const buf = malloc((size_t)stat_buf->st_size + 1);
+    const ssize_t l = readlink(path, buf, (size_t)stat_buf->st_size);
 
     if (l == -1) {
-		printerr(strerror(errno), "readlink %s", pth1);
-		r = -1;
-		goto exit;
-	}
-
-	if (l != gstat[0].st_size) {
-		printerr("Unexpected link lenght", "readlink %s", pth1);
-		r = -1;
-		goto exit;
-	}
-
+        printerr(strerror(errno), "readlink %s", path);
+        r = -1;
+        goto exit;
+    }
+    if (l != stat_buf->st_size) {
+        printerr("Unexpected link lenght", "readlink %s", path);
+        r = -1;
+        goto exit;
+    }
     buf[l] = 0;
+exit:
+    if (buffer)
+        *buffer = buf;
+    if (len)
+        *len = l;
+    return r;
+}
+
+inline static int cp_link_cmp(char **buf, ssize_t *len, bool *equal)
+{
+    int r = 0;
+    if ((r = cp_link_read(pth1, &gstat[0], buf, len)))
+        goto exit;
 
     if (!fs_stat(pth2, &gstat[1], 0)
             && S_ISLNK(gstat[1].st_mode)
-            && l == gstat[1].st_size)
+            && *len == gstat[1].st_size)
     {
-        char *const buf2 = malloc((size_t)gstat[0].st_size + 1);
-        ssize_t l2 = readlink(pth2, buf2, (size_t)gstat[1].st_size);
-
-        if (l2 == -1) {
-            printerr(strerror(errno), "readlink %s", pth2);
-            r = -1;
+        char *buf2;
+        ssize_t l2;
+        if ((r = cp_link_read(pth2, &gstat[1], &buf2, &l2)))
             goto free_buf2;
-        }
 
-        if (l2 != l) {
-            printerr("Unexpected link lenght", "readlink %s", pth2);
-            r = -1;
-            goto free_buf2;
-        }
-
-        buf2[l2] = 0;
-
-        if (!strcmp(buf, buf2)) {
+        if (!strcmp(*buf, buf2)) {
 #if defined(TRACE)
             fprintf(debug, "  Equal symlinks: %s and %s\n", pth1, pth2);
 #endif
-            equal = TRUE;
+            *equal = TRUE;
         }
 
 free_buf2:
         free(buf2);
     }
+exit:
+    return r;
+}
 
-    if (!equal) {
+inline static void cp_link_attr(void)
+{
+#ifdef HAVE_FUTIMENS
+    struct timespec ts[2];
+    ts[0] = gstat[0].st_atim;
+    ts[1] = gstat[0].st_mtim;
+    if (utimensat(0, pth2, ts, AT_SYMLINK_NOFOLLOW) == -1) {
+#if defined(TRACE)
+        fprintf(debug, "  utimensat(%s): %s\n", pth2, strerror(errno));
+#endif
+    }
+#endif /* HAVE_FUTIMENS */
+    if (lchown(pth2, gstat[0].st_uid, gstat[0].st_gid) == -1) {
+#if defined(TRACE)
+        fprintf(debug, "  lchown(%s): %s\n", pth2, strerror(errno));
+#endif
+    }
+}
+
+static int
+cp_link(void)
+{
+	int r = 0;
+    bool equal = FALSE;
+#if defined(TRACE)
+    fprintf(debug, "->cp_link \"%s\" -> \"%s\"\n", pth1, pth2);
+#endif
+    char *buf;
+    ssize_t l;
+    r = cp_link_cmp(&buf, &l, &equal);
+
+    if (!r && !equal) {
         if (!fs_stat(pth2, &gstat[1], 0) &&
                 fs_rm(0 /* tree */, "overwrite", NULL /* nam */,
                       0 /* u */, 1 /* n */, 4|2 /* md */) == 1) {
@@ -1514,23 +1543,9 @@ free_buf2:
             r = -1;
             goto exit;
         }
-        if (preserve_all) {
-#ifdef HAVE_FUTIMENS
-            struct timespec ts[2];
-            ts[0] = gstat[0].st_atim;
-            ts[1] = gstat[0].st_mtim;
-            if (utimensat(0, pth2, ts, AT_SYMLINK_NOFOLLOW) == -1) {
-#if defined(TRACE)
-                fprintf(debug, "  utimensat(%s): %s\n", pth2, strerror(errno));
-#endif
-            }
-#endif /* HAVE_FUTIMENS */
-            if (lchown(pth2, gstat[0].st_uid, gstat[0].st_gid) == -1) {
-#if defined(TRACE)
-                fprintf(debug, "  lchown(%s): %s\n", pth2, strerror(errno));
-#endif
-            }
-        }
+        if (preserve_all)
+            cp_link_attr();
+
         tot_cmp_byte_count += l;
         ++tot_cmp_file_count;
         if (!wstat && verbose)
