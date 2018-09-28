@@ -429,7 +429,13 @@ no_tree2:
 
                 continue;
             }
-
+            if (qdiff) {
+                fprintf(stderr, "%s: %s: Unsupported file type\n",
+                        prog, syspth[0]);
+                retval |= 2;
+                if (exit_on_error)
+                    break;
+            }
 			continue;
 		}
 
