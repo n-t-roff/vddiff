@@ -327,6 +327,7 @@ main(int argc, char **argv)
 		case 'q':
             qdiff = TRUE;
             cli_mode = TRUE;
+            nodialog = TRUE;
 			break;
 
 		case 'R':
@@ -341,6 +342,7 @@ main(int argc, char **argv)
         case 'S':
             bmode = TRUE;
             cli_mode = TRUE;
+            nodialog = TRUE;
             break;
 
         case 's':
