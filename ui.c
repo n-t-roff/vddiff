@@ -2963,27 +2963,27 @@ no_diff:
 #endif
 	disp_name(w, y, 0, twocols && !fmode ? llstw : mx, info, f, *type,
 	    color_id,
-	    right_col           ? f->rlink :
-	    twocols || f->llink ? f->llink : f->rlink,
+        right_col ? f->link[1] :
+        twocols || f->link[0] ? f->link[0] : f->link[1],
 	    diff, fmode ? right_col : twocols || f->type[0] ? 0 : 1);
 
-	if (twocols && !fmode) {
+    if (twocols && !fmode) {
 prtc2:
-		if (diff != '<') {
-			(wattr_set)(w, a, cp, NULL);
-			set_file_info(f, f->type[1], type+1, &color_id, &diff);
+        if (diff != '<') {
+            (wattr_set)(w, a, cp, NULL);
+            set_file_info(f, f->type[1], type+1, &color_id, &diff);
 #if defined(TRACE)
-			fprintf(debug, "  col R %c 0%o \"%s\"\n",
-			    type[1], f->type[1], f->name);
+            fprintf(debug, "  col R %c 0%o \"%s\"\n",
+                    type[1], f->type[1], f->name);
 #endif
-			disp_name(w, y, rlstx, mx, info, f, type[1], color_id,
-			    f->rlink, diff, 1);
-		}
+            disp_name(w, y, rlstx, mx, info, f, type[1], color_id,
+                    f->link[1], diff, 1);
+        }
 
-		standoutc(w);
-		mvwaddch(w, y, llstw, diff);
-		standendc(w);
-	}
+        standoutc(w);
+        mvwaddch(w, y, llstw, diff);
+        standendc(w);
+    }
 
 	if (!info) {
 		goto ret;
@@ -3017,17 +3017,17 @@ prtc2:
 
 		mvwaddstr(wstat, 0, tc ? 0 : 2, type_name(f->type[0]));
 
-		if (f->llink) {
+        if (f->link[0]) {
 			addmbs(wstat, " -> ", mx);
-			addmbs(wstat, f->llink, mx);
+            addmbs(wstat, f->link[0], mx);
 		}
 
 		mvwaddstr(wstat, tc ? 0 : 1, tc ? rlstx : 2,
 		    type_name(f->type[1]));
 
-		if (f->rlink) {
+        if (f->link[1]) {
 			addmbs(wstat, " -> ", 0);
-			addmbs(wstat, f->rlink, 0);
+            addmbs(wstat, f->link[1], 0);
 		}
 	} else if (fmode) {
 		file_stat(
@@ -3296,14 +3296,14 @@ file_stat(struct filediff *f, struct filediff *f2)
 	if (S_ISLNK(ltyp)) {
 		wmove(wstat, yl, x);
 		addmbs(wstat, "-> ", mx1);
-		putmbsra(wstat, f->llink, mx1);
+        putmbsra(wstat, f->link[0], mx1);
 		ltyp = 0;
 	}
 
 	if (S_ISLNK(rtyp)) {
 		wmove(wstat, yr, x2);
 		addmbs(wstat, "-> ", 0);
-		putmbsra(wstat, f2->rlink, 0);
+        putmbsra(wstat, f2->link[1], 0);
 		rtyp = 0;
 	}
 
@@ -3453,16 +3453,16 @@ file_stat(struct filediff *f, struct filediff *f2)
 		addmbs(wstat, rbuf, 0);
 	}
 
-	if (ltyp && f->llink) {
+    if (ltyp && f->link[0]) {
 		wmove(wstat, yl, lx1);
 		addmbs(wstat, " -> ", mx1);
-		putmbsra(wstat, f->llink, mx1);
+        putmbsra(wstat, f->link[0], mx1);
 	}
 
-	if (rtyp && f2->rlink) {
+    if (rtyp && f2->link[1]) {
 		wmove(wstat, yr, lx2);
 		addmbs(wstat, " -> ", 0);
-		putmbsra(wstat, f2->rlink, 0);
+        putmbsra(wstat, f2->link[1], 0);
 	}
 }
 

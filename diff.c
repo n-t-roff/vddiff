@@ -115,7 +115,7 @@ static void set_diff_item(struct filediff *const diff, short i, off_t lsize) {
         lsize = gstat[i].st_size;
 
     if (lsize >= 0)
-        diff->llink = read_link(syspth[i], lsize);
+        diff->link[i] = read_link(syspth[i], lsize);
 }
 
 /* Return value:
@@ -449,8 +449,8 @@ db_add_file:
 
         } else if (S_ISLNK(gstat[0].st_mode)) {
 
-            if (diff->llink && diff->rlink) {
-                if (strcmp(diff->llink, diff->rlink))
+            if (diff->link[0] && diff->link[1]) {
+                if (strcmp(diff->link[0], diff->link[1]))
                     diff->diff = '!';
                 diff_db_add(diff, 0);
                 continue;
@@ -1312,8 +1312,8 @@ alloc_diff(const char *const name)
 {
 	struct filediff *p = malloc(sizeof(struct filediff));
 	p->name  = strdup(name);
-	p->llink = NULL; /* to simply use free() later */
-	p->rlink = NULL;
+    p->link[0] = NULL; /* to simply use free() later */
+    p->link[1] = NULL;
 	p->fl = 0;
 	p->diff  = ' ';
 	return p;
@@ -1323,8 +1323,8 @@ void
 free_diff(struct filediff *f)
 {
     free(const_cast_ptr(f->name));
-	free(f->llink);
-	free(f->rlink);
+    free(f->link[0]);
+    free(f->link[1]);
 	free(f);
 }
 

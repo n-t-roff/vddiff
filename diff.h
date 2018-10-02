@@ -13,15 +13,15 @@ extern "C" {
 
 struct filediff {
     const char *name;
-	char   *llink, *rlink;
-	mode_t  type[2];
-	uid_t   uid[2];
-	gid_t   gid[2];
-	off_t   siz[2];
+    char *link[2];
+    mode_t type[2];
+    uid_t uid[2];
+    gid_t gid[2];
+    off_t siz[2];
     struct timespec mtim[2];
-	dev_t   rdev[2];
+    dev_t rdev[2];
 	unsigned fl;
-	char    diff;
+    char diff;
 };
 
 extern off_t tot_cmp_byte_count;
