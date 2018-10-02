@@ -1,31 +1,39 @@
 # Does also set names of ~/.$(BIN)rc and ~/.$(BIN)info to allow parallel
 # installation of different tool versions.
 
-BIN=	vddiff
+BIN = vddiff
 TEST_BIN = test
-PREFIX=	/usr/local
-BINDIR=	$(PREFIX)/bin
-MANDIR=	$(PREFIX)/share/man
-INCDIR=	$(PREFIX)/include
-LIBDIR=	$(PREFIX)/lib
+PREFIX = /usr/local
+BINDIR = $(PREFIX)/bin
+MANDIR = $(PREFIX)/share/man
+INCDIR = $(PREFIX)/include
+LIBDIR = $(PREFIX)/lib
 TEST_DIR = .TMP_TEST_DIR
 
 TRACE = #-DTRACE='"/tmp/.$(BIN)_trace_"'
 DEBUG = #-DDEBUG #-std=c99 -D_XOPEN_SOURCE=700 #-DUNIMP
 STRP = -s
 
-OBJ=	main.o pars.o lex.o diff.o ui.o db.o exec.o fs.o ed.o uzp.o \
+OBJ = \
+	main.o pars.o lex.o diff.o ui.o db.o exec.o fs.o ed.o uzp.o \
 	ui2.o gq.o tc.o info.o dl.o cplt.o misc.o
 TEST_OBJ = $(OBJ) test.o fs_test.o misc_test.o
-YFLAGS=	-d
-_CFLAGS=$(CFLAGS) $(CPPFLAGS) $(DEFINES) $(INCDIR_CURSES) -I$(INCDIR) \
-	$(__CDBG) $(__CLDBG) $(TRACE) $(DEBUG) -DBIN='"$(BIN)"'
+YFLAGS = -d
+_CFLAGS = \
+	$(CFLAGS) $(CPPFLAGS) $(DEFINES) $(__CDBG) $(__CLDBG) \
+	-I$(INCDIR) \
+	$(INCDIR_CURSES) \
+	$(TRACE) \
+	$(DEBUG) \
+	-DBIN='"$(BIN)"'
 _CXXFLAGS = \
 	$(CXXFLAGS) $(__CXXDBG) $(__CLXXDBG) -std=c++17 \
 	$(TRACE) -DTEST_DIR='"$(TEST_DIR)"'
-_LDFLAGS=$(LDFLAGS) $(__CLDBG) -L${LIBDIR} -Wl,-rpath,${LIBDIR} \
-	$(RPATH_CURSES) $(STRP) $(LIBDIR_CURSES)
-LDADD=	$(LIB_AVLBST) $(LIB_CURSES)
+_LDFLAGS = \
+	$(LDFLAGS) $(__CLDBG) $(STRP) \
+	-L${LIBDIR} -Wl,-rpath,${LIBDIR} \
+	$(RPATH_CURSES) $(LIBDIR_CURSES)
+LDADD = $(LIB_AVLBST) $(LIB_CURSES)
 
 all: $(BIN) $(BIN).1.out
 
