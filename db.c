@@ -270,10 +270,10 @@ str_db_add(void **db, char *s)
 
 #ifdef HAVE_LIBAVLBST
 int
-str_db_srch(void **db, char *s, struct bst_node **n)
+str_db_srch(void **db, const char *const s, struct bst_node **n)
 {
     union bst_val k;
-    k.p = s;
+    k.cp = s;
     return bst_srch(*db, k, n);
 }
 #else

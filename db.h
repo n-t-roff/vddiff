@@ -33,7 +33,7 @@ char *str_db_add(void **, char *);
 /* Input:
  *   node: May be NULL
  * Return value: 0: found, !0: not found */
-int str_db_srch(void **db, char *str,
+int str_db_srch(void **db, const char *const str,
 #ifdef HAVE_LIBAVLBST
                 struct bst_node **node);
 #else
