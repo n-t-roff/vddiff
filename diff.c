@@ -99,6 +99,23 @@ static bool is_dot_file(const char *const name) {
              name[1] == '.' && !name[2]));
 }
 
+static void set_diff_item(struct filediff *const diff, short i, off_t lsize) {
+#if defined(TRACE) && 1
+    fprintf(debug, "  found %d 0%o \"%s\"\n", i, gstat[i].st_mode, syspth[i]);
+#endif
+    diff->uid[i] = gstat[i].st_uid;
+    diff->gid[i] = gstat[i].st_gid;
+    diff->siz[i] = gstat[i].st_size;
+    diff->mtim[i] = gstat[i].st_mtim;
+    diff->rdev[i] = gstat[i].st_rdev;
+
+    if (S_ISLNK(gstat[i].st_mode))
+        lsize = gstat[i].st_size;
+
+    if (lsize >= 0)
+        diff->llink = read_link(syspth[i], lsize);
+}
+
 /* Return value:
  *   4: Goto `dir_scan_end`
  *   8: Set `dir_diff` */
@@ -141,13 +158,13 @@ inline static int scan_left_dir(const int tree) {
             "  found L \"%s\" \"%s\" strlen=%zu pthlen=%zu\n",
             name, syspth[0], strlen(syspth[0]), pthlen[0]);
 #endif
-        off_t lsiz1;
+        off_t lsiz[2];
         if (followlinks && !scan && lstat(syspth[0], &gstat[0]) != -1 &&
             S_ISLNK(gstat[0].st_mode))
         {
-            lsiz1 = gstat[0].st_size;
+            lsiz[0] = gstat[0].st_size;
         } else
-            lsiz1 = -1;
+            lsiz[0] = -1;
         bool file_err = FALSE;
         int i;
 
@@ -181,13 +198,12 @@ inline static int scan_left_dir(const int tree) {
         } else {
             goto no_tree2;
         }
-        off_t lsiz2;
         if (followlinks && !scan && lstat(syspth[1], &gstat[1]) != -1 &&
                 S_ISLNK(gstat[1].st_mode))
         {
-            lsiz2 = gstat[1].st_size;
+            lsiz[1] = gstat[1].st_size;
         } else {
-            lsiz2 = -1;
+            lsiz[1] = -1;
         }
         if (!followlinks || (i = stat(syspth[1], &gstat[1])) == -1)
             i = lstat(syspth[1], &gstat[1]);
@@ -391,41 +407,10 @@ no_tree2:
             continue;
         }
 
-        if ((diff->type[0] = gstat[0].st_mode)) {
-#if defined(TRACE) && 1
-            fprintf(debug, "  found L 0%o \"%s\"\n",
-                gstat[0].st_mode, syspth[0]);
-#endif
-            diff->uid[0] = gstat[0].st_uid;
-            diff->gid[0] = gstat[0].st_gid;
-            diff->siz[0] = gstat[0].st_size;
-            diff->mtim[0] = gstat[0].st_mtim;
-            diff->rdev[0] = gstat[0].st_rdev;
-
-            if (S_ISLNK(gstat[0].st_mode))
-                lsiz1 = gstat[0].st_size;
-
-            if (lsiz1 >= 0)
-                diff->llink = read_link(syspth[0], lsiz1);
-        }
-
-        if ((diff->type[1] = gstat[1].st_mode)) {
-#if defined(TRACE) && 1
-            fprintf(debug, "  found R 0%o \"%s\"\n",
-                gstat[1].st_mode, syspth[1]);
-#endif
-            diff->uid[1] = gstat[1].st_uid;
-            diff->gid[1] = gstat[1].st_gid;
-            diff->siz[1] = gstat[1].st_size;
-            diff->mtim[1] = gstat[1].st_mtim;
-            diff->rdev[1] = gstat[1].st_rdev;
-
-            if (S_ISLNK(gstat[1].st_mode))
-                lsiz2 = gstat[1].st_size;
-
-            if (lsiz2 >= 0)
-                diff->rlink = read_link(syspth[1], lsiz2);
-        }
+        if ((diff->type[0] = gstat[0].st_mode))
+            set_diff_item(diff, 0, lsiz[0]);
+        if ((diff->type[1] = gstat[1].st_mode))
+            set_diff_item(diff, 1, lsiz[1]);
 
         if ((diff->type[0] & S_IFMT) != (diff->type[1] & S_IFMT)) {
 
@@ -615,23 +600,8 @@ inline static int scan_right_dir(const int tree) {
 
         if (file_err)
             diff->diff = '-';
-        else {
-#if defined(TRACE) && 1
-            fprintf(debug, "  found R 0%o \"%s\"\n",
-                gstat[1].st_mode, syspth[1]);
-#endif
-            diff->uid[1] = gstat[1].st_uid;
-            diff->gid[1] = gstat[1].st_gid;
-            diff->siz[1] = gstat[1].st_size;
-            diff->mtim[1] = gstat[1].st_mtim;
-            diff->rdev[1] = gstat[1].st_rdev;
-
-            if (S_ISLNK(gstat[1].st_mode))
-                lsiz2 = gstat[1].st_size;
-
-            if (lsiz2 >= 0)
-                diff->rlink = read_link(syspth[1], lsiz2);
-        }
+        else
+            set_diff_item(diff, 1, lsiz2);
 
         if (scan) {
             if (gq_pattern && !gq_proc(diff)) {
