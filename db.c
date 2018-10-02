@@ -278,7 +278,7 @@ str_db_srch(void **db, const char *const s, struct bst_node **n)
 }
 #else
 int
-str_db_srch(void **db, char *s, char **n)
+str_db_srch(void **db, const char *const s, char **n)
 {
 	void *vp;
 

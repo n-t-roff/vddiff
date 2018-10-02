@@ -56,7 +56,6 @@ static ssize_t dlg_read(int fd, void *buf, size_t count,
 static char *last_path;
 off_t tot_cmp_byte_count;
 long tot_cmp_file_count;
-static struct scan_dir *dirs;
 short followlinks;
 bool one_scan;
 bool dotdot;
@@ -81,9 +80,12 @@ static const char *get_next_file_name(DIR *d, char *path, size_t path_len)
 {
     errno = 0;
     const struct dirent *ent = readdir(d);
-    if (ent)
+    if (ent) {
+#if defined(TRACE) && 1
+        fprintf(debug, "  get_next_file_name: \"%s\"\n", ent->d_name);
+#endif
         return ent->d_name;
-    else if (errno) {
+    } else if (errno) {
         int readdir_errno = errno;
         path[path_len] = 0;
         printerr(strerror(errno), "readdir \"%s\"", path);
@@ -119,7 +121,7 @@ static void set_diff_item(struct filediff *const diff, short i, off_t lsize) {
 /* Return value:
  *   4: Goto `dir_scan_end`
  *   8: Set `dir_diff` */
-inline static int scan_left_dir(const int tree) {
+inline static int scan_left_dir(const int tree, struct scan_dir **const dirs) {
     int retval = 0;
 #if defined(TRACE) && 1
     fprintf(debug, "  opendir lp(%s)%s\n", syspth[0], scan ? " scan" : "");
@@ -277,8 +279,8 @@ no_tree2:
                 se = malloc(sizeof(struct scan_dir));
                 se->s = strdup(name);
                 se->tree = S_ISDIR(gstat[1].st_mode) ? 3 : 1;
-                se->next = dirs;
-                dirs = se;
+                se->next = *dirs;
+                *dirs = se;
                 continue;
             }
 
@@ -472,7 +474,7 @@ func_return:
 /* Return value:
  *   4: Goto `dir_scan_end`
  *   8: Set `dir_diff` */
-inline static int scan_right_dir(const int tree) {
+inline static int scan_right_dir(const int tree, struct scan_dir **const dirs) {
     int retval = 0;
 #if defined(TRACE) && 1
     fprintf(debug, "  opendir rp(%s)%s\n", syspth[1], scan ? " scan" : "");
@@ -572,8 +574,8 @@ inline static int scan_right_dir(const int tree) {
                 se = malloc(sizeof(struct scan_dir));
                 se->s = strdup(name);
                 se->tree = 2;
-                se->next = dirs;
-                dirs = se;
+                se->next = *dirs;
+                *dirs = se;
                 continue;
             }
 
@@ -630,8 +632,9 @@ build_diff_db(
      * 3: Proc both dirs */
     int tree)
 {
-	int retval = 0;
-	/* Used to show only dirs which contains diffs. Is set if any diff
+    struct scan_dir *dirs = NULL;
+    int retval = 0;
+    /* Used to show only dirs which contains diffs. Is set if any diff
 	 * is found inside a dir. */
 	short dir_diff = 0;
 	static time_t lpt, lpt2;
@@ -688,7 +691,7 @@ build_diff_db(
 
     if (!cli_mode)
         ini_int();
-    retval |= scan_left_dir(tree);
+    retval |= scan_left_dir(tree, &dirs);
 
     if (retval & 8) {
         retval &= ~8;
@@ -730,7 +733,7 @@ right_tree:
 	}
 
 	ini_int();
-    retval |= scan_right_dir(tree);
+    retval |= scan_right_dir(tree, &dirs);
 
     if (retval & 8) {
         retval &= ~8;
