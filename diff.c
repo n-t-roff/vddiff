@@ -53,15 +53,11 @@ static int dlg_open_ro(const char *const pth);
 static ssize_t dlg_read(int fd, void *buf, size_t count,
                         const char* const pth);
 
-static struct filediff *diff;
-static off_t lsiz1, lsiz2;
 static char *last_path;
 off_t tot_cmp_byte_count;
 long tot_cmp_file_count;
 static struct scan_dir *dirs;
-
 short followlinks;
-
 bool one_scan;
 bool dotdot;
 static bool stopscan;
@@ -145,16 +141,13 @@ inline static int scan_left_dir(const int tree) {
             "  found L \"%s\" \"%s\" strlen=%zu pthlen=%zu\n",
             name, syspth[0], strlen(syspth[0]), pthlen[0]);
 #endif
-
-        /* Get link length. Redundant code but necessary,
-         * unfortunately. */
-
+        off_t lsiz1;
         if (followlinks && !scan && lstat(syspth[0], &gstat[0]) != -1 &&
             S_ISLNK(gstat[0].st_mode))
+        {
             lsiz1 = gstat[0].st_size;
-        else
+        } else
             lsiz1 = -1;
-
         bool file_err = FALSE;
         int i;
 
@@ -188,17 +181,16 @@ inline static int scan_left_dir(const int tree) {
         } else {
             goto no_tree2;
         }
-
+        off_t lsiz2;
         if (followlinks && !scan && lstat(syspth[1], &gstat[1]) != -1 &&
-            S_ISLNK(gstat[1].st_mode)) {
+                S_ISLNK(gstat[1].st_mode))
+        {
             lsiz2 = gstat[1].st_size;
         } else {
             lsiz2 = -1;
         }
-
         if (!followlinks || (i = stat(syspth[1], &gstat[1])) == -1)
             i = lstat(syspth[1], &gstat[1]);
-
         if (i == -1) {
             if (errno != ENOENT) {
                 if (!ign_diff_errs && dialog(ign_txt, NULL,
@@ -391,7 +383,7 @@ no_tree2:
             continue;
         }
 
-        diff = alloc_diff(name);
+        struct filediff *diff = alloc_diff(name);
 
         if (file_err) {
             diff->diff = '-';
@@ -549,14 +541,14 @@ inline static int scan_right_dir(const int tree) {
             "  found R \"%s\" \"%s\" strlen=%zu pthlen=%zu\n",
             name, syspth[1], strlen(syspth[1]), pthlen[1]);
 #endif
-
+        off_t lsiz2;
         if (followlinks && !scan && lstat(syspth[1], &gstat[1]) != -1 &&
-            S_ISLNK(gstat[1].st_mode)) {
+            S_ISLNK(gstat[1].st_mode))
+        {
             lsiz2 = gstat[1].st_size;
         } else {
             lsiz2 = -1;
         }
-
         bool file_err = FALSE;
         int i;
 
@@ -617,7 +609,7 @@ inline static int scan_right_dir(const int tree) {
             }
         }
 
-        diff = alloc_diff(name);
+        struct filediff *diff = alloc_diff(name);
         diff->type[0] = 0;
         diff->type[1] = gstat[1].st_mode;
 
@@ -823,7 +815,7 @@ int file_grep(const char *const name)
 {
     int return_value = 1;
     ++tot_cmp_file_count;
-    diff = alloc_diff(name);
+    struct filediff *diff = alloc_diff(name);
     diff->type[0] = gstat[0].st_mode;
     diff->type[1] = gstat[1].st_mode;
     diff->siz[0]  = gstat[0].st_size;
