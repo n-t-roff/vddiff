@@ -67,6 +67,42 @@ bool dotdot;
 static bool stopscan;
 static bool ign_diff_errs;
 
+static DIR *open_scan_dir(const char *const path) {
+    DIR *d = opendir(path);
+    if (!d) {
+        if (!ign_diff_errs &&
+                dialog(ign_txt, NULL, "opendir \"%s\": %s",
+                       path, strerror(errno))
+                == 'i')
+        {
+            ign_diff_errs = TRUE;
+        }
+    }
+    return d;
+}
+
+static const char *get_next_file_name(DIR *d, char *path, size_t path_len)
+{
+    errno = 0;
+    const struct dirent *ent = readdir(d);
+    if (ent)
+        return ent->d_name;
+    else if (errno) {
+        int readdir_errno = errno;
+        path[path_len] = 0;
+        printerr(strerror(errno), "readdir \"%s\"", path);
+        closedir(d);
+        errno = readdir_errno;
+    }
+    return NULL;
+}
+
+static bool is_dot_file(const char *const name) {
+    return *name == '.' && (!name[1] ||
+            (!((bmode || fmode) && (dotdot && !scan)) &&
+             name[1] == '.' && !name[2]));
+}
+
 /* Return value:
  *   4: Goto `dir_scan_end`
  *   8: Set `dir_diff` */
@@ -75,46 +111,26 @@ inline static int scan_left_dir(const int tree) {
 #if defined(TRACE) && 1
     fprintf(debug, "  opendir lp(%s)%s\n", syspth[0], scan ? " scan" : "");
 #endif
-    DIR *d = opendir(syspth[0]);
+    DIR *d = open_scan_dir(syspth[0]);
     if (!d) {
-        if (!ign_diff_errs &&
-                dialog(ign_txt, NULL, "opendir \"%s\": %s",
-                       syspth[0], strerror(errno))
-                == 'i')
-        {
-            ign_diff_errs = TRUE;
-        }
-
         retval |= 4|2;
         goto func_return;
     }
 
     while (1) {
-        int i;
-
-        errno = 0;
-        const struct dirent *ent = readdir(d);
-        if (!ent) {
+        const char *const name =
+                get_next_file_name(d, syspth[0], pthlen[0]);
+        if (!name) {
             if (!errno)
                 break;
-            syspth[0][pthlen[0]] = 0;
-            printerr(strerror(errno), "readdir \"%s\"", syspth[0]);
-            closedir(d);
             retval |= 4|2;
             goto func_return;
         }
-
 #if defined(TRACE) && 1
-        fprintf(debug, "  readdir L \"%s\"\n", ent->d_name);
+        fprintf(debug, "  readdir L \"%s\"\n", name);
 #endif
-        const char *const name = ent->d_name;
-
-        if (*name == '.' && (!name[1] ||
-            (!((bmode || fmode) && (dotdot && !scan)) &&
-             name[1] == '.' && !name[2]))) {
+        if (is_dot_file(name))
             continue;
-        }
-
         if (!(bmode || fmode)) {
             str_db_add(&name_db, strdup(name)
 #ifdef HAVE_LIBAVLBST
@@ -127,7 +143,7 @@ inline static int scan_left_dir(const int tree) {
 #if defined(TRACE) && 1
         fprintf(debug,
             "  found L \"%s\" \"%s\" strlen=%zu pthlen=%zu\n",
-            ent->d_name, syspth[0], strlen(syspth[0]), pthlen[0]);
+            name, syspth[0], strlen(syspth[0]), pthlen[0]);
 #endif
 
         /* Get link length. Redundant code but necessary,
@@ -140,6 +156,7 @@ inline static int scan_left_dir(const int tree) {
             lsiz1 = -1;
 
         bool file_err = FALSE;
+        int i;
 
         if (!followlinks || (i = stat(syspth[0], &gstat[0])) == -1)
             i = lstat(syspth[0], &gstat[0]);
@@ -483,46 +500,26 @@ inline static int scan_right_dir(const int tree) {
 #if defined(TRACE) && 1
     fprintf(debug, "  opendir rp(%s)%s\n", syspth[1], scan ? " scan" : "");
 #endif
-    DIR *d = opendir(syspth[1]);
+    DIR *d = open_scan_dir(syspth[1]);
     if (!d) {
-        if (!ign_diff_errs &&
-                dialog(ign_txt, NULL, "opendir \"%s\": %s",
-                       syspth[1], strerror(errno))
-                == 'i')
-        {
-            ign_diff_errs = TRUE;
-        }
-
         retval |= 4|2;
         goto func_return;
     }
 
     while (1) {
-        int i;
-
-        errno = 0;
-        const struct dirent *ent = readdir(d);
-        if (!ent) {
+        const char *const name =
+                get_next_file_name(d, syspth[1], pthlen[1]);
+        if (!name) {
             if (!errno)
                 break;
-            syspth[1][pthlen[1]] = 0;
-            printerr(strerror(errno), "readdir \"%s\"", syspth[1]);
-            closedir(d);
             retval |= 4|2;
             goto func_return;
         }
-
 #if defined(TRACE) && 1
-        fprintf(debug, "  readdir R \"%s\"\n", ent->d_name);
+        fprintf(debug, "  readdir R \"%s\"\n", name);
 #endif
-        const char *const name = ent->d_name;
-
-        if (*name == '.' && (!name[1] ||
-            (!((bmode || fmode) && (dotdot && !scan)) &&
-             name[1] == '.' && !name[2]))) {
+        if (is_dot_file(name))
             continue;
-        }
-
         if (!(bmode || fmode) && (tree & 1) &&
                 !str_db_srch(&name_db, name, NULL))
         {
@@ -550,7 +547,7 @@ inline static int scan_right_dir(const int tree) {
 #if defined(TRACE) && 1
         fprintf(debug,
             "  found R \"%s\" \"%s\" strlen=%zu pthlen=%zu\n",
-            ent->d_name, syspth[1], strlen(syspth[1]), pthlen[1]);
+            name, syspth[1], strlen(syspth[1]), pthlen[1]);
 #endif
 
         if (followlinks && !scan && lstat(syspth[1], &gstat[1]) != -1 &&
@@ -561,6 +558,7 @@ inline static int scan_right_dir(const int tree) {
         }
 
         bool file_err = FALSE;
+        int i;
 
         if (!followlinks || (i = stat(syspth[1], &gstat[1])) == -1) {
             i = lstat(syspth[1], &gstat[1]);
