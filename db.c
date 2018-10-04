@@ -946,17 +946,17 @@ exit:
 		/* 5 instead of 4 for the column separator */
 		for (bsizlen[i] = 5; maxsiz >= 10000;
 		    bsizlen[i]++, maxsiz /= 10);
-
+#if defined (TRACE)
+        fprintf(debug, "  maxmajor=%lu maxminor=%lu\n", maxmajor, maxminor);
+#endif
 		if (maxmajor || maxminor) {
-            unsigned short j;
-
 			for (majorlen[i] = 4; maxmajor >= 1000;
-			    majorlen[i]++, maxmajor /= 10);
-
+                 majorlen[i]++, maxmajor /= 10)
+            {}
 			for (minorlen[i] = 4; maxminor >= 1000;
-			    minorlen[i]++, maxminor /= 10);
-
-			j = majorlen[i] + minorlen[i] + 2;
+                 minorlen[i]++, maxminor /= 10)
+            {}
+            const unsigned short j = majorlen[i] + minorlen[i] + 1; /* + ',' */
 
 			if (bsizlen[i] < j) {
 				bsizlen[i] = j;

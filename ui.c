@@ -3193,7 +3193,7 @@ static int disp_name(WINDOW *w, int y, int x, int mx, int o,
 
 		if (S_ISCHR(f->type[i]) || S_ISBLK(f->type[i])) {
 
-			n = snprintf(lbuf, sizeof lbuf, "%lu, %lu",
+            n = snprintf(lbuf, sizeof lbuf, "%3lu, %3lu",
 			    (unsigned long)major(f->rdev[i]),
 			    (unsigned long)minor(f->rdev[i]));
 		} else {

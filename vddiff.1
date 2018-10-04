@@ -13,7 +13,7 @@ LOSS OF USE, DATA OR PROFITS, WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE OR
 OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
 PERFORMANCE OF THIS SOFTWARE.
 ..
-.Dd September 17, 2018
+.Dd October 4, 2018
 .Dt VDDIFF 1
 .Sh NAME
 .Nm @vddiff@
@@ -722,8 +722,10 @@ Toggle display of hidden files.
 .It Dq Li \&Ah
 Add scaled file size column.
 Does not show device major and minor numbers
-(future version will show this for
-.Dq Li \&As )
+to keep the column narrow.
+Use
+.Dq Li \&As
+to display these numbers.
 Removes an existing byte size column.
 Can be enabled permanently with .@vddiff@rc option
 .Cm disp_hsize .
@@ -741,7 +743,9 @@ Can be enabled permanently with .@vddiff@rc option
 .Cm disp_perms .
 .It Dq Li \&As
 Add file size column.
-Does not (yet) show device major and minor numbers.
+Does show device major and minor numbers
+(in contrast to
+.Dq Li \&Ah ) .
 Removes an existing scaled size column.
 .It Dq Li \&At
 Add file modification time column.
@@ -2027,6 +2031,11 @@ Remove file group column.
 .
 .It Li disp_hsize
 Add scaled file size column.
+Does not show device major and minor numbers
+to keep the column narrow.
+Use
+.Dq Li \&As
+to display these numbers.
 Can be removed with
 .Dq Li \&Rh
 .

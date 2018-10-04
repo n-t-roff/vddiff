@@ -1336,18 +1336,28 @@ func_return:
 /* Return value:
  *    1: User response: "Don't overwrite"
  *   -1: Error */
-inline static int cp_socket_or_fifo(void) {
+inline static int cp_special(void) {
     int ret_val = 0;
 
     /* Test if target exists. */
     if (!fs_stat(pth2, &gstat[1], 0)) {
         /* File exists. Test if it is of same type. */
-        if ((S_ISSOCK(gstat[0].st_mode) &&
-             S_ISSOCK(gstat[1].st_mode)) ||
-            (S_ISFIFO(gstat[0].st_mode) &&
-             S_ISFIFO(gstat[1].st_mode)))
+        if (((S_ISSOCK(gstat[0].st_mode) &&
+              S_ISSOCK(gstat[1].st_mode)) ||
+             (S_ISFIFO(gstat[0].st_mode) &&
+              S_ISFIFO(gstat[1].st_mode))))
         {
             /* Is of same type. */
+            goto function_return;
+        }
+        if ((((S_ISBLK(gstat[0].st_mode) &&
+               S_ISBLK(gstat[1].st_mode)) ||
+              (S_ISCHR(gstat[0].st_mode) &&
+               S_ISCHR(gstat[1].st_mode))) &&
+             (gstat[0].st_rdev ==
+              gstat[1].st_rdev)))
+        {
+            /* Of same type and equal. */
             goto function_return;
         }
         /* Wrong type -> try to delete. */
@@ -1359,11 +1369,12 @@ inline static int cp_socket_or_fifo(void) {
             goto function_return;
         }
     }
-    if (mknod(pth2, gstat[0].st_mode, 0) == -1) {
+    if (mknod(pth2, gstat[0].st_mode, gstat[0].st_rdev) == -1) {
         printerr(strerror(errno), LOCFMT "mknod(%s)" LOCVAR, pth2);
         ret_val = -1;
         goto function_return;
     }
+    ++tot_cmp_file_count;
     if (preserve_all)
         cp_link_attr(); /* Fits here too. */
 function_return:
@@ -1391,10 +1402,12 @@ static int cp_file(void)
             rv |= 1;
 	} else if (S_ISLNK(gstat[0].st_mode)) {
         rv |= cp_link();
-    } else if (S_ISSOCK(gstat[0].st_mode) ||
-               S_ISFIFO(gstat[0].st_mode))
+    } else if ((S_ISSOCK(gstat[0].st_mode) ||
+                S_ISFIFO(gstat[0].st_mode) ||
+                S_ISBLK(gstat[0].st_mode) ||
+                S_ISCHR(gstat[0].st_mode)))
     {
-        rv |= cp_socket_or_fifo();
+        rv |= cp_special();
 	} else {
         fs_fwrap("Unsupported file type 0%o", gstat[0].st_mode);
 		printerr(NULL, "Not copied: \"%s\"", pth1);

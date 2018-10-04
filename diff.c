@@ -368,18 +368,44 @@ no_tree2:
                 free(a);
                 continue;
             }
-            if ((S_ISSOCK(gstat[0].st_mode) &&
-                 S_ISSOCK(gstat[1].st_mode)) ||
-                (S_ISFIFO(gstat[0].st_mode) &&
-                 S_ISFIFO(gstat[1].st_mode)))
+            if (((S_ISSOCK(gstat[0].st_mode) &&
+                  S_ISSOCK(gstat[1].st_mode)) ||
+                 (S_ISFIFO(gstat[0].st_mode) &&
+                  S_ISFIFO(gstat[1].st_mode))))
             {
+                ++tot_cmp_file_count;
+                continue;
+            }
+            if (((S_ISBLK(gstat[0].st_mode) &&
+                  S_ISBLK(gstat[1].st_mode)) ||
+                 (S_ISCHR(gstat[0].st_mode) &&
+                  S_ISCHR(gstat[1].st_mode))))
+            {
+                if (gstat[0].st_rdev ==
+                    gstat[1].st_rdev)
+                {
+                    ++tot_cmp_file_count;
+                } else {
+                    retval |= 1;
+                    if (qdiff) {
+                        printf("Special files %s and %s differ\n",
+                               syspth[0], syspth[1]);
+                        if (exit_on_error)
+                            break;
+                    } else {
+#if defined(TRACE) && 1
+                        fprintf(debug, "  dir_diff: special diff: %s\n", name);
+#endif
+                        retval |= 8;
+                    }
+                }
                 continue;
             }
             if (real_diff)
                 continue;
 
-            if (!gstat[0].st_mode || !gstat[1].st_mode ||
-                 gstat[0].st_mode !=  gstat[1].st_mode)
+            if ((!gstat[0].st_mode || !gstat[1].st_mode ||
+                  gstat[0].st_mode !=  gstat[1].st_mode))
             {
                 if (qdiff) {
                     printf("Different file type: %s and %s\n",
@@ -460,6 +486,16 @@ db_add_file:
                 diff_db_add(diff, 0);
                 continue;
             }
+        } else if ((S_ISBLK(gstat[0].st_mode) ||
+                    S_ISCHR(gstat[0].st_mode)))
+        {
+            if ((gstat[0].st_rdev !=
+                 gstat[1].st_rdev))
+            {
+                diff->diff = '!';
+            }
+            diff_db_add(diff, 0);
+            continue;
         } else {
             /* Any other file type.
              * Comparing sockets and FIFOs does not make sense. */
