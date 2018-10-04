@@ -6,6 +6,7 @@ extern "C" {
 #endif
 
 #include <sys/types.h>
+#include <sys/stat.h>
 #include "compat.h"
 
 /* File marked (for delete, copy, etc.) */
@@ -100,6 +101,11 @@ int cmp_file(const char *const, const off_t, const char *const, const off_t,
  *   }
  */
 int cmp_symlink(char **, char **);
+/* Return value:
+ *    1: Different size
+ *    0: Equal */
+int cmp_socket(const struct stat *const stat1,
+               const struct stat *const stat2);
 void free_diff(struct filediff *);
 char *read_link(char *, off_t);
 

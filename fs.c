@@ -63,6 +63,7 @@ static int creatdir(void);
  *    1: User response: "Don't overwrite"
  *   -1: error */
 static int cp_link(void);
+static void cp_link_attr(void);
 static int ask_for_perms(mode_t *);
 static int fs_ro(void);
 static void fs_fwrap(const char *, ...);
@@ -1332,15 +1333,47 @@ func_return:
     return return_value;
 }
 
-static int
-cp_file(void)
+/* Return value:
+ *    1: User response: "Don't overwrite"
+ *   -1: Error */
+inline static int cp_sock(void) {
+    int ret_val = 0;
+
+    /* Test if target exists. */
+    if (!fs_stat(pth2, &gstat[1], 0)) {
+        /* File exists. Test if it is a socket. */
+        if (S_ISSOCK(gstat[1].st_mode) &&
+                !cmp_socket(&gstat[0], &gstat[1]))
+        {
+            /* Is socket and both sockets are equal. */
+            goto function_return;
+        }
+        /* Is not a socket or are not equal -> try to delete. */
+        if (fs_rm(0 /* tree */, "overwrite", NULL /* nam */,
+                  0 /* u */, 1 /* n */, 4|2 /* md */) == 1)
+        {
+            /* User does not want to overwrite */
+            ret_val = 1;
+            goto function_return;
+        }
+    }
+    if (mknod(pth2, gstat[0].st_mode, 0) == -1) {
+        printerr(strerror(errno), LOCFMT "mknod(%s)" LOCVAR, pth2);
+        ret_val = -1;
+        goto function_return;
+    }
+    if (preserve_all)
+        cp_link_attr();
+function_return:
+    return ret_val;
+}
+
+static int cp_file(void)
 {
     int rv = 0;
-
 #if defined(TRACE)
     fprintf(debug, "->cp_file pth1=\"%s\" pth2=\"%s\"\n", pth1, pth2);
 #endif
-
     if (wstat && (fs_t2 = time(NULL)) - fs_t1) {
 		printerr(NULL, "Copy \"%s\" -> \"%s\"", pth1, pth2);
 		fs_t1 = fs_t2;
@@ -1351,12 +1384,13 @@ cp_file(void)
 			goto ret;
 		}
 	}
-
 	if (S_ISREG(gstat[0].st_mode)) {
         if (cp_reg(0) < 0)
             rv |= 1;
 	} else if (S_ISLNK(gstat[0].st_mode)) {
         rv |= cp_link();
+    } else if (S_ISSOCK(gstat[0].st_mode)) {
+        rv |= cp_sock();
 	} else {
         fs_fwrap("Unsupported file type 0%o", gstat[0].st_mode);
 		printerr(NULL, "Not copied: \"%s\"", pth1);
@@ -1499,7 +1533,7 @@ exit:
     return r;
 }
 
-inline static void cp_link_attr(void)
+static void cp_link_attr(void)
 {
 #ifdef HAVE_FUTIMENS
     struct timespec ts[2];

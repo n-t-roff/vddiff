@@ -15,7 +15,6 @@ PERFORMANCE OF THIS SOFTWARE.
 */
 
 #include <stdlib.h>
-#include <sys/types.h>
 #include <sys/param.h>
 #include <fcntl.h>
 #include <unistd.h>
@@ -348,7 +347,7 @@ no_tree2:
                 char *a = NULL;
                 char *b = NULL;
 
-                int v = cmp_symlink(&a, &b);
+                const int v = cmp_symlink(&a, &b);
                 retval |= v;
 
                 if (v == 1) {
@@ -369,7 +368,26 @@ no_tree2:
                 free(a);
                 continue;
             }
-
+            if (S_ISSOCK(gstat[0].st_mode) &&
+                S_ISSOCK(gstat[1].st_mode))
+            {
+                const int value = cmp_socket(&gstat[0], &gstat[1]);
+                retval |= value;
+                if (value > 0) {
+                    if (qdiff) {
+                        printf("Sockets %s and %s diff\n",
+                               syspth[0], syspth[1]);
+                        if (exit_on_error)
+                            break;
+                    } else {
+#if defined(TRACE) && 1
+                        fprintf(debug, "  dir_diff: socket diff: %s\n", name);
+#endif
+                        retval |= 8;
+                    }
+                }
+                continue;
+            }
             if (real_diff)
                 continue;
 
@@ -455,9 +473,13 @@ db_add_file:
                 diff_db_add(diff, 0);
                 continue;
             }
-
-        /* any other file type */
+        } else if (S_ISSOCK(gstat[0].st_mode)) {
+            if (cmp_socket(&gstat[0], &gstat[1]))
+                diff->diff = '!';
+            diff_db_add(diff, 0);
+            continue;
         } else {
+            /* any other file type */
             diff_db_add(diff, 0);
             continue;
         }
@@ -1271,6 +1293,18 @@ ret:
 	fprintf(debug, "<-cmp_file(): %d\n", rv);
 #endif
 	return rv;
+}
+
+/* Return value:
+ *    1: Different size
+ *    0: Equal */
+int cmp_socket(const struct stat *const stat1,
+               const struct stat *const stat2)
+{
+    int return_value = 0;
+    if (stat1->st_size != stat2->st_size)
+        return_value = 1;
+    return return_value;
 }
 
 static int dlg_open_ro(const char *const pth) {
