@@ -1715,6 +1715,7 @@ inline static int cp_reg_copy_loop(const int f1, const int f2) {
         }
         if (!l1)
             break;
+        errno = 0;
         const ssize_t l2 = write(f2, lbuf, (size_t)l1);
         if (l2 == -1) {
             fs_fwrap("write \"%s\": %s", pth2, strerror(errno));
@@ -1722,7 +1723,13 @@ inline static int cp_reg_copy_loop(const int f1, const int f2) {
             break;
         }
         if (l2 != l1) {
-            fs_fwrap("%s: \"%s\"", "Write error", pth2);
+            if (!errno) {
+#if defined (TRACE)
+                fprintf(debug, LOCFMT "overwrite errno\n" LOCVAR);
+#endif
+                errno = ENOSPC;
+            }
+            fs_fwrap("write \"%s\": %s", pth2, strerror(errno));
             rv = -1;
             break; /* error */
         }
