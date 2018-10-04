@@ -1164,14 +1164,9 @@ static int proc_dir(void)
         rv = -1;
         goto ret;
     }
-    bool retry = TRUE;
-retry:
+    if (tree_op == TREE_RM)
+        chmod(pth1, 0777); /* Just try it, don't check for errors */
     if (!(d = opendir(pth1))) {
-        if (tree_op == TREE_RM && retry) {
-            chmod(pth1, 0777);
-            retry = FALSE;
-            goto retry;
-        }
         if (tree_op != TREE_NOT_EMPTY)
             printerr(strerror(errno), LOCFMT "opendir(%s)" LOCVAR, pth1);
         rv = -1;
