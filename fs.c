@@ -700,13 +700,12 @@ ntr:
 
 				tree_op = TREE_NOT_EMPTY;
 				v = proc_dir();
-
-				if (!v) {
+                if (v == 1)
+                    typ = "non-empty directory ";
+                else
+                    typ = "directory ";
+                if (!v)
 					empty_dir_ = TRUE;
-					typ = "directory ";
-				} else if (v > 0) {
-					typ = "non-empty directory ";
-				}
 			}
 
             if (fs_deldialog(tree < 1 || nam || ntr ? y_a_n_txt : y_n_txt, /* menu */
@@ -1165,13 +1164,19 @@ static int proc_dir(void)
         rv = -1;
         goto ret;
     }
-
+    bool retry = TRUE;
+retry:
     if (!(d = opendir(pth1))) {
-        printerr(strerror(errno), "opendir %s failed", pth1);
+        if (tree_op == TREE_RM && retry) {
+            chmod(pth1, 0777);
+            retry = FALSE;
+            goto retry;
+        }
+        if (tree_op != TREE_NOT_EMPTY)
+            printerr(strerror(errno), LOCFMT "opendir(%s)" LOCVAR, pth1);
         rv = -1;
         goto ret;
     }
-
     while (!fs_error && !fs_abort) {
         int i;
 
@@ -1183,7 +1188,7 @@ static int proc_dir(void)
             }
 
             pth1[len1] = 0;
-            printerr(strerror(errno), "readdir %s failed", pth1);
+            printerr(strerror(errno), LOCFMT "readdir(%s)" LOCVAR, pth1);
             rv = -1;
             break;
         }
