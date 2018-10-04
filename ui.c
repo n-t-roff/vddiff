@@ -3916,7 +3916,7 @@ pop_state(
 			clr_mark();
 
 		st->lzip[strlen(st->lzip) - 2] = 0;
-		rmtmpdirs(st->lzip, TOOL_NOLIST);
+        rmtmpdirs(st->lzip);
 		respthofs(0);
 	}
 
@@ -3929,7 +3929,7 @@ pop_state(
 			clr_mark();
 
 		st->rzip[strlen(st->rzip) - 2] = 0;
-		rmtmpdirs(st->rzip, TOOL_NOLIST);
+        rmtmpdirs(st->rzip);
 		respthofs(1);
 	}
 
@@ -4210,7 +4210,7 @@ enter_dir(const char *name, const char *rnam, bool lzip, bool rzip, short tree
 			clr_mark();
 
         s[l - 2] = 0; /* remove "/[lr]" */
-        rmtmpdirs(s, TOOL_NOLIST); /* does free(rnam) */
+        rmtmpdirs(s); /* does free(rnam) */
 		respthofs(bmode || right_col ? 1 : 0);
 
 		if (bmode)

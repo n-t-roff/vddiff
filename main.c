@@ -657,7 +657,7 @@ main(int argc, char **argv)
 rmtmp:
 	for (i = 0; i < 2; i++) {
 		if (zipdir[i]) {
-			rmtmpdirs(zipdir[i], TOOL_NOCURS);
+            rmtmpdirs(zipdir[i]);
 		}
 #if defined(TRACE)
 		else {

@@ -1350,9 +1350,8 @@ free_zdir(struct filediff *z, char *t)
 	free(z);
 
 	if (t) {
-		/* Not called for archives, only for compressed files.
-		 * Hence don't use TOOL_NOLIST since */
-		rmtmpdirs(t, TOOL_UDSCR);
+        /* Not called for archives, only for compressed files. */
+        rmtmpdirs(t);
 	}
 }
 

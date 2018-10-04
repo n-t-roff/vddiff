@@ -30,6 +30,7 @@ PERFORMANCE OF THIS SOFTWARE.
 #include "main.h"
 #include "tc.h"
 #include "misc.h"
+#include "fs.h"
 
 struct pthofs {
 	size_t sys;
@@ -182,7 +183,7 @@ uz_exit(void)
 		 * in rmtmpdirs() */
 		ptr_db_del(&uz_path_db, n);
 		key[strlen(key) - 2] = 0;
-		rmtmpdirs(key, TOOL_NOLIST);
+        rmtmpdirs(key);
 		free(dat->pth);
 		free(dat);
 	}
@@ -225,7 +226,7 @@ mktmpdirs(void)
 	if (mkdir(d1, 0700) == -1) {
 		printerr(strerror(errno),
 		    "mkdir %s failed", tmp_dir);
-		rmtmpdirs(tmp_dir, TOOL_NOLIST);
+        rmtmpdirs(tmp_dir);
 		return 1;
 	}
 
@@ -234,7 +235,7 @@ mktmpdirs(void)
 	if (mkdir(d1, 0700) == -1) {
 		printerr(strerror(errno),
 		    "mkdir %s failed", tmp_dir);
-		rmtmpdirs(tmp_dir, TOOL_NOLIST);
+        rmtmpdirs(tmp_dir);
 		return 1;
 	}
 
@@ -244,16 +245,23 @@ mktmpdirs(void)
 }
 
 void
-rmtmpdirs(const char *s, tool_flags_t tf)
+rmtmpdirs(const char *const s)
 {
 #if defined(TRACE) && 1
 	fprintf(debug, "->rmtmpdirs(%s)\n", s);
 #endif
-    const char *const cm[] = { "chmod", "-R", "700", s, NULL };
-    exec_cmd(cm, tf, NULL, NULL);
-    const char *const rm[] = { "rm", "-rf", s, NULL };
-    exec_cmd(rm, tf, NULL, NULL);
+    char *const syspth_copy = strdup(syspth[0]);
+    memcpy(syspth[0], s, strlen(s) + 1);
     free(const_cast_ptr(s)); /* either tmp_dir or a DB entry */
+    pth2 = syspth[0];
+    fs_rm(0, /* tree */
+          NULL, /* txt */
+          NULL, /* nam */
+          0, /* u */
+          1, /* n */
+          8|2|1); /* md */
+    memcpy(syspth[0], syspth_copy, strlen(syspth_copy) + 1);
+    free(syspth_copy);
 #if defined(TRACE) && 1
 	fprintf(debug, "<-rmtmpdirs\n");
 #endif
@@ -348,8 +356,7 @@ unpack(const struct filediff *f, int tree, char **tmp,
 		break;
 
 	default:
-		rmtmpdirs(tmp_dir, TOOL_NOLIST |
-		    (type & 2 ? TOOL_NOCURS : 0));
+        rmtmpdirs(tmp_dir);
 		goto ret;
 	}
 
