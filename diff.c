@@ -118,6 +118,230 @@ static void set_diff_item(struct filediff *const diff, short i, off_t lsize) {
 }
 
 /* Return value:
+ *      4: Leave calling function
+ *   0x10: `continue` in calling function
+ *   0x20: `break` in calling function */
+inline static int left_dir_scan_mode(const char *const name,
+                                     struct scan_dir **const dirs)
+{
+    int retval = 0;
+    if (stopscan || (!cli_mode && (bmode || fmode) &&
+                     file_pattern && getch() == '%'))
+    {
+        stopscan = TRUE;
+        retval |= 4;
+        goto func_return;
+    }
+
+    if ( S_ISDIR(gstat[0].st_mode) &&
+        (S_ISDIR(gstat[1].st_mode) || bmode || fmode))
+    {
+        struct scan_dir *se;
+
+        if (find_dir_name) { /* -x */
+            if (find_dir_name_only)
+                ++tot_cmp_file_count;
+            if (!regexec(&find_dir_name_regex, name, 0, NULL, 0)) {
+#if defined(TRACE) && 1
+                fprintf(debug, "  dir_diff: find_dir: %s\n", name);
+#endif
+                retval |= 8;
+
+                if (cli_mode) { /* -Sx */
+                    syspth[0][pthlen[0]] = 0;
+                    printf("%s/%s\n", syspth[0], name);
+                    retval |= 1;
+                }
+            }
+        }
+
+        if (!scan) {
+            /* Non-recursive qdiff */
+            retval |= 16;
+            goto func_return;
+        }
+
+        se = malloc(sizeof(struct scan_dir));
+        se->s = strdup(name);
+        se->tree = S_ISDIR(gstat[1].st_mode) ? 3 : 1;
+        se->next = *dirs;
+        *dirs = se;
+        retval |= 16;
+        goto func_return;
+    }
+
+    if (find_name) { /* -F ("find(1)") */
+        if (!gq_pattern)
+            ++tot_cmp_file_count;
+        if (regexec(&fn_re, name, 0, NULL, 0)) {
+            /* no match */
+            retval |= 16;
+            goto func_return;
+        } else if (!gq_pattern) {
+            /* match and not -G */
+#if defined(TRACE) && 1
+            fprintf(debug, "  dir_diff: find: %s\n", name);
+#endif
+            retval |= 8;
+
+            if (cli_mode) {
+                syspth[0][pthlen[0]] = 0;
+                printf("%s/%s\n", syspth[0], name);
+                retval |= 1;
+            }
+            retval |= 16;
+            goto func_return;
+        }
+    }
+
+    if (gq_pattern) { /* -G ("grep(1)") */
+        if (!file_grep(name)) {
+#if defined(TRACE) && 1
+            fprintf(debug, "  dir_diff: grep: %s\n", name);
+#endif
+            retval |= 8;
+            if (cli_mode)
+                retval |= 1;
+        }
+        retval |= 16;
+        goto func_return;
+    }
+    if (bmode || fmode) {
+        retval |= 16;
+        goto func_return;
+    }
+
+    if (S_ISREG(gstat[0].st_mode) &&
+        S_ISREG(gstat[1].st_mode))
+    {
+        if (cmp_file(syspth[0], gstat[0].st_size,
+                     syspth[1], gstat[1].st_size, 0) == 1) {
+            if (qdiff) {
+                printf("Files %s and %s differ\n",
+                       syspth[0], syspth[1]);
+                retval |= 1;
+                if (exit_on_error) {
+                    retval |= 0x20;
+                    goto func_return;
+                }
+            } else {
+#if defined(TRACE) && 1
+                fprintf(debug, "  dir_diff: file diff: %s\n", name);
+#endif
+                retval |= 8;
+            }
+        }
+        retval |= 0x10;
+        goto func_return;
+    }
+
+    if (S_ISLNK(gstat[0].st_mode) &&
+        S_ISLNK(gstat[1].st_mode))
+    {
+        char *a = NULL;
+        char *b = NULL;
+
+        const int v = cmp_symlink(&a, &b);
+        retval |= v;
+
+        if (v == 1) {
+            if (qdiff) {
+                printf("Symbolic links differ: %s -> %s, %s -> %s\n",
+                       syspth[0], a, syspth[1], b);
+                if (exit_on_error) {
+                    retval |= 0x20;
+                    goto func_return;
+                }
+            } else {
+#if defined(TRACE) && 1
+                fprintf(debug, "  dir_diff: link diff: %s\n", name);
+#endif
+                retval |= 8;
+            }
+        }
+
+        free(b);
+        free(a);
+        retval |= 0x10;
+        goto func_return;
+    }
+    if (((S_ISSOCK(gstat[0].st_mode) &&
+          S_ISSOCK(gstat[1].st_mode)) ||
+         (S_ISFIFO(gstat[0].st_mode) &&
+          S_ISFIFO(gstat[1].st_mode))))
+    {
+        ++tot_cmp_file_count;
+        retval |= 0x10;
+        goto func_return;
+    }
+    if (((S_ISBLK(gstat[0].st_mode) &&
+          S_ISBLK(gstat[1].st_mode)) ||
+         (S_ISCHR(gstat[0].st_mode) &&
+          S_ISCHR(gstat[1].st_mode))))
+    {
+        if (gstat[0].st_rdev ==
+            gstat[1].st_rdev)
+        {
+            ++tot_cmp_file_count;
+        } else {
+            retval |= 1;
+            if (qdiff) {
+                printf("Special files %s and %s differ\n",
+                       syspth[0], syspth[1]);
+                if (exit_on_error) {
+                    retval |= 0x20;
+                    goto func_return;
+                }
+            } else {
+#if defined(TRACE) && 1
+                fprintf(debug, "  dir_diff: special diff: %s\n", name);
+#endif
+                retval |= 8;
+            }
+        }
+        retval |= 0x10;
+        goto func_return;
+    }
+    if (real_diff) {
+        retval |= 0x10;
+        goto func_return;
+    }
+
+    if ((!gstat[0].st_mode || !gstat[1].st_mode ||
+          gstat[0].st_mode !=  gstat[1].st_mode))
+    {
+        if (qdiff) {
+            printf("Different file type: %s and %s\n",
+                   syspth[0], syspth[1]);
+            retval |= 1;
+            if (exit_on_error) {
+                retval |= 0x20;
+                goto func_return;
+            }
+        } else {
+#if defined(TRACE) && 1
+            fprintf(debug, "  dir_diff: type diff: %s\n", name);
+#endif
+            retval |= 8;
+        }
+        retval |= 0x10;
+        goto func_return;
+    }
+    if (qdiff) {
+        fprintf(stderr, "%s: %s: Unsupported file type\n",
+                prog, syspth[0]);
+        retval |= 2;
+        if (exit_on_error) {
+            retval |= 0x20;
+            goto func_return;
+        }
+    }
+    retval |= 0x10;
+func_return:
+    return retval;
+}
+
+/* Return value:
  *   4: Goto `dir_scan_end`
  *   8: Set `dir_diff` */
 inline static int scan_left_dir(const int tree, struct scan_dir **const dirs) {
@@ -240,196 +464,19 @@ no_tree2:
         }
 
         if (scan || cli_mode) {
-            if (stopscan ||
-                (!cli_mode && (bmode || fmode) && file_pattern && getch() == '%')) {
-                stopscan = TRUE;
+            retval |= left_dir_scan_mode(name, dirs);
+            if (retval & 16) {
+                retval &= ~16;
+                continue;
+            }
+            if (retval & 0x20) {
+                retval &= ~0x20;
+                break;
+            }
+            if (retval & 4) {
                 closedir(d);
-                retval |= 4;
                 goto func_return;
             }
-
-            if ( S_ISDIR(gstat[0].st_mode) &&
-                (S_ISDIR(gstat[1].st_mode) || bmode || fmode))
-            {
-                struct scan_dir *se;
-
-                if (find_dir_name) { /* -x */
-                    if (find_dir_name_only)
-                        ++tot_cmp_file_count;
-                    if (!regexec(&find_dir_name_regex, name, 0, NULL, 0)) {
-#if defined(TRACE) && 1
-                        fprintf(debug, "  dir_diff: find_dir: %s\n", name);
-#endif
-                        retval |= 8;
-
-                        if (cli_mode) { /* -Sx */
-                            syspth[0][pthlen[0]] = 0;
-                            printf("%s/%s\n", syspth[0], name);
-                            retval |= 1;
-                        }
-                    }
-                }
-
-                if (!scan) {
-                    /* Non-recursive qdiff */
-                    continue;
-                }
-
-                se = malloc(sizeof(struct scan_dir));
-                se->s = strdup(name);
-                se->tree = S_ISDIR(gstat[1].st_mode) ? 3 : 1;
-                se->next = *dirs;
-                *dirs = se;
-                continue;
-            }
-
-            if (find_name) { /* -F ("find(1)") */
-                if (!gq_pattern)
-                    ++tot_cmp_file_count;
-                if (regexec(&fn_re, name, 0, NULL, 0)) {
-                    /* no match */
-                    continue;
-                } else if (!gq_pattern) {
-                    /* match and not -G */
-#if defined(TRACE) && 1
-                    fprintf(debug, "  dir_diff: find: %s\n", name);
-#endif
-                    retval |= 8;
-
-                    if (cli_mode) {
-                        syspth[0][pthlen[0]] = 0;
-                        printf("%s/%s\n", syspth[0], name);
-                        retval |= 1;
-                    }
-                    continue;
-                }
-            }
-
-            if (gq_pattern) { /* -G ("grep(1)") */
-                if (!file_grep(name)) {
-#if defined(TRACE) && 1
-                    fprintf(debug, "  dir_diff: grep: %s\n", name);
-#endif
-                    retval |= 8;
-                    if (cli_mode)
-                        retval |= 1;
-                }
-                continue;
-            }
-            if (bmode || fmode)
-                continue;
-
-            if (S_ISREG(gstat[0].st_mode) &&
-                S_ISREG(gstat[1].st_mode))
-            {
-                if (cmp_file(syspth[0], gstat[0].st_size,
-                             syspth[1], gstat[1].st_size, 0) == 1) {
-                    if (qdiff) {
-                        printf("Files %s and %s differ\n",
-                               syspth[0], syspth[1]);
-                        retval |= 1;
-                        if (exit_on_error)
-                            break;
-                    } else {
-#if defined(TRACE) && 1
-                        fprintf(debug, "  dir_diff: file diff: %s\n", name);
-#endif
-                        retval |= 8;
-                    }
-                }
-
-                continue;
-            }
-
-            if (S_ISLNK(gstat[0].st_mode) &&
-                S_ISLNK(gstat[1].st_mode))
-            {
-                char *a = NULL;
-                char *b = NULL;
-
-                const int v = cmp_symlink(&a, &b);
-                retval |= v;
-
-                if (v == 1) {
-                    if (qdiff) {
-                        printf("Symbolic links differ: %s -> %s, %s -> %s\n",
-                               syspth[0], a, syspth[1], b);
-                        if (exit_on_error)
-                            break;
-                    } else {
-#if defined(TRACE) && 1
-                        fprintf(debug, "  dir_diff: link diff: %s\n", name);
-#endif
-                        retval |= 8;
-                    }
-                }
-
-                free(b);
-                free(a);
-                continue;
-            }
-            if (((S_ISSOCK(gstat[0].st_mode) &&
-                  S_ISSOCK(gstat[1].st_mode)) ||
-                 (S_ISFIFO(gstat[0].st_mode) &&
-                  S_ISFIFO(gstat[1].st_mode))))
-            {
-                ++tot_cmp_file_count;
-                continue;
-            }
-            if (((S_ISBLK(gstat[0].st_mode) &&
-                  S_ISBLK(gstat[1].st_mode)) ||
-                 (S_ISCHR(gstat[0].st_mode) &&
-                  S_ISCHR(gstat[1].st_mode))))
-            {
-                if (gstat[0].st_rdev ==
-                    gstat[1].st_rdev)
-                {
-                    ++tot_cmp_file_count;
-                } else {
-                    retval |= 1;
-                    if (qdiff) {
-                        printf("Special files %s and %s differ\n",
-                               syspth[0], syspth[1]);
-                        if (exit_on_error)
-                            break;
-                    } else {
-#if defined(TRACE) && 1
-                        fprintf(debug, "  dir_diff: special diff: %s\n", name);
-#endif
-                        retval |= 8;
-                    }
-                }
-                continue;
-            }
-            if (real_diff)
-                continue;
-
-            if ((!gstat[0].st_mode || !gstat[1].st_mode ||
-                  gstat[0].st_mode !=  gstat[1].st_mode))
-            {
-                if (qdiff) {
-                    printf("Different file type: %s and %s\n",
-                           syspth[0], syspth[1]);
-                    retval |= 1;
-                    if (exit_on_error)
-                        break;
-                } else {
-#if defined(TRACE) && 1
-                    fprintf(debug, "  dir_diff: type diff: %s\n", name);
-#endif
-                    retval |= 8;
-                }
-
-                continue;
-            }
-            if (qdiff) {
-                fprintf(stderr, "%s: %s: Unsupported file type\n",
-                        prog, syspth[0]);
-                retval |= 2;
-                if (exit_on_error)
-                    break;
-            }
-            continue;
         }
 
         struct filediff *diff = alloc_diff(name);
