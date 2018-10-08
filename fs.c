@@ -26,6 +26,7 @@ PERFORMANCE OF THIS SOFTWARE.
 #include <unistd.h>
 #include <time.h>
 #include <signal.h>
+#include <stdint.h>
 #ifndef HAVE_FUTIMENS
 # include <utime.h>
 #endif
@@ -41,6 +42,8 @@ PERFORMANCE OF THIS SOFTWARE.
 #include "ed.h"
 #include "tc.h"
 #include "misc.h"
+#include "format_time.h"
+#include "unit_prefix.h"
 
 struct str_list {
 	char *s;
@@ -79,11 +82,15 @@ static void fs_fwrap(const char *, ...);
  */
 static int fs_deldialog(const char *menu, const char *op, const char *typ,
     const char *nam);
+/* Changes `lbuf` and `rbuf` */
 static int fs_testBreak(void);
 
 time_t fs_t1, fs_t2;
+static time_t fs_start_time;
 char *pth1, *pth2;
 static size_t len1, len2;
+static int fs_op_depth;
+enum fs_op fs_op;
 
 static enum {
     TREE_RM, /* delete */
@@ -791,6 +798,12 @@ int fs_cp(int to, long u, int n, unsigned md, unsigned *sto_res_)
     bool m = FALSE;
 	bool chg = FALSE;
 	bool ofs = FALSE;
+    if (!fs_op_depth++) {
+        fs_start_time = time(NULL);
+        fs_op = fs_op_cp;
+        tot_cmp_byte_count = 0;
+        tot_cmp_file_count = 0;
+    }
 
 #if defined(TRACE)
 	fprintf(debug, "->fs_cp(to=%d u=%ld n=%d md=0x%x)\n",
@@ -1018,7 +1031,8 @@ ret0:
 	if (sto_res_) {
 		*sto_res_ = sto;
 	}
-
+    if (!--fs_op_depth)
+        fs_op = fs_op_none;
 #if defined(TRACE)
 	fprintf(debug, "<-fs_cp: 0x%x\n", r);
 #endif
@@ -1323,7 +1337,7 @@ int rm_file(void)
                 printf("File \"%s\" removed\n", pth1);
             }
 
-            if (cli_rm) { /* not cli_cp overwrite */
+            if (fs_op != fs_op_cp) { /* not cli_cp overwrite */
                 tot_cmp_byte_count += gstat[0].st_size;
                 ++tot_cmp_file_count;
             }
@@ -1428,13 +1442,21 @@ ret:
 static int
 fs_testBreak(void)
 {
-	int b = 0;
+    mvwprintw(wstat, 0, 0, "Type <ESC> to cancel.");
+    if (tot_cmp_file_count || tot_cmp_byte_count) {
+        char *const time_buf = lbuf + BUF_SIZE / 2;
+        FormatTime.time_t_to_hour_min_sec(time_buf, BUF_SIZE / 2, NULL,
+                                          time(NULL) - fs_start_time);
+        UnitPrefix.unit_prefix(lbuf, BUF_SIZE / 2, NULL, tot_cmp_file_count,
+                               UnitPrefix.decimal);
+        UnitPrefix.unit_prefix(rbuf, BUF_SIZE, NULL, tot_cmp_byte_count, 0);
+        wprintw(wstat, " %s %s files %sB done.", time_buf, lbuf, rbuf);
+    }
+    wrefresh(wstat);
+    nodelay(stdscr, TRUE);
 
-	mvwaddstr(wstat, 0, 0, "Type <ESC> to cancel");
-	wrefresh(wstat);
-	nodelay(stdscr, TRUE);
-
-	if (getch() == 27 /* ESC */) {
+    int b = 0;
+    if (getch() == 27 /* ESC */) {
 		fs_abort = TRUE;
 		b = 1;
 	}

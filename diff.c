@@ -35,6 +35,7 @@ PERFORMANCE OF THIS SOFTWARE.
 #include "gq.h"
 #include "tc.h"
 #include "misc.h"
+#include "fs.h"
 
 struct scan_dir {
 	char *s;
@@ -1244,8 +1245,10 @@ int cmp_symlink(char **a, char **b) {
                 return_value |= 1;
             } else {
                 /* Count successfully compared links only. */
-                ++tot_cmp_file_count;
-                tot_cmp_byte_count += gstat[0].st_size;
+                if (fs_op != fs_op_cp) {
+                    ++tot_cmp_file_count;
+                    tot_cmp_byte_count += gstat[0].st_size;
+                }
 
                 if (qdiff && verbose)
                     printf("Equal symbolic links: \"%s\" and \"%s\"\n",

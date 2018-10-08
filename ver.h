@@ -23,5 +23,5 @@
 #ifndef VERSION
 #define VERSION \
 "1.12.0-alpha " \
-"2018-10-05 11:13"
+"2018-10-08 12:55"
 #endif

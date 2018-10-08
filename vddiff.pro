@@ -29,7 +29,9 @@ SOURCES += \
     ui.c \
     ui2.c \
     uzp.c \
-    misc_test.cpp
+    misc_test.cpp \
+    unit_prefix.c \
+    format_time.c
 
 HEADERS += \
     cplt.h \
@@ -54,4 +56,6 @@ HEADERS += \
     ui2.h \
     uzp.h \
     misc_test.h \
-    ver.h
+    ver.h \
+    unit_prefix.h \
+    format_time.h

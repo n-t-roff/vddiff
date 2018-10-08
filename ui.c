@@ -75,7 +75,6 @@ static void set_file_info(struct filediff *, mode_t, int *, short *, int *);
 static int disp_name(WINDOW *w, int y, int x, int mx, int o,
                      struct filediff *f, int t, short ct, char *l, int d,
                      int i);
-static size_t getfilesize(char *, size_t, off_t, unsigned);
 static size_t gettimestr(char *, size_t, time_t *);
 static void disp_help(void);
 static void help_pg_down(void);
@@ -3466,8 +3465,7 @@ file_stat(struct filediff *f, struct filediff *f2)
 	}
 }
 
-static size_t
-getfilesize(char *buf, size_t bufsiz, off_t size,
+size_t getfilesize(char *buf, size_t bufsiz, off_t size,
     /* 1: scale */
     /* 2: don't group */
     unsigned md)

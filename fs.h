@@ -7,6 +7,8 @@ extern "C" {
 
 #include <sys/stat.h>
 
+enum fs_op { fs_op_none, fs_op_cp };
+
 void clr_fs_err(void);
 void fs_mkdir(short tree);
 void fs_rename(int, long, int, unsigned);
@@ -69,7 +71,7 @@ void rebuild_db(short);
 int fs_get_dst(long, unsigned);
 int fs_any_dst(long, int, unsigned);
 
-
+extern enum fs_op fs_op;
 extern bool fs_none; /* Don't delete or overwrite any file */
 extern bool fs_abort; /* Abort operation */
 extern bool preserve_mtim;

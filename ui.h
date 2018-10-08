@@ -77,6 +77,7 @@ void enter_dir(const char *, const char *, bool, bool, short
 void set_win_dim(void);
 void pop_state(short);
 int curs_down(void);
+size_t getfilesize(char *, size_t, off_t, unsigned);
 
 extern short color;
 extern short color_leftonly ,

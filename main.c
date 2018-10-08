@@ -633,9 +633,9 @@ main(int argc, char **argv)
             else if (!gq_pattern && find_dir_name)
                 printf("%'ld directories processed\n", tot_cmp_file_count);
             else
-                printf("%'ld files (%'ju bytes) %s\n",
+                printf("%'ld files (%'jd bytes) %s\n",
                        tot_cmp_file_count,
-                       (uintmax_t)tot_cmp_byte_count,
+                       (intmax_t)tot_cmp_byte_count,
                        qdiff ? "compared" :
                        cli_mv ? "moved" :
                        cli_cp ? "copied" :
