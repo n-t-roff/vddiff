@@ -44,8 +44,6 @@ PERFORMANCE OF THIS SOFTWARE.
 
 static void db_dl_free(char **);
 #ifdef HAVE_LIBAVLBST
-static void *db_new(int (*)(union bst_val, union bst_val));
-static int name_cmp(union bst_val, union bst_val);
 static int diff_cmp(union bst_val, union bst_val);
 static int ddl_cmp(union bst_val, union bst_val);
 static int bdl_cmp(union bst_val, union bst_val);
@@ -127,7 +125,7 @@ db_init(void)
 	alias_db   = db_new(name_cmp);
 }
 
-static void *
+void *
 db_new(int (*compare)(union bst_val, union bst_val))
 {
 	struct bst *bst;
@@ -249,21 +247,21 @@ ptr_db_cmp(const void *a, const void *b)
  ********************/
 
 #ifdef HAVE_LIBAVLBST
-void
+int
 str_db_add(void **db, char *s, int br, struct bst_node *n)
 {
     union bst_val k, v;
     k.p = s;
     v.i = 0;
-    avl_add_at(*db, k, v, br, n);
+    return avl_add_at(*db, k, v, br, n);
 }
 #else
 char *
 str_db_add(void **db, char *s)
 {
-	void *vp;
-
-	vp = tsearch(s, db, name_cmp);
+    void *const vp = tsearch(s, db, name_cmp);
+    if (!vp)
+        return NULL;
 	return *(char **)vp;
 }
 #endif
@@ -323,7 +321,7 @@ str_db_sort(void *db, unsigned long n)
 	fprintf(debug, "->str_db_sort(n=%lu)\n", n);
 #endif
 	if (!n) {
-		goto ret;;
+        goto ret;
 	}
 
 	str_list = malloc(sizeof(char *) * n);
@@ -352,7 +350,8 @@ mk_str_list(struct bst_node *n)
 
 	mk_str_list(n->left);
 #if defined(TRACE)
-	fprintf(debug, "<>mk_str_list set [%u]\n", db_idx);
+    fprintf(debug, "<>mk_str_list set [%u]=%s\n",
+            db_idx, (char *)n->key.p);
 #endif
 	str_list[db_idx++] = n->key.p;
 	mk_str_list(n->right);
@@ -408,14 +407,11 @@ del_strs(struct bst_node *n)
 }
 #endif
 
-static int
-name_cmp(
 #ifdef HAVE_LIBAVLBST
-    union bst_val a, union bst_val b
+int name_cmp(union bst_val a, union bst_val b)
 #else
-    const void *a, const void *b
+static int name_cmp(const void *a, const void *b)
 #endif
-    )
 {
 #ifdef HAVE_LIBAVLBST
 	char *s1 = a.p,
@@ -916,7 +912,7 @@ diff_db_restore(struct ui_state *st)
 void
 diff_db_sort(int i)
 {
-	db_idx = 0;
+    db_idx = 0; /* shared with str_db */
 	maxsiz = 0;
 	maxmajor = 0;
 	maxminor = 0;

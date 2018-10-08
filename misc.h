@@ -9,7 +9,7 @@ extern "C" {
 
 int getuwidth(unsigned long);
 char *msgrealpath(const char *);
-bool str_eq_dotdot(const char *);
+bool str_eq_dotdot(const char *const);
 /*
  * Return base name from `buf`, leaving dir name in `buf`.
  * `buf` is modified, hence it is declared non-const.

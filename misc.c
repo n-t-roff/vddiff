@@ -49,7 +49,7 @@ msgrealpath(const char *p)
 }
 
 bool
-str_eq_dotdot(const char *s) {
+str_eq_dotdot(const char *const s) {
 	if (s && *s == '.' && s[1] == '.' && !s[2]) {
 		return TRUE;
 	}

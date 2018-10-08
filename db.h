@@ -17,6 +17,8 @@ struct scan_db {
 
 #ifdef HAVE_LIBAVLBST
 void db_init(void);
+void *db_new(int (*)(union bst_val, union bst_val));
+int name_cmp(union bst_val, union bst_val);
 #else
 struct ptr_db_ent {
     char *key;
@@ -24,8 +26,12 @@ struct ptr_db_ent {
 };
 #endif
 
+/****************
+ *  `char *` DB *
+ ****************/
+
 #ifdef HAVE_LIBAVLBST
-void str_db_add(void **, char *, int, struct bst_node *);
+int str_db_add(void **, char *, int, struct bst_node *);
 #else
 char *str_db_add(void **, char *);
 #endif
@@ -40,13 +46,16 @@ int str_db_srch(void **db, const char *const str,
                 char **node);
 #endif
 
+void str_db_del(void **, void *);
+void *str_db_get_node(void *);
 char **str_db_sort(void *, unsigned long);
+void free_strs(void **);
+
 void diff_db_add(struct filediff *, int);
 void diff_db_sort(int);
 void diff_db_restore(struct ui_state *);
 void diff_db_store(struct ui_state *);
 void diff_db_free(int);
-void free_strs(void **);
 void add_alias(char *const, char *, const tool_flags_t);
 void db_def_ext(char *const, char *, tool_flags_t);
 struct tool *db_srch_ext(char *);
@@ -56,12 +65,12 @@ char *str_tolower(char *);
 void uz_db_add(char *, enum uz_id);
 enum uz_id uz_db_srch(char *);
 void uz_db_del(char *);
+
 int ptr_db_add(void **, char *, void *);
 int ptr_db_srch(void **, char *, void **, void **);
 void ptr_db_del(void **, void *);
 void *ptr_db_get_node(void *);
-void str_db_del(void **, void *);
-void *str_db_get_node(void *);
+
 void push_scan_db(bool);
 void pop_scan_db(void);
 void free_scan_db(bool);
@@ -79,6 +88,9 @@ extern unsigned short majorlen[2], minorlen[2];
 extern size_t usrlen[2], grplen[2];
 extern short noequal, real_diff;
 extern void *scan_db;
+/* Use: UI dir diff: Every file found on left side is put into name_db
+ * to check if it is found on right side too or if there are supernumerary
+ * files in right side. */
 extern void *name_db;
 extern void *skipext_db;
 extern void *uz_path_db;

@@ -1171,9 +1171,15 @@ static int proc_dir(void)
     DIR *d;
     struct dirent *ent;
     char *name;
-    struct str_list *dirs = NULL;
     int rv = 0;
-
+    long dir_count = 0;
+    void *dir_db = NULL;
+#if defined (TRACE)
+    fprintf(debug, "->proc_dir(%s)\n", pth1);
+#endif
+#ifdef HAVE_LIBAVLBST
+    dir_db = db_new(name_cmp);
+#endif
     if (tree_op == TREE_CP && creatdir()) {
         rv = -1;
         goto ret;
@@ -1205,7 +1211,8 @@ static int proc_dir(void)
         name = ent->d_name;
 
         if (*name == '.' && (!name[1] || (name[1] == '.' &&
-                                          !name[2]))) {
+                                          !name[2])))
+        {
             continue;
         }
 
@@ -1234,10 +1241,23 @@ static int proc_dir(void)
         }
 
         if (S_ISDIR(gstat[0].st_mode)) {
-            struct str_list *se = malloc(sizeof(struct str_list));
-            se->s = strdup(name);
-            se->next = dirs;
-            dirs = se;
+            char *const name_copy = strdup(name);
+            if (!name_copy) {
+                rv = -1;
+                break;
+            }
+#ifdef HAVE_LIBAVLBST
+            if (str_db_add(&dir_db, name_copy, 0, NULL)) {
+                free(name_copy);
+                break;
+            }
+#else
+            if (!str_db_add(&dir_db, name_copy)) {
+                free(name_copy);
+                break;
+            }
+#endif
+            ++dir_count;
         } else if (tree_op == TREE_RM) {
             if (rm_file() < 0)
                 rv = -1;
@@ -1251,25 +1271,24 @@ static int proc_dir(void)
     closedir(d);
     pth1[len1] = 0;
 
-    if (tree_op == TREE_NOT_EMPTY) {
-        goto ret;
-    }
+    if (tree_op == TREE_NOT_EMPTY)
+        goto ret; /* DB not used in this case */
 
     if (tree_op == TREE_CP) {
         pth2[len2] = 0;
     }
-
-    while (dirs) {
+    char **const dirs = str_db_sort(dir_db,
+                                    (unsigned long)dir_count);
+    int i;
+    for (i = 0; i < dir_count; ++i) {
         size_t l1, l2 = 0 /* silence warning */;
-        struct str_list *p;
-
         if (!fs_error && !fs_abort) {
             l1 = len1;
-            len1 = pthcat(pth1, len1, dirs->s);
+            len1 = pthcat(pth1, len1, dirs[i]);
 
             if (tree_op == TREE_CP) {
                 l2 = len2;
-                len2 = pthcat(pth2, len2, dirs->s);
+                len2 = pthcat(pth2, len2, dirs[i]);
             }
 
             if (proc_dir() < 0)
@@ -1279,13 +1298,12 @@ static int proc_dir(void)
             if (tree_op == TREE_CP)
                 pth2[(len2 = l2)] = 0;
         }
-
-        free(dirs->s);
-        p = dirs;
-        dirs = dirs->next;
-        free(p);
     }
-
+    free(dirs);
+    free_strs(&dir_db);
+#ifdef HAVE_LIBAVLBST
+    free(dir_db);
+#endif
     if (tree_op == TREE_RM && rm_dir() < 0)
         rv = -1;
 ret:
