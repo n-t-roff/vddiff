@@ -55,6 +55,7 @@ static ssize_t dlg_read(int fd, void *buf, size_t count,
 
 static char *last_path;
 off_t tot_cmp_byte_count;
+/* -A, -D, -F, -G, -q, -T, -x */
 long tot_cmp_file_count;
 short followlinks;
 bool one_scan;
@@ -141,7 +142,7 @@ inline static int left_dir_scan_mode(const char *const name,
 
         if (find_dir_name) { /* -x */
             if (find_dir_name_only)
-                ++tot_cmp_file_count;
+                ++tot_cmp_file_count; /* -x */
             if (!regexec(&find_dir_name_regex, name, 0, NULL, 0)) {
 #if defined(TRACE) && 1
                 fprintf(debug, "  dir_diff: find_dir: %s\n", name);
@@ -173,7 +174,7 @@ inline static int left_dir_scan_mode(const char *const name,
 
     if (find_name) { /* -F ("find(1)") */
         if (!gq_pattern)
-            ++tot_cmp_file_count;
+            ++tot_cmp_file_count; /* -F */
         if (regexec(&fn_re, name, 0, NULL, 0)) {
             /* no match */
             retval |= 16;
@@ -271,7 +272,7 @@ inline static int left_dir_scan_mode(const char *const name,
          (S_ISFIFO(gstat[0].st_mode) &&
           S_ISFIFO(gstat[1].st_mode))))
     {
-        ++tot_cmp_file_count;
+        ++tot_cmp_file_count; /* FIFO, socket: -q */
         retval |= 0x10;
         goto func_return;
     }
@@ -283,7 +284,7 @@ inline static int left_dir_scan_mode(const char *const name,
         if (gstat[0].st_rdev ==
             gstat[1].st_rdev)
         {
-            ++tot_cmp_file_count;
+            ++tot_cmp_file_count; /* BLK, CHR: -q */
         } else {
             retval |= 1;
             if (qdiff) {
@@ -876,7 +877,7 @@ exit:
 int file_grep(const char *const name)
 {
     int return_value = 1;
-    ++tot_cmp_file_count;
+    ++tot_cmp_file_count; /* -G */
     struct filediff *diff = alloc_diff(name);
     diff->type[0] = gstat[0].st_mode;
     diff->type[1] = gstat[1].st_mode;
@@ -1246,7 +1247,7 @@ int cmp_symlink(char **a, char **b) {
             } else {
                 /* Count successfully compared links only. */
                 if (fs_op != fs_op_cp) {
-                    ++tot_cmp_file_count;
+                    ++tot_cmp_file_count; /* Link: -A, -q, -T */
                     tot_cmp_byte_count += gstat[0].st_size;
                 }
 
@@ -1347,7 +1348,7 @@ int cmp_file(
     /* Count really and successfully compared files only,
      * not zero size files, nor different files. */
     if (!rv && qdiff) {
-        ++tot_cmp_file_count;
+        ++tot_cmp_file_count; /* File: -A, -q, -T */
 
         if (verbose)
             printf("Equal files: \"%s\" and \"%s\"\n",

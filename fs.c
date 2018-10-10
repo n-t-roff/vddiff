@@ -542,6 +542,11 @@ int fs_rm(int tree, const char *const txt, char *nam, long u, int n,
 	if (fs_ro()) {
 		return 0;
 	}
+    if (!fs_op_depth++) {
+        fs_start_time = time(NULL);
+        tot_cmp_byte_count = 0;
+        tot_cmp_file_count = 0;
+    }
 
 #if defined(TRACE)
 	TRCPTH;
@@ -779,7 +784,7 @@ free_mem:
 	if (fs_ign_errs) {
 		rv |= 4;
 	}
-
+    --fs_op_depth;
 #if defined(TRACE)
 	fprintf(debug, "<-fs_rm: 0x%x\n", rv);
 #endif
@@ -1301,12 +1306,12 @@ static int proc_dir(void)
     }
     free(dirs);
     free_strs(&dir_db);
-#ifdef HAVE_LIBAVLBST
-    free(dir_db);
-#endif
     if (tree_op == TREE_RM && rm_dir() < 0)
         rv = -1;
 ret:
+#ifdef HAVE_LIBAVLBST
+    free(dir_db);
+#endif
     if (exit_on_error && rv < 0)
         fs_abort = TRUE;
     return rv;
@@ -1357,7 +1362,7 @@ int rm_file(void)
 
             if (fs_op != fs_op_cp) { /* not cli_cp overwrite */
                 tot_cmp_byte_count += gstat[0].st_size;
-                ++tot_cmp_file_count;
+                ++tot_cmp_file_count; /* -A, -D, -T */
             }
         }
     }
@@ -1406,7 +1411,7 @@ inline static int cp_special(void) {
         ret_val = -1;
         goto function_return;
     }
-    ++tot_cmp_file_count;
+    ++tot_cmp_file_count; /* -A, -T */
     if (preserve_all)
         cp_link_attr(); /* Fits here too. */
 function_return:
@@ -1638,7 +1643,7 @@ cp_link(void)
             cp_link_attr();
 
         tot_cmp_byte_count += l;
-        ++tot_cmp_file_count;
+        ++tot_cmp_file_count; /* -A, -T */
         if (!wstat && verbose)
             printf("Symbolic link copy \"%s\" -> \"%s\" done\n", pth1, pth2);
     }
@@ -1856,7 +1861,7 @@ int cp_reg(const unsigned mode) {
         }
         cp_reg_copy_loop(f1, f2);
         close(f1);
-        ++tot_cmp_file_count;
+        ++tot_cmp_file_count; /* -A, -T */
     }
     cp_reg_set_attr(f2);
 close2:
