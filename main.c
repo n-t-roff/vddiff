@@ -109,6 +109,7 @@ bool find_dir_name_only;
 bool exit_on_error;
 #ifdef DEBUG
 static bool tmp_dir_check;
+static bool skip_tmp_dir_check;
 #endif
 
 #if defined(TRACE) && defined(DEBUG)
@@ -138,6 +139,10 @@ main(int argc, char **argv)
 	prog = *argv;
 	setlocale(LC_ALL, "");
 #ifdef DEBUG
+    if (argc > 1 && !strcmp(argv[1], "-Z")) {
+        skip_tmp_dir_check = TRUE;
+        argc--; argv++;
+    }
     tmp_dir_check = !(argc < 3 ||
                       strcmp(argv[1], "-u") ||
                       strcmp(argv[2], "-S") ||
@@ -178,7 +183,7 @@ main(int argc, char **argv)
 		return 1;
 	}
 #if defined(DEBUG)
-    if (!tmp_dir_check)
+    if (!tmp_dir_check && !skip_tmp_dir_check)
         check_tmp_dir_left();
 #endif
 
@@ -211,7 +216,12 @@ main(int argc, char **argv)
 
     while ((opt =
             getopt(argc, argv,
-                   "AaBbCcDdEeF:fG:gIikLlMmNnOoP:pQqRrSsTt:UuVv:WXx:Yy")
+                   /* HhJjKwZz */
+                   "AaBbCcDdEeF:fG:gIikLlMmNnOoP:pQqRrSsTt:UuVv:WXx:Yy"
+#if defined (DEBUG)
+                   "Z"
+#endif
+                   )
             ) != -1)
     {
 		switch (opt) {
@@ -412,6 +422,8 @@ main(int argc, char **argv)
 			break;
 
 		default:
+            if (opt != '?')
+                fprintf(stderr, "%s: Internal error for option %c\n", prog, opt);
             exit(EXIT_STATUS_ERROR);
 		}
 	}
@@ -666,7 +678,8 @@ rmtmp:
 #endif
 	}
 #if defined(DEBUG)
-    if (!(bmode && cli_mode))
+    if (!(bmode && cli_mode) /* ??? */
+            && !skip_tmp_dir_check)
         check_tmp_dir_left();
 #endif
     return exit_status;
