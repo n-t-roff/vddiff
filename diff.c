@@ -452,7 +452,7 @@ inline static int scan_left_dir(const int tree, struct scan_dir **const dirs) {
 
 no_tree2:
             if (qdiff) {
-                if (nosingle)
+                if (nosingle  & 1)
                     continue;
                 syspth[0][pthlen[0]] = 0;
                 printf("Only in %s: %s\n", syspth[0], name);
@@ -596,7 +596,7 @@ inline static int scan_right_dir(const int tree, struct scan_dir **const dirs) {
         }
 
         if (qdiff) {
-            if (nosingle)
+            if (nosingle & 2)
                 continue;
             syspth[1][pthlen[1]] = 0;
             printf("Only in %s: %s\n", syspth[1], name);

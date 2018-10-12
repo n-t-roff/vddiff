@@ -13,7 +13,7 @@ LOSS OF USE, DATA OR PROFITS, WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE OR
 OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
 PERFORMANCE OF THIS SOFTWARE.
 ..
-.Dd October 4, 2018
+.Dd October 12, 2018
 .Dt VDDIFF 1
 .Sh NAME
 .Nm @vddiff@
@@ -278,6 +278,7 @@ command.
 .It Fl f
 Normally directories are displayed on top.
 With this option files are displayed first.
+.
 .It Fl G Ar pattern
 Display only files which contain
 .Ar pattern
@@ -352,6 +353,13 @@ Use
 as diff tool and
 .Dq Li gvim -R
 as view tool.
+.
+.It Fl H Ar n
+.Dq Fl H Li 1 :
+Ignore missing files on left side,
+.Dq Fl H Li 2 :
+Ignore missing files on right side.
+.
 .It Fl I
 Use case-sensitive pattern match.
 .It Fl i

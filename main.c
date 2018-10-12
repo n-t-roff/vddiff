@@ -216,8 +216,8 @@ main(int argc, char **argv)
 
     while ((opt =
             getopt(argc, argv,
-                   /* HhJjKwZz */
-                   "AaBbCcDdEeF:fG:gIikLlMmNnOoP:pQqRrSsTt:UuVv:WXx:Yy"
+                   /* hJjKwz */
+                   "AaBbCcDdEeF:fG:gH:IikLlMmNnOoP:pQqRrSsTt:UuVv:WXx:Yy"
 #if defined (DEBUG)
                    "Z"
 #endif
@@ -284,7 +284,14 @@ main(int argc, char **argv)
 			set_tool(&difftool, strdup("gvim -dR"), 0);
 			set_tool(&viewtool, strdup("gvim -R"), 0);
 			break;
-		case 'I':
+        case 'H':
+            if (*optarg < '0' || *optarg > '3' || optarg[1]) {
+                fprintf(stderr, "%s: -H argument not in range 0...3\n", prog);
+                return EXIT_STATUS_ERROR;
+            }
+            nosingle = *optarg - '0';
+            break;
+        case 'I':
 			noic = 1; /* don't ignore case */
 			break;
 		case 'i':
