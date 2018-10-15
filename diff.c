@@ -1235,7 +1235,7 @@ int cmp_symlink(char **a, char **b) {
     if (gstat[0].st_size != gstat[1].st_size) {
         return_value |= 1;
 
-    } else if (gstat[0].st_size) {
+    } else if (!dontcmp && gstat[0].st_size) {
         if (!(*a = read_link(syspth[0], gstat[0].st_size))) {
             return_value |= 2;
 
@@ -1310,7 +1310,7 @@ int cmp_file(
     int rv = 0;
 
 #if defined(TRACE) && (defined(TEST) || 1)
-	fprintf(debug, "->cmp_file(name1=%s size1=%ju name2=%s size2=%ju mode=%u)\n",
+    fprintf(debug, "->cmp_file(lpth=%s lsiz=%ju rpth=%s rsiz=%ju md=%u)\n",
 		lpth, (intmax_t)lsiz, rpth, (intmax_t)rsiz, md);
 #endif
 
