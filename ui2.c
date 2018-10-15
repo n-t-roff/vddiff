@@ -1571,27 +1571,33 @@ set_def_mouse_msk(void)
 int
 ui_cp(int t, long u, unsigned short num, unsigned md)
 {
-	unsigned sto;
+    unsigned sto = 0;
+    int ret_val = 0;
+    fs_start_time = time(NULL);
+    fs_op = fs_op_cp;
+    tot_cmp_byte_count = 0;
+    tot_cmp_file_count = 0;
 
 	if (mmrkd[right_col]) {
 		if (dialog(y_n_txt, NULL,
 		    "Really copy %d files?",
 		    mmrkd[right_col]) != 'y') {
-			return 1;
+            ret_val = 1;
+            goto ret;
 		}
-
 		while ((u = get_mmrk()) >= 0) {
 			fs_cp(t, u, 1, md | 5, &sto);
 		}
-
 		rebuild_db(
 		    !fmode || !sto || sto == 3 || (md & (16 | 32))
 		    ? 0 : sto << 1);
-		return 1;
+        ret_val = 1;
+        goto ret;
 	}
-
 	fs_cp(t, u, num, md, NULL);
-	return 0;
+ret:
+    fs_op = fs_op_none;
+    return ret_val;
 }
 
 /* Only called on 'T' */
@@ -1612,6 +1618,11 @@ ui_mv(int dst, long u, unsigned short num)
 			return multi;
 		}
 	}
+    int ret_val = 0;
+    fs_start_time = time(NULL);
+    fs_op = fs_op_cp;
+    tot_cmp_byte_count = 0;
+    tot_cmp_file_count = 0;
 
 	if (mmrkd[right_col]) {
 		int fs_retval_ = 0;
@@ -1619,49 +1630,52 @@ ui_mv(int dst, long u, unsigned short num)
 		if (dialog(y_n_txt, NULL,
 		    "Really move %d files?",
 		    mmrkd[right_col]) != 'y') {
-			return 1;
+            ret_val = 1;
+            goto ret;
 		}
-
 		while ((u = get_mmrk()) >= 0 &&
 		    !((fs_retval_ = fs_cp(dst, u, 1,
 		    16 /* move */ | 5 | (fs_retval_ & 2 ? 0x40 : 0), NULL))
 		    /* Don't break loop on "ignore error" */
 		    & ~2))
-		{
-		}
-
+        {}
 		rebuild_db(0);
-		return 1;
+        ret_val = 1;
+        goto ret;
 	}
-
 	fs_cp(dst, u, num, 16 /* move */, NULL);
-	return 0;
+ret:
+    return ret_val;
 }
 
 int
 ui_dd(int t, long u, unsigned short num)
 {
-	if (mmrkd[right_col]) {
+    int ret_val = 0;
+    fs_start_time = time(NULL);
+    tot_cmp_byte_count = 0;
+    tot_cmp_file_count = 0;
+
+    if (mmrkd[right_col]) {
 		int fs_retval_ = 0;
 
 		if (dialog(y_n_txt, NULL,
 		    "Really delete %d files?",
 		    mmrkd[right_col]) != 'y') {
-			return 1;
+            ret_val = 1;
+            goto ret;
 		}
-
 		while ((u = get_mmrk()) >= 0 &&
 		    !((fs_retval_ = fs_rm(t, NULL, NULL, u, 1,
 		    (fs_retval_ & 4 ? 8 : 0) | 3)) & ~4))
-		{
-		}
-
+        {}
 		rebuild_db(0);
-		return 1;
+        ret_val = 1;
+        goto ret;
 	}
-
 	fs_rm(t, NULL, NULL, u, num, 0);
-	return 0;
+ret:
+    return ret_val;
 }
 
 int

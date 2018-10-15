@@ -86,10 +86,9 @@ static int fs_deldialog(const char *menu, const char *op, const char *typ,
 static int fs_testBreak(void);
 
 time_t fs_t1, fs_t2;
-static time_t fs_start_time;
+time_t fs_start_time;
 char *pth1, *pth2;
 static size_t len1, len2;
-static int fs_op_depth;
 enum fs_op fs_op;
 
 static enum {
@@ -542,11 +541,6 @@ int fs_rm(int tree, const char *const txt, char *nam, long u, int n,
 	if (fs_ro()) {
 		return 0;
 	}
-    if (!fs_op_depth++) {
-        fs_start_time = time(NULL);
-        tot_cmp_byte_count = 0;
-        tot_cmp_file_count = 0;
-    }
 
 #if defined(TRACE)
 	TRCPTH;
@@ -784,7 +778,6 @@ free_mem:
 	if (fs_ign_errs) {
 		rv |= 4;
 	}
-    --fs_op_depth;
 #if defined(TRACE)
 	fprintf(debug, "<-fs_rm: 0x%x\n", rv);
 #endif
@@ -803,12 +796,6 @@ int fs_cp(int to, long u, int n, unsigned md, unsigned *sto_res_)
     bool m = FALSE;
 	bool chg = FALSE;
 	bool ofs = FALSE;
-    if (!fs_op_depth++) {
-        fs_start_time = time(NULL);
-        fs_op = fs_op_cp;
-        tot_cmp_byte_count = 0;
-        tot_cmp_file_count = 0;
-    }
 
 #if defined(TRACE)
 	fprintf(debug, "->fs_cp(to=%d u=%ld n=%d md=0x%x)\n",
@@ -1036,8 +1023,6 @@ ret0:
 	if (sto_res_) {
 		*sto_res_ = sto;
 	}
-    if (!--fs_op_depth)
-        fs_op = fs_op_none;
 #if defined(TRACE)
 	fprintf(debug, "<-fs_cp: 0x%x\n", r);
 #endif

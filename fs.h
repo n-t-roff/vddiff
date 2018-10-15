@@ -72,6 +72,7 @@ int fs_get_dst(long, unsigned);
 int fs_any_dst(long, int, unsigned);
 
 extern enum fs_op fs_op;
+extern time_t fs_start_time;
 extern bool fs_none; /* Don't delete or overwrite any file */
 extern bool fs_abort; /* Abort operation */
 extern bool preserve_mtim;
