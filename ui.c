@@ -597,7 +597,7 @@ next_key:
 
 			/* fall through */
 		case 'f':
-			if (num && num <= FKEY_MUX_NUM) {
+            if (ns && num && num <= FKEY_MUX_NUM) {
 				c = 0;
 				fkey_set = num - 1;
                 printerr(NULL, "Funktion key set %d selected", num);
