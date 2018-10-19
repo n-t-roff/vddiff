@@ -22,7 +22,6 @@ PERFORMANCE OF THIS SOFTWARE.
 #include <time.h>
 #include <ctype.h>
 #include <errno.h>
-#include <time.h>
 #include <signal.h>
 #ifdef USE_SYS_SYSMACROS_H
 # include <sys/sysmacros.h>

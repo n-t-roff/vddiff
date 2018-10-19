@@ -23,6 +23,7 @@ PERFORMANCE OF THIS SOFTWARE.
 #include <ctype.h>
 #include <stdarg.h>
 #include <signal.h>
+#include <time.h>
 #include "ed.h"
 #include "ui.h"
 #include "exec.h"
