@@ -4396,7 +4396,7 @@ vdialog(const char *quest, const char *answ, const char *fmt, va_list ap)
              * and the call vdialog(). */
             werase(wstat);
             wmove(wstat, 0, 0);
-            vwprintw(wstat, fmt, ap);
+            vw_printw(wstat, fmt, ap);
         }
 
         mvwprintw(wstat, 1, 0, "%s", quest);

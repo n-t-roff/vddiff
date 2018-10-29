@@ -13,7 +13,7 @@ LOSS OF USE, DATA OR PROFITS, WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE OR
 OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
 PERFORMANCE OF THIS SOFTWARE.
 ..
-.Dd October 12, 2018
+.Dd October 29, 2018
 .Dt VDDIFF 1
 .Sh NAME
 .Nm @vddiff@
@@ -1128,6 +1128,7 @@ are compared directly.
 Handling of compressed files is implemented redundant
 and should be tested separately.
 .end_comment
+.
 .It Sq Li y
 Copy file path(s) to edit line.
 If a
@@ -1136,8 +1137,15 @@ command is entered later, this file path can be used
 to build a
 .Xr sh 1
 command.
+.Pp
+To use multiple paths in bmode or fmode
+.Sq Li y
+can be used multiple times before pressing
+.Sq Li $ .
+.
 .It Sq Li Y
 Copy file paths to edit line in reverse order.
+.
 .It Sq Li $
 Enter shell command.
 If paths had been copied to the edit line before using the
