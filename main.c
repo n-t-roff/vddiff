@@ -653,8 +653,10 @@ main(int argc, char **argv)
                 printf("%'ld directories processed\n", tot_cmp_file_count);
             else if (tot_cmp_file_count) {
                 printf("%'ld files ", tot_cmp_file_count);
+
                 if (tot_cmp_byte_count)
-                    printf("(%'jd bytes) \n", (intmax_t)tot_cmp_byte_count);
+                    printf("(%'jd bytes) ", (intmax_t)tot_cmp_byte_count);
+
                 printf("%s\n", qdiff ? "compared" :
                                cli_mv ? "moved" :
                                cli_cp ? "copied" :
