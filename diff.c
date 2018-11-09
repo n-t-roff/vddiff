@@ -66,7 +66,9 @@ static bool ign_diff_errs;
 static DIR *open_scan_dir(const char *const path) {
     DIR *d = opendir(path);
     if (!d) {
-        if (!ign_diff_errs &&
+        if (!bmode && !fmode && errno == ENOENT) {
+            /* We are in diff mode. Ignore error. Predent empty directory. */
+        } else if (!ign_diff_errs &&
                 dialog(ign_txt, NULL, "opendir \"%s\": %s",
                        path, strerror(errno))
                 == 'i')
@@ -353,7 +355,9 @@ inline static int scan_left_dir(const int tree, struct scan_dir **const dirs) {
 #endif
     DIR *d = open_scan_dir(syspth[0]);
     if (!d) {
-        retval |= 4|2;
+        if (bmode || fmode)
+            retval |= 4|2;
+
         goto func_return;
     }
 
@@ -571,7 +575,9 @@ inline static int scan_right_dir(const int tree, struct scan_dir **const dirs) {
 #endif
     DIR *d = open_scan_dir(syspth[1]);
     if (!d) {
-        retval |= 4|2;
+        if (bmode || fmode)
+            retval |= 4|2;
+
         goto func_return;
     }
 

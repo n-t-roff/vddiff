@@ -2095,10 +2095,10 @@ action(
 	static const char *const typerr = "Not a directory or regular file";
 	static const char *const typdif = "Different file type";
 	mode_t typ[2];
-	bool diff_act_ = !bmode && !fmode && tree == 3 && (mode & 1);
-	bool exec_act_ = file_exec && !(mode & 8) && !(mode & 2) &&
+    const bool diff_act_ = !bmode && !fmode && tree == 3 && (mode & 1);
+    const bool exec_act_ = file_exec && !(mode & 8) && !(mode & 2) &&
 	    (bmode || fmode) && (mode & 1);
-	bool force_tool_ =
+    const bool force_tool_ =
 	    /* Always in 'o' (open) mode */
 	    (mode & 4) ||
 	    /* In browse mode also ENTER is sufficient */
@@ -2245,6 +2245,7 @@ action(
 					setpthofs(2, f->name, z2->name);
 				}
 
+                /* Used in diff mode when both directories are present */
 				enter_dir(lnam             , rnam,
 				          z1 ? TRUE : FALSE, z2 ? TRUE : FALSE,
 					  tree LOCVAR);
@@ -2283,7 +2284,8 @@ action(
 				setpthofs(1, f->name, z2->name);
 			}
 
-			enter_dir(diff_act_ ? "" : NULL, f2->name,
+            /* Used in diff mode when only right dir is present */
+            enter_dir(diff_act_ ? f2->name : NULL, f2->name,
 			          FALSE, z2 ? TRUE : FALSE, 0 LOCVAR);
 		} else {
 			err = typerr;
@@ -2304,7 +2306,8 @@ action(
 				setpthofs(bmode ? 1 : 0, f->name, z1->name);
 			}
 
-			enter_dir(f1->name, diff_act_ ? "" : NULL,
+            /* Used in diff mode when only left dir is present */
+            enter_dir(f1->name, diff_act_ ? f1->name : NULL,
 			          z1 ? TRUE : FALSE, FALSE, 0 LOCVAR);
 		} else {
 			err = typerr;

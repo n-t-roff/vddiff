@@ -1808,6 +1808,8 @@ int cp_reg(const unsigned mode) {
     fprintf(debug, "->cp_reg(mode=%x) pth1=\"%s\" pth2=\"%s\"\n", mode, pth1, pth2);
 #endif
     int rv = 0; /* return value. must only be set in code. Clearing rv may hide errors. */
+    char *pth2_dir = NULL;
+
     if (fs_stat(pth2, &gstat[1], 0)) {
         if (errno != ENOENT && exit_on_error) {
             rv = -1;
@@ -1829,10 +1831,36 @@ int cp_reg(const unsigned mode) {
             goto ret;
         }
 	} /* if (!fs_stat(pth2)) */
+
+open_pth2:
+    ; /* C bug? */
     const int fl = mode & 1 ? O_APPEND | O_WRONLY :
                               O_CREAT | O_TRUNC | O_WRONLY ;
     const int f2 = open(pth2, fl, gstat[0].st_mode & 07777);
     if (f2 == -1) {
+        if (!pth2_dir && !bmode && !fmode && errno == ENOENT) {
+            pth2_dir = strdup(pth2);
+            size_t l = 0;
+
+            for (; pth2_dir[l]; ++l) {
+                if (l && pth2_dir[l] == '/') {
+                    pth2_dir[l] = 0;
+
+                    if (lstat(pth2_dir, &gstat[1])) {
+#if defined (TRACE)
+                        fprintf(debug, "  try to create %s\n", pth2_dir);
+#endif
+                        if (mkdir(pth2_dir, 0777))
+                            break;
+                    }
+
+                    pth2_dir[l] = '/';
+                }
+            }
+
+            goto open_pth2;
+        }
+
         printerr(strerror(errno), LOCFMT "create \"%s\"" LOCVAR, pth2);
 		rv = -1;
         goto ret;
@@ -1855,6 +1883,8 @@ close2:
         printf("File copy \"%s\" -> \"%s\" done\n", pth1, pth2);
     }
 ret:
+    free(pth2_dir);
+
     if (exit_on_error && rv < 0)
         fs_abort = TRUE;
 #if defined(TRACE)
