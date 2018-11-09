@@ -248,7 +248,8 @@ void
 rmtmpdirs(const char *const s)
 {
 #if defined(TRACE) && 1
-	fprintf(debug, "->rmtmpdirs(%s)\n", s);
+    fprintf(debug, "->rmtmpdirs(%s) lpth=%s rpth=%s\n",
+            s, syspth[0], syspth[1]);
 #endif
     char *const syspth_copy = strdup(syspth[0]);
     memcpy(syspth[0], s, strlen(s) + 1);

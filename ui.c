@@ -4132,7 +4132,9 @@ enter_dir(const char *name, const char *rnam, bool lzip, bool rzip, short tree
 		bpth = malloc(sizeof(struct bpth));
 		bpth->pth = strdup(cp);
 
-		if (!bmode) {
+        if (bmode) {
+            bpth->col = -1;
+        } else {
 			bpth->col = right_col;
 			*lp = 0;
 			*cp = 0;
@@ -4140,29 +4142,40 @@ enter_dir(const char *name, const char *rnam, bool lzip, bool rzip, short tree
 
 		ptr_db_add(&uz_path_db, strdup(name), bpth);
 
-	} else if (name && *name == '.' && name[1] == '.' && !name[2] &&
-	    !ptr_db_srch(&uz_path_db, cp, (void **)&bpth,
-	    (void **)&n)) {
-
+    } else if (str_eq_dotdot(name) &&
+               !ptr_db_srch(&uz_path_db, cp, (void **)&bpth, (void **)&n))
+    {
 		name = bpth->pth; /* dat */
-
-		if (!bmode) {
-			size_t l;
-
-			l = strlen(name);
-			memcpy(syspth[bpth->col], name, l+1);
-			pthlen[bpth->col] = l;
-            free(const_cast_ptr(name));
-			name = NULL;
-		}
-
-		free(bpth);
 #ifdef HAVE_LIBAVLBST
-		rnam = n->key.p;
+        rnam = n->key.p;
 #else
-		rnam = n->key;
+        rnam = n->key;
 #endif
-		ptr_db_del(&uz_path_db, n);
+        const size_t rl = strlen(rnam);
+
+        if (    !strncmp(rnam, syspth[0], rl) ||
+                !strncmp(rnam, syspth[1], rl))
+            n = NULL;
+
+        if (!bmode) {
+            const int col = bpth->col != -1 ? bpth->col : right_col;
+            const size_t l = strlen(name);
+            memcpy(syspth[col], name, l+1);
+            pthlen[col] = l;
+
+            if (n)
+                free(const_cast_ptr(name));
+            // else {
+            //  TODO: reset path offset
+            // }
+
+            name = NULL;
+        }
+
+        if (n) {
+            free(bpth);
+            ptr_db_del(&uz_path_db, n);
+        }
 	} else {
 		/* DON'T REMOVE! (Cause currently unclear) */
 		n = NULL;
@@ -4197,18 +4210,19 @@ enter_dir(const char *name, const char *rnam, bool lzip, bool rzip, short tree
 	}
 
 	if (n) {
-        size_t l;
         /* `rnam` is const but modified below */
         char *s = const_cast_ptr(rnam);
 
-        l = strlen(s);
+        size_t l = strlen(s);
 
         if (gl_mark && !strncmp(s, gl_mark, l))
 			clr_mark();
 
-        s[l - 2] = 0; /* remove "/[lr]" */
+        l -= 2;
+        s[l] = 0; /* remove "/[lr]" */
+
         rmtmpdirs(s); /* does free(rnam) */
-		respthofs(bmode || right_col ? 1 : 0);
+        respthofs(bmode || right_col ? 1 : 0);
 
 		if (bmode)
             free(const_cast_ptr(name)); /* dat */
