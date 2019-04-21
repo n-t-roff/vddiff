@@ -10,9 +10,9 @@ INCDIR = $(PREFIX)/include
 LIBDIR = $(PREFIX)/lib
 TEST_DIR = .TMP_TEST_DIR
 
-TRACE = #-DTRACE='"/tmp/.$(BIN)_trace_"'
-DEBUG = #-DDEBUG #-std=c99 -D_XOPEN_SOURCE=700 #-DUNIMP
-STRP = -s
+TRACE = -DTRACE='"/tmp/.$(BIN)_trace_"'
+DEBUG = -DDEBUG #-std=c99 -D_XOPEN_SOURCE=700 #-DUNIMP
+STRP = #-s
 
 OBJ = \
 	main.o pars.o lex.o diff.o ui.o db.o exec.o fs.o ed.o uzp.o \
