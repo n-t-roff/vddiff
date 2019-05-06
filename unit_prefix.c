@@ -34,7 +34,7 @@ static int unit_prefix(char *const buf, const size_t bufsiz,
         else
             return fprintf(file_ptr, "%'jd", value);
     }
-    const double pw = (mode & UnitPrefix.decimal) ? 1000 : 1024;
+    const double pw = (mode & UnitPrefix.decimal) ? 1000.0 : 1024.0;
     const double thr = 999.9;
     double f = value / pw;
     const char *unit = "K";
@@ -53,13 +53,13 @@ static int unit_prefix(char *const buf, const size_t bufsiz,
     }
     const char *const space = (mode & UnitPrefix.space) ? " " : "";
 
-    if (f > -10 && f < 10) {
+    if (f >= -9.9 && f <= 9.9) {
         if (buf)
             return snprintf(buf, bufsiz, "%.1f%s%s", f, space, unit);
         else
             return fprintf(file_ptr, "%.1f%s%s", f, space, unit);
     }
-    if (f < 0)
+    if (f < 0.0)
         f -= .5;
     else
         f += .5;

@@ -3501,8 +3501,8 @@ size_t getfilesize(char *buf, size_t bufsiz, off_t size,
 		}
 	}
 
-	if (f < 10) {
-		return snprintf(buf, bufsiz, "%.1f%s", f, unit);
+    if (f <= 9.9) {
+        return snprintf(buf, bufsiz, "%.1f%s", f, unit);
 	} else {
 		return snprintf(buf, bufsiz, "%.0f%s", f+.5, unit);
 	}
