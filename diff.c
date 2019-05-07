@@ -106,7 +106,7 @@ static bool is_dot_file(const char *const name) {
 
 static void set_diff_item(struct filediff *const diff, short i, off_t lsize) {
 #if defined(TRACE) && 1
-    fprintf(debug, "  found %d 0%o \"%s\"\n", i, gstat[i].st_mode, syspth[i]);
+    fprintf(debug, "  set_diff_item() found %d 0%o \"%s\"\n", i, gstat[i].st_mode, syspth[i]);
 #endif
     diff->uid[i] = gstat[i].st_uid;
     diff->gid[i] = gstat[i].st_gid;
@@ -560,8 +560,8 @@ db_add_file:
     } /* readdir() loop */
 
     closedir(d);
-    syspth[0][pthlen[0]] = 0;
 func_return:
+    syspth[0][pthlen[0]] = 0;
     return retval;
 }
 
@@ -718,6 +718,7 @@ inline static int scan_right_dir(const int tree, struct scan_dir **const dirs) {
 
     closedir(d);
 func_return:
+    syspth[1][pthlen[1]] = 0;
     return retval;
 }
 

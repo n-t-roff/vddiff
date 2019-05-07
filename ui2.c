@@ -1443,7 +1443,7 @@ putwcs(WINDOW *w, wchar_t *s,
 }
 
 ssize_t putmbs(WINDOW *w, const char *const s, int n) {
-#if defined(TRACE)
+#if defined(TRACE) && 0
     fprintf(debug, "->putmbs(\"%s\" avail_width=%d)\n", s, n);
 #endif
     ssize_t l;
@@ -1459,7 +1459,7 @@ ssize_t putmbs(WINDOW *w, const char *const s, int n) {
     if (wadd_wchnstr(w, ccbuf, n) == ERR)
         l = -1;
 ret:
-#if defined(TRACE)
+#if defined(TRACE) && 0
     fprintf(debug, "<-putmbs l=%zu\n", l);
 #endif
     return l;
