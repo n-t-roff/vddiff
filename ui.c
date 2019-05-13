@@ -3296,7 +3296,7 @@ file_stat(struct filediff *f, struct filediff *f2)
 
 	if (S_ISLNK(ltyp)) {
 		wmove(wstat, yl, x);
-		addmbs(wstat, "-> ", mx1);
+        addmbs(wstat, "-> ", mx1);
         putmbsra(wstat, f->link[0], mx1);
 		ltyp = 0;
 	}

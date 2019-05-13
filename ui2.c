@@ -1468,27 +1468,45 @@ ret:
 int
 addmbs(WINDOW *w, const char *const s, int mx)
 {
+#   if defined (TRACE) && 0
+    fprintf(debug, "  addmbs(\"%s\", mx=%d)\n", s, mx);
+#   endif
     int cy, cx, my;
 
     getyx(w, cy, cx);
 
-    int avail_width;
-    if (!mx) {
-        avail_width = -1; /* wadd_wchnstr does the work */
+    if (!mx)
         getmaxyx(w, my, mx);
-    } else
-        avail_width = mx - cx;
 
+    int avail_width = mx - cx;
     (void)my;
 
     if (cx >= mx)
+    {
+#       if defined (TRACE)
+        fprintf(debug, "  addmbs: cx >= mx\n");
+#       endif
         return -2; /* Not really an error */
+    }
 
     const ssize_t l = putmbs(w, s, avail_width);
     if (l < 0)
+    {
+#       if defined (TRACE)
+        fprintf(debug, "  addmbs: l < 0\n");
+#       endif
         return -1;
-    if (l >= avail_width)
+    }
+
+    if (l > avail_width)
+    {
+#       if defined (TRACE)
+        fprintf(debug,
+                "  addmbs: mx=%d l=%zd > avail_width=%d\n",
+                mx, l, avail_width);
+#       endif
         return -3;
+    }
 
     cx += l;
 
