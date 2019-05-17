@@ -65,7 +65,8 @@ const char *tmpdirbase;
 static struct uz_ext exttab[] = {
 	{ "bz2"    , UZ_BZ2 },
 	{ "gz"     , UZ_GZ  },
-	{ "ods"    , UZ_ZIP },
+    { "jar"    , UZ_ZIP },
+    { "ods"    , UZ_ZIP },
 	{ "odt"    , UZ_ZIP },
 	{ "pptx"   , UZ_ZIP },
 	{ "tar"    , UZ_TAR },
