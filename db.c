@@ -1207,6 +1207,17 @@ diff_cmp(
         const int i = strcmp(lbuf, rbuf);
         if (i)
             return i;
+    } else if (sorting == SORT_SYMLINK) {
+        const char *const lnk1 = f1->type[0] ? f1->link[0] : f1->link[1];
+        const char *const lnk2 = f2->type[0] ? f2->link[0] : f2->link[1];
+        if (lnk1 && lnk2) {
+            const int i = strcmp(lnk1, lnk2);
+            if (i)
+                return i;
+        } else if (lnk1)
+            return -1;
+        else if (lnk2)
+            return 1;
     } else if (sorting != SORTMIXED) {
 		short f1_dir = IS_F_DIR(1),
 		      f2_dir = IS_F_DIR(2);

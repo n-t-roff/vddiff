@@ -8,7 +8,7 @@
 #include "uzp.h"
 
 enum sorting { DIRSFIRST, FILESFIRST, SORTMIXED, SORTMTIME, SORTSIZE,
-               SORT_OWNER, SORT_GROUP };
+               SORT_OWNER, SORT_GROUP, SORT_SYMLINK };
 
 struct scan_db {
 	void *db;

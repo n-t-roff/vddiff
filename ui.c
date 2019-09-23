@@ -903,6 +903,17 @@ next_key:
 				nosingle = 1;
 				re_sort_list();
 				goto next_key;
+
+            case 'S': /* "Sl" sort symlink */
+                c = 0;
+
+                if (sorting == SORT_SYMLINK) {
+                    goto next_key;
+                }
+
+                sorting = SORT_SYMLINK;
+                rebuild_db(1);
+                goto next_key;
 			}
 
 			c = 0;
@@ -1623,6 +1634,7 @@ static const char *const helptxt[] = {
        "/		Search file by typing first letters of filename",
        "//		Search file with regular expression",
        "Sd		Sort files with directories on top",
+       "Sl		Sort files by symbolic link target"
        "Sm		Sort files by name only",
        "SS		Sort files by size only",
        "St		Sort files by modification time only",

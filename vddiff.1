@@ -13,7 +13,7 @@ LOSS OF USE, DATA OR PROFITS, WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE OR
 OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
 PERFORMANCE OF THIS SOFTWARE.
 ..
-.Dd November 16, 2018
+.Dd September 23, 2019
 .Dt VDDIFF 1
 .Sh NAME
 .Nm @vddiff@
@@ -35,7 +35,7 @@ PERFORMANCE OF THIS SOFTWARE.
 .Sh DESCRIPTION
 .Nm
 stands for
-.Dq Vim Directory DIFF .
+.Dq Vim directory diff .
 It is a simple text terminal directory diff tool using
 .Xr vim 1
 for the actual diff operation.
@@ -659,6 +659,10 @@ Sort files with directories on top.
 .Cm sortic
 and ex command
 .Cm set sortic . )
+.
+.It Dq Li \&Sl
+Sort files by symbolic link target.
+Symbolic links are displayed first.
 .
 .It Dq Li \&Sm
 Sort files by name only (ignoring file type).
