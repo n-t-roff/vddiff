@@ -86,20 +86,20 @@ extern char *pth1, *pth2;
 /* Return value:
  *   -1: error */
 int rm_file(void);
-/*
+/**
  * WARNING: Overwrites `lbuf` and (via cmp_file()) `rbuf`!
  *
- * Input:
- *   mode:
+ * @param mode
  *     1: append
  *     2: force (currently used by software test only)
  *
- * Output:
+ * @return
  *    2: Destination is newer than source -> don't overwrite
  *    1: Files are equal
  *    0: Successfully copied
  *   -1: System call failed
  *   -2: User abort
+ *   The only return value test which is used is "< 0".
  */
 int cp_reg(const unsigned mode);
 int fs_stat(const char *, struct stat *, const unsigned);

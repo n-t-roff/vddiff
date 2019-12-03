@@ -1672,16 +1672,19 @@ inline static int cp_reg_prepare_overwrite(void)
     bool mode_set = FALSE; /* mode set after access(2) error */
 test:
     if (access(pth2, W_OK) != -1) {
-        rv = 1000;
+        /* Have access -> overwrite! */
+        rv = 0; /* Could have been set to -1 by errors below. */
         goto ret;
     }
     if (errno != EACCES) {
         /* Unexpected system call error */
+        rv = -1;
         printerr(strerror(errno), "access \"%s\"", pth2);
     }
     /* Access permission error -> try chmod(2) */
     if (!mode_set && !(gstat[1].st_mode & S_IWUSR)) {
         if (chmod(pth2, gstat[1].st_mode & S_IWUSR) == -1) {
+            rv = -1;
             printerr(strerror(errno), LOCFMT "chmod \"%s\"" LOCVAR, pth2);
         } else {
             mode_set = TRUE;
@@ -1690,6 +1693,7 @@ test:
     }
     /* mode could not be set or didn't help -> try to remove target */
     if (unlink(pth2) == -1) {
+        rv = -1;
         printerr(strerror(errno), LOCFMT "unlink \"%s\"" LOCVAR, pth2);
     }
 ret:
@@ -1818,16 +1822,7 @@ int cp_reg(const unsigned mode) {
     } else { /* target file exists */
         if (dont_overwrite)
             goto ret;
-        int i;
-        switch ((i = cp_reg_to_existing(mode))) {
-        case 1000:
-            break;
-        /* case 2: dest newer than src, copy not necessary */
-        /* case 1: if (*src == *dest) no copy is done */
-        /* case 0: don't overwrite */
-        /* negative value: error */
-        default:
-            rv = i;
+        if ((rv = cp_reg_to_existing(mode))) {
             goto ret;
         }
 	} /* if (!fs_stat(pth2)) */
