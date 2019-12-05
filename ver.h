@@ -21,5 +21,5 @@
  *            failes, this will become the release version. */
 
 #ifndef VERSION
-#define VERSION "1.12.1-alpha 2019-12-03"
+#define VERSION "1.13.0"
 #endif
