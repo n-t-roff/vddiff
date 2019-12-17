@@ -1,3 +1,7 @@
+abs2relPath.c
+abs2relPath.h
+abs2relPathTest.cpp
+abs2relPathTest.h
 cplt.c
 cplt.h
 db.c

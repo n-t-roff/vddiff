@@ -44,6 +44,7 @@ PERFORMANCE OF THIS SOFTWARE.
 #include "misc.h"
 #include "format_time.h"
 #include "unit_prefix.h"
+#include "abs2relPath.h"
 
 struct str_list {
 	char *s;
@@ -955,11 +956,20 @@ tpth:
 				goto ret;
 			}
 
-			if (symlink(pth1, pth2) == -1) {
-				printerr(strerror(errno), "symlink %s -> %s",
-				    pth2, pth1);
+#if defined(TRACE)
+            fprintf(debug, "  Absolute symlink \"%s\" -> \"%s\"\n", pth2, pth1);
+#endif
+            char *const relPath = abs2relPath(pth1, pth2);
+#if defined(TRACE)
+            fprintf(debug, "  Relative symlink \"%s\" -> \"%s\"\n", pth2, relPath);
+#endif
+            if (symlink(relPath, pth2) == -1)
+            {
+                printerr(strerror(errno), "symlink %s -> %s", pth2, relPath);
+                free(relPath);
 				continue;
-			}
+            }
+            free(relPath);
 		} else if (S_ISDIR(gstat[0].st_mode)) {
 			tree_op = TREE_CP;
 			proc_dir();

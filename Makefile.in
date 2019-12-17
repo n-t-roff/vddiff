@@ -12,13 +12,13 @@ TEST_DIR = .TMP_TEST_DIR
 
 TRACE = #-DTRACE='"/tmp/.$(BIN)_trace_"'
 DEBUG = #-DDEBUG #-std=c99 -D_XOPEN_SOURCE=700 #-DUNIMP
-STRP = -s
+STRP  = -s
 
 OBJ = \
 	main.o pars.o lex.o diff.o ui.o db.o exec.o fs.o ed.o uzp.o \
 	ui2.o gq.o tc.o info.o dl.o cplt.o misc.o format_time.o \
-	unit_prefix.o
-TEST_OBJ = $(OBJ) test.o fs_test.o misc_test.o
+	unit_prefix.o abs2relPath.o
+TEST_OBJ = $(OBJ) test.o fs_test.o misc_test.o abs2relPathTest.o
 YFLAGS = -d
 _CFLAGS = \
 	$(CFLAGS) $(CPPFLAGS) $(DEFINES) $(__CDBG) $(__CLDBG) \

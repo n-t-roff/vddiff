@@ -12,6 +12,8 @@ DEFINES = \
     VDSUSP
 
 SOURCES += \
+    abs2relPath.c \
+    abs2relPathTest.cpp \
     fs_test.cpp \
     test.cpp \
     cplt.c \
@@ -34,6 +36,8 @@ SOURCES += \
     format_time.c
 
 HEADERS += \
+    abs2relPath.h \
+    abs2relPathTest.h \
     cplt.h \
     db.h \
     diff.h \
