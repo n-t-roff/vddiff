@@ -1742,7 +1742,7 @@ static const char *const helptxt[] = {
        "y		Copy file path to edit line",
        "Y		Copy file path in reverse order to edit line",
        "$		Enter shell command",
-       "[<n>]<F1> - <F12>",
+       "[<n>]<F1> - <F48>",
        "		Define string to be used in (or as) shell command",
        "		or execute shell command",
        "l		List function key strings",

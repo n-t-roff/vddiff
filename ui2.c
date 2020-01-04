@@ -1912,7 +1912,7 @@ void disp_fkey_list(void)
         print_fkey_set();
         {
             int i;
-            int lkey_ = anykey("Press '0'..'9', <F1>..<F12>, or any other key");
+            int lkey_ = anykey("Press '0'..'9', <F1>..<F48>, or any other key");
             if (lkey_ >= '1' && lkey_ <= '9') {
                 fkey_set = lkey_ - '1';
                 continue;
