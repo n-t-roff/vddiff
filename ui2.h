@@ -96,7 +96,6 @@ void prt_ln_num(void);
 void list_jmrks(void);
 int keep_ungetch(int);
 int opt_flushinp(void);
-void disp_fkey_list(void);
 void set_fkey_set(const int i);
 
 /* private declarations */

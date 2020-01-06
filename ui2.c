@@ -56,7 +56,6 @@ static char *getnextarg(char *, unsigned);
 static void set_all(void);
 static void sig_cont(int);
 static void long_shuffle(long *, const long);
-static void print_fkey_set(void);
 
 long mark_idx[2] = { -1, -1 };
 long mmrkd[2];
@@ -1904,83 +1903,6 @@ opt_flushinp(void) {
 	}
 
 	return flushinp();
-}
-
-void disp_fkey_list(void)
-{
-    while (1) {
-        print_fkey_set();
-        {
-            int i;
-            int lkey_ = anykey("Press '0'..'9', <F1>..<F48>, or any other key");
-            if (lkey_ >= '1' && lkey_ <= '9') {
-                fkey_set = lkey_ - '1';
-                continue;
-            }
-            switch (lkey_) {
-            case KEY_DOWN:
-            case KEY_RIGHT:
-            case KEY_NPAGE:
-            case ' ':
-                if (fkey_set >= FKEY_MUX_NUM - 1)
-                    fkey_set = 0;
-                else
-                    ++fkey_set;
-                continue;
-            case KEY_UP:
-            case KEY_LEFT:
-            case KEY_PPAGE:
-            case KEY_BACKSPACE:
-            case CERASE:
-                if (fkey_set <= 0)
-                    fkey_set = FKEY_MUX_NUM - 1;
-                else
-                    --fkey_set;
-                continue;
-            case 'Q':
-                keep_ungetch(lkey_);
-                break;
-            }
-            for (i = 0; i < FKEY_NUM; i++) {
-                if (lkey_ == KEY_F(i + 1)) {
-                    keep_ungetch(lkey_);
-                    break;
-                }
-            }
-        }
-        break;
-    }
-}
-
-static void print_fkey_set(void)
-{
-    int i;
-    standendc(wlist);
-    werase(wlist);
-    if (fkey_set)
-        mvwprintw(wlist, 0, 0, "Set %d", fkey_set + 1);
-    for (i = 0; i < FKEY_NUM; i++) {
-        int j = fkey_set ? i + 2 : i; /* display line */
-        mvwprintw(wlist, j, 0, "F%d", i + 1);
-        if (fkey_cmd[fkey_set][i]) {
-            if (fkey_comment[fkey_set][i]) {
-                mvwprintw(wlist, j, 5, "\"%c %s\" (%s)",
-                    FKEY_CMD_CHR(i), fkey_cmd[fkey_set][i],
-                    fkey_comment[fkey_set][i]);
-            } else {
-                mvwprintw(wlist, j, 5, "\"%c %s\"",
-                    FKEY_CMD_CHR(i), fkey_cmd[fkey_set][i]);
-            }
-            continue;
-        }
-        if (!sh_str[fkey_set][i])
-            continue;
-        if (fkey_comment[fkey_set][i])
-            mvwprintw(wlist, j, 5, "\"%ls\" (%s)",
-                      sh_str[fkey_set][i], fkey_comment[fkey_set][i]);
-        else
-            mvwprintw(wlist, j, 5, "\"%ls\"", sh_str[fkey_set][i]);
-    }
 }
 
 void set_fkey_set(const int i)

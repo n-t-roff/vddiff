@@ -23,6 +23,7 @@ SOURCES += \
     ed.c \
     exec.c \
     fs.c \
+    fkeyListDisplay.c \
     gq.c \
     info.c \
     main.c \
@@ -44,6 +45,7 @@ HEADERS += \
     dl.h \
     ed.h \
     exec.h \
+    fkeyListDisplay.h \
     fs_test.h \
     fs.h \
     gq.h \

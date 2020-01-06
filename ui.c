@@ -46,6 +46,7 @@ PERFORMANCE OF THIS SOFTWARE.
 #ifdef TEST
 # include "test.h"
 #endif
+#include "fkeyListDisplay.h"
 
 static void ui_ctrl(void);
 static void page_down(void);
