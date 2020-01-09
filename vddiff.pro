@@ -33,6 +33,8 @@ SOURCES += \
     ui2.c \
     uzp.c \
     misc_test.cpp \
+    MoveCursorToFile.c \
+    MoveCursorToFileTest.cpp \
     unit_prefix.c \
     format_time.c
 
@@ -62,6 +64,8 @@ HEADERS += \
     ui2.h \
     uzp.h \
     misc_test.h \
+    MoveCursorToFile.h \
+    MoveCursorToFileTest.h \
     ver.h \
     unit_prefix.h \
     format_time.h

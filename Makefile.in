@@ -17,8 +17,10 @@ STRP  = -s
 OBJ = \
 	main.o pars.o lex.o diff.o ui.o db.o exec.o fs.o ed.o uzp.o \
 	ui2.o gq.o tc.o info.o dl.o cplt.o misc.o format_time.o \
-	unit_prefix.o abs2relPath.o fkeyListDisplay.o
-TEST_OBJ = $(OBJ) test.o fs_test.o misc_test.o abs2relPathTest.o
+	unit_prefix.o abs2relPath.o fkeyListDisplay.o MoveCursorToFile.o
+TEST_OBJ = \
+	$(OBJ) test.o fs_test.o misc_test.o abs2relPathTest.o \
+	MoveCursorToFileTest.o
 YFLAGS = -d
 _CFLAGS = \
 	$(CFLAGS) $(CPPFLAGS) $(DEFINES) $(__CDBG) $(__CLDBG) \

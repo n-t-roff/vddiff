@@ -34,6 +34,10 @@ misc.c
 misc.h
 misc_test.cpp
 misc_test.h
+MoveCursorToFile.c
+MoveCursorToFile.h
+MoveCursorToFileTest.cpp
+MoveCursorToFileTest.h
 pars.h
 pars.y
 tc.c

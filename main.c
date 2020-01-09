@@ -42,6 +42,7 @@ PERFORMANCE OF THIS SOFTWARE.
 #include "lex.h"
 #include "misc.h"
 #include "fs.h"
+#include "MoveCursorToFile.h"
 #ifdef TEST
 # include "test.h"
 #endif
@@ -85,6 +86,7 @@ static const char rc_name[] = "." BIN "rc";
 static const char etc_rc_dir[] = "/etc/" BIN "/" BIN "rc";
 static const char etc_rc_name[] = "/etc/" BIN "rc";
 char *printwd;
+struct MoveCursorToFile *moveCursorToFileInst;
 bool bmode;
 bool qdiff;
 static bool dontdiff;
@@ -107,6 +109,8 @@ bool overwrite_if_old;
 bool nodialog;
 bool find_dir_name_only;
 bool exit_on_error;
+bool moveCursorToFile;
+
 #ifdef DEBUG
 static bool tmp_dir_check;
 static bool skip_tmp_dir_check;
@@ -216,8 +220,8 @@ main(int argc, char **argv)
 
     while ((opt =
             getopt(argc, argv,
-                   /* hJjKwz */
-                   "AaBbCcDdEeF:fG:gH:IikLlMmNnOoP:pQqRrSsTt:UuVv:WXx:Yy"
+                   /* hjKwz */
+                   "AaBbCcDdEeF:fG:gH:IiJkLlMmNnOoP:pQqRrSsTt:UuVv:WXx:Yy"
 #if defined (DEBUG)
                    "Z"
 #endif
@@ -297,6 +301,11 @@ main(int argc, char **argv)
 		case 'i':
 			noic = 0; /* ignore case */
 			break;
+
+        case 'J':
+            moveCursorToFile = TRUE;
+            break;
+
 		case 'k':
 			set_tool(&difftool, strdup("tkdiff"), TOOL_BG);
 			break;
@@ -468,6 +477,13 @@ main(int argc, char **argv)
         exit(EXIT_STATUS_ERROR);
         /* not reached */
     }
+    else if (moveCursorToFile && argc != 1)
+    {
+        fprintf(stderr, "%s: Exactly one argument expected\n", prog);
+        exit(EXIT_STATUS_ERROR);
+        /* not reached */
+    }
+
     if (!nodialog && (isatty(STDIN_FILENO)  != 1 ||
                       isatty(STDOUT_FILENO) != 1))
     {
@@ -814,7 +830,22 @@ check_args(int argc, char **argv)
 	if (argc) {
 		s = *argv++;
 		argc--;
-	} else if (!(s = getenv("PWD"))) {
+
+        if (moveCursorToFile)
+        {
+            if (lstat(s, &gstat[0]) == -1)
+            {
+                fprintf(stderr, "%s: " LOCFMT "lstat(%s): %s\n", prog LOCVAR, s, strerror(errno));
+                exit(EXIT_STATUS_ERROR);
+            }
+            moveCursorToFileInst = newMoveCursorToFile(s);
+            if (!moveCursorToFileInst)
+            {
+                exit(EXIT_FAILURE);
+            }
+            s = moveCursorToFileInst->getPathName(moveCursorToFileInst);
+        }
+    } else if (!(s = getenv("PWD"))) {
         fprintf(stderr, "%s: PWD not set\n", prog);
         s = ".";
 	}
@@ -851,13 +882,14 @@ cmp_inodes(void)
 }
 
 void
-get_arg(const char *s, int i)
+get_arg(const char *s, /* modified */
+        const int i)
 {
     char *s2;
 	struct filediff f;
     bool free_path = FALSE;
 
-	arg[i] = s;
+    arg[i] = s;
 
 stat:
     if (( lstat_args && lstat(s, &gstat[i]) == -1) ||

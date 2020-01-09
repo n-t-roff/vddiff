@@ -52,6 +52,7 @@ extern size_t pthlen[2];
 extern const char *pwd, *rpwd, *arg[];
 extern char syspth[2][PATHSIZ], lbuf[BUF_SIZE], rbuf[BUF_SIZE];
 extern char *printwd;
+extern struct MoveCursorToFile *moveCursorToFileInst;
 extern short recursive, scan;
 extern short nosingle;
 #ifdef TRACE
@@ -73,6 +74,7 @@ extern bool overwrite_if_old; /* -U: Like `cp -u` */
 extern bool nodialog;
 extern bool find_dir_name_only;
 extern bool exit_on_error;
+extern bool moveCursorToFile;
 
 char *add_home_pth(const char *);
 /*

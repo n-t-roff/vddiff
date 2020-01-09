@@ -47,6 +47,7 @@ PERFORMANCE OF THIS SOFTWARE.
 # include "test.h"
 #endif
 #include "fkeyListDisplay.h"
+#include "MoveCursorToFile.h"
 
 static void ui_ctrl(void);
 static void page_down(void);
@@ -227,6 +228,10 @@ build_ui(void)
     }
 
     disp_fmode();
+    if (moveCursorToFile)
+    {
+        center(findlistname(moveCursorToFileInst->getFileName(moveCursorToFileInst)));
+    }
 	ui_ctrl();
 
 ret:
