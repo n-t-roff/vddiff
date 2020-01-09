@@ -87,6 +87,7 @@ static const char etc_rc_dir[] = "/etc/" BIN "/" BIN "rc";
 static const char etc_rc_name[] = "/etc/" BIN "rc";
 char *printwd;
 struct MoveCursorToFile *moveCursorToFileInst;
+short applyFKey;
 bool bmode;
 bool qdiff;
 static bool dontdiff;
@@ -220,8 +221,8 @@ main(int argc, char **argv)
 
     while ((opt =
             getopt(argc, argv,
-                   /* hjKwz */
-                   "AaBbCcDdEeF:fG:gH:IiJkLlMmNnOoP:pQqRrSsTt:UuVv:WXx:Yy"
+                   /* hjwz */
+                   "AaBbCcDdEeF:fG:gH:IiJK:kLlMmNnOoP:pQqRrSsTt:UuVv:WXx:Yy"
 #if defined (DEBUG)
                    "Z"
 #endif
@@ -305,6 +306,30 @@ main(int argc, char **argv)
         case 'J':
             moveCursorToFile = TRUE;
             break;
+
+        case 'K':
+        {
+            moveCursorToFile = TRUE;
+            char *endptr;
+            errno = 0;
+            applyFKey = strtol(optarg, &endptr, 10);
+            if (errno)
+            {
+                fprintf(stderr, "%s: " LOCFMT "strtol(\"%s\"): %s\n", prog LOCVAR, optarg, strerror(errno));
+                exit(EXIT_STATUS_ERROR);
+            }
+            if (*endptr)
+            {
+                fprintf(stderr, "%s: " LOCFMT "Invalid argument \"%s\" to -K\n", prog LOCVAR, optarg);
+                exit(EXIT_STATUS_ERROR);
+            }
+            if (applyFKey < 1 || applyFKey > FKEY_NUM)
+            {
+                fprintf(stderr, "%s: " LOCFMT "Argument %d to -K not in range [1, %d]\n", prog LOCVAR, applyFKey, FKEY_NUM);
+                exit(EXIT_STATUS_ERROR);
+            }
+            break;
+        }
 
 		case 'k':
 			set_tool(&difftool, strdup("tkdiff"), TOOL_BG);

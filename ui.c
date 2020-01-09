@@ -232,7 +232,11 @@ build_ui(void)
     {
         center(findlistname(moveCursorToFileInst->getFileName(moveCursorToFileInst)));
     }
-	ui_ctrl();
+    if (applyFKey)
+    {
+        test_fkey(KEY_F(applyFKey), 1, top_idx[right_col] + curs[right_col]);
+    }
+    ui_ctrl();
 
 ret:
 #if defined(TRACE) && 1

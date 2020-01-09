@@ -55,6 +55,7 @@ extern char *printwd;
 extern struct MoveCursorToFile *moveCursorToFileInst;
 extern short recursive, scan;
 extern short nosingle;
+extern short applyFKey;
 #ifdef TRACE
 extern FILE *debug;
 extern char trcpth[2][PATHSIZ];
