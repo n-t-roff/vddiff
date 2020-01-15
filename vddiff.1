@@ -2443,6 +2443,17 @@ compares two archives and
 .Pp
 compares an archive with a directory.
 .
+.begin_comment
+.Pp
+.D1 Li @vddiff@ -u -AOps Ar source_path Ar target_path
+.Pp
+Recursively copy new files from
+.Ar source_path
+to
+.Ar target_path ,
+print progress and summery.
+.end_comment
+.
 .
 .
 .Sh SEE ALSO
@@ -2455,12 +2466,3 @@ This manual page as a PDF document with hyperlinks.
 .It Lk http://n-t-roff.github.io/vddiff/vddiff.1.html
 This manual page as a HTML document with hyperlinks.
 .El
-.begin_comment
-.Sh Regression test items
-.Bl -bullet
-.It
-Terminal window resize
-.It
-Test on virtual terminals with and without color
-.El
-.end_comment

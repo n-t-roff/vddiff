@@ -114,6 +114,10 @@ static void print_fkey_set(void)
     for (i = 0; i < FKEY_NUM; i++)
     {
         int j = fkey_set ? i + 2 : i; /* display line */
+        if (j == (int)listh)
+        {
+            break;
+        }
         mvwprintw(wlist, j, 0, "F%d", i + 1);
         printAlias(i + 1, terminalType);
 
