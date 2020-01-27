@@ -111,6 +111,7 @@ bool nodialog;
 bool find_dir_name_only;
 bool exit_on_error;
 bool moveCursorToFile;
+bool waitOnExec;
 
 #ifdef DEBUG
 static bool tmp_dir_check;
@@ -221,8 +222,8 @@ main(int argc, char **argv)
 
     while ((opt =
             getopt(argc, argv,
-                   /* hjwz */
-                   "AaBbCcDdEeF:fG:gH:IiJK:kLlMmNnOoP:pQqRrSsTt:UuVv:WXx:Yy"
+                   /* hjz */
+                   "AaBbCcDdEeF:fG:gH:IiJK:kLlMmNnOoP:pQqRrSsTt:UuVv:WwXx:Yy"
 #if defined (DEBUG)
                    "Z"
 #endif
@@ -446,6 +447,10 @@ main(int argc, char **argv)
 		case 'W':
 			force_fs = TRUE;
 			break;
+
+        case 'w':
+            waitOnExec = TRUE;
+            break;
 
 		case 'X':
 			force_exec = TRUE;
@@ -940,7 +945,10 @@ stat:
             exit(EXIT_STATUS_ERROR);
 		}
 
-        if (!cli_cp && !cli_rm && !zipfile[i]) { /* break "goto stat" loop */
+        if (!cli_cp && !cli_rm
+                && !zipfile[i] /* break "goto stat" loop */
+                && !check_ext_tool(s) /* Configured tool has higher priority */)
+        {
 			f.name = s;
 			f.type[i] = gstat[i].st_mode;
 

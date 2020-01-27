@@ -148,7 +148,10 @@ check_ext_tool(const char *name)
 	struct tool *tmptool = NULL;
 	short skipped = 0;
 
-	l = strlen(name);
+#ifdef TRACE
+    fprintf(debug, "->check_ext_tool(\"%s\")\n", name);
+#endif
+    l = strlen(name);
 	cmd = lbuf + sizeof lbuf;
 	*--cmd = 0;
 
@@ -170,7 +173,10 @@ check_ext_tool(const char *name)
 			break;
 	}
 
-	return tmptool;
+#ifdef TRACE
+    fprintf(debug, "<-check_ext_tool: %p\n", tmptool);
+#endif
+    return tmptool;
 }
 
 /* Only used for commands which are executed by /bin/sh (not exec() directly */
@@ -564,14 +570,17 @@ exec_cmd(const char *const *const av, tool_flags_t flags, char *path, const char
 		fgetc(stdin);
 		_exit(77);
 	default:
-		if (!wait_after_exec /* key 'W' */
-		    && (flags & TOOL_BG)
-		    /* "ext wait ..." sets BG + WAIT */
-		    && !(flags & TOOL_WAIT)) {
-			break;
-		}
+        if (!wait_after_exec /* key 'W' */
+                && !waitOnExec /* Option -w */
+                && (flags & TOOL_BG)
+                /* "ext wait ..." sets BG + WAIT */
+                && !(flags & TOOL_WAIT))
+        {
+            break;
+        }
 
-		if (!(flags & TOOL_BG)) {
+        if (!(flags & TOOL_BG) || waitOnExec)
+        {
 			pid_t wpid;
 			/* did always return "interrupted sys call" on OI */
 			while (-1 == (wpid = waitpid(pid, &status, 0)) &&

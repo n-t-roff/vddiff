@@ -13,7 +13,7 @@ LOSS OF USE, DATA OR PROFITS, WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE OR
 OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
 PERFORMANCE OF THIS SOFTWARE.
 ..
-.Dd January 9, 2020
+.Dd January 27, 2020
 .Dt VDDIFF 1
 .Sh NAME
 .Nm @vddiff@
@@ -532,6 +532,24 @@ To include it into the string the symbolic name
 can be embedded which is expanded to the filename.
 .It Fl W
 Don't ask for confirmation on file system operations.
+.It Fl w
+Don't start tools in background mode.
+This can be useful when a tool is configured with
+.Pp
+.Dl ext bg
+.Pp
+and another tool is using
+.Nm
+as a general file viewer with e.g.
+.Pp
+.D1 Li xterm -e vddiff Ar path_name .
+.Pp
+In this case the external tool would be terminated
+when xterm terminates.
+.Pp
+.D1 Li xterm -e vddiff \-w Ar path_name .
+.Pp
+avoids this.
 .It Fl X
 Don't ask for confirmation on execute.
 .It Fl x Ar pattern Op Fl EeIirS
