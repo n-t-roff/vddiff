@@ -15,7 +15,8 @@ char *abs2relPath(const char *const absPath, const char *const refPath)
     size_t pathElemCount = 0; // Different path elements
     size_t diffPathIndex = 0;
     char diffFound = 0;
-    for (size_t i = 0; i < refPathLen; ++i)
+    size_t i; /* Declaration in for-loop requires c99 which causes other issues */
+    for (i = 0; i < refPathLen; ++i)
     {
         if (refPath[i] == '/')
         {
@@ -43,7 +44,7 @@ char *abs2relPath(const char *const absPath, const char *const refPath)
                            + absPathLen - diffPathIndex // Part to be copied
                            + 1); // Trailing 0
     size_t relPathIndex = 0;
-    for (size_t i = 0; i < pathElemCount; ++i)
+    for (i = 0; i < pathElemCount; ++i)
     {
         relPath[relPathIndex++] = '.';
         relPath[relPathIndex++] = '.';
