@@ -236,7 +236,10 @@ build_ui(void)
     {
         test_fkey(KEY_F(applyFKey), 1, top_idx[right_col] + curs[right_col]);
     }
-    ui_ctrl();
+    else
+    {
+        ui_ctrl();
+    }
 
 ret:
 #if defined(TRACE) && 1
