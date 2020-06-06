@@ -26,7 +26,7 @@ struct ui_state {
 	/* Path before going to temp dir for returning when leaving temp dir */
 	char *lpth, *rpth;
 	/* Path to temp dir for removing it later */
-	char *lzip, *rzip;
+    char *lzip, *rzip;
 	size_t llen, rlen;
 	void *bst;
 	unsigned num; /* db_num */
@@ -62,13 +62,23 @@ int printerr(const char *err, const char *fmt, ...);
  */
 int dialog(const char *, const char *, const char *, ...);
 int vdialog(const char *, const char *, const char *, va_list);
-void disp_list(unsigned);
+
+/**
+ * @brief disp_list
+ * @param md [0]: 1: Enable cursor
+ */
+void disp_list(unsigned md);
 void center(unsigned);
 void no_file(void);
 void action(short, unsigned);
 void mark_global(void);
 void clr_mark(void);
-void disp_curs(int);
+
+/**
+ * @brief disp_curs
+ * @param a 0: Remove cursor, 1: Normal cursor
+ */
+void disp_curs(int a);
 void enter_dir(const char *, const char *, bool, bool, short
 #ifdef DEBUG
     , const char *const , const unsigned

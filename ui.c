@@ -57,7 +57,25 @@ static void curs_first(void);
 static int last_line_is_disp(void);
 static int first_line_is_top(void);
 static void curs_up(void);
-static void disp_line(unsigned, unsigned, int);
+
+/**
+ * @brief disp_marked_line
+ * Display line with possible marking.
+ * @param y
+ * @param i
+ * @param md [0]: 1: No cursor
+ * @param w
+ */
+static void disp_marked_line(const unsigned y, const unsigned i, const unsigned md, WINDOW *const w);
+
+/**
+ * @brief disp_line
+ * @param y Display line.
+ * @param i DB index.
+ * @param info 1: is cursor line.
+ */
+/* Used in: scroll_up(), scroll_down(), disp_curs(), disp_list(), clr_mark() */
+static void disp_line(unsigned y, unsigned i, int info);
 static void push_state(const char *, const char *, unsigned);
 static void help(void);
 static const char *type_name(mode_t);
@@ -2664,7 +2682,7 @@ scroll_up(unsigned num, bool keepscrpos,
 	top_idx[right_col] -= num;
 
 	for (y = 0, i = top_idx[right_col]; y < num; y++, i++)
-		disp_line(y, i, 0);
+        disp_marked_line(y, i, 0, w);
 
 	if (move_curs)
 		disp_curs(1);
@@ -2734,7 +2752,7 @@ scroll_down(unsigned num, bool keepscrpos, int col)
 			standoutc(w);
 			mvwaddch(w, y, llstw, ' ');
 		} else {
-			disp_line(y, i, 0);
+            disp_marked_line(y, i, 0, w);
 		}
 
 	if (move_curs)
@@ -2746,11 +2764,7 @@ exit:
 	right_col = ocol;
 }
 
-void
-disp_curs(
-    /* 0: Remove cursor
-     * 1: Normal cursor */
-    int a)
+void disp_curs(int a)
 {
 	WINDOW *w;
 	unsigned i, y, m;
@@ -2811,21 +2825,15 @@ disp_curs(
 #endif
 }
 
-void
-disp_list(
-    /* Reserverd for 32 mode flags
-     * Value 0: No cursor! */
-    unsigned md)
+void disp_list(unsigned md)
 {
 	unsigned y, i;
 	WINDOW *w;
-	bool cg;
 
 #if defined(TRACE)
 	fprintf(debug, "->disp_list(%u) col=%d\n", md, right_col);
 #endif
 	w = getlstwin();
-	cg = CHGAT_MRKS;
 
 	/* For the case that entries had been removed
 	 * and page_down() */
@@ -2859,38 +2867,9 @@ disp_list(
 
 	for (y = 0, i = top_idx[right_col];
 	    y < listh && ((twocols && !fmode) || i < db_num[right_col]);
-	    y++, i++) {
-		if (i >= db_num[right_col]) {
-			standoutc(w);
-			mvwaddch(w, y, llstw, ' ');
-			standendc(w);
-		} else if (md && y == curs[right_col]) {
-			disp_curs(1);
-		} else if ((long)(top_idx[right_col] + y) ==
-		    mark_idx[right_col]) {
-			if (!cg) {
-				markc(w);
-			}
-
-			disp_line(y, i, 1);
-
-			if (cg) {
-				chgat_mark(w, y);
-			}
-		} else if ((db_list[right_col][top_idx[right_col] + y])->fl
-		    & FDFL_MMRK) {
-			if (!cg) {
-				mmrkc(w);
-			}
-
-			disp_line(y, i, 1);
-
-			if (cg) {
-				chgat_mmrk(w, y);
-			}
-		} else {
-			disp_line(y, i, 0);
-		}
+        y++, i++)
+    {
+        disp_marked_line(y, i, md, w);
 	}
 
 exit:
@@ -2901,18 +2880,54 @@ exit:
 	return;
 }
 
-static void
-disp_line(
-    /* display line */
-    unsigned y,
-    /* DB index */
-    unsigned i,
-    /* 1: Is cursor line */
-    int info)
+static void disp_marked_line(const unsigned y, const unsigned i, const unsigned md, WINDOW *const w)
+{
+    bool cg = CHGAT_MRKS;
+    if (i >= db_num[right_col])
+    {
+        standoutc(w);
+        mvwaddch(w, y, llstw, ' ');
+        standendc(w);
+    }
+    else if (md && y == curs[right_col])
+    {
+        disp_curs(1);
+    }
+    else if ((long)(top_idx[right_col] + y) == mark_idx[right_col])
+    {
+        if (!cg)
+        {
+            markc(w);
+        }
+        disp_line(y, i, 1);
+        if (cg)
+        {
+            chgat_mark(w, y);
+        }
+    }
+    else if ((db_list[right_col][top_idx[right_col] + y])->fl & FDFL_MMRK)
+    {
+        if (!cg)
+        {
+            mmrkc(w);
+        }
+        disp_line(y, i, 1);
+        if (cg)
+        {
+            chgat_mmrk(w, y);
+        }
+    }
+    else
+    {
+        disp_line(y, i, 0);
+    }
+}
+
+static void disp_line(unsigned y, unsigned i, int info)
 {
 	int diff = 'E'; /* Internal error */
 	int type[2] = { 'E', 'E' };
-	mode_t mode[2] = { ~0, ~0 }; /* Detect error */
+    mode_t mode[2] = { ~0U, ~0U }; /* Detect error */
 	struct filediff *f;
 	short color_id = 0;
 	WINDOW *w;
