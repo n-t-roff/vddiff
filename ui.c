@@ -4233,23 +4233,23 @@ enter_dir(const char *name, const char *rnam, bool lzip, bool rzip, short tree
 #       if defined(TRACE)
         fprintf(debug, "  ptr_db_srch(uz_path_db, key(%s)): name(%s) rnam(%s)\n", current_path, name, rnam);
 #       endif
-        const size_t rl = strlen(rnam);
         if (!bmode)
         {
-            if (!strncmp(rnam, syspth[0], rl) || !strncmp(rnam, syspth[1], rl))
-            {
-                n = NULL;
-            }
+            // TODO:
+            //const size_t rl = strlen(rnam);
+            //if (!strncmp(rnam, syspth[0], rl) || !strncmp(rnam, syspth[1], rl))
+            //{
+            //    n = NULL;
+            //}
             const int col = bpth->col != -1 ? bpth->col : right_col;
             const size_t l = strlen(name);
             memcpy(syspth[col], name, l+1);
             pthlen[col] = l;
 
             if (n)
+            {
                 free(const_cast_ptr(name));
-            // else {
-            //  TODO: reset path offset
-            // }
+            }
             name = NULL;
         }
         if (n)
