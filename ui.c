@@ -425,7 +425,10 @@ next_key:
 			break;
 
 		case KEY_LEFT:
-			if (*key == '|') {
+#if defined(TRACE)
+            fprintf(debug, "  KEY_LEFT\n");
+#endif
+            if (*key == '|') {
 				c = *key;
 
 				if (COLS / 2 + midoffs < 0)
@@ -439,15 +442,20 @@ next_key:
 			c = 0;
 
 			if (bmode || fmode)
-				enter_dir("..", NULL, FALSE, FALSE, 0
-				    LOCVAR);
+            {
+                enter_dir("..", NULL, FALSE, FALSE, 0 LOCVAR);
+            }
 			else
+            {
 				pop_state(1);
-
+            }
 			break;
 
 		case '\n':
-			if (*key == 'z') {
+#if defined(TRACE)
+            fprintf(debug, "  [ENTER KEY]\n");
+#endif
+            if (*key == 'z') {
 				if (!curs[right_col]) {
 					c = 0;
 					break;
@@ -464,7 +472,10 @@ next_key:
 			/* fall through */
 
 		case KEY_RIGHT:
-			if (*key == '|') {
+#if defined(TRACE)
+            fprintf(debug, "  KEY_RIGHT\n");
+#endif
+            if (*key == '|') {
 				c = *key;
 
 				if (midoffs > COLS / 2)
@@ -1465,7 +1476,10 @@ next_key:
 			break;
 
 		case CTRL('l'):
-			c = 0;
+#if defined(TRACE)
+            fprintf(debug, "  CTRL('l')\n");
+#endif
+            c = 0;
 			rebuild_scr();
 			break;
 
@@ -2261,7 +2275,7 @@ action(
 		} else if (S_ISDIR(ltyp) || S_ISDIR(rtyp)) {
 			if (!S_ISDIR(ltyp)) {
 				if (z2) {
-					setpthofs(1, f->name, z2->name);
+					set_path_display_name_offset(1, f->name, z2->name);
 				}
 
 				enter_dir(NULL , rnam,
@@ -2270,7 +2284,7 @@ action(
 
 			} else if (!S_ISDIR(rtyp)) {
 				if (z1) {
-					setpthofs(0, mnam, z1->name);
+					set_path_display_name_offset(0, mnam, z1->name);
 				}
 
 				enter_dir(lnam             , NULL,
@@ -2278,16 +2292,15 @@ action(
 				          tree LOCVAR);
 			} else {
 				push_scan_db(TRUE);
-
-				if (z1) {
-					setpthofs(0, mnam, z1->name);
+                if (z1)
+                {
+					set_path_display_name_offset(0, mnam, z1->name);
 				}
-
-				if (z2) {
+                if (z2)
+                {
 					/* 2: don't set vpath[0] */
-					setpthofs(2, f->name, z2->name);
+					set_path_display_name_offset(2, f->name, z2->name);
 				}
-
                 /* Used in diff mode when both directories are present */
 				enter_dir(lnam             , rnam,
 				          z1 ? TRUE : FALSE, z2 ? TRUE : FALSE,
@@ -2324,7 +2337,7 @@ action(
 			/* Used by fmode */
 
 			if (z2) {
-				setpthofs(1, f->name, z2->name);
+				set_path_display_name_offset(1, f->name, z2->name);
 			}
 
             /* Used in diff mode when only right dir is present */
@@ -2346,7 +2359,7 @@ action(
 			/* Used by bmode and fmode */
 
 			if (z1) {
-				setpthofs(bmode ? 1 : 0, f->name, z1->name);
+				set_path_display_name_offset(bmode ? 1 : 0, f->name, z1->name);
 			}
 
             /* Used in diff mode when only left dir is present */
@@ -2364,38 +2377,48 @@ action(
 				tool(f1->name, f2->name, 3, 0);
 			else
 				tool(f1->name, NULL, 1, 0);
-		} else if (S_ISDIR(typ[0])) {
-			if (z1 || z2) {
+        }
+        else if (S_ISDIR(typ[0]))
+        {
+            if (z1 || z2)
+            {
 				push_scan_db(TRUE);
 			}
-
-			if (z1) {
-				setpthofs(0, f->name, z1->name);
+            if (z1)
+            {
+				set_path_display_name_offset(0, f->name, z1->name);
 			}
-
-			if (z2) {
-				setpthofs(1, f->name, z2->name);
+            if (z2)
+            {
+				set_path_display_name_offset(1, f->name, z2->name);
 			}
-
 			enter_dir(f1->name         , f2->name,
 			          z1 ? TRUE : FALSE, z2 ? TRUE : FALSE, 0
 				  LOCVAR);
-		} else {
+        }
+        else
+        {
 			err = typerr;
 			goto ret;
 		}
-	} else
+    }
+    else
+    {
 		err = typdif;
-
+    }
 ret:
 	if (z1)
+    {
 		free_zdir(z1, t1);
-
+    }
 	if (z2)
+    {
 		free_zdir(z2, t2);
-
+    }
 	if (err)
+    {
 		printerr(NULL, err);
+    }
 out:
 #if defined(TRACE)
 	fprintf(debug, "<-action\n");
@@ -3305,7 +3328,10 @@ type_name(mode_t m)
 static void
 file_stat(struct filediff *f, struct filediff *f2)
 {
-	int x, x2, w, w1, w2, yl, yr, lx1, lx2, mx1;
+#   if defined(TRACE) && 1
+    fprintf(debug, "->file_stat()\n");
+#   endif
+    int x, x2, w, w1, w2, yl, yr, lx1, lx2, mx1;
 	mode_t ltyp, rtyp;
 	bool tc = twocols || mark;
 
@@ -3322,16 +3348,16 @@ file_stat(struct filediff *f, struct filediff *f2)
 	if (bmode) {
 		if (!mark || dir_change) {
 			wmove(wstat, 1, 0);
-			setvpth(2);
-			putmbsra(wstat, vpath[1], 0);
+			set_path_display_name(2);
+			putmbsra(wstat, path_display_name[1], 0);
 		}
 	} else if (dir_change) {
-		setvpth(2);
+		set_path_display_name(2);
 		wmove(wstat, 0, mark ? 0 : 2);
-		putmbsra(wstat, vpath[0], mark ? mx1 : 0);
+		putmbsra(wstat, path_display_name[0], mark ? mx1 : 0);
 		wmove(wstat, mark ? 0 : 1, mark ? rlstx : 2);
-		putmbsra(wstat, vpath[1], 0);
-		return;
+		putmbsra(wstat, path_display_name[1], 0);
+        goto ret;
 	}
 
 	if (S_ISLNK(ltyp)) {
@@ -3505,6 +3531,10 @@ file_stat(struct filediff *f, struct filediff *f2)
 		addmbs(wstat, " -> ", 0);
         putmbsra(wstat, f2->link[1], 0);
 	}
+    ret: ;
+#   if defined(TRACE) && 1
+    fprintf(debug, "<-file_stat()\n");
+#   endif
 }
 
 size_t getfilesize(char *buf, size_t bufsiz, off_t size,
@@ -3957,7 +3987,7 @@ pop_state(
 
 		st->lzip[strlen(st->lzip) - 2] = 0;
         rmtmpdirs(st->lzip);
-		respthofs(0);
+		reset_path_offsets(0);
 	}
 
 	if (st->rzip) {
@@ -3970,7 +4000,7 @@ pop_state(
 
 		st->rzip[strlen(st->rzip) - 2] = 0;
         rmtmpdirs(st->rzip);
-		respthofs(1);
+		reset_path_offsets(1);
 	}
 
 	if (mark) {
@@ -4050,50 +4080,54 @@ enter_dir(const char *name, const char *rnam, bool lzip, bool rzip, short tree
 #endif
     )
 {
-	int i;
-	unsigned *uv;
-	char *cp /* current path */, *sp /* saved path */;
-	struct bpth *bpth;
-	size_t *lp;
+    int i = 0;
+    unsigned *uv = NULL;
+    char *current_path = NULL; /* current path */
+    char *saved_path = NULL; /* saved path */
+    struct bpth *bpth = NULL;
+    size_t *lp = NULL;
 #ifdef HAVE_LIBAVLBST
-	struct bst_node *n;
+    struct bst_node *n = NULL;
 #else
-	struct ptr_db_ent *n;
+    struct ptr_db_ent *n = NULL;
 #endif
 	bool f2d = FALSE;
 
 #ifdef TRACE
 	TRCPTH;
 	fprintf(debug, "->" LOCFMT
-	    "enter_dir(ln(%s) rn(%s) lz=%d rz=%d t=%d) lp(%s) rp(%s)\n",
+        "enter_dir(left_name(%s) right_name(%s) left_zip=%d right_zip=%d tree=%d) left_sys_path(%s) right_sys_path(%s)\n",
 # ifdef DEBUG
 	    _file, _line,
 # endif
 	    name, rnam, lzip, rzip, tree, trcpth[0], trcpth[1]);
 #endif
 	if (   (str_eq_dotdot(name) && rnam) /* enter_dir("..", NULL, ...) is used to change to the parent directory */
-	    || (str_eq_dotdot(rnam) && name)) { /* Same goes for enter_dir(NULL, "..", ...) */
+        || (str_eq_dotdot(rnam) && name)) /* Same goes for enter_dir(NULL, "..", ...) */
+    {
 		goto ret;
 	}
-
-	if (!twocols) {
+    if (!twocols)
+    {
 		dir_change = TRUE;
 	}
-
-	if (name && rnam) {
-		if (bmode || fmode) {
-
+    if (name && rnam)
+    {
+        if (bmode || fmode)
+        {
 			clr_mark();
 			name = strdup(name);
 			rnam = strdup(rnam);
 			f2d = TRUE;
 		}
-
-		if (bmode) {
+        if (bmode)
+        {
 			tgl2c(1);
-
-		} else if (fmode) {
-			if (tree == 1) {
+        }
+        else if (fmode)
+        {
+            if (tree == 1)
+            {
 				fpath = strdup(syspth[1]);
 				fpath[pthlen[1]] = 0;
 #if defined(TRACE)
@@ -4118,89 +4152,94 @@ enter_dir(const char *name, const char *rnam, bool lzip, bool rzip, short tree
 			fmode_dmode();
 		}
 	}
-
 	if (mark && !gl_mark && (!fmode ||
 	    (!right_col && mark->type[0]) ||
-	    ( right_col && mark->type[1]))) {
-
+        ( right_col && mark->type[1])))
+    {
 		mark_global();
 	}
-
-	if (!bmode && !fmode) {
+    if (!bmode && !fmode)
+    {
 		push_state(name, rnam,
 		    (f2d ? 4 : 0) | (rzip ? 2 : 0) | (lzip ? 1 : 0));
 		subtree = (name ? 1 : 0) | (rnam ? 2 : 0);
 		scan_subdir(name, rnam, subtree);
-
-		if (f2d) {
+        if (f2d)
+        {
             free(const_cast_ptr(name));
             free(const_cast_ptr(rnam));
 		}
-
 		goto disp;
 	}
-
-	if (!name) {
+    if (!name)
+    {
 		name = rnam;
 		lzip = rzip;
 	}
-
-	if (bmode) {
-		cp = syspth[1];
-	} else {
+    if (bmode)
+    {
+        current_path = syspth[1];
+    }
+    else
+    {
 		syspth[right_col][pthlen[right_col]] = 0;
-		cp = syspth[right_col];
+        current_path = syspth[right_col];
 		lp = &pthlen[right_col];
-		sp = strdup(cp);
+        saved_path = strdup(current_path);
 	}
-
-	db_set_curs(right_col, cp, top_idx[right_col], curs[right_col]);
+    db_set_curs(right_col, current_path, top_idx[right_col], curs[right_col]);
 	n = NULL; /* flag */
-
 	/* Not in bmode since syspth[0] is always "." there */
-	if (!lzip && !bmode && name && *name == '/') {
+    if (!lzip && !bmode && name && *name == '/')
+    {
 		*lp = 0;
-		*cp = 0;
+        *current_path = 0;
 	}
-
-	if (lzip) {
-		if (bmode) {
+    if (lzip)
+    {
+        if (bmode)
+        {
 			if (!getcwd(syspth[1], sizeof syspth[1]))
-				printerr(strerror(errno),
-				    "getcwd failed");
-
-			cp = syspth[1];
+            {
+                printerr(strerror(errno), "getcwd failed");
+            }
+            current_path = syspth[1];
 		}
-
 		bpth = malloc(sizeof(struct bpth));
-		bpth->pth = strdup(cp);
-
-        if (bmode) {
+        bpth->pth = strdup(current_path);
+        if (bmode)
+        {
             bpth->col = -1;
-        } else {
+        }
+        else
+        {
 			bpth->col = right_col;
 			*lp = 0;
-			*cp = 0;
+            *current_path = 0;
 		}
-
-		ptr_db_add(&uz_path_db, strdup(name), bpth);
-
-    } else if (str_eq_dotdot(name) &&
-               !ptr_db_srch(&uz_path_db, cp, (void **)&bpth, (void **)&n))
+#       if defined(TRACE)
+        fprintf(debug, "  ptr_db_add(uz_path_db key(%s) dat(%s))\n", name, current_path);
+#       endif
+        ptr_db_add(&uz_path_db, strdup(name), bpth);
+    }
+    else if (str_eq_dotdot(name) && !ptr_db_srch(&uz_path_db, current_path, (void **)&bpth, (void **)&n))
     {
 		name = bpth->pth; /* dat */
-#ifdef HAVE_LIBAVLBST
+#       ifdef HAVE_LIBAVLBST
         rnam = n->key.p;
-#else
+#       else
         rnam = n->key;
-#endif
+#       endif
+#       if defined(TRACE)
+        fprintf(debug, "  ptr_db_srch(uz_path_db, key(%s)): name(%s) rnam(%s)\n", current_path, name, rnam);
+#       endif
         const size_t rl = strlen(rnam);
-
-        if (    !strncmp(rnam, syspth[0], rl) ||
-                !strncmp(rnam, syspth[1], rl))
-            n = NULL;
-
-        if (!bmode) {
+        if (!bmode)
+        {
+            if (!strncmp(rnam, syspth[0], rl) || !strncmp(rnam, syspth[1], rl))
+            {
+                n = NULL;
+            }
             const int col = bpth->col != -1 ? bpth->col : right_col;
             const size_t l = strlen(name);
             memcpy(syspth[col], name, l+1);
@@ -4211,17 +4250,17 @@ enter_dir(const char *name, const char *rnam, bool lzip, bool rzip, short tree
             // else {
             //  TODO: reset path offset
             // }
-
             name = NULL;
         }
-
-        if (n) {
+        if (n)
+        {
             free(bpth);
             ptr_db_del(&uz_path_db, n);
         }
-	} else {
-		/* DON'T REMOVE! (Cause currently unclear) */
-		n = NULL;
+    }
+    else
+    {
+        n = NULL; // n might be set by an unsuccessful search. Clear it.
 	}
 
 	if (bmode && chdir(name) == -1) {
@@ -4244,12 +4283,12 @@ enter_dir(const char *name, const char *rnam, bool lzip, bool rzip, short tree
 			/* sp is absolut. So reset length to place sp at
 			 * begin of string. */
 			*lp = 0;
-			scan_subdir(sp, NULL, right_col ? 2 : 1);
+            scan_subdir(saved_path, NULL, right_col ? 2 : 1);
 		} else {
 			fmode_chdir();
 		}
 
-		free(sp);
+        free(saved_path);
 	}
 
 	if (n) {
@@ -4265,7 +4304,7 @@ enter_dir(const char *name, const char *rnam, bool lzip, bool rzip, short tree
         s[l] = 0; /* remove "/[lr]" */
 
         rmtmpdirs(s); /* does free(rnam) */
-        respthofs(bmode || right_col ? 1 : 0);
+        reset_path_offsets(bmode || right_col ? 1 : 0);
 
 		if (bmode)
             free(const_cast_ptr(name)); /* dat */
@@ -4277,7 +4316,7 @@ enter_dir(const char *name, const char *rnam, bool lzip, bool rzip, short tree
 		syspth[0][pthlen[0]] = 0;
 	}
 
-	if ((uv = db_get_curs(right_col, cp))) {
+    if ((uv = db_get_curs(right_col, current_path))) {
 		top_idx[right_col] = *uv++;
 		curs[right_col] = *uv;
 	}

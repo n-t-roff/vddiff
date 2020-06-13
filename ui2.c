@@ -1340,11 +1340,10 @@ int anykey(const char *const text)
     }
 }
 
-void
-free_zdir(struct filediff *z, char *t)
+void free_zdir(struct filediff *z, char *t)
 {
 #if defined(TRACE)
-	fprintf(debug, "<>free_zdir(z->name=%s, t=%s)\n", z->name, t);
+    fprintf(debug, "->free_zdir(z->name=%s, t=%s)\n", z->name, t);
 #endif
     free(const_cast_ptr(z->name));
 	free(z);
@@ -1353,6 +1352,9 @@ free_zdir(struct filediff *z, char *t)
         /* Not called for archives, only for compressed files. */
         rmtmpdirs(t);
 	}
+#if defined(TRACE)
+    fprintf(debug, "<-free_zdir()\n");
+#endif
 }
 
 void

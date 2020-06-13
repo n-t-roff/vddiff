@@ -146,6 +146,9 @@ db_new(int (*compare)(union bst_val, union bst_val))
 int
 ptr_db_add(void **db, char *key, void *dat)
 {
+#   if defined(TRACE)
+    fprintf(debug, "<>ptr_db_add(key(%s))\n", key);
+#   endif
 #ifdef HAVE_LIBAVLBST
 	struct bst_node *n;
 	int br;
@@ -178,6 +181,9 @@ ptr_db_add(void **db, char *key, void *dat)
 int
 ptr_db_srch(void **db, char *key, void **dat, void **n)
 {
+#   if defined(TRACE)
+    fprintf(debug, "<>ptr_db_srch(key(%s))\n", key);
+#   endif
 #ifdef HAVE_LIBAVLBST
 	int i;
 	struct bst_node *n1;

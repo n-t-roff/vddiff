@@ -51,14 +51,14 @@ static char *zpths(const struct filediff *, struct filediff **, int, size_t *,
 char *tmp_dir;
 /* View path names used by the UI.
  * syspth[0] and syspth[1] are only used for file system access. */
-char *vpath[2];
+char *path_display_name[2];
 /* View path buffer size. Initially set by uz_init(). */
-size_t vpthsz[2];
+size_t path_display_buffer_size[2];
 /* Number of bytes in syspth[0]/syspth[1], which belong to the temporary
  * directory only. */
-size_t spthofs[2];
+size_t sys_path_tmp_len[2];
 /* Offset in view path to where real path + tpthlen is copied. */
-size_t vpthofs[2];
+size_t path_display_name_offset[2];
 static struct pthofs *pthofs[2];
 const char *tmpdirbase;
 
@@ -119,8 +119,8 @@ uz_init(void)
 		return 1;
 	}
 
-	vpath[0] = malloc((vpthsz[0] = 4096));
-	vpath[1] = malloc((vpthsz[1] = 4096));
+    path_display_name[0] = malloc((path_display_buffer_size[0] = 4096));
+    path_display_name[1] = malloc((path_display_buffer_size[1] = 4096));
 #if defined(TRACE) && 0 /* DANGER!!! Hides bugs! Keep 0! */
 	*vpath[0] = 0;
 	*vpath[1] = 0;
@@ -245,12 +245,10 @@ mktmpdirs(void)
 #endif /* HAVE_MKDTEMP */
 }
 
-void
-rmtmpdirs(const char *const s)
+void rmtmpdirs(const char *const s)
 {
 #if defined(TRACE) && 1
-    fprintf(debug, "->rmtmpdirs(%s) lpth=%s rpth=%s\n",
-            s, syspth[0], syspth[1]);
+    fprintf(debug, "->rmtmpdirs(%s) lpth=%s rpth=%s\n", s, syspth[0], syspth[1]);
 #endif
     char *const syspth_copy = strdup(syspth[0]);
     memcpy(syspth[0], s, strlen(s) + 1);
@@ -560,114 +558,119 @@ zpths(const struct filediff *f, struct filediff **z2, int tree, size_t *l2,
 	}
 }
 
-void setvpth(const int i)
+void set_path_display_name(const int i)
 {
-    const int src = bmode ? 1 :
-                    i > 1 ? 0 : i; /* `src` is not used if `i > 1` */
-    const size_t l = pthlen[src] - spthofs[src];
-
-	if (i > 1) {
+#   if defined(TRACE) && 1
+    fprintf(debug, "->set_path_display_name(i=%d)\n", i);
+#   endif
+    if (i > 1)
+    {
 		/* 1 before 0 because of bmode */
-		setvpth(1);
-		setvpth(0);
-		return;
+        set_path_display_name(1);
+        set_path_display_name(0);
+        goto ret;
 	}
-	if (spthofs[src] > pthlen[src] || vpthofs[i] > vpthsz[i]) {
-#ifdef DEBUG
-		printerr("Path offset error", "setvpth()");
-#endif
-		return;
+#   if defined(TRACE) && 1
+    TRCPTH;
+    fprintf(debug, "  trcpth[%d]=\"%s\"\n", i, trcpth[i]); // 0 <= i <= 1 !
+#   endif
+    const int src = bmode ? 1 : i;
+    if (sys_path_tmp_len[src] > pthlen[src] || path_display_name_offset[i] > path_display_buffer_size[i])
+    {
+#       ifdef DEBUG
+        printerr("Path offset error", "set_path_display_name()");
+#       endif
+        goto ret;
 	}
-
-#if defined(TRACE) && 1
-	TRCPTH;
-    fprintf(debug, "->setvpth(i=%d): trcpth[i]=\"%s\"\n", i, trcpth[i]);
-#endif
-
-	while (l >= vpthsz[i] - vpthofs[i]) {
-		vpath[i] = realloc(vpath[i], vpthsz[i] <<= 1);
+    const size_t l = pthlen[src] - sys_path_tmp_len[src];
+    while (l >= path_display_buffer_size[i] - path_display_name_offset[i])
+    {
+        path_display_name[i] = realloc(path_display_name[i], path_display_buffer_size[i] <<= 1);
 	}
-
-	memcpy(vpath[i] + vpthofs[i], syspth[src] + spthofs[src], l);
-	vpath[i][vpthofs[i] + l] = 0;
-#if defined(TRACE) && 1
-    fprintf(debug, "<-setvpth(i=%d) vpthsz[i]=%zu vpath[i]=\"%s\"\n", i, vpthsz[i], vpath[i]);
-#endif
+    memcpy(path_display_name[i] + path_display_name_offset[i], syspth[src] + sys_path_tmp_len[src], l);
+    path_display_name[i][path_display_name_offset[i] + l] = 0;
+#   if defined(TRACE) && 1
+    fprintf(debug, "  vpthsz[%d]=%zu vpath[%d]=\"%s\"\n", i, path_display_buffer_size[i], i, path_display_name[i]); // 0 <= i <= 1 !
+#   endif
+    ret: ;
+#   if defined(TRACE) && 1
+    fprintf(debug, "<-set_path_display_name(i=%d)\n", i);
+#   endif
 }
 
-void setpthofs(const int mode, const char *const fn, const char *const tn)
+void set_path_display_name_offset(const int mode, const char *const fn, const char *const tn)
 {
+#if defined(TRACE) && 1
+    fprintf(debug, "->set_path_display_name_offset(mode=%d archive file name fn=\"%s\" temp dir name tn=\"%s\")\n",
+            mode, fn, tn);
+#endif
     const size_t l = strlen(fn);
     struct pthofs *const p = malloc(sizeof(*p));
     const int fl =  mode & ~3;
     const int  i = (mode & 3) > 1 ? 1 : mode & 3;
     const bool b = (mode & 3) > 1 ? FALSE : bmode && i ? TRUE : FALSE;
 
-#if defined(TRACE) && 1
-    fprintf(debug, "->setpthofs(mode=%d archive file name fn=\"%s\" temp dir name tn=\"%s\")\n",
-            mode, fn, tn);
-#endif
-	p->sys = spthofs[i];
-	p->view = vpthofs[i];
+    p->sys = sys_path_tmp_len[i];
+    p->view = path_display_name_offset[i];
     p->vpth = !(fl & 4) /* when started from main() vpath[i] is invalid */
-            && *fn == '/' ? strdup(vpath[i]) : NULL;
+            && *fn == '/' ? strdup(path_display_name[i]) : NULL;
 	p->next = pthofs[i];
 	pthofs[i] = p;
 	/* If we are already in a archive and enter another archive,
 	 * keep the full current vpath and add the archive name. */
-	vpthofs[i] = fl & 4 || *fn == '/' ? 0 :
-	             vpthofs[i] ? strlen(vpath[i]) : pthlen[bmode ? 1 : i];
-	spthofs[i] = strlen(tn);
+    path_display_name_offset[i] = fl & 4 || *fn == '/' ? 0 :
+                 path_display_name_offset[i] ? strlen(path_display_name[i]) : pthlen[bmode ? 1 : i];
+    sys_path_tmp_len[i] = strlen(tn);
 
-	while (vpthsz[i] < vpthofs[i] + l + 3) {
-		vpath[i] = realloc(vpath[i], vpthsz[i] <<= 1);
+    while (path_display_buffer_size[i] < path_display_name_offset[i] + l + 3) {
+        path_display_name[i] = realloc(path_display_name[i], path_display_buffer_size[i] <<= 1);
 	}
 
 	if (!((fl & 4) || *fn == '/')) {
-		vpath[i][vpthofs[i]++] = '/';
+        path_display_name[i][path_display_name_offset[i]++] = '/';
 	}
 
-	memcpy(vpath[i] + vpthofs[i], fn, l);
-	vpath[i][vpthofs[i] += l] = '/';
-	vpath[i][vpthofs[i]] = 0;
+    memcpy(path_display_name[i] + path_display_name_offset[i], fn, l);
+    path_display_name[i][path_display_name_offset[i] += l] = '/';
+    path_display_name[i][path_display_name_offset[i]] = 0;
 
 	/* Nobody else sets vpath[0] in bmode. But this is needed for
 	 * bmode -> dmode. */
 	if (b) {
-		vpthofs[0] = vpthofs[1];
+        path_display_name_offset[0] = path_display_name_offset[1];
 
-		while (vpthsz[0] < vpthofs[0] + l + 3) {
-			vpath[0] = realloc(vpath[0], vpthsz[0] <<= 1);
+        while (path_display_buffer_size[0] < path_display_name_offset[0] + l + 3) {
+            path_display_name[0] = realloc(path_display_name[0], path_display_buffer_size[0] <<= 1);
 		}
 
-		memcpy(vpath[0], vpath[1], vpthofs[0] + 1);
+        memcpy(path_display_name[0], path_display_name[1], path_display_name_offset[0] + 1);
 #if defined(TRACE) && 1
-        fprintf(debug, "<-setpthofs(i=%d) vpthsz[0]=%zu vpath[0]=\"%s\"\n", i, vpthsz[0], vpath[0]);
+        fprintf(debug, "  vpthsz[0]=%zu vpath[0]=\"%s\"\n", path_display_buffer_size[0], path_display_name[0]);
 #endif
 	}
 
 #if defined(TRACE) && 1
-    fprintf(debug, "<-setpthofs(i=%d) vpthsz[i]=%zu vpath[i]=\"%s\"\n", i, vpthsz[i], vpath[i]);
+    fprintf(debug, "<-set_path_display_name_offset(i=%d) path_display_buffer_size[i]=%zu path_display_name[i]=\"%s\"\n",
+            i, path_display_buffer_size[i], path_display_name[i]);
 #endif
 }
 
 /* Called when archive is left */
 
-void
-respthofs(int i)
+void reset_path_offsets(int i)
 {
 	struct pthofs *p;
 
-#if defined(TRACE) && 0
-	fprintf(debug, "<>respthofs(col=%d)\n", i);
+#if defined(TRACE) && 1
+    fprintf(debug, "<>reset_path_offsets(col=%d)\n", i);
 #endif
 	p = pthofs[i];
 	pthofs[i] = p->next;
-	spthofs[i] = p->sys;
-	vpthofs[i] = p->view;
+    sys_path_tmp_len[i] = p->sys;
+    path_display_name_offset[i] = p->view;
 
 	if (p->vpth) {
-		memcpy(vpath[i], p->vpth, strlen(p->vpth) + 1);
+        memcpy(path_display_name[i], p->vpth, strlen(p->vpth) + 1);
 		free(p->vpth);
 	}
 

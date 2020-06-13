@@ -16,10 +16,10 @@ struct uz_ext {
 
 extern const char *tmpdirbase;
 extern char *tmp_dir;
-extern char *vpath[2];
-extern size_t vpthsz[2];
-extern size_t spthofs[2];
-extern size_t vpthofs[2];
+extern char *path_display_name[2];
+extern size_t path_display_buffer_size[2];
+extern size_t sys_path_tmp_len[2];
+extern size_t path_display_name_offset[2];
 
 struct filediff *unpack(const struct filediff *, int, char **, int);
 void rmtmpdirs(const char *const);
@@ -32,7 +32,7 @@ const char *gettmpdirbase(void);
  * Input
  *   i: 0: syspth[0], 1: syspth[1], 2: both paths
  */
-void setvpth(const int i);
+void set_path_display_name(const int i);
 /*
  * Called when archive is entered
  * Input
@@ -42,7 +42,7 @@ void setvpth(const int i);
  *   fn: archive file name
  *   tn: temp dir name
  */
-void setpthofs(const int mode, const char *const, const char *const);
-void respthofs(int);
+void set_path_display_name_offset(const int mode, const char *const, const char *const);
+void reset_path_offsets(int);
 
 #endif /* UZP_H */

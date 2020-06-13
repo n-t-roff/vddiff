@@ -190,7 +190,7 @@ restore_fmode(void)
 void
 mk_abs_pth(char *p, size_t *l)
 {
-	char *s;
+    char *s;
 
 	if (*p == '/') {
 		return;
@@ -212,11 +212,14 @@ prt2chead(
     /* 1: Show path */
     unsigned md)
 {
-	if (md & 1) {
+#   if defined(TRACE) && 1
+    fprintf(debug, "->prt2chead()\n");
+#   endif
+    if (md & 1) {
 		wmove(wstat, 1, 0);
 		wclrtoeol(wstat);
-		setvpth(0);
-		putmbsra(wstat, vpath[0], llstw);
+		set_path_display_name(0);
+		putmbsra(wstat, path_display_name[0], llstw);
 	}
 
 	standoutc(wstat);
@@ -231,9 +234,12 @@ prt2chead(
 	/* Splitted to save one wmove */
 
 	if (md & 1) {
-		setvpth(1);
-		putmbsra(wstat, vpath[1], 0);
+		set_path_display_name(1);
+		putmbsra(wstat, path_display_name[1], 0);
 	}
+#   if defined(TRACE) && 1
+    fprintf(debug, "<-prt2chead()\n");
+#   endif
 }
 
 WINDOW *

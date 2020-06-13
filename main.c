@@ -544,12 +544,12 @@ main(int argc, char **argv)
 		check_args(argc, argv);
 
         if (zipfile[0]) {
-            setpthofs(bmode ? 5 : 4, arg[0], zipfile[0]->name);
+            set_path_display_name_offset(bmode ? 5 : 4, arg[0], zipfile[0]->name);
         }
 
         if (zipfile[1]) {
             /* 2: don't set vpath[0] */
-            setpthofs(6, arg[1], zipfile[1]->name);
+            set_path_display_name_offset(6, arg[1], zipfile[1]->name);
         }
 
         if (S_ISLNK(gstat[0].st_mode) ||
