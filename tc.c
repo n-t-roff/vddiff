@@ -119,42 +119,45 @@ dmode_fmode(
      * 2: Don't disp_list */
     unsigned mode)
 {
-	if (fmode)
-		return;
-
-#if defined(TRACE)
-	TRCPTH;
-	fprintf(debug, "->dmode_fmode(%u) lp(%s) rp(%s) bm=%u fm=%u 2c=%u\n",
-	    mode, trcpth[0], trcpth[1], bmode ? 1 : 0, fmode ? 1 : 0,
-	    twocols ? 1 : 0);
-#endif
-	while (!bmode && ui_stack)
-		pop_state(2);
-
-	if (bmode || /* bmode -> fmode */
-	    twocols) { /* 2C diff -> fmode */
-		bmode = FALSE; /* from tgl2c() */
-		twocols = TRUE;
-		fmode = TRUE;
-		right_col = old_col;
-		open2cwins();
-	} else { /* 1C diff -> bmode */
-		bmode = TRUE;
-	}
-
-	mk_abs_pth(syspth[0], &pthlen[0]);
-	mk_abs_pth(syspth[1], &pthlen[1]);
-	rebuild_db((mode & 1) ? 1 : 0);
-
-	if (!(mode & 2)) {
-		disp_fmode();
-	}
-#if defined(TRACE)
-	TRCPTH;
-	fprintf(debug, "<-dmode_fmode(%u) lp(%s) rp(%s) bm=%u fm=%u 2c=%u\n",
-	    mode, trcpth[0], trcpth[1], bmode ? 1 : 0, fmode ? 1 : 0,
-	    twocols ? 1 : 0);
-#endif
+#   if defined(TRACE)
+    fprintf(debug, "->dmode_fmode(%u) bm=%u fm=%u 2c=%u\n", mode, bmode ? 1 : 0, fmode ? 1 : 0, twocols ? 1 : 0);
+    TRCVPTH;
+#   endif
+    if (!fmode)
+    {
+        while (!bmode && ui_stack)
+        {
+            pop_state(2);
+        }
+        if (bmode /* bmode -> fmode */
+                || twocols) /* 2C diff -> fmode */
+        {
+            if (bmode)
+            {
+                bmode = FALSE; /* from tgl2c() */
+                sys_path_tmp_len[0] = sys_path_tmp_len[1];
+            }
+            twocols = TRUE;
+            fmode = TRUE;
+            right_col = old_col;
+            open2cwins();
+        }
+        else /* 1C diff -> bmode */
+        {
+            bmode = TRUE;
+        }
+        mk_abs_pth(syspth[0], &pthlen[0]);
+        mk_abs_pth(syspth[1], &pthlen[1]);
+        rebuild_db((mode & 1) ? 1 : 0);
+        if (!(mode & 2))
+        {
+            disp_fmode();
+        }
+    }
+#   if defined(TRACE)
+    fprintf(debug, "<-dmode_fmode(%u) bm=%u fm=%u 2c=%u\n", mode, bmode ? 1 : 0, fmode ? 1 : 0, twocols ? 1 : 0);
+    TRCVPTH;
+#   endif
 }
 
 void
@@ -214,31 +217,31 @@ prt2chead(
 {
 #   if defined(TRACE) && 1
     fprintf(debug, "->prt2chead()\n");
+    TRCVPTH;
 #   endif
-    if (md & 1) {
+    if (md & 1)
+    {
 		wmove(wstat, 1, 0);
 		wclrtoeol(wstat);
 		set_path_display_name(0);
 		putmbsra(wstat, path_display_name[0], llstw);
 	}
-
 	standoutc(wstat);
 	mvwaddch(wstat, 0, llstw, ' ');
-
-	if (!(md & 2)) {
+    if (!(md & 2))
+    {
 		mvwaddch(wstat, 1, llstw, ' ');
 	}
-
 	standendc(wstat);
-
 	/* Splitted to save one wmove */
-
-	if (md & 1) {
+    if (md & 1)
+    {
 		set_path_display_name(1);
 		putmbsra(wstat, path_display_name[1], 0);
 	}
 #   if defined(TRACE) && 1
     fprintf(debug, "<-prt2chead()\n");
+    TRCVPTH;
 #   endif
 }
 
@@ -259,10 +262,8 @@ tgl2c(
 	char *s;
 
 #   if defined(TRACE)
-    TRCPTH;
-    fprintf(debug, "->tgl2c(%u) lp(%s) rp(%s) left_display(%s) right_display(%s) bm=%u fm=%u 2c=%u\n",
-        md, trcpth[0], trcpth[1], path_display_name[0], path_display_name[1], bmode ? 1 : 0, fmode ? 1 : 0,
-	    twocols ? 1 : 0);
+    fprintf(debug, "->tgl2c(%u) bm=%u fm=%u 2c=%u\n", md, bmode ? 1 : 0, fmode ? 1 : 0, twocols ? 1 : 0);
+    TRCVPTH;
 #   endif
 	if (bmode) { /* -> fmode */
 		bool sc = one_scan;
@@ -362,10 +363,8 @@ tgl2c(
 		disp_fmode();
 	}
 #if defined(TRACE)
-    TRCPTH;
-    fprintf(debug, "<-tgl2c(%u) lp(%s) rp(%s) left_display(%s) right_display(%s) bm=%u fm=%u 2c=%u\n",
-        md, trcpth[0], trcpth[1], path_display_name[0], path_display_name[1], bmode ? 1 : 0, fmode ? 1 : 0,
-	    twocols ? 1 : 0);
+    fprintf(debug, "<-tgl2c(%u) bm=%u fm=%u 2c=%u\n", md, bmode ? 1 : 0, fmode ? 1 : 0, twocols ? 1 : 0);
+    TRCVPTH;
 #endif
 }
 
@@ -385,7 +384,11 @@ resize_fmode(void)
 void
 disp_fmode(void)
 {
-	if (fmode) {
+#   if defined(TRACE)
+    fprintf(debug, "->disp_fmode()\n");
+    TRCVPTH;
+#   endif
+    if (fmode) {
 		right_col = right_col ? 0 : 1;
 		disp_list(0);
 		wnoutrefresh(getlstwin());
@@ -395,6 +398,10 @@ disp_fmode(void)
 	}
 
 	disp_list(1);
+#   if defined(TRACE)
+    fprintf(debug, "<-disp_fmode()\n");
+    TRCVPTH;
+#   endif
 }
 
 void

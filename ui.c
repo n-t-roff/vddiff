@@ -68,13 +68,13 @@ static void curs_up(void);
  */
 static void disp_marked_line(const unsigned y, const unsigned i, const unsigned md, WINDOW *const w);
 
+/* Used in: scroll_up(), scroll_down(), disp_curs(), disp_list(), clr_mark() */
 /**
  * @brief disp_line
  * @param y Display line.
  * @param i DB index.
  * @param info 1: is cursor line.
  */
-/* Used in: scroll_up(), scroll_down(), disp_curs(), disp_list(), clr_mark() */
 static void disp_line(unsigned y, unsigned i, int info);
 static void push_state(const char *, const char *, unsigned);
 static void help(void);
@@ -2851,58 +2851,54 @@ void disp_curs(int a)
 #endif
 }
 
-void disp_list(unsigned md)
+void disp_list(const unsigned md)
 {
 	unsigned y, i;
 	WINDOW *w;
 
-#if defined(TRACE)
+#   if defined(TRACE)
 	fprintf(debug, "->disp_list(%u) col=%d\n", md, right_col);
-#endif
+    TRCVPTH;
+#   endif
 	w = getlstwin();
-
 	/* For the case that entries had been removed
 	 * and page_down() */
-
-	if (top_idx[right_col] >= db_num[right_col]) {
-
-		top_idx[right_col] =
-		    db_num[right_col] ? db_num[right_col] - 1 : 0;
+    if (top_idx[right_col] >= db_num[right_col])
+    {
+        top_idx[right_col] = db_num[right_col] ? db_num[right_col] - 1 : 0;
 	}
-
-	if (top_idx[right_col] + curs[right_col] >= db_num[right_col]) {
-
-		curs[right_col] = db_num[right_col] ? db_num[right_col] -
-		    top_idx[right_col] - 1 : 0;
+    if (top_idx[right_col] + curs[right_col] >= db_num[right_col])
+    {
+        curs[right_col] = db_num[right_col] ? db_num[right_col] - top_idx[right_col] - 1 : 0;
 	}
-
-	if (fmode && right_col) {
+    if (fmode && right_col)
+    {
 		/* Else glyphs are left in right column with ncursesw */
 		wclear(w);
-	} else {
+    }
+    else
+    {
 		werase(w);
 	}
-
 	/* Else glyphs are left with NetBSD curses */
 	wrefresh(w);
-
-	if (!db_num[right_col]) {
+    if (!db_num[right_col])
+    {
 		no_file();
 		goto exit;
 	}
-
-	for (y = 0, i = top_idx[right_col];
+    for (y = 0, i = top_idx[right_col];
 	    y < listh && ((twocols && !fmode) || i < db_num[right_col]);
         y++, i++)
     {
         disp_marked_line(y, i, md, w);
 	}
-
-exit:
+    exit:
 	refr_scr();
-#if defined(TRACE)
-	fprintf(debug, "<-disp_list\n");
-#endif
+#   if defined(TRACE)
+    fprintf(debug, "<-disp_list(%u)\n", md);
+    TRCVPTH;
+#   endif
 	return;
 }
 
@@ -2954,79 +2950,84 @@ static void disp_line(unsigned y, unsigned i, int info)
 	int diff = 'E'; /* Internal error */
 	int type[2] = { 'E', 'E' };
     mode_t mode[2] = { ~0U, ~0U }; /* Detect error */
-	struct filediff *f;
+    struct filediff *f = NULL;
 	short color_id = 0;
-	WINDOW *w;
+    WINDOW *w = NULL;
     attr_t a = 0;
-	int mx;
+    int mx = 0;
     short cp = 0;
 
-#if defined(DEBUG)
-	if (i >= db_num[right_col]) {
+#   if defined(DEBUG)
+    if (i >= db_num[right_col])
+    {
 		standoutc(wstat);
 		printerr("disp_line: i >= num", "");
 		return;
 	}
-#endif
-
+#   endif
 	w = getlstwin();
 	f = db_list[right_col][i];
 	mx = !fmode    ? (int)listw :
 	     right_col ?      rlstw :
 	                      llstw ;
-
-	if (twocols && !fmode) {
+    if (twocols && !fmode)
+    {
 		(wattr_get)(w, &a, &cp, NULL);
 	}
-#if defined(TRACE) && 0
-	else {
-		a = 0; cp = 0;
-	}
-
-	fprintf(debug,
-	    "->disp_line(y=%u i=%u is_curs=%i) attr=0x%x color=%d\n",
-	    y, i, info, a, cp);
-#endif
-
-	if (fmode || bmode) {
+#   if defined(TRACE) && 1
+    fprintf(debug, "->disp_line(y=%u i=%u is_curs=%i) attr=0x%x color=%d\n", y, i, info, a, cp);
+#   endif
+    if (fmode || bmode)
+    {
 		goto no_diff;
-	} else if (!f->type[0]) {
+    }
+    else if (!f->type[0])
+    {
 		diff = '>';
 		*mode = f->type[1];
 		color_id = PAIR_RIGHTONLY;
-	} else if (!f->type[1]) {
+    }
+    else if (!f->type[1])
+    {
 		diff = '<';
 		*mode = f->type[0];
 		color_id = PAIR_LEFTONLY;
-	} else if ((f->type[0] & S_IFMT) != (f->type[1] & S_IFMT)) {
+    }
+    else if ((f->type[0] & S_IFMT) != (f->type[1] & S_IFMT))
+    {
 		if (twocols && !fmode)
+        {
 			diff = 'X';
-		else {
+        }
+        else
+        {
 			diff = ' ';
 			*mode = 0;
 			type[0] = '!';
 		}
-
 		color_id = PAIR_DIFF;
-	} else {
-no_diff:
+    }
+    else
+    {
+    no_diff:
 		diff = f->diff;
 		*mode = right_col ? f->type[1] : f->type[0];
-
 		if (diff == '!')
+        {
 			color_id = PAIR_DIFF;
+        }
 		else if (diff == '-')
+        {
 			color_id = PAIR_ERROR;
+        }
 	}
-
 	if (twocols && !fmode && diff == '>')
+    {
 			goto prtc2;
-
-	set_file_info(f, twocols && !fmode ? f->type[0] : *mode, type,
-	    &color_id, &diff);
+    }
+    set_file_info(f, twocols && !fmode ? f->type[0] : *mode, type, &color_id, &diff);
 #if defined(TRACE)
-	fprintf(debug, "  col %d %c 0%o \"%s\"\n", right_col ? 1 : 0,
-	    *type, twocols && !fmode ? f->type[0] : *mode, f->name);
+    fprintf(debug, "  col %d %c 0%o \"%s\"\n", right_col ? 1 : 0, *type, twocols && !fmode ? f->type[0] : *mode, f->name);
 #endif
 	disp_name(w, y, 0, twocols && !fmode ? llstw : mx, info, f, *type,
 	    color_id,
@@ -3107,8 +3108,8 @@ prtc2:
 	filt_stat();
 	dir_change = FALSE;
 
-ret:
-#if defined(TRACE) && 0
+    ret:
+#if defined(TRACE) && 1
 	(wattr_get)(w, &a, &cp, NULL);
 	fprintf(debug, "<-disp_line attr=0x%x color=%d\n", a, cp);
 #endif
@@ -3295,24 +3296,33 @@ static int disp_name(WINDOW *w, int y, int x, int mx, int o,
 	return 0;
 }
 
-static void
-statcol(
+static void statcol(
     /* See prt2chead() */
     int m)
 {
+#if defined(TRACE)
+    fprintf(debug, "->statcol()\n");
+    TRCVPTH;
+#endif
 	if (bmode) {
-		return;
+        goto ret;
 	}
 
 	if (twocols || (m & 2)) {
 		prt2chead(m);
-		return;
+        goto ret;
 	}
 
 	standoutc(wstat);
 	mvwaddch(wstat, 0, 0, '<');
 	mvwaddch(wstat, 1, 0, '>');
 	standendc(wstat);
+    ret:
+#if defined(TRACE)
+    fprintf(debug, "<-statcol()\n");
+    TRCVPTH;
+#endif
+    return;
 }
 
 static const char *
@@ -3949,13 +3959,11 @@ pop_state(
 	struct ui_state *st = ui_stack;
 	bool d2f;
 
-#if defined(TRACE)
+#   if defined(TRACE)
 	TRCPTH;
-	fprintf(debug, "->pop_state(m=%d) lp(%s) rp(%s) fp(%s)"
-	    " from_fmode=%d st=%p\n",
-	    mode, trcpth[0], trcpth[1], fpath, from_fmode ? 1 : 0,
-	    st);
-#endif
+    fprintf(debug, "->pop_state(m=%d) lp(%s) rp(%s) fp(%s) from_fmode=%d st=%p\n",
+        mode, trcpth[0], trcpth[1], fpath, from_fmode ? 1 : 0, st);
+#   endif
 	if (!st) {
 		if (from_fmode) {
 			restore_fmode();
@@ -3967,9 +3975,9 @@ pop_state(
 	}
 
 	d2f = st->fl & 1 ? TRUE : FALSE;
-#if defined(TRACE)
+#   if defined(TRACE)
 	fprintf(debug, "  d2f=%d\n", d2f ? 1 : 0);
-#endif
+#   endif
 
 	if (st->lzip || st->rzip) {
 		/* In diff mode a new scan DB is only required when

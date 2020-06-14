@@ -1127,43 +1127,47 @@ rebuild_db(
 {
     char *name = NULL;
 
-#if defined(TRACE)
-	fprintf(debug, "->rebuild_db(%d) c=%u\n", mode, curs[right_col]);
-#endif
-	syspth[0][pthlen[0]] = 0;
-
-	if (!bmode) {
+#   if defined(TRACE)
+    fprintf(debug, "->rebuild_db(%d) curs[right_col]=%u\n", mode, curs[right_col]);
+    TRCVPTH;
+#   endif
+    syspth[0][pthlen[0]] = 0;
+    if (!bmode)
+    {
 		syspth[1][pthlen[1]] = 0;
 	}
-
-	if (mode) {
+    if (mode)
+    {
 		name = saveselname();
 	}
-
 	/* pointer is freed in next line */
-	if (mark && !gl_mark) {
+    if (mark && !gl_mark)
+    {
 		mark_global();
 	}
-
-	if (!(mode & 4)) {
+    if (!(mode & 4))
+    {
 		diff_db_free(0);
 		build_diff_db(bmode || fmode ? 1 : subtree);
 	}
-
-	if (fmode && !(mode & 2)) {
+    if (fmode && !(mode & 2))
+    {
 		diff_db_free(1);
 		build_diff_db(2);
 	}
-
-	if (mode && name) {
+    if (mode && name)
+    {
 		center(findlistname(name));
 		free(name);
-	} else {
-		disp_fmode();
+    }
+    else
+    {
+        disp_fmode();
 	}
-#if defined(TRACE)
+#   if defined(TRACE)
 	fprintf(debug, "<-rebuild_db\n");
-#endif
+    TRCVPTH;
+#   endif
 }
 
 static int proc_dir(void)

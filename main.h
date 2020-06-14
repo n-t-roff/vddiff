@@ -39,6 +39,20 @@
 		memcpy(trcpth[1], syspth[1], pthlen[1]); \
 		trcpth[1][pthlen[1]] = 0; \
 	} while (0)
+
+# define TRCVPTH \
+    do { \
+        TRCPTH; \
+        fprintf(debug, \
+                "    syspth[0]=\"%s\" sys_path_tmp_len[0]=%zu\n" \
+                "    syspth[1]=\"%s\" sys_path_tmp_len[1]=%zu\n" \
+                "    path_display_name[0]=\"%s\" path_display_name_offset[0]=%zu\n" \
+                "    path_display_name[1]=\"%s\" path_display_name_offset[1]=%zu\n", \
+                trcpth[0], sys_path_tmp_len[0], \
+                trcpth[1], sys_path_tmp_len[1], \
+                path_display_name[0], path_display_name_offset[0], \
+                path_display_name[1], path_display_name_offset[1]); \
+    } while (0)
 #endif
 
 struct strlst {

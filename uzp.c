@@ -121,6 +121,8 @@ uz_init(void)
 
     path_display_name[0] = malloc((path_display_buffer_size[0] = 4096));
     path_display_name[1] = malloc((path_display_buffer_size[1] = 4096));
+    path_display_name[0][0] = 0;
+    path_display_name[1][0] = 0;
 #if defined(TRACE) && 0 /* DANGER!!! Hides bugs! Keep 0! */
 	*vpath[0] = 0;
 	*vpath[1] = 0;
@@ -562,6 +564,7 @@ void set_path_display_name(const int i)
 {
 #   if defined(TRACE) && 1
     fprintf(debug, "->set_path_display_name(i=%d)\n", i);
+    TRCVPTH;
 #   endif
     if (i > 1)
     {
@@ -570,10 +573,6 @@ void set_path_display_name(const int i)
         set_path_display_name(0);
         goto ret;
 	}
-#   if defined(TRACE) && 1
-    TRCPTH;
-    fprintf(debug, "  trcpth[%d]=\"%s\"\n", i, trcpth[i]); // 0 <= i <= 1 !
-#   endif
     const int src = bmode ? 1 : i;
     if (sys_path_tmp_len[src] > pthlen[src] || path_display_name_offset[i] > path_display_buffer_size[i])
     {
@@ -586,23 +585,28 @@ void set_path_display_name(const int i)
     while (l >= path_display_buffer_size[i] - path_display_name_offset[i])
     {
         path_display_name[i] = realloc(path_display_name[i], path_display_buffer_size[i] <<= 1);
-	}
+#       if defined(TRACE) && 1
+        fprintf(debug, "  path_display_buffer_size[%d]=%zu\n", i, path_display_buffer_size[i]); // 0 <= i <= 1 !
+#       endif
+    }
+#   if defined(TRACE) && 1
+    fprintf(debug, "  memcpy(path_display_name[%d] + %zu, syspth[%d] + sys_path_tmp_len[%d]=%zu, %zu)\n",
+            i, path_display_name_offset[i], src, src, sys_path_tmp_len[src], l);
+#   endif
     memcpy(path_display_name[i] + path_display_name_offset[i], syspth[src] + sys_path_tmp_len[src], l);
     path_display_name[i][path_display_name_offset[i] + l] = 0;
-#   if defined(TRACE) && 1
-    fprintf(debug, "  vpthsz[%d]=%zu vpath[%d]=\"%s\"\n", i, path_display_buffer_size[i], i, path_display_name[i]); // 0 <= i <= 1 !
-#   endif
-    ret: ;
+    ret:
 #   if defined(TRACE) && 1
     fprintf(debug, "<-set_path_display_name(i=%d)\n", i);
+    TRCVPTH;
 #   endif
+    return;
 }
 
 void set_path_display_name_offset(const int mode, const char *const fn, const char *const tn)
 {
 #if defined(TRACE) && 1
-    fprintf(debug, "->set_path_display_name_offset(mode=%d archive file name fn=\"%s\" temp dir name tn=\"%s\")\n",
-            mode, fn, tn);
+    fprintf(debug, "->set_path_display_name_offset(mode=%d archive file name fn=\"%s\" temp dir name tn=\"%s\")\n", mode, fn, tn);
 #endif
     const size_t l = strlen(fn);
     struct pthofs *const p = malloc(sizeof(*p));
