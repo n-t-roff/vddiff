@@ -1476,9 +1476,9 @@ next_key:
 			break;
 
 		case CTRL('l'):
-#if defined(TRACE)
+#           if defined(TRACE)
             fprintf(debug, "  CTRL('l')\n");
-#endif
+#           endif
             c = 0;
 			rebuild_scr();
 			break;
@@ -1558,7 +1558,10 @@ next_key:
 			break;
 
 		case CTRL('w'):
-			c = 0;
+#           if defined(TRACE)
+            fprintf(debug, "  CTRL('w')\n");
+#           endif
+            c = 0;
 			tgl2c(0);
 			break;
 
@@ -4235,12 +4238,12 @@ enter_dir(const char *name, const char *rnam, bool lzip, bool rzip, short tree
 #       endif
         if (!bmode)
         {
-            // TODO:
-            //const size_t rl = strlen(rnam);
-            //if (!strncmp(rnam, syspth[0], rl) || !strncmp(rnam, syspth[1], rl))
-            //{
-            //    n = NULL;
-            //}
+            // Is this ZIP open on other side too?
+            if (fmode && !strncmp(rnam, syspth[right_col ? 0 : 1], strlen(rnam)))
+            {
+                n = NULL; // Flag: Don't remove ZIP directory since it is still in use by other side.
+                reset_path_offsets(right_col);
+            }
             const int col = bpth->col != -1 ? bpth->col : right_col;
             const size_t l = strlen(name);
             memcpy(syspth[col], name, l+1);

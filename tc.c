@@ -258,11 +258,12 @@ tgl2c(
 	size_t l1, l2;
 	char *s;
 
-#if defined(TRACE)
-	fprintf(debug, "->tgl2c(%u) lp(%s) rp(%s) bm=%u fm=%u 2c=%u\n",
-	    md, syspth[0], syspth[1], bmode ? 1 : 0, fmode ? 1 : 0,
+#   if defined(TRACE)
+    TRCPTH;
+    fprintf(debug, "->tgl2c(%u) lp(%s) rp(%s) left_display(%s) right_display(%s) bm=%u fm=%u 2c=%u\n",
+        md, trcpth[0], trcpth[1], path_display_name[0], path_display_name[1], bmode ? 1 : 0, fmode ? 1 : 0,
 	    twocols ? 1 : 0);
-#endif
+#   endif
 	if (bmode) { /* -> fmode */
 		bool sc = one_scan;
 
@@ -361,8 +362,9 @@ tgl2c(
 		disp_fmode();
 	}
 #if defined(TRACE)
-	fprintf(debug, "<-tgl2c(%u) lp(%s) rp(%s) bm=%u fm=%u 2c=%u\n",
-	    md, syspth[0], syspth[1], bmode ? 1 : 0, fmode ? 1 : 0,
+    TRCPTH;
+    fprintf(debug, "<-tgl2c(%u) lp(%s) rp(%s) left_display(%s) right_display(%s) bm=%u fm=%u 2c=%u\n",
+        md, trcpth[0], trcpth[1], path_display_name[0], path_display_name[1], bmode ? 1 : 0, fmode ? 1 : 0,
 	    twocols ? 1 : 0);
 #endif
 }
