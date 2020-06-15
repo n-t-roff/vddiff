@@ -4097,23 +4097,23 @@ enter_dir(const char *name, const char *rnam, bool lzip, bool rzip, short tree
     char *saved_path = NULL; /* saved path */
     struct bpth *bpth = NULL;
     size_t *lp = NULL;
-#ifdef HAVE_LIBAVLBST
+#   ifdef HAVE_LIBAVLBST
     struct bst_node *n = NULL;
-#else
+#   else
     struct ptr_db_ent *n = NULL;
-#endif
+#   endif
 	bool f2d = FALSE;
 
-#ifdef TRACE
-	TRCPTH;
-	fprintf(debug, "->" LOCFMT
-        "enter_dir(left_name(%s) right_name(%s) left_zip=%d right_zip=%d tree=%d) left_sys_path(%s) right_sys_path(%s)\n",
-# ifdef DEBUG
-	    _file, _line,
-# endif
-	    name, rnam, lzip, rzip, tree, trcpth[0], trcpth[1]);
-#endif
-	if (   (str_eq_dotdot(name) && rnam) /* enter_dir("..", NULL, ...) is used to change to the parent directory */
+#   ifdef TRACE
+    fprintf(debug, "->" LOCFMT
+            "enter_dir(name(%s) rnam(%s) lzip=%d rzip=%d tree=%d)\n",
+#           ifdef DEBUG
+            _file, _line,
+#           endif
+            name, rnam, lzip, rzip, tree);
+    TRCVPTH;
+#   endif
+    if (   (str_eq_dotdot(name) && rnam) /* enter_dir("..", NULL, ...) is used to change to the parent directory */
         || (str_eq_dotdot(rnam) && name)) /* Same goes for enter_dir(NULL, "..", ...) */
     {
 		goto ret;

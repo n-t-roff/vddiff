@@ -89,13 +89,13 @@ void
 fmode_dmode(void)
 {
 	if (!fmode)
+    {
 		return;
-
-#if defined(TRACE)
-	fprintf(debug, "->fmode_dmode lp(%s) rp(%s) bm=%u fm=%u 2c=%u\n",
-	    syspth[0], syspth[1], bmode ? 1 : 0, fmode ? 1 : 0,
-	    twocols ? 1 : 0);
-#endif
+    }
+#   if defined(TRACE)
+    fprintf(debug, "->fmode_dmode bm=%u fm=%u 2c=%u\n", bmode ? 1 : 0, fmode ? 1 : 0, twocols ? 1 : 0);
+    TRCVPTH;
+#   endif
 	fmode = FALSE;
 	/*diff_db_free(?);*/
 	old_col = right_col;
@@ -107,9 +107,8 @@ fmode_dmode(void)
 	diff_db_free(0);
 	diff_db_free(1);
 #if defined(TRACE)
-	fprintf(debug, "<-fmode_dmode lp(%s) rp(%s) bm=%u fm=%u 2c=%u\n",
-	    syspth[0], syspth[1], bmode ? 1 : 0, fmode ? 1 : 0,
-	    twocols ? 1 : 0);
+    fprintf(debug, "<-fmode_dmode bm=%u fm=%u 2c=%u\n", bmode ? 1 : 0, fmode ? 1 : 0, twocols ? 1 : 0);
+    TRCVPTH;
 #endif
 }
 
@@ -136,6 +135,8 @@ dmode_fmode(
             {
                 bmode = FALSE; /* from tgl2c() */
                 sys_path_tmp_len[0] = sys_path_tmp_len[1];
+                free_path_offsets(0);
+                copy_path_offsets(1, 0);
             }
             twocols = TRUE;
             fmode = TRUE;

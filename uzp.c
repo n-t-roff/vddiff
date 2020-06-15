@@ -648,35 +648,94 @@ void set_path_display_name_offset(const int mode, const char *const fn, const ch
 		}
 
         memcpy(path_display_name[0], path_display_name[1], path_display_name_offset[0] + 1);
-#if defined(TRACE) && 1
+#       if defined(TRACE) && 1
         fprintf(debug, "  vpthsz[0]=%zu vpath[0]=\"%s\"\n", path_display_buffer_size[0], path_display_name[0]);
-#endif
+#       endif
 	}
-
-#if defined(TRACE) && 1
+#   if defined(TRACE) && 1
     fprintf(debug, "<-set_path_display_name_offset(i=%d) path_display_buffer_size[i]=%zu path_display_name[i]=\"%s\"\n",
             i, path_display_buffer_size[i], path_display_name[i]);
-#endif
+#   endif
 }
 
 /* Called when archive is left */
 
 void reset_path_offsets(int i)
 {
-	struct pthofs *p;
+#   if defined(TRACE) && 1
+    fprintf(debug, "->reset_path_offsets(col=%d)\n", i);
+#   endif
+    struct pthofs *p = pthofs[i];
+    if (p)
+    {
+#       if defined(TRACE) && 1
+        fprintf(debug, "  p=pthofs[%d]=%p\n", i, (void *)p);
+#       endif
+        pthofs[i] = p->next;
+        sys_path_tmp_len[i] = p->sys;
+        path_display_name_offset[i] = p->view;
+        if (p->vpth)
+        {
+            memcpy(path_display_name[i], p->vpth, strlen(p->vpth) + 1);
+            free(p->vpth);
+        }
+        free(p);
+    }
+#   if defined(TRACE) && 1
+    fprintf(debug, "<-reset_path_offsets\n");
+#   endif
+}
 
-#if defined(TRACE) && 1
-    fprintf(debug, "<>reset_path_offsets(col=%d)\n", i);
-#endif
-	p = pthofs[i];
-	pthofs[i] = p->next;
-    sys_path_tmp_len[i] = p->sys;
-    path_display_name_offset[i] = p->view;
+void free_path_offsets(int i)
+{
+#   if defined(TRACE) && 1
+    fprintf(debug, "->free_path_offsets(%d)\n", i);
+#   endif
+    struct pthofs *p;
+    for (p = pthofs[i]; p;)
+    {
+        free(p->vpth);
+        struct pthofs *p2 = p;
+        p = p->next;
+        free(p2);
+    }
+#   if defined(TRACE) && 1
+    fprintf(debug, "<-free_path_offsets\n");
+#   endif
+}
 
-	if (p->vpth) {
-        memcpy(path_display_name[i], p->vpth, strlen(p->vpth) + 1);
-		free(p->vpth);
-	}
-
-	free(p);
+void copy_path_offsets(int i_from, int i_to)
+{
+#   if defined(TRACE) && 1
+    fprintf(debug, "->copy_path_offsets(%d,%d)\n", i_from, i_to);
+#   endif
+    struct pthofs *p_from = pthofs[i_from];
+    struct pthofs **p_to = &pthofs[i_to];
+    while (1)
+    {
+        if (!p_from)
+        {
+            *p_to = NULL;
+            break;
+        }
+        struct pthofs *p = *p_to = malloc(sizeof(*p));
+        p->sys = p_from->sys;
+        p->view = p_from->view;
+        if (p_from->vpth)
+        {
+            p->vpth = strdup(p_from->vpth);
+        }
+        else
+        {
+            p->vpth = NULL;
+        }
+        p_to = &(p->next);
+#       if defined(TRACE) && 1
+        fprintf(debug, "  sys=%zu view=%zu vpth=\"%s\"\n", p->sys, p->view, p->vpth);
+#       endif
+        p_from = p_from->next;
+    }
+#   if defined(TRACE) && 1
+    fprintf(debug, "<-copy_path_offsets\n");
+#   endif
 }

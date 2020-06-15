@@ -44,5 +44,7 @@ void set_path_display_name(const int i);
  */
 void set_path_display_name_offset(const int mode, const char *const, const char *const);
 void reset_path_offsets(int);
+void free_path_offsets(int i);
+void copy_path_offsets(int i_from, int i_to);
 
 #endif /* UZP_H */
