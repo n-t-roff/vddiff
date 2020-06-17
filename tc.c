@@ -32,6 +32,7 @@ PERFORMANCE OF THIS SOFTWARE.
 #include "diff.h"
 
 static void set_mb_bg(void);
+static void fmode_copy_side();
 
 int llstw, rlstw, rlstx, midoffs;
 /* Used for bmode <-> fmode transitions the remember fmode column */
@@ -405,24 +406,42 @@ disp_fmode(void)
 #   endif
 }
 
-void
-fmode_cp_pth(void)
+void fmode_cp_pth(void)
 {
-	if (right_col) {
-		syspth[0][pthlen[0]] = 0;
-		memcpy(syspth[1], syspth[0], pthlen[0] + 1);
-		pthlen[1] = pthlen[0];
-	} else {
-		syspth[1][pthlen[1]] = 0;
-		memcpy(syspth[0], syspth[1], pthlen[1] + 1);
-		pthlen[0] = pthlen[1];
-	}
-
-	enter_dir(NULL, NULL, FALSE, FALSE, 0 LOCVAR);
+#   if defined(TRACE)
+    fprintf(debug, "->fmode_cp_pth() right_col=%d\n", right_col);
+    TRCVPTH;
+#   endif
+    fmode_copy_side();
+    enter_dir(NULL, NULL, FALSE, FALSE, 0 LOCVAR);
+#   if defined(TRACE)
+    fprintf(debug, "<-fmode_cp_pth()\n");
+    TRCVPTH;
+#   endif
 }
 
-void
-stmove(int i)
+static void fmode_copy_side()
+{
+    int left_col = right_col ? 0 : 1;
+    syspth[left_col][pthlen[left_col]] = 0;
+    memcpy(syspth[right_col], syspth[left_col], pthlen[left_col] + 1);
+    pthlen[right_col] = pthlen[left_col];
+    path_display_name_offset[right_col] = path_display_name_offset[left_col];
+    sys_path_tmp_len[right_col] = sys_path_tmp_len[left_col];
+    path_display_buffer_size[right_col] = path_display_buffer_size[left_col];
+    free(path_display_name[right_col]);
+    path_display_name[right_col] = malloc(path_display_buffer_size[right_col]);
+    memcpy(path_display_name[right_col], path_display_name[left_col], path_display_buffer_size[left_col]);
+    sys_path_tmp_len[right_col] = sys_path_tmp_len[left_col];
+    free_path_offsets(right_col);
+    copy_path_offsets(left_col, right_col);
+#   if defined(TRACE)
+    fprintf(debug, "<-fmode_copy_side()\n");
+    TRCVPTH;
+#   endif
+}
+
+void stmove(int i)
 {
 	if (twocols) {
 		if (i)

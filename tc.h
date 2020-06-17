@@ -5,7 +5,6 @@
 
 struct bpth {
 	char *pth;
-	int col;
 };
 
 extern char *fpath;

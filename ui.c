@@ -4218,13 +4218,8 @@ enter_dir(const char *name, const char *rnam, bool lzip, bool rzip, short tree
 		}
 		bpth = malloc(sizeof(struct bpth));
         bpth->pth = strdup(current_path);
-        if (bmode)
+        if (!bmode)
         {
-            bpth->col = -1;
-        }
-        else
-        {
-			bpth->col = right_col;
 			*lp = 0;
             *current_path = 0;
 		}
@@ -4252,11 +4247,9 @@ enter_dir(const char *name, const char *rnam, bool lzip, bool rzip, short tree
                 n = NULL; // Flag: Don't remove ZIP directory since it is still in use by other side.
                 reset_path_offsets(right_col);
             }
-            const int col = bpth->col != -1 ? bpth->col : right_col;
             const size_t l = strlen(name);
-            memcpy(syspth[col], name, l+1);
-            pthlen[col] = l;
-
+            memcpy(syspth[right_col], name, l+1);
+            pthlen[right_col] = l;
             if (n)
             {
                 free(const_cast_ptr(name));
