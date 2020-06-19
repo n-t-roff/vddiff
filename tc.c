@@ -32,7 +32,7 @@ PERFORMANCE OF THIS SOFTWARE.
 #include "diff.h"
 
 static void set_mb_bg(void);
-static void fmode_copy_side();
+static void fmode_copy_side(void);
 
 int llstw, rlstw, rlstx, midoffs;
 /* Used for bmode <-> fmode transitions the remember fmode column */
@@ -420,7 +420,7 @@ void fmode_cp_pth(void)
 #   endif
 }
 
-static void fmode_copy_side()
+static void fmode_copy_side(void)
 {
     int left_col = right_col ? 0 : 1;
     syspth[left_col][pthlen[left_col]] = 0;
