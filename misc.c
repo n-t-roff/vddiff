@@ -268,4 +268,18 @@ void add_skip_ext(char *const ext)
                );
 }
 
+const char *get_filename_extension(const char *const filename)
+{
+    const char *ext = strrchr(filename, '.');
+    if (!ext || ext == filename)
+    {
+        ext = "";
+    }
+    else
+    {
+        ++ext;
+    }
+    return ext;
+}
+
 inline void *const_cast_ptr(const void *const ptr) { return ptr; }

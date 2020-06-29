@@ -13,7 +13,7 @@ LOSS OF USE, DATA OR PROFITS, WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE OR
 OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
 PERFORMANCE OF THIS SOFTWARE.
 ..
-.Dd January 27, 2020
+.Dd June 29, 2020
 .Dt VDDIFF 1
 .Sh NAME
 .Nm @vddiff@
@@ -712,6 +712,12 @@ Sort files by owner name.
 .
 .It Dq Li \&Sg
 Sort files by group name.
+.
+.It Dq Li \&SX
+Sort files by name extension.
+Currently does also sort directory names by extension.
+This may change in future revisions.
+Files are listed after directories.
 .
 .It Sq Li H
 Put cursor to top line.

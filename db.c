@@ -267,7 +267,9 @@ str_db_add(void **db, char *s)
 {
     void *const vp = tsearch(s, db, name_cmp);
     if (!vp)
+    {
         return NULL;
+    }
 	return *(char **)vp;
 }
 #endif
@@ -1213,7 +1215,9 @@ diff_cmp(
         const int i = strcmp(lbuf, rbuf);
         if (i)
             return i;
-    } else if (sorting == SORT_SYMLINK) {
+    }
+    else if (sorting == SORT_SYMLINK)
+    {
         const char *const lnk1 = f1->type[0] ? f1->link[0] : f1->link[1];
         const char *const lnk2 = f2->type[0] ? f2->link[0] : f2->link[1];
         if (lnk1 && lnk2) {
@@ -1224,24 +1228,41 @@ diff_cmp(
             return -1;
         else if (lnk2)
             return 1;
-    } else if (sorting != SORTMIXED) {
+    }
+    else if (sorting != SORTMIXED)
+    {
 		short f1_dir = IS_F_DIR(1),
 		      f2_dir = IS_F_DIR(2);
 		short dirsort = f1_dir && !f2_dir ? -1 :
 		                f2_dir && !f1_dir ?  1 : 0;
-
-		if (dirsort) {
-			if (sorting == DIRSFIRST)
+        if (dirsort)
+        {
+            if (sorting == DIRSFIRST // TODO: better refactor to "!DIRSLAST" to simplify this condition
+                    || sorting == SORT_EXTENSION)
+            {
 				return  dirsort;
+            }
 			else
+            {
 				return -dirsort;
+            }
 		}
-	}
-
+        if (sorting == SORT_EXTENSION)
+        {
+            const int i = strcmp(get_filename_extension(name1), get_filename_extension(name2));
+            if (i)
+            {
+                return i;
+            }
+        }
+    }
     int i;
-    if (sortic && (i = strcasecmp(name1, name2))) {
+    if (sortic && (i = strcasecmp(name1, name2)))
+    {
         return i;
-	} else {
+    }
+    else
+    {
 		return strcmp(name1, name2);
 	}
 }

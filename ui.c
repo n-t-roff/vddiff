@@ -1101,19 +1101,32 @@ next_key:
 				m |= 2;
 				break;
 
-			case 'U':
+            case 'U':
 				m |= 8;
 				break;
 
 			case 'X':
-				if (bmode || fmode || !fs_any_dst(u, num, 2))
-				{
-					c = 0;
-					goto next_key;
-				}
-
-				m |= 32;
-				break;
+                if (*key == 'S')
+                {
+                    c = 0;
+                    if (sorting == SORT_EXTENSION)
+                    {
+                        goto next_key;
+                    }
+                    sorting = SORT_EXTENSION;
+                    rebuild_db(1);
+                    goto next_key;
+                }
+                else
+                {
+                    if (bmode || fmode || !fs_any_dst(u, num, 2))
+                    {
+                        c = 0;
+                        goto next_key;
+                    }
+                    m |= 32;
+                }
+                break;
 			}
 
 			if (ui_cp(0, u, num, m)) {
@@ -1688,6 +1701,7 @@ static const char *const helptxt[] = {
        "St		Sort files by modification time only",
        "Su		Sort files by owner name",
        "Sg		Sort files by group name",
+       "SX		Sort files by file name extension",
        "H		Put cursor to top line",
        "M		Put cursor on middle line",
        "L		Put cursor on bottom line",
