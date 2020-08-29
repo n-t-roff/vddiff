@@ -2,13 +2,20 @@
 #include <string.h>
 #include <stdlib.h>
 #include <stdio.h>
+#include "main.h"
 
 char *abs2relPath(const char *const absPath, const char *const refPath)
 {
+#   if defined(TRACE) && 1
+    fprintf(debug, "->abs2relPath(absPath=\"%s\", refPath=\"%s\")\n", absPath, refPath);
+#   endif
     if (absPath[0] != '/' // path to convert is not absolute
             || refPath[0] != '/' // reference path not useable
             )
     {
+#       if defined(TRACE) && 1
+        fprintf(debug, "<-abs2relPath: invalid arguments\n");
+#       endif
         return strdup(absPath);
     }
     const size_t refPathLen = strlen(refPath);
@@ -35,10 +42,6 @@ char *abs2relPath(const char *const absPath, const char *const refPath)
             diffFound = 1;
         }
     }
-    if (pathElemCount == 0)
-    {
-        return strdup(absPath); // Paths are equal
-    }
     const size_t absPathLen = strlen(absPath);
     char *relPath = malloc(pathElemCount * 3 // "../" for each path element
                            + absPathLen - diffPathIndex // Part to be copied
@@ -53,5 +56,8 @@ char *abs2relPath(const char *const absPath, const char *const refPath)
     memcpy(relPath + relPathIndex, absPath + diffPathIndex + 1, // Start at index + 1 to avoid "//"
            absPathLen + 1 // Original path len
            - (diffPathIndex + 1)); // -(+1) = -1 for skipped '/'
+#   if defined(TRACE) && 1
+    fprintf(debug, "<-abs2relPath: \"%s\"\n", relPath);
+#   endif
     return relPath;
 }

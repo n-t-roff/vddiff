@@ -86,6 +86,7 @@ extern char *pth1, *pth2;
 /* Return value:
  *   -1: error */
 int rm_file(void);
+
 /**
  * WARNING: Overwrites `lbuf` and (via cmp_file()) `rbuf`!
  *
