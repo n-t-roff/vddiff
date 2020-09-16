@@ -112,6 +112,7 @@ bool find_dir_name_only;
 bool exit_on_error;
 bool moveCursorToFile;
 bool waitOnExec;
+bool hide_diff_files;
 
 #ifdef DEBUG
 static bool tmp_dir_check;
@@ -222,8 +223,8 @@ main(int argc, char **argv)
 
     while ((opt =
             getopt(argc, argv,
-                   /* hjz */
-                   "AaBbCcDdEeF:fG:gH:IiJK:kLlMmNnOoP:pQqRrSsTt:UuVv:WwXx:Yy"
+                   /* jz */
+                   "AaBbCcDdEeF:fG:gH:hIiJK:kLlMmNnOoP:pQqRrSsTt:UuVv:WwXx:Yy"
 #if defined (DEBUG)
                    "Z"
 #endif
@@ -296,6 +297,9 @@ main(int argc, char **argv)
                 return EXIT_STATUS_ERROR;
             }
             nosingle = *optarg - '0';
+            break;
+        case 'h':
+            hide_diff_files = TRUE;
             break;
         case 'I':
 			noic = 1; /* don't ignore case */

@@ -740,7 +740,8 @@ next_key:
             /* fall through */
 
 		case '!':
-		case 'c':
+        case '*':
+        case 'c':
 		case '&':
 		case '^':
 			if (bmode || fmode) {
@@ -754,6 +755,9 @@ next_key:
 			case '!':
 				noequal = noequal ? 0 : 1;
 				break;
+            case '*':
+                hide_diff_files = hide_diff_files ? 0 : 1;
+                break;
 
 			case 'c':
 				real_diff = real_diff ? 0 : 1;
@@ -1713,6 +1717,7 @@ static const char *const helptxt[] = {
        "^D		Scroll half screen down",
        "^U		Scroll half screen up",
        "!, n		Toggle display of equal files",
+       "*		Toggle display of different files",
        "c		Toggle showing only directories and really different files",
        "&		Toggle display of files which are on one side only",
        "&l		Hide files which are on left side only",
@@ -3844,7 +3849,8 @@ no_file(void)
 	int n = 0;
 
 	if (!(bmode || fmode)) {
-		if (real_diff) n++;
+        if (hide_diff_files) n++;
+        if (real_diff) n++;
 		if (noequal  ) n++;
 		if (nosingle ) n++;
 		if (excl_or  ) n++;
@@ -3857,12 +3863,13 @@ no_file(void)
 		printerr(NULL,
 		    "No file in list (key%s %s%s%s%s%sdisable%s filter%s).",
 		    n > 1 ? "s" : "",
-		    file_pattern ? "'E' " : "",
-            nohidden     ? "',' " : "",
-		    real_diff    ? "'c' " : "",
-		    noequal      ? "'!' " : "",
-		    nosingle     ? "'&' " : "",
-		    excl_or      ? "'^' " : "",
+            file_pattern    ? "'E' " : "",
+            nohidden        ? "',' " : "",
+            hide_diff_files ? "'*' " : "",
+            real_diff       ? "'c' " : "",
+            noequal         ? "'!' " : "",
+            nosingle        ? "'&' " : "",
+            excl_or         ? "'^' " : "",
 		    n > 1 ? "" : "s",
 		    n > 1 ? "s" : "");
 

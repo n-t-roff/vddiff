@@ -360,6 +360,8 @@ Ignore missing files on left side,
 .Dq Fl H Li 2 :
 Ignore missing files on right side.
 .
+.It Fl h
+Hide different files.
 .It Fl I
 Use case-sensitive pattern match.
 .It Fl i
@@ -408,7 +410,7 @@ Using
 this check is skipped.
 .
 .It Fl n
-This option suppresses the display of equal files.
+Hide equal files.
 .It Fl O
 Don't overwrite existing files.
 Intented for use with
@@ -741,6 +743,8 @@ Scroll half screen down.
 Scroll half screen up.
 .It So Li ! Sc or Sq Li n
 Toggle display of equal files.
+.It Sq Li *
+Toggle display of different files.
 .It Sq Li c
 Toggle display of all files or
 only directories which exist in both trees

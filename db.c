@@ -990,6 +990,8 @@ exit:
 	       (S_ISDIR(f->type[0]) && (!recursive || is_diff_dir(f))) || \
 	       (f->type[0] & S_IFMT) != (f->type[1] & S_IFMT)) \
 	      && \
+          (!hide_diff_files || f->diff == ' ') \
+          && \
 	      (!real_diff || \
 	       f->diff == '!' || (S_ISDIR(f->type[0]) && S_ISDIR(f->type[1]) \
 	       && (!recursive || is_diff_dir(f)))) \

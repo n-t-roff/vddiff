@@ -1228,7 +1228,9 @@ filt_stat(void)
 			mvwaddch(wstat, 0, x--, '!');
         if (real_diff)
 			mvwaddch(wstat, 0, x--, 'c');
-	}
+        if (hide_diff_files)
+            mvwaddch(wstat, 0, x--, '*');
+    }
 	standendc(wstat);
 	mvwaddch(wstat, 0, x--, ' ');
 }

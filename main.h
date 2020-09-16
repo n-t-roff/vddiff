@@ -91,6 +91,7 @@ extern bool find_dir_name_only;
 extern bool exit_on_error;
 extern bool moveCursorToFile;
 extern bool waitOnExec;
+extern bool hide_diff_files;
 
 char *add_home_pth(const char *);
 /*
