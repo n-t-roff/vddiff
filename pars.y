@@ -53,6 +53,7 @@ extern char *yytext;
 %token SORTIC PRESERVE_ALL PRESERVE_MTIM DISP_ALL NO_DOTDOT HIDDEN NO_HIDDEN
 %token NO_DISP_PERM NO_DISP_OWNER NO_DISP_GROUP NO_DISP_HSIZE NO_DISP_MTIME
 %token NO_PRESERVE FKEY_SET OVERRIDE
+%token VI_CURSOR_KEYS
 %token <str>     STRING
 %token <integer> INTEGER
 %%
@@ -143,7 +144,8 @@ option:
     | HIDDEN { nohidden = FALSE; }
     | NO_HIDDEN { nohidden = TRUE; }
     | OVERRIDE { override_prev = TRUE; }
-	| LOCALE STRING {
+    | VI_CURSOR_KEYS { vi_cursor_keys = TRUE; }
+    | LOCALE STRING {
 			if (!setlocale(LC_ALL, $2)) {
 				printf("locale LC_ALL=%s cannot be set\n",
 				    $2);

@@ -161,6 +161,7 @@ bool add_mtime;
 bool add_ns_mtim;
 bool add_owner;
 bool add_group;
+bool vi_cursor_keys;
 
 int
 build_ui(void)
@@ -428,6 +429,7 @@ next_key:
 #if defined(TRACE)
             fprintf(debug, "  KEY_LEFT\n");
 #endif
+emulate_key_left:
             if (*key == '|') {
 				c = *key;
 
@@ -475,6 +477,7 @@ next_key:
 #if defined(TRACE)
             fprintf(debug, "  KEY_RIGHT\n");
 #endif
+emulate_key_right:
             if (*key == '|') {
 				c = *key;
 
@@ -569,6 +572,10 @@ next_key:
 				disp_fmode();
 				goto next_key;
 			}
+            if (vi_cursor_keys)
+            {
+                goto emulate_key_left;
+            }
 
 			/* fall through */
 
@@ -948,7 +955,7 @@ next_key:
 				c = 0;
 				nosingle = 1;
 				re_sort_list();
-				goto next_key;
+                goto next_key;
 
             case 'S': /* "Sl" sort symlink */
                 c = 0;
@@ -961,12 +968,21 @@ next_key:
                 rebuild_db(1);
                 goto next_key;
 			}
-
+            if (vi_cursor_keys)
+            {
+                goto emulate_key_right;
+            }
 			c = 0;
             disp_fkey_list();
 			break;
-
-		case 'r':
+        case 'K':
+            c = 0;
+            if (vi_cursor_keys)
+            {
+                disp_fkey_list();
+            }
+            break;
+        case 'r':
 #if defined(TRACE)
 			fprintf(debug,
 			    "  'r': *key(%c) mark=%p edit=%d regex=%d\n",
@@ -1673,18 +1689,76 @@ save_st:
 	goto next_key;
 }
 
+/*
+ * A...		Show file information
+ * a		Show command line directory arguments
+ * B		-
+ * b		Binary diff to marked file
+ * C		Copy to other side
+ * c		Toggle showing only directories and really different files
+ * D...		Persistent directory list commands
+ * dd		Delete file or directory
+ * E		Toggle file name or file content filter
+ * e...		Change file attribute
+ * F		Toggle following symbolic links
+ * f		Show full path
+ * G		Go to last file
+ * g		- TODO: gg === 1G
+ * H		Put cursor to top line
+ * h		Display help, with vi_cursor_keys: KEY_LEFT
+ * I		-
+ * i		-
+ * J		Append to marked file
+ * j		KEY_DOWN
+ * K		With vi_cursor_keys: List function key strings
+ * k		KEY_UP
+ * L		Put cursor on bottom line
+ * l		List function key strings, with vi_cursor_keys: KEY_RIGHT
+ * M		Put cursor on middle line
+ * m		Mark file or directory
+ * N		Search previous pattern occurrence
+ * n		Search next pattern occurrence
+ * O		-
+ * o...		Open file
+ * P...		Create directory
+ * p		Show current relative work directory
+ * Q		Quit
+ * q		Quit
+ * R...		Show file information
+ * r		Remove mark, edit line or regex search
+ * S...		Sort files
+ * s...		Open shell
+ * T		Move file to over side
+ * t		-
+ * U		Update file
+ * u		Update file list
+ * V		Mark files
+ * v...		View raw file contents
+ * W		Toggle wait for <ENTER> after running external tool
+ * w		-
+ * X		Exchange file(s)
+ * x		-
+ * Y		Copy file path in reverse order to edit line
+ * y		Copy file path to edit line
+ * Z		-
+ * z...		Align selected line
+ */
+
 static const char *const helptxt[] = {
        "Type 'q' to quit help, scroll with <DOWN>, <UP>, <PAGE-DOWN>, and <PAGE-UP>.",
        "",
        "Q		Quit " BIN,
-       "h, ?		Display help",
+       "?		Display help",
+       "h		Display help, with vi_cursor_keys: emulate <LEFT>",
        "^L		Refresh display",
        "<TAB>		Toggle column",
        "<UP>, k, -	Move cursor up",
        "<DOWN>, j, +	Move cursor down",
        "<LEFT>		Leave directory (one directory up)",
-       "<RIGHT>, <ENTER>",
-       "		Enter directory or start diff tool",
+       "<RIGHT>",
+       "		Enter directory or view file",
+       "<ENTER>",
+       "		Enter directory, start diff tool or execute file",
        "<PG-UP>, <BACKSPACE>",
        "		Scroll one screen up",
        "<PG-DOWN>, <SPACE>",
@@ -1699,7 +1773,7 @@ static const char *const helptxt[] = {
        "/		Search file by typing first letters of filename",
        "//		Search file with regular expression",
        "Sd		Sort files with directories on top",
-       "Sl		Sort files by symbolic link target"
+       "Sl		Sort files by symbolic link target",
        "Sm		Sort files by name only",
        "SS		Sort files by size only",
        "St		Sort files by modification time only",
@@ -1812,7 +1886,8 @@ static const char *const helptxt[] = {
        "[<n>]<F1> - <F48>",
        "		Define string to be used in (or as) shell command",
        "		or execute shell command",
-       "l		List function key strings",
+       "l		List function key strings, with vi_cursor_keys: emulate <RIGHT>",
+       "K		With vi_cursor_keys: list function key strings",
        "u		Update file list",
        "s		Open shell",
        "sl		Open shell in left directory",

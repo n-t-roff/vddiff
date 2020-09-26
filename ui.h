@@ -133,5 +133,6 @@ extern bool add_mtime;
 extern bool add_ns_mtim;
 extern bool add_owner;
 extern bool add_group;
+extern bool vi_cursor_keys;
 
 #endif /* UI_H */

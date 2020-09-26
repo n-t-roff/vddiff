@@ -13,7 +13,7 @@ LOSS OF USE, DATA OR PROFITS, WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE OR
 OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
 PERFORMANCE OF THIS SOFTWARE.
 ..
-.Dd June 29, 2020
+.Dd September 26, 2020
 .Dt VDDIFF 1
 .Sh NAME
 .Nm @vddiff@
@@ -571,7 +571,13 @@ This is currently only supported if two arguments are given.
 .It So Li Q Sc , Do Li qy Dc , Do Li :q Dc , Do Li :qa Dc
 Quit
 .Nm .
-.It So Li h Sc or Sq Li \&?
+.It Sq Li h
+When
+.Cm vi_cursor_keys
+is active: emulate
+.Aq Cm LEFT ,
+else display help.
+.It Sq Li \&?
 Display help.
 In help mode the following inputs are valid:
 .Bl -tag -width 12n
@@ -1301,7 +1307,15 @@ for editing the left and right side file with
 and
 .Dq Li "$ vi $2" .
 .It Sq Li l
-List strings which had been defined for a function key.
+When
+.Cm vi_cursor_keys
+is active: emulate
+.Aq Cm RIGHT ,
+else list strings which had been defined for a function key.
+.It Sq Li K
+When
+.Cm vi_cursor_keys
+is active: list strings which had been defined for a function key.
 .It Sq Li u
 Update file list.
 Also used to remove multiple marks
@@ -1623,6 +1637,20 @@ into a quoted string, precede it with a backslash.
 This backslash is removed before storing the string.
 All other backslashes are preserved.
 .Bl -tag -width 12n
+.
+.It Li vi_cursor_keys
+Use
+.Cm vi
+cursor keys
+.Cm h , j , k
+and
+.Cm l .
+Normally h is bound to the help menu and l shows the function key bindings.
+When this command is used, keys h and l are bound to
+.Dq cursor left
+and
+.Dq cursor rigth ,
+respectively.
 .
 .It Li twocolumn
 Start in two-column mode.

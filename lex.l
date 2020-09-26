@@ -121,6 +121,7 @@ nopreserve { rc_col += yyleng; return NO_PRESERVE; }
 hidden { rc_col += yyleng; return HIDDEN; }
 nohidden { rc_col += yyleng; return NO_HIDDEN; }
 override { rc_col += yyleng; return OVERRIDE; }
+vi_cursor_keys { rc_col += yyleng; return VI_CURSOR_KEYS; }
 include		{ rc_col += yyleng; incl = 1            ; }
 {S}+		{ rc_col += yyleng; }
 
