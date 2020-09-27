@@ -35,7 +35,9 @@ void disp_fkey_list(void)
             switch (lkey_)
             {
             case KEY_DOWN:
+            case 'j':
             case KEY_RIGHT:
+            case 'l':
             case KEY_NPAGE:
             case ' ':
                 if (fkey_set >= FKEY_MUX_NUM - 1)
@@ -49,7 +51,9 @@ void disp_fkey_list(void)
                 continue;
 
             case KEY_UP:
+            case 'k':
             case KEY_LEFT:
+            case 'h':
             case KEY_PPAGE:
             case KEY_BACKSPACE:
             case CERASE:

@@ -1166,7 +1166,6 @@ emulate_key_right:
 			c = 0;
 			curs_first();
 			break;
-
 		case 'G':
 			if (ns) {
 				c = 0;
@@ -1326,64 +1325,74 @@ emulate_key_right:
 			break;
 
 		case 'g':
-			if (*key == 'A') {
+            if (*key == 'A')
+            {
 				c = 0;
-
-				if (add_group) {
+                if (add_group)
+                {
 					goto next_key;
 				}
-
 				add_group = TRUE;
 				re_sort_list();
 				disp_fmode();
 				goto next_key;
-
-			} else if (*key == 'R') {
+            }
+            else if (*key == 'R')
+            {
 				c = 0;
-
-				if (!add_group) {
+                if (!add_group)
+                {
 					goto next_key;
 				}
-
 				add_group = FALSE;
 				disp_fmode();
 				goto next_key;
-
-			} else if (*key == 'e') {
-				if (ui_chown(3, 1, u, num)) {
+            }
+            else if (*key == 'e')
+            {
+                if (ui_chown(3, 1, u, num))
+                {
 					c = 0;
 					goto next_key;
 				}
-
 				goto save_st;
-
-			} else if (key[1] == 'e') {
+            }
+            else if (key[1] == 'e')
+            {
 				if (*key == 'l') {
-					if (ui_chown(1, 1, u, num)) {
+                    if (ui_chown(1, 1, u, num))
+                    {
 						c = 0;
 						goto next_key;
 					}
-
 					goto save_st;
-
-				} else if (*key == 'r') {
-					if (ui_chown(2, 1, u, num)) {
+                }
+                else if (*key == 'r')
+                {
+                    if (ui_chown(2, 1, u, num))
+                    {
 						c = 0;
 						goto next_key;
 					}
-
 					goto save_st;
 				}
-            } else if (*key == 'S') {
+            }
+            else if (*key == 'S')
+            {
                 c = 0;
                 if (sorting == SORT_GROUP)
+                {
                     break;
+                }
                 sorting = SORT_GROUP;
                 rebuild_db(1);
-                break;
             }
-			break;
-
+            else if ('g' == *key)
+            {
+                c = 0;
+                center(0);
+            }
+            break;
 		case 's':
 			switch (*key) {
 			case 'A':
@@ -1967,6 +1976,7 @@ help(void) {
 			/* fall-through */
 
 		case KEY_LEFT:
+        case 'h':
 		case 'q':
 			goto exit;
 		case KEY_DOWN:
@@ -1998,8 +2008,7 @@ help(void) {
 				    "Invalid input '%c' ('q' quits help).", c);
 			else
 				printerr(NULL,
-				    "Invalid character code 0x%x"
-				    " ('q' quits help).", c);
+                    "Invalid character code 0x%x ('q' quits help).", c);
 		}
 	}
 
