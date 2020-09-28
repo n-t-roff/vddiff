@@ -977,10 +977,7 @@ emulate_key_right:
 			break;
         case 'K':
             c = 0;
-            if (vi_cursor_keys)
-            {
-                disp_fkey_list();
-            }
+            disp_fkey_list();
             break;
         case 'r':
 #if defined(TRACE)
@@ -1104,6 +1101,7 @@ emulate_key_right:
 			goto save_st;
 
 		case '@':
+        case 'B':
 		case 'C':
 		case 'U':
 		case 'X':
@@ -1117,14 +1115,14 @@ emulate_key_right:
 					/* wait for key 'l' or 'r' */
 					goto next_key;
 				}
-
 				m |= 2;
 				break;
-
+            case 'B':
+                m |= 0x100;
+                break;
             case 'U':
 				m |= 8;
 				break;
-
 			case 'X':
                 if (*key == 'S')
                 {
@@ -1148,15 +1146,13 @@ emulate_key_right:
                 }
                 break;
 			}
-
-			if (ui_cp(0, u, num, m)) {
+            if (ui_cp(0, u, num, m))
+            {
 				c = 0;
 				goto next_key;
 			}
-
 			goto save_st;
 		}
-
 		case 'J':
 			c = 0;
 			fs_cat(u);
@@ -1701,7 +1697,7 @@ save_st:
 /*
  * A...		Show file information
  * a		Show command line directory arguments
- * B		-
+ * B		Copy non-recursively to other side
  * b		Binary diff to marked file
  * C		Copy to other side
  * c		Toggle showing only directories and really different files
@@ -1712,7 +1708,7 @@ save_st:
  * F		Toggle following symbolic links
  * f		Show full path
  * G		Go to last file
- * g		- TODO: gg === 1G
+ * gg		Go to first file
  * H		Put cursor to top line
  * h		Display help, with vi_cursor_keys: KEY_LEFT
  * I		-
@@ -1758,7 +1754,7 @@ static const char *const helptxt[] = {
        "",
        "Q		Quit " BIN,
        "?		Display help",
-       "h		Display help, with vi_cursor_keys: emulate <LEFT>",
+       "h		With vi_cursor_keys: emulate <LEFT>, else display help",
        "^L		Refresh display",
        "<TAB>		Toggle column",
        "<UP>, k, -	Move cursor up",
@@ -1772,7 +1768,7 @@ static const char *const helptxt[] = {
        "		Scroll one screen up",
        "<PG-DOWN>, <SPACE>",
        "		Scroll one screen down",
-       "<HOME>, 1G	Go to first file",
+       "<HOME>, 1G, gg	Go to first file",
        "<END>, G	Go to last file",
        "<n>G		Go to line <n>",
        "|<LEFT>		In two-column mode: Enlarge right column",
@@ -1835,6 +1831,8 @@ static const char *const helptxt[] = {
        "'>>		Copy from first to second tree (range cursor...mark)",
        "[<n>]C		Copy to other side",
        "'C		Copy to other side (range cursor...mark)",
+       "[<n>]B		Copy non-recursively to other side",
+       "'B		Copy non-recursively to other side (range cursor...mark)",
        "[<n>]U		Update file(s)",
        "'U		Update file(s) (range cursor...mark)",
        "[<n>]X		Exchange file(s)",
@@ -1895,8 +1893,8 @@ static const char *const helptxt[] = {
        "[<n>]<F1> - <F48>",
        "		Define string to be used in (or as) shell command",
        "		or execute shell command",
-       "l		List function key strings, with vi_cursor_keys: emulate <RIGHT>",
-       "K		With vi_cursor_keys: list function key strings",
+       "l		With vi_cursor_keys: emulate <RIGHT>, else list function key strings",
+       "K		List function key strings",
        "u		Update file list",
        "s		Open shell",
        "sl		Open shell in left directory",

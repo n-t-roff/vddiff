@@ -95,6 +95,7 @@ enum fs_op fs_op;
 static enum {
     TREE_RM, /* delete */
     TREE_CP, /* copy */
+    CREATE_EMPTY, /* create empty directory */
     TREE_NOT_EMPTY
 } tree_op;
 
@@ -971,7 +972,14 @@ tpth:
             }
             free(relPath);
 		} else if (S_ISDIR(gstat[0].st_mode)) {
-			tree_op = TREE_CP;
+            if (0x100 & md)
+            {
+                tree_op = CREATE_EMPTY;
+            }
+            else
+            {
+                tree_op = TREE_CP;
+            }
 			proc_dir();
 		} else {
 			if (cp_file()) {
@@ -1184,8 +1192,13 @@ static int proc_dir(void)
 #ifdef HAVE_LIBAVLBST
     dir_db = db_new(name_cmp);
 #endif
-    if (tree_op == TREE_CP && creatdir()) {
+    if ((tree_op == TREE_CP || CREATE_EMPTY == tree_op) && creatdir())
+    {
         rv = -1;
+        goto ret;
+    }
+    if (CREATE_EMPTY == tree_op)
+    {
         goto ret;
     }
     if (tree_op == TREE_RM)

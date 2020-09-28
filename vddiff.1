@@ -13,7 +13,7 @@ LOSS OF USE, DATA OR PROFITS, WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE OR
 OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
 PERFORMANCE OF THIS SOFTWARE.
 ..
-.Dd September 26, 2020
+.Dd September 28, 2020
 .Dt VDDIFF 1
 .Sh NAME
 .Nm @vddiff@
@@ -640,7 +640,7 @@ and the selected file or directory.
 Scroll one screen up.
 .It Ao Cm PAGE-DOWN Ac or Aq Cm SPACE
 Scroll one screen down.
-.It Ao Cm HOME Ac or Dq Li 1G
+.It Ao Cm HOME Ac or Do Li 1G Dc or Dq Li gg
 Go to first file.
 .It Ao Cm END Ac or Sq Li G
 Go to last file.
@@ -880,13 +880,26 @@ if it had been below the mark.
 Copy all files between the cursor and the local mark (inclusive)
 from first to second tree.
 .Macro1
+.
 .It Oo Ar n Oc Ns Sq Li C
 Copy to other side.
 .Macro1
+.
 .It Dq Li \(aqC
 Copy all files between the cursor and the local mark (inclusive)
 to other side.
 .Macro1
+.
+.It Oo Ar n Oc Ns Sq Li B
+Copy non-recursively to other side
+(directories are created but left empty).
+.Macro1
+.
+.It Dq Li \(aqB
+Copy non-recursively all files between the cursor and the local mark (inclusive)
+to other side.
+.Macro1
+.
 .It Oo Ar n Oc Ns Sq Li U
 Update files:
 Overwrite older files.
@@ -1313,9 +1326,7 @@ is active: emulate
 .Aq Cm RIGHT ,
 else list strings which had been defined for a function key.
 .It Sq Li K
-When
-.Cm vi_cursor_keys
-is active: list strings which had been defined for a function key.
+List strings which had been defined for a function key.
 .It Sq Li u
 Update file list.
 Also used to remove multiple marks

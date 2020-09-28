@@ -60,6 +60,7 @@ int fs_rm(int tree, const char *const txt, char *nam, long u, int n,
  *    64 (0x40): Set fs_ign_errs
  *   128 (0x80): Use db_list[right_col ? 0 : 1][u]->name
  *               as new name
+ *   256 (0x100): Copy non-recursively
  *
  * Return value:
  *   1: General error
