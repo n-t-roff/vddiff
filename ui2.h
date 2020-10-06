@@ -7,11 +7,14 @@
 #define FKEY_WAIT  1 /* Wait after executing the command to check the command output.
                       * Used by '!' and '%'. */
 #define FKEY_FORCE 2 /* Immediately start execution. Used by '#' and '%'. */
+#define FKEY_SHELL 4 /* Open shell after command execution. */
 
 #define FKEY_CMD_CHR(i) \
-	(fkey_flags[fkey_set][i] & (FKEY_WAIT | FKEY_FORCE)) == (FKEY_WAIT | FKEY_FORCE) ? '%' : \
-	fkey_flags[fkey_set][i] & FKEY_WAIT  ? '!' : \
-	fkey_flags[fkey_set][i] & FKEY_FORCE ? '#' : '$'
+    (fkey_flags[fkey_set][i] & (FKEY_WAIT  | FKEY_FORCE)) == (FKEY_WAIT  | FKEY_FORCE) ? '%' : \
+    (fkey_flags[fkey_set][i] &  FKEY_WAIT               ) ==  FKEY_WAIT                ? '!' : \
+    (fkey_flags[fkey_set][i] &               FKEY_FORCE ) ==               FKEY_FORCE  ? '#' : \
+    (fkey_flags[fkey_set][i] & (FKEY_SHELL | FKEY_FORCE)) == (FKEY_SHELL | FKEY_FORCE) ? '>' : \
+                                                                                         '$'
 
 extern long mark_idx[2];
 extern long mmrkd[2];

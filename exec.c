@@ -598,10 +598,15 @@ exec_cmd(const char *const *const av, tool_flags_t flags, char *path, const char
 		}
 
 		if (wait_after_exec /* key 'W' */
-		    || (flags & TOOL_WAIT)) {
+            || (flags & TOOL_WAIT))
+        {
 			write(STDOUT_FILENO, prompt, sizeof prompt);
 			fgetc(stdin);
 		}
+        if (flags & TOOL_OPEN_SH)
+        {
+            open_sh(3);
+        }
 	}
 
 	if (wstat && !(flags & TOOL_NOCURS)) {

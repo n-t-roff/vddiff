@@ -115,13 +115,14 @@ test_fkey(
 			set_tool(&viewtool, strdup(fkey_cmd[fkey_set][i]),
 			    /* A rebuild_db() is done, so the list need not
 			     * to be updated by the command itself */
-			    TOOL_NOLIST |
-			    (fkey_flags[fkey_set][i] & FKEY_WAIT ? TOOL_WAIT :
-			    0));
+                TOOL_NOLIST
+                | (fkey_flags[fkey_set][i] & FKEY_WAIT  ? TOOL_WAIT    : 0)
+                | (fkey_flags[fkey_set][i] & FKEY_SHELL ? TOOL_OPEN_SH : 0)
+                );
 			act = num > 1 ? 8 : 9;
 
-			if ((force_exec || (fkey_flags[fkey_set][i] &
-			    FKEY_FORCE)) && (force_multi || num <= 1)) {
+            if ((force_exec || (fkey_flags[fkey_set][i] & FKEY_FORCE)) && (force_multi || num <= 1))
+            {
 				goto exec;
 			}
 
@@ -288,25 +289,24 @@ edit_fkey:
 		fkey_cmd[fkey_set][i] = NULL;
 		ek = *rbuf;
 
-		if (is_fkey_cmd(rbuf)) {
+        if (is_fkey_cmd(rbuf))
+        {
 			int c2;
 			int j = 0;
-
-			while ((c2 = rbuf[++j]) && isspace(c2));
-
+            while ((c2 = rbuf[++j]) && isspace(c2))
+                ;
 			if (!c2)
 				return 1; /* empty input */
-
 			set_fkey_cmd(fkey_set, i, rbuf + j, ek, NULL);
 			clr_edit();
-			printerr(NULL, "%c %s saved for F%d",
-			    FKEY_CMD_CHR(i), fkey_cmd[fkey_set][i], i + 1);
-		} else {
+            printerr(NULL, "%c %s saved for F%d", FKEY_CMD_CHR(i), fkey_cmd[fkey_set][i], i + 1);
+        }
+        else
+        {
 			sh_str[fkey_set][i] = linebuf;
 			linebuf = NULL; /* clr_edit(): free(linebuf) */
 			clr_edit();
-			printerr(NULL, "%ls"
-			    " saved for F%d", sh_str[fkey_set][i], i + 1);
+            printerr(NULL, "%ls saved for F%d", sh_str[fkey_set][i], i + 1);
 		}
 		return 1;
 	}
@@ -316,9 +316,7 @@ edit_fkey:
 
 bool is_fkey_cmd(const char *const s) {
     int ek;
-
-    bool result = ((ek = *s) == '$' || ek == '!' || ek == '#' || ek == '%') &&
-                  isspace((int)s[1]);
+    bool result = ((ek = *s) == '$' || ek == '!' || ek == '#' || ek == '%' || ek == '>') && isspace((int)s[1]);
 #if defined(TRACE)
     fprintf(debug, "<>is_fkey_cmd(%s): %d\n", s, result ? 1 : 0);
 #endif
@@ -338,10 +336,11 @@ set_fkey_cmd(
 	fkey_cmd[j][i] = strdup(s);
     set_fkey_comment(j, i, comment);
 	fkey_flags[j][i] =
-	    ek == '%' ? (FKEY_WAIT | FKEY_FORCE) :
-	    ek == '!' ? FKEY_WAIT  : /* wait after command */
-	    ek == '#' ? FKEY_FORCE : /* don't wait before command */
-	                0 ;
+        ek == '%' ? (FKEY_WAIT | FKEY_FORCE)  :
+        ek == '!' ? FKEY_WAIT                 : /* wait after command */
+        ek == '#' ? FKEY_FORCE                : /* don't wait before command */
+        ek == '>' ? (FKEY_SHELL | FKEY_FORCE) : /* don't wait before command, then open shell */
+                    0                         ;
 }
 
 void set_fkey_comment(const int set, const int key_id, char *const comment)

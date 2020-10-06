@@ -13,7 +13,7 @@ LOSS OF USE, DATA OR PROFITS, WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE OR
 OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
 PERFORMANCE OF THIS SOFTWARE.
 ..
-.Dd September 28, 2020
+.Dd October 6, 2020
 .Dt VDDIFF 1
 .Sh NAME
 .Nm @vddiff@
@@ -1299,12 +1299,13 @@ or
 .Sq Li %
 instead, the command is started immediately.)
 .Pp
-Summery:
+Summary:
 .Bl -column -offset indent ".Sq Li %"
 .It So Li $   Sc Ta Confirm command execution (e.g. for dangerous commands with no diagnostic output)
 .It So Li #   Sc Ta Just run command (e.g. for GUI tools)
 .It So Li \&! Sc Ta Confirm command execution and check output
 .It So Li %   Sc Ta Start command immediately but check output
+.It So Li >   Sc Ta Start command immediately and open shell in current directory
 .El
 .Pp
 To save a command for a function key which does not take
