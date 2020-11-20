@@ -808,8 +808,10 @@ ext_cmp(const void *a, const void *b)
 void
 db_set_curs(int col, char *path, unsigned _top_idx, unsigned _curs)
 {
-	unsigned *uv;
-
+#ifdef TRACE
+    fprintf(debug, "<>db_set_curs(col=%d path=%s topIdx=%u curs=%u)\n", col, path, _top_idx, _curs);
+#endif
+    unsigned *uv;
 #ifdef HAVE_LIBAVLBST
 	struct bst_node *n;
 	int br;
@@ -850,6 +852,9 @@ db_set_curs(int col, char *path, unsigned _top_idx, unsigned _curs)
 unsigned *
 db_get_curs(int col, char *path)
 {
+#ifdef TRACE
+    fprintf(debug, "<>db_get_curs(col=%d path=%s)\n", col, path);
+#endif
 #ifdef HAVE_LIBAVLBST
 	struct bst_node *n;
     union bst_val k;
