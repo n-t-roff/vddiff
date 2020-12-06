@@ -6,8 +6,7 @@
 
 #define TMPPREFIX "/." BIN "."
 
-enum uz_id { UZ_NONE, UZ_GZ, UZ_BZ2, UZ_TAR, UZ_TGZ, UZ_TBZ, UZ_ZIP,
-    UZ_XZ, UZ_TXZ, UZ_TAR_Z };
+enum uz_id { UZ_BZ2, UZ_GZ, UZ_NONE, UZ_RAR, UZ_TAR, UZ_TAR_Z, UZ_TBZ, UZ_TGZ, UZ_TXZ, UZ_XZ, UZ_ZIP };
 
 struct uz_ext {
 	const char *str;

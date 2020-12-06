@@ -42,11 +42,20 @@ struct pthofs {
 static int mktmpdirs(void);
 static enum uz_id check_ext(const char *, size_t *);
 static struct filediff *zcat(const char *, const struct filediff *, int, size_t);
-static struct filediff *tar(const char *const, const struct filediff *, int, size_t,
-    unsigned);
-static struct filediff *unzip(const struct filediff *, int, size_t, unsigned);
-static char *zpths(const struct filediff *, struct filediff **, int, size_t *,
-    size_t, int);
+static struct filediff *tar(const char *const, const struct filediff *, int, size_t, unsigned);
+static struct filediff *unrar(const struct filediff *f, int tree, size_t i, unsigned m);
+/**
+ * @brief unzip
+ * @param m 1: set tmp_dir
+ * @return
+ */
+static struct filediff *unzip(const struct filediff *, int, size_t, unsigned m);
+/**
+ * Sets lbuf (to original (packed) source file) and rbuf
+ * (to temporary unpacked target file)!
+ * @param fn 1: is file, not dir; 2: keep tmpdir
+ */
+static char *zpths(const struct filediff *, struct filediff **, int, size_t *, size_t, int fn);
 
 char *tmp_dir;
 /* View path names used by the UI.
@@ -69,6 +78,7 @@ static struct uz_ext exttab[] = {
     { "ods"    , UZ_ZIP },
 	{ "odt"    , UZ_ZIP },
 	{ "pptx"   , UZ_ZIP },
+    { "rar"    , UZ_RAR },
 	{ "tar"    , UZ_TAR },
 	{ "tar.bz2", UZ_TBZ },
 	{ "tar.gz" , UZ_TGZ },
@@ -86,6 +96,7 @@ static struct uz_ext exttab[] = {
 static struct uz_ext idtab[] = {
 	{ "bz2"    , UZ_BZ2 },
 	{ "gz"     , UZ_GZ  },
+    { "rar"    , UZ_RAR },
 	{ "tar"    , UZ_TAR },
 	{ "tar.Z"  , UZ_TAR_Z },
 	{ "tbz"    , UZ_TBZ },
@@ -320,43 +331,38 @@ unpack(const struct filediff *f, int tree, char **tmp,
 	if (mktmpdirs())
 		goto ret;
 
-	switch (id) {
-	case UZ_GZ:
+    switch (id)
+    {
+    case UZ_BZ2:
+        z = zcat("bzcat", f, tree, i);
+        break;
+    case UZ_GZ:
 		z = zcat("zcat", f, tree, i);
 		break;
-
-	case UZ_BZ2:
-		z = zcat("bzcat", f, tree, i);
-		break;
-
-	case UZ_XZ:
-		z = zcat("xzcat", f, tree, i);
-		break;
-
-	case UZ_TGZ:
+    case UZ_RAR:
+        z = unrar(f, tree, i, type & 4 ? 1 : 0);
+        break;
+    case UZ_TAR:
+        z = tar("xf", f, tree, i, type & 4 ? 1 : 0);
+        break;
+    case UZ_TAR_Z:
+        z = tar("xZf", f, tree, i, type & 4 ? 1 : 0);
+        break;
+    case UZ_TBZ:
+        z = tar("xjf", f, tree, i, type & 4 ? 1 : 0);
+        break;
+    case UZ_TGZ:
 		z = tar("xzf", f, tree, i, type & 4 ? 1 : 0);
 		break;
-
-	case UZ_TBZ:
-		z = tar("xjf", f, tree, i, type & 4 ? 1 : 0);
-		break;
-
-	case UZ_TAR:
-		z = tar("xf", f, tree, i, type & 4 ? 1 : 0);
-		break;
-
 	case UZ_TXZ:
 		z = tar("xJf", f, tree, i, type & 4 ? 1 : 0);
 		break;
-
-	case UZ_TAR_Z:
-		z = tar("xZf", f, tree, i, type & 4 ? 1 : 0);
-		break;
-
-	case UZ_ZIP:
+    case UZ_XZ:
+        z = zcat("xzcat", f, tree, i);
+        break;
+    case UZ_ZIP:
 		z = unzip(f, tree, i, type & 4 ? 1 : 0);
 		break;
-
 	default:
         rmtmpdirs(tmp_dir);
 		goto ret;
@@ -458,10 +464,19 @@ tar(const char *const opt, const struct filediff *f, int tree, size_t i,
 	return z;
 }
 
-static struct filediff *
-unzip(const struct filediff *f, int tree, size_t i,
-    /* 1: set tmp_dir */
-    unsigned m)
+static struct filediff *unrar(const struct filediff *f, int tree, size_t i, unsigned m)
+{
+    struct filediff *z;
+    static const char *av[] = { "unrar", "x", "-kb", NULL, NULL, NULL };
+
+    zpths(f, &z, tree, NULL, i, m & 1 ? 2 : 0);
+    av[3] = lbuf;
+    av[4] = rbuf;
+    exec_cmd(av, TOOL_TTY, NULL, NULL);
+    return z;
+}
+
+static struct filediff *unzip(const struct filediff *f, int tree, size_t i, unsigned m)
 {
 	struct filediff *z;
 	static const char *av[] = { "unzip", "-qq", NULL, "-d", NULL, NULL };
@@ -473,15 +488,7 @@ unzip(const struct filediff *f, int tree, size_t i,
 	return z;
 }
 
-/* Sets lbuf (to original (packed) source file) and rbuf
- * (to temporary unpacked target file)! */
-
-static char *
-zpths(const struct filediff *f, struct filediff **z2, int tree, size_t *l2,
-    size_t i,
-    /* 1: is file, not dir */
-    /* 2: keep tmpdir */
-    int fn)
+static char * zpths(const struct filediff *f, struct filediff **z2, int tree, size_t *l2, size_t i, int fn)
 {
     char *s;
     const char *s2;
