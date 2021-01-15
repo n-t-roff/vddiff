@@ -1533,14 +1533,18 @@ creatdir(void)
     }
     if (preserve_all) {
         if (lchown(pth2, gstat[0].st_uid, gstat[0].st_gid) == -1) {
-#if defined(TRACE)
+#           if defined(TRACE)
             fprintf(debug, "  lchown(%s): %s\n", pth2, strerror(errno));
-#endif
+#           endif
         }
-        if (chmod(pth2, gstat[0].st_mode & 07777) == -1) {
-#if defined(TRACE)
+        if (chmod(pth2, (gstat[0].st_mode & 07777)
+                  /* TODO: Restore actual permissions before closing this directory. */
+                  | 0700 /* make sure that target directory is usable. */
+                  ) == -1)
+        {
+#           if defined(TRACE)
             fprintf(debug, "  chmod(%s): %s\n", pth2, strerror(errno));
-#endif
+#           endif
         }
     }
     if (!wstat && verbose) {

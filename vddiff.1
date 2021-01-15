@@ -13,7 +13,7 @@ LOSS OF USE, DATA OR PROFITS, WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE OR
 OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
 PERFORMANCE OF THIS SOFTWARE.
 ..
-.Dd October 6, 2020
+.Dd December 6, 2020
 .Dt VDDIFF 1
 .Sh NAME
 .Nm @vddiff@
@@ -58,6 +58,7 @@ Currently the following file name extensions are
 supported:
 .Li .bz2 ,
 .Li .gz ,
+.Li .rar ,
 .Li .tar ,
 .Li .tbz ,
 .Li .tgz ,
@@ -66,6 +67,7 @@ supported:
 .Li .zip ,
 and
 .Li .Z .
+.Li .jar ,
 .Li .ods
 and
 .Li .odt
@@ -1992,9 +1994,11 @@ Currently the following file extensions are assigned:
 .It Sy Extension Ta Sy Algorithm
 .It Li bz2     Ta Li bz2
 .It Li gz      Ta Li gz
+.It Li jar     Ta Li zip
 .It Li ods     Ta Li zip
 .It Li odt     Ta Li zip
 .It Li pptx    Ta Li zip
+.It Li rar     Ta Li rar
 .It Li tar     Ta Li tar
 .It Li tar.bz2 Ta Li tbz
 .It Li tar.gz  Ta Li tgz
