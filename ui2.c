@@ -876,15 +876,17 @@ bindiff(void)
 
 	f = db_list[right_col][top_idx[right_col] + curs[right_col]];
 
-	/* check if mark needs to be unzipped */
 	ml = m->type[0] && (f->type[1] || !m->type[1]);
 
-	if ((z1 = unpack(m, ml ? 1 : 2, &t1, 0))) {
+    /* check if mark needs to be unzipped */
+    if (0 && (z1 = unpack(m, ml ? 1 : 2, &t1, 0)))
+    {
 		m = z1;
 	}
 
 	/* check if other file needs to be unzipped */
-	if ((z2 = unpack(f, f->type[1] ? 2 : 1, &t2, 0))) {
+    if (0 && (z2 = unpack(f, f->type[1] ? 2 : 1, &t2, 0)))
+    {
 		f = z2;
 	}
 
@@ -970,13 +972,13 @@ bindiff(void)
 		goto ret;
 	}
 
-	printerr(NULL, "Comparing %s and %s", olnam, ornam);
+    printerr(NULL, "Comparing \"%s\" and \"%s\"", olnam, ornam);
 	val = cmp_file(lnam, lsiz, rnam, rsiz, 1);
 
 ret:
 	switch (val) {
 	case 0:
-		printerr(any_txt, "Equal: %s and %s",
+        printerr(any_txt, "Equal: \"%s\" and \"%s\"",
 #if defined(DEBUG) && 0
 		    lnam, rnam);
 		(void)olnam;
@@ -986,7 +988,7 @@ ret:
 #endif
 		break;
 	case 1:
-		printerr(any_txt, "Different: %s and %s",
+        printerr(any_txt, "Different: \"%s\" and \"%s\"",
 #if defined(DEBUG) && 0
 		    lnam, rnam);
 #else
