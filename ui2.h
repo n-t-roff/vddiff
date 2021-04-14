@@ -47,7 +47,11 @@ void clr_regex(void);
 void start_regex(char *);
 int regex_srch(int);
 int parsopt(char *);
-void bindiff(void);
+/**
+ * @brief bindiff
+ * @param mode 1: unpack
+ */
+void bindiff(unsigned int mode);
 int chk_mark(const char *, short);
 char *saveselname(void);
 unsigned findlistname(char *);

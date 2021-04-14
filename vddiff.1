@@ -13,7 +13,7 @@ LOSS OF USE, DATA OR PROFITS, WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE OR
 OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
 PERFORMANCE OF THIS SOFTWARE.
 ..
-.Dd December 6, 2020
+.Dd April 14, 2021
 .Dt VDDIFF 1
 .Sh NAME
 .Nm @vddiff@
@@ -1182,15 +1182,15 @@ Remove mark, edit line, or regex search.
 Does not remove multiple marks, use
 .Sq Li u
 instead.
+.
 .It Sq Li b
 Test for binary difference between selected and marked file.
 Compressed files are unpacked but compressed archive files
 are compared directly.
-.begin_comment
-.Pp
-Handling of compressed files is implemented redundant
-and should be tested separately.
-.end_comment
+.
+.It Sq Li Z
+Test for binary difference between selected and marked file.
+Compressed files are not unpacked.
 .
 .It Sq Li y
 Copy file path(s) to edit line.

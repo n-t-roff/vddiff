@@ -519,10 +519,14 @@ emulate_key_right:
 			fmode_cp_pth();
 			break;
 
-		case 'b':
+        case 'b':
 			c = 0;
-			bindiff();
+            bindiff(1);
 			break;
+        case 'Z':
+            c = 0;
+            bindiff(0);
+            break;
 
 		case KEY_NPAGE:
 		case ' ':
@@ -1698,7 +1702,7 @@ save_st:
  * A...		Show file information
  * a		Show command line directory arguments
  * B		Copy non-recursively to other side
- * b		Binary diff to marked file
+ * b		Binary diff to marked file, unpack if necessary
  * C		Copy to other side
  * c		Toggle showing only directories and really different files
  * D...		Persistent directory list commands
@@ -1745,7 +1749,7 @@ save_st:
  * x		-
  * Y		Copy file path in reverse order to edit line
  * y		Copy file path to edit line
- * Z		-
+ * Z		Binary diff to marked file
  * z...		Align selected line
  */
 
@@ -1886,7 +1890,8 @@ static const char *const helptxt[] = {
        "VG		Toggle mark of all files from cursor to last line",
        "1GVG		Toggle mark of all files",
        "r		Remove mark, edit line or regex search",
-       "b		Binary diff to marked file",
+       "b		Binary diff to marked file, unpack if necessary",
+       "Z		Binary diff to marked file",
        "y		Copy file path to edit line",
        "Y		Copy file path in reverse order to edit line",
        "$		Enter shell command",

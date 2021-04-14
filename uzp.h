@@ -20,7 +20,19 @@ extern size_t path_display_buffer_size[2];
 extern size_t sys_path_tmp_len[2];
 extern size_t path_display_name_offset[2];
 
-struct filediff *unpack(const struct filediff *, int, char **, int);
+/**
+ * @brief unpack
+ * @param f
+ * @param tree
+ * @param tmp
+ * @param type
+ *   1: Also unpack archives, not just files
+ *   2: Non-curses mode
+ *   4: Always set tmpdir
+ *   8: Check if viewer is set for extension. In this case the archive is not unpacked.
+ * @return
+ */
+struct filediff *unpack(const struct filediff *f, int tree, char **tmp, int type);
 void rmtmpdirs(const char *const);
 int uz_init(void);
 void uz_add(char *, char *);

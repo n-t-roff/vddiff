@@ -281,13 +281,7 @@ void rmtmpdirs(const char *const s)
 }
 
 struct filediff *
-unpack(const struct filediff *f, int tree, char **tmp,
-    /* 1: Also unpack files, not just archives */
-    /* 2: Non-curses mode */
-    /* 4: Always set tmpdir */
-    /* 8: Check if viewer is set for extension. In this case the archive
-          is not unpacked. */
-    int type)
+unpack(const struct filediff *f, int tree, char **tmp, int type)
 {
 	enum uz_id id;
 	struct filediff *z = NULL;
@@ -313,12 +307,13 @@ unpack(const struct filediff *f, int tree, char **tmp,
 
 	switch (id) {
 	/* all archive types */
-	case UZ_TGZ:
-	case UZ_TBZ:
-	case UZ_TAR:
+    case UZ_RAR:
+    case UZ_TAR:
+    case UZ_TAR_Z:
+    case UZ_TBZ:
+    case UZ_TGZ:
 	case UZ_TXZ:
 	case UZ_ZIP:
-	case UZ_TAR_Z:
 		if (!(type & 1)) {
 			goto ret;
 		}

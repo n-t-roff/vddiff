@@ -860,7 +860,7 @@ set_all(void)
 }
 
 void
-bindiff(void)
+bindiff(unsigned int mode)
 {
 	struct filediff *f, *z1 = NULL, *z2 = NULL;
 	char *t1 = NULL, *t2 = NULL;
@@ -879,13 +879,13 @@ bindiff(void)
 	ml = m->type[0] && (f->type[1] || !m->type[1]);
 
     /* check if mark needs to be unzipped */
-    if (0 && (z1 = unpack(m, ml ? 1 : 2, &t1, 0)))
+    if ((mode & 1) && (z1 = unpack(m, ml ? 1 : 2, &t1, 0)))
     {
 		m = z1;
 	}
 
 	/* check if other file needs to be unzipped */
-    if (0 && (z2 = unpack(f, f->type[1] ? 2 : 1, &t2, 0)))
+    if ((mode & 1) && (z2 = unpack(f, f->type[1] ? 2 : 1, &t2, 0)))
     {
 		f = z2;
 	}
