@@ -56,7 +56,7 @@ static void mk_str_list(struct bst_node *);
 #else
 struct curs_pos {
 	char *path;
-	unsigned uv[2];
+    const char *name;
 };
 
 static int name_cmp(const void *, const void *);
@@ -806,23 +806,22 @@ ext_cmp(const void *a, const void *b)
  ***********/
 
 void
-db_set_curs(int col, char *path, unsigned _top_idx, unsigned _curs)
+db_set_curs(int col, char *path, const char *name)
 {
 #ifdef TRACE
-    fprintf(debug, "<>db_set_curs(col=%d path=%s topIdx=%u curs=%u)\n", col, path, _top_idx, _curs);
+    fprintf(debug, "<>db_set_curs(col=%d path=%s name=%s)\n", col, path, name);
 #endif
-    unsigned *uv;
 #ifdef HAVE_LIBAVLBST
 	struct bst_node *n;
 	int br;
     union bst_val k, v;
     k.p = path;
     if (!(br = bst_srch(curs_db[col], k, &n))) {
-		uv = n->data.p;
-	} else {
-		uv = malloc(2 * sizeof(unsigned));
+        free(n->data.p);
+        n->data.p = strdup(name);
+    } else {
         k.p = strdup(path);
-        v.p = uv;
+        v.p = strdup(name);
         avl_add_at(curs_db[col], k, v, br, n);
 	}
 #else
@@ -831,25 +830,24 @@ db_set_curs(int col, char *path, unsigned _top_idx, unsigned _curs)
 
 	cp = malloc(sizeof(struct curs_pos));
 	cp->path = strdup(path);
+    cp->name = NULL;
 	vp = tsearch(cp, &curs_db[col], curs_cmp);
 	cp2 = *(struct curs_pos **)vp;
 
 	if (cp2 != cp) {
 		free(cp->path);
-		free(cp);
+        free(cp);
 	}
 
 	if (!cp2)
 		return;
 
-	uv = (unsigned *)&cp2->uv;
+    free(cp2->name);
+    cp2->name = strdup(name);
 #endif
-
-	*uv++ = _top_idx;
-	*uv   = _curs;
 }
 
-unsigned *
+const char *
 db_get_curs(int col, char *path)
 {
 #ifdef TRACE
@@ -869,7 +867,7 @@ db_get_curs(int col, char *path)
 
 	if ((vp = tfind(&key, &curs_db[col], curs_cmp))) {
 		cp = *(struct curs_pos **)vp;
-		return (unsigned *)&cp->uv;
+        return cp->name;
 	}
 #endif
 	else

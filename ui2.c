@@ -1074,7 +1074,7 @@ saveselname(void)
 }
 
 unsigned
-findlistname(char *name)
+findlistname(const char *name)
 {
 	unsigned u;
 	struct filediff *f;

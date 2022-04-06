@@ -54,7 +54,7 @@ int parsopt(char *);
 void bindiff(unsigned int mode);
 int chk_mark(const char *, short);
 char *saveselname(void);
-unsigned findlistname(char *);
+unsigned findlistname(const char *);
 void re_sort_list(void);
 void filt_stat(void);
 void markc(WINDOW *);

@@ -4200,7 +4200,6 @@ enter_dir(const char *name, const char *rnam, bool lzip, bool rzip, short tree
     )
 {
     int i = 0;
-    unsigned *uv = NULL;
     char *current_path = NULL; /* current path */
     char *saved_path = NULL; /* saved path */
     struct bpth *bpth = NULL;
@@ -4306,7 +4305,8 @@ enter_dir(const char *name, const char *rnam, bool lzip, bool rzip, short tree
 		lp = &pthlen[right_col];
         saved_path = strdup(current_path);
 	}
-    db_set_curs(right_col, current_path, top_idx[right_col], curs[right_col]);
+    struct filediff *file_at_cursor = db_list[right_col][top_idx[right_col] + curs[right_col]];
+    db_set_curs(right_col, current_path, file_at_cursor->name);
 	n = NULL; /* flag */
 	/* Not in bmode since syspth[0] is always "." there */
     if (!lzip && !bmode && name && *name == '/')
@@ -4428,9 +4428,9 @@ enter_dir(const char *name, const char *rnam, bool lzip, bool rzip, short tree
 		syspth[0][pthlen[0]] = 0;
 	}
 
-    if ((uv = db_get_curs(right_col, current_path))) {
-		top_idx[right_col] = *uv++;
-		curs[right_col] = *uv;
+    const char *const name_at_cursor = db_get_curs(right_col, current_path);
+    if (name_at_cursor) {
+        center(findlistname(name_at_cursor));
 	}
 
 disp:
