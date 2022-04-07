@@ -3265,6 +3265,7 @@ static int disp_name(WINDOW *w, int y, int x, int mx, int o,
 	int db;
     static const int ns_time_width = 28; /* "18-09-17 17:42:54.000000000"
                                           * ("%'09ld" does not work!?) */
+    static const int mtime_width = 13;
 
 	db = fmode ? right_col : 0;
 
@@ -3287,7 +3288,7 @@ static int disp_name(WINDOW *w, int y, int x, int mx, int o,
 	}
 
     if (add_mtime)
-		mx -= 13;
+        mx -= mtime_width;
     else if (add_ns_mtim) {
         mx -= ns_time_width;
     }
@@ -3380,8 +3381,7 @@ static int disp_name(WINDOW *w, int y, int x, int mx, int o,
 
 	if (add_mtime) {
 		size_t n;
-
-		mx += 13;
+        mx += mtime_width;
         n = gettimestr(lbuf, sizeof lbuf, &f->mtim[i].tv_sec);
 		wmove(w, y, mx - n);
 		addmbs(w, lbuf, 0);

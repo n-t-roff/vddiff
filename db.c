@@ -842,7 +842,7 @@ db_set_curs(int col, char *path, const char *name)
 	if (!cp2)
 		return;
 
-    free(cp2->name);
+    free(const_cast_ptr(cp2->name));
     cp2->name = strdup(name);
 #endif
 }
