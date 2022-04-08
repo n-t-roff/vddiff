@@ -4305,8 +4305,12 @@ enter_dir(const char *name, const char *rnam, bool lzip, bool rzip, short tree
 		lp = &pthlen[right_col];
         saved_path = strdup(current_path);
 	}
-    struct filediff *file_at_cursor = db_list[right_col][top_idx[right_col] + curs[right_col]];
-    db_set_curs(right_col, current_path, file_at_cursor->name);
+    unsigned cursor_index = top_idx[right_col] + curs[right_col];
+    if(db_num[right_col] > cursor_index)
+    {
+        struct filediff *file_at_cursor = db_list[right_col][cursor_index];
+        db_set_curs(right_col, current_path, file_at_cursor->name);
+    }
 	n = NULL; /* flag */
 	/* Not in bmode since syspth[0] is always "." there */
     if (!lzip && !bmode && name && *name == '/')
