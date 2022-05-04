@@ -872,101 +872,111 @@ bindiff(unsigned int mode)
 	bool ml;
 
 	if (!db_num[right_col] || !mark)
+    {
 		return;
-
+    }
 	f = db_list[right_col][top_idx[right_col] + curs[right_col]];
-
 	ml = m->type[0] && (f->type[1] || !m->type[1]);
-
     /* check if mark needs to be unzipped */
     if ((mode & 1) && (z1 = unpack(m, ml ? 1 : 2, &t1, 0)))
     {
 		m = z1;
 	}
-
 	/* check if other file needs to be unzipped */
     if ((mode & 1) && (z2 = unpack(f, f->type[1] ? 2 : 1, &t2, 0)))
     {
 		f = z2;
 	}
-
-	if (ml) {
+    if (ml)
+    {
 		olnam =
 		lnam = m->name ? m->name   :
 		       bmode   ? gl_mark   :
 		                 mark_lnam ;
-
-		if (*lnam != '/') {
+        if (*lnam != '/')
+        {
 			pthcat(syspth[0], pthlen[0], lnam);
 			lnam = syspth[0];
 		}
-
 		if (chk_mark(lnam, 0))
+        {
 			goto ret;
-
+        }
 		ltyp = m->type[0];
 		lsiz = m->siz[0];
-		ornam = rnam = f->name;
+        lnam = strdup(lnam);
 
-		if (f->type[1]) {
+		ornam = rnam = f->name;
+        if (f->type[1])
+        {
 			rtyp = f->type[1];
 			rsiz = f->siz[1];
-
-			if (*rnam != '/') {
+            if (*rnam != '/')
+            {
 				pthcat(syspth[1], pthlen[1], rnam);
 				rnam = syspth[1];
 			}
-		} else {
+        }
+        else
+        {
 			rtyp = f->type[0];
 			rsiz = f->siz[0];
-
-			if (*rnam != '/') {
+            if (*rnam != '/')
+            {
 				pthcat(syspth[0], pthlen[0], rnam);
 				rnam = syspth[0];
 			}
 		}
-
-	} else if (m->type[1]) {
+    }
+    else if (m->type[1])
+    {
 		olnam = lnam = f->name;
 
-		if (f->type[0]) {
+        if (f->type[0])
+        {
 			ltyp = f->type[0];
 			lsiz = f->siz[0];
-
-			if (*lnam != '/') {
+            if (*lnam != '/')
+            {
 				pthcat(syspth[0], pthlen[0], lnam);
 				lnam = syspth[0];
 			}
-		} else {
+        }
+        else
+        {
 			ltyp = f->type[1];
 			lsiz = f->siz[1];
-
-			if (*lnam != '/') {
+            if (*lnam != '/')
+            {
 				pthcat(syspth[1], pthlen[1], lnam);
 				lnam = syspth[1];
 			}
 		}
+        lnam = strdup(lnam);
 
 		ornam =
 		rnam = m->name ? m->name   :
 		       bmode   ? gl_mark   :
 		                 mark_rnam ;
-
-		if (*rnam != '/') {
+        if (*rnam != '/')
+        {
 			pthcat(syspth[1], pthlen[1], rnam);
 			rnam = syspth[1];
 		}
-
 		if (chk_mark(rnam, 0))
-			goto ret;
-
+        {
+            goto free_lnam;
+        }
 		rtyp = m->type[1];
 		rsiz = m->siz[1];
-	} else {
+    }
+    else
+    {
 		goto ret;
 	}
 
-	if (!S_ISREG(ltyp) || !S_ISREG(rtyp)) {
+    if (!S_ISREG(ltyp) || !S_ISREG(rtyp))
+    {
 		printerr(NULL,
 		    "Binary diff can only be used for regular files");
 		goto ret;
@@ -974,9 +984,11 @@ bindiff(unsigned int mode)
 
     printerr(NULL, "Comparing \"%s\" and \"%s\"", olnam, ornam);
 	val = cmp_file(lnam, lsiz, rnam, rsiz, 1);
-
+free_lnam:
+    free(const_cast_ptr(lnam));
 ret:
-	switch (val) {
+    switch (val)
+    {
 	case 0:
         printerr(any_txt, "Equal: \"%s\" and \"%s\"",
 #if defined(DEBUG) && 0
@@ -999,12 +1011,14 @@ ret:
 		/* Error message is already output by cmp_file() */
 		;
 	}
-
 	if (z1)
+    {
 		free_zdir(z1, t1);
-
+    }
 	if (z2)
+    {
 		free_zdir(z2, t2);
+    }
 }
 
 int
