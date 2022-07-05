@@ -910,6 +910,10 @@ ini_int(void)
 
 	nodelay(stdscr, TRUE); /* compare() waits for key */
 
+    if (dontcmp)
+    {
+        return;
+    }
 	if (bmode || fmode) {
 		if (gq_pattern) {
 			/* keep msg */
