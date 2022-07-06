@@ -13,7 +13,7 @@ LOSS OF USE, DATA OR PROFITS, WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE OR
 OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
 PERFORMANCE OF THIS SOFTWARE.
 ..
-.Dd April 14, 2021
+.Dd July 6, 2022
 .Dt VDDIFF 1
 .Sh NAME
 .Nm @vddiff@
@@ -394,6 +394,8 @@ and
 are only applied on single files operations.
 .Fl M
 allows to use them on multiple files too.
+Also skips confirmation for multiple file operations which don't
+require confirmation for single file operations.
 .It Fl m
 Normally directories are displayed on top.
 This is disabled with this option.

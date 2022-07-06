@@ -1616,7 +1616,7 @@ ui_cp(int t, long u, unsigned short num, unsigned md)
     tot_cmp_file_count = 0;
 
 	if (mmrkd[right_col]) {
-		if (dialog(y_n_txt, NULL,
+        if (!force_multi && dialog(y_n_txt, NULL,
 		    "Really copy %d files?",
 		    mmrkd[right_col]) != 'y') {
             ret_val = 1;
@@ -1696,7 +1696,7 @@ ui_dd(int t, long u, unsigned short num)
     if (mmrkd[right_col]) {
 		int fs_retval_ = 0;
 
-		if (dialog(y_n_txt, NULL,
+		if (!force_multi && dialog(y_n_txt, NULL,
 		    "Really delete %d files?",
 		    mmrkd[right_col]) != 'y') {
             ret_val = 1;
