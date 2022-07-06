@@ -450,6 +450,7 @@ emulate_key_left:
 			else
             {
 				pop_state(1);
+                rebuild_db(0);
             }
 			break;
 
