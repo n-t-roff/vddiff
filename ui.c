@@ -451,6 +451,7 @@ emulate_key_left:
             {
 				pop_state(1);
                 rebuild_db(0);
+                prt_ln_num();
             }
 			break;
 

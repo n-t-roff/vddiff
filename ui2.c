@@ -1826,12 +1826,19 @@ prt_ln_num(void)
 			path = syspth[right_col];
 		}
 
-		if (file_idx) {
-			printerr(NULL, "File %lu of %lu (%s)",
-			    file_idx, file_num, path);
-		} else if (file_num) {
-			printerr(NULL, "%lu file(s) (%s)", file_num, path);
-		} else {
+        if (file_num)
+        {
+            if (file_idx)
+            {
+                printerr(NULL, "File %lu of %lu (%s)", file_idx, file_num, path);
+            }
+            else
+            {
+                printerr(NULL, "%lu file(s) (%s)", file_num, path);
+            }
+        }
+        else
+        {
 			printerr(NULL, "No file (%s)", path);
 		}
 	} else {
@@ -1839,18 +1846,22 @@ prt_ln_num(void)
 		syspth[0][pthlen[0]] = 0;
 		syspth[1][pthlen[1]] = 0;
 
-		if (file_idx) {
-			printerr(NULL, "File %lu of %lu (%s, %s)",
-			    file_idx, file_num,
-			    syspth[0], syspth[1]);
-		} else if (file_num) {
-			printerr(NULL, "%lu file(s) (%s, %s)",
-			  file_num, syspth[0], syspth[1]);
-		} else {
-			printerr(NULL, "No file (%s, %s)",
-			    syspth[0], syspth[1]);
-		}
-	}
+        if (file_num)
+        {
+            if (file_idx)
+            {
+                printerr(NULL, "File %lu of %lu (%s, %s)", file_idx, file_num, syspth[0], syspth[1]);
+            }
+            else
+            {
+                printerr(NULL, "%lu file(s) (%s, %s)", file_num, syspth[0], syspth[1]);
+            }
+        }
+        else
+        {
+            printerr(NULL, "No file (%s, %s)", syspth[0], syspth[1]);
+        }
+    }
 }
 
 void
