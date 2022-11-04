@@ -1615,14 +1615,21 @@ ui_cp(int t, long u, unsigned short num, unsigned md)
     tot_cmp_byte_count = 0;
     tot_cmp_file_count = 0;
 
-	if (mmrkd[right_col]) {
+    if (mmrkd[right_col])
+    {
         if (!force_multi && dialog(y_n_txt, NULL,
-		    "Really copy %d files?",
-		    mmrkd[right_col]) != 'y') {
+            "Really %s %d files?",
+            md &  2 ? "create symlink to" :
+            md & 16 ? "move"              :
+            md & 32 ? "exchange"          :
+                      "copy"              ,
+            mmrkd[right_col]) != 'y')
+        {
             ret_val = 1;
             goto ret;
 		}
-		while ((u = get_mmrk()) >= 0) {
+        while ((u = get_mmrk()) >= 0)
+        {
 			fs_cp(t, u, 1, md | 5, &sto);
 		}
 		rebuild_db(
@@ -1630,7 +1637,7 @@ ui_cp(int t, long u, unsigned short num, unsigned md)
 		    ? 0 : sto << 1);
         ret_val = 1;
         goto ret;
-	}
+    }
 	fs_cp(t, u, num, md, NULL);
 ret:
     fs_op = fs_op_none;

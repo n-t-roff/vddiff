@@ -93,7 +93,20 @@ int key_mmrk(void);
 void tgl_mmrk(struct filediff *);
 long get_mmrk(void);
 void mmrktobot(void);
-int ui_cp(int, long, unsigned short, unsigned);
+/*
+ * md: (see fs_cp())
+ *     1: don't rebuild DB
+ *     2: Symlink instead of copying
+ *     4: Force
+ *     8: Sync (update, 'U')
+ *    16: Move (remove source after copy)
+ *    32: Exchange
+ *    64 (0x40): Set fs_ign_errs
+ *   128 (0x80): Use db_list[right_col ? 0 : 1][u]->name
+ *               as new name
+ *   256 (0x100): Copy non-recursively
+ */
+int ui_cp(int, long, unsigned short, unsigned md);
 int ui_mv(int, long, unsigned short);
 int ui_dd(int, long, unsigned short);
 int ui_rename(int, long, unsigned short);
