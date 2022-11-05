@@ -1984,6 +1984,9 @@ help(void) {
         case 'h':
 		case 'q':
 			goto exit;
+        case 'Q':
+            keep_ungetch(c);
+            goto exit;
 		case KEY_DOWN:
 		case 'j':
 		case '+':

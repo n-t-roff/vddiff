@@ -19,6 +19,8 @@ static void print_fkey_set(void);
 static enum terminalType getTerminalType(void);
 static void printAlias(int i, enum terminalType terminalType);
 
+static unsigned topFkeyNumber;
+
 void disp_fkey_list(void)
 {
     while (1) {
@@ -26,20 +28,18 @@ void disp_fkey_list(void)
         {
             int i;
             int lkey_ = anykey("Press '0'..'9', <F1>..<F48>, or any other key");
+            unsigned screen_heigth = fkey_set ? listh - 2 : listh;
 
             if (lkey_ >= '1' && lkey_ <= '9')
             {
                 fkey_set = lkey_ - '1';
+                topFkeyNumber = 0;
                 continue;
             }
             switch (lkey_)
             {
-            case KEY_DOWN:
-            case 'j':
             case KEY_RIGHT:
             case 'l':
-            case KEY_NPAGE:
-            case ' ':
                 if (fkey_set >= FKEY_MUX_NUM - 1)
                 {
                     fkey_set = 0;
@@ -48,15 +48,11 @@ void disp_fkey_list(void)
                 {
                     ++fkey_set;
                 }
+                topFkeyNumber = 0;
                 continue;
 
-            case KEY_UP:
-            case 'k':
             case KEY_LEFT:
             case 'h':
-            case KEY_PPAGE:
-            case KEY_BACKSPACE:
-            case CERASE:
                 if (fkey_set <= 0)
                 {
                     fkey_set = FKEY_MUX_NUM - 1;
@@ -64,6 +60,45 @@ void disp_fkey_list(void)
                 else
                 {
                     --fkey_set;
+                }
+                topFkeyNumber = 0;
+                continue;
+
+            case KEY_DOWN:
+            case 'j':
+            case '+':
+            case CTRL('e'):
+            case '\n':
+                if (topFkeyNumber + 1 < FKEY_NUM)
+                {
+                    ++topFkeyNumber;
+                }
+                continue;
+
+            case KEY_UP:
+            case 'k':
+            case '-':
+            case CTRL('y'):
+                if (topFkeyNumber != 0)
+                {
+                    --topFkeyNumber;
+                }
+                continue;
+
+            case KEY_NPAGE:
+            case ' ':
+                if (topFkeyNumber + screen_heigth < FKEY_NUM)
+                {
+                    topFkeyNumber += screen_heigth;
+                }
+                continue;
+
+            case KEY_PPAGE:
+            case KEY_BACKSPACE:
+            case CERASE:
+                if (topFkeyNumber)
+                {
+                    topFkeyNumber = topFkeyNumber > screen_heigth ? topFkeyNumber - screen_heigth : 0;
                 }
                 continue;
 
@@ -114,44 +149,45 @@ static void print_fkey_set(void)
         break;
     }
 
-    int i;
-    for (i = 0; i < FKEY_NUM; i++)
+    int currentLineNumber;
+    int currentFkeyNumber;
+    for (currentLineNumber = 0, currentFkeyNumber = topFkeyNumber; currentFkeyNumber < FKEY_NUM; ++currentLineNumber, ++currentFkeyNumber)
     {
-        int j = fkey_set ? i + 2 : i; /* display line */
+        int j = fkey_set ? currentLineNumber + 2 : currentLineNumber; /* display line */
         if (j == (int)listh)
         {
             break;
         }
-        mvwprintw(wlist, j, 0, "F%d", i + 1);
-        printAlias(i + 1, terminalType);
+        mvwprintw(wlist, j, 0, "F%d", currentFkeyNumber + 1);
+        printAlias(currentFkeyNumber + 1, terminalType);
 
-        if (fkey_cmd[fkey_set][i])
+        if (fkey_cmd[fkey_set][currentFkeyNumber])
         {
-            if (fkey_comment[fkey_set][i])
+            if (fkey_comment[fkey_set][currentFkeyNumber])
             {
                 mvwprintw(wlist, j, textColumn, " \"%c %s\" (%s)",
-                    FKEY_CMD_CHR(i), fkey_cmd[fkey_set][i],
-                    fkey_comment[fkey_set][i]);
+                    FKEY_CMD_CHR(currentFkeyNumber), fkey_cmd[fkey_set][currentFkeyNumber],
+                    fkey_comment[fkey_set][currentFkeyNumber]);
             }
             else
             {
                 mvwprintw(wlist, j, textColumn, " \"%c %s\"",
-                    FKEY_CMD_CHR(i), fkey_cmd[fkey_set][i]);
+                    FKEY_CMD_CHR(currentFkeyNumber), fkey_cmd[fkey_set][currentFkeyNumber]);
             }
             continue;
         }
-        if (!sh_str[fkey_set][i])
+        if (!sh_str[fkey_set][currentFkeyNumber])
         {
             continue;
         }
-        if (fkey_comment[fkey_set][i])
+        if (fkey_comment[fkey_set][currentFkeyNumber])
         {
             mvwprintw(wlist, j, textColumn, " \"%ls\" (%s)",
-                      sh_str[fkey_set][i], fkey_comment[fkey_set][i]);
+                      sh_str[fkey_set][currentFkeyNumber], fkey_comment[fkey_set][currentFkeyNumber]);
         }
         else
         {
-            mvwprintw(wlist, j, textColumn, " \"%ls\"", sh_str[fkey_set][i]);
+            mvwprintw(wlist, j, textColumn, " \"%ls\"", sh_str[fkey_set][currentFkeyNumber]);
         }
     }
 }

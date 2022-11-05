@@ -584,22 +584,35 @@ else display help.
 .It Sq Li \&?
 Display help.
 In help mode the following inputs are valid:
+
 .Bl -tag -width 12n
-.It So Li q Sc , Aq Cm LEFT
+
+. It So Li q Sc , Aq Cm LEFT
 Leave help mode.
-.It So Li + Sc , So Li j Sc , Aq Cm DOWN
+
+. It Sq Q
+Quit vddiff.
+
+. It So Li + Sc , So Li j Sc , Aq Cm DOWN
 Scroll down.
-.It So Li - Sc , So Li k Sc , Aq Cm UP
+
+. It So Li - Sc , So Li k Sc , Aq Cm UP
 Scroll up.
-.It Mouse scroll wheel
+
+. It Mouse scroll wheel
 Scroll list.
-.It So Li " " Sc , Aq Cm PAGE-DOWN
+
+. It Ao Cm SPACE Ac , Aq Cm PAGE-DOWN
 Scroll one screen down.
-.It Ao Cm BACKSPACE Ac , Aq Cm PAGE-UP
+
+. It Ao Cm BACKSPACE Ac , Aq Cm PAGE-UP
 Scroll one screen up.
-.It Aq Cm CTRL-l
+
+. It Aq Cm CTRL-l
 Redraw screen.
+
 .El
+
 .It Aq Cm CTRL-l
 Refresh display.
 This may be necessary after another application
@@ -608,12 +621,16 @@ had output text into the curses controlled display.
 In
 .Sy fmode :
 Toggle column.
+
 .It Ao Cm UP Ac , So Li k Sc or Sq Li \-
 Move cursor line up.
+
 .It Ao Cm DOWN Ac , So Li j Sc or Sq Li +
 Move cursor line down.
+
 .It Aq Cm LEFT
 Leave directory (one directory up).
+
 .It Ao Cm RIGHT Ac , Ao Cm ENTER Ac , or double click
 View file, enter directory or start diff tool.
 Compressed files and directories
@@ -640,17 +657,35 @@ can be used to normally view files or enter directories.
 .Aq Cm ENTER
 starts a diff between the marked file
 and the selected file or directory.
+
 .It Ao Cm PAGE-UP Ac or Aq Cm BACKSPACE
 Scroll one screen up.
+
 .It Ao Cm PAGE-DOWN Ac or Aq Cm SPACE
 Scroll one screen down.
+
+.It Aq Cm CTRL-e
+Scroll one line down.
+
+.It Aq Cm CTRL-y
+Scroll one line up.
+
+.It Aq Cm CTRL-d
+Scroll half screen down.
+
+.It Aq Cm CTRL-u
+Scroll half screen up.
+
 .It Ao Cm HOME Ac or Do Li 1G Dc or Dq Li gg
 Go to first file.
+
 .It Ao Cm END Ac or Sq Li G
 Go to last file.
+
 .It Ar n Ns Sq Li G
 Go to line
 .Ar n .
+
 .It So Li | Sc Ns Aq Cm LEFT
 In two-column mode:
 Enlarge right column by 10 characters.
@@ -743,14 +778,6 @@ Put selected file to top.
 Center selected file.
 .It Dq Li z-
 Put selected file to bottom.
-.It Aq Cm CTRL-e
-Scroll one line down.
-.It Aq Cm CTRL-y
-Scroll one line up.
-.It Aq Cm CTRL-d
-Scroll half screen down.
-.It Aq Cm CTRL-u
-Scroll half screen up.
 .It So Li ! Sc or Sq Li n
 Toggle display of equal files.
 .It Sq Li *
@@ -1330,8 +1357,59 @@ When
 is active: emulate
 .Aq Cm RIGHT ,
 else list strings which had been defined for a function key.
+
 .It Sq Li K
 List strings which had been defined for a function key.
+
+.Bl -tag -width 12n
+
+. It Ao Cm UP Ac , So Li k Sc , So Li \- Sc , Ao Cm CTRL-y Ac
+Scroll one line down.
+
+. It Ao Cm DOWN Ac , So Li j Sc , So Li + Sc , Ao Cm CTRL-e Ac , Aq Cm ENTER
+Scroll one line up.
+
+. It Ao Cm LEFT Ac , Sq h
+Select previous f-key set.
+
+. It Ao Cm RIGHT Ac , Sq l
+Select next f-key set.
+
+. It So 0 Sc ... Sq 9
+Select f-key set 0 ... 9.
+
+. It Ao Cm PAGE-UP Ac or Aq Cm BACKSPACE
+Scroll one screen down.
+
+. It Ao Cm PAGE-DOWN Ac or Aq Cm SPACE
+Scroll one screen up.
+
+.\". It Aq Cm CTRL-d
+.\"Scroll half screen up.
+.\"
+.\". It Aq Cm CTRL-u
+.\"Scroll half screen down.
+.\"
+.\". It Ao Cm HOME Ac
+.\"Go to first line.
+.\"
+.\". It Ao Cm END Ac
+.\"Go to last line.
+
+. It Ao Cm F1 Ac ... Aq Cm F48
+Activate f-key function
+. Cm F1
+\&...\&
+. Cm F48 .
+
+. It Sq q
+Leave view.
+
+. It Sq Q
+Quit vddiff.
+
+.El
+
 .It Sq Li u
 Update file list.
 Also used to remove multiple marks
